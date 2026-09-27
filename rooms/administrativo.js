@@ -8,12 +8,19 @@ function roomAdministrativo(ctx) {
   //  · Banheiro pastoral (x 17,0–20,1 · z 3,1–4,9): bancada com cuba, vaso e box.
   //  · Caixa d'água (x 17,0–20,1 · z 0–3,1): 2 reservatórios de 1000 L sobre base,
   //    barrilete em PVC, motobomba e quadro elétrico.
-  //  · Recepção (x 9,45–12,75 · z 5,9–9,25): balcão ripado, painel com o logo,
-  //    3 poltronas de espera, bebedouro, planta e quadro.
-  //  · Sala Gilvan (x 17,1–20,1 · z 11,0–14,2) e Administrativo (z 14,2–19,0).
+  //  · Recepção (x 9,45–12,75 · z 5,9–9,25): parede ripada do piso ao teto com o LOGO
+  //    oficial em letras caixa prateadas (ctx.logo.relief, retroiluminado com a luz
+  //    'recepcao'), balcão ripado com a marca "B" e fita de LED, 3 poltronas, bebedouro.
+  //  · Sala Gilvan (x 17,1–20,1 · z 11,0–14,2) e Administrativo (z 14,2–19,0): estações
+  //    com monitores (papel de parede com o logo), prateleiras, mural, logo na parede.
+  //  · Placas de porta (recepção / sala pastoral) na face externa da parede z = 9,25.
+  // Logo: SEMPRE via ctx.logo (mesma função de desenho do cartão). Telas, abajures e
+  // LEDs acompanham a luz do ambiente (ctx.bindEmissive).
   // Paleta: preto, madeira clara (ripado), branco e grafite, acentos âmbar/terracota.
   // Livres: giros das portas (recepção, pastoral, banheiro, Gilvan, Adm.), split da
   // pastoral (14,9; 2,4; 0,2) e as luminárias do cartão (y ≈ 2,7).
+  // Faces internas: x 12,675/12,825 · 16,925/17,075 · 17,175 · 20,013 (muro revestido)
+  // · z 0,087 · 3,025/3,175 · 4,825/4,975 · 5,975 · 9,175/9,325 · 11,075 · 14,125/14,275 · 18,925.
   // ---------------------------------------------------------------------------
   const THREE = ctx.THREE, M = ctx.M;
   const box = (...a) => ctx.box(...a), cyl = (...a) => ctx.cyl(...a), sph = (...a) => ctx.sph(...a);
@@ -29,6 +36,7 @@ function roomAdministrativo(ctx) {
   // ---- materiais (mesmas opções → mesmo material → menos draw calls) ----------
   const woodL    = std({ color: 0xd2b08a, roughness: 0.65 });                    // madeira clara (tampos)
   const slat     = std({ color: 0xcfa97c, roughness: 0.7 });                     // ripado
+  const ripaB    = std({ color: 0xd9b8a0, roughness: 0.68 });                    // ripado bege-rosado (igual ao da fachada)
   const blackM   = std({ color: 0x1b1b1d, roughness: 0.55 });                    // marcenaria preta
   const metalBk  = std({ color: 0x141416, roughness: 0.45, metalness: 0.45 });   // metal preto (pés, perfis)
   const whiteTop = std({ color: 0xf1efea, roughness: 0.4 });                     // tampo branco / quartzo
@@ -61,7 +69,42 @@ function roomAdministrativo(ctx) {
   const panelGr  = std({ color: 0xb8bcc0, roughness: 0.5, metalness: 0.3 });
   const waterJug = std({ color: 0x7fb2dc, roughness: 0.1, transparent: true, opacity: 0.6 });
   const book = [0x8b2f2f, 0x2f4f6b, 0x3f6d3a, 0xc9a24a, 0x6b4a2f, 0xe6dfd3, 0x1f1f22, 0xa65a3a].map((c) => std({ color: c, roughness: 0.9 }));
-  const artA = [terra, amber, sand, uphGray, blackM, linenLt];
+  const cork     = std({ color: 0xb68c5c, roughness: 1 });
+  const spruce   = std({ color: 0xe2c28e, roughness: 0.45 });                    // tampo do violão
+  const rosewood = std({ color: 0x5a3320, roughness: 0.5 });                     // laterais/braço
+  const hoseGr   = std({ color: 0x2f7a3a, roughness: 0.6 });                     // mangueira
+  const steelBr  = std({ color: 0xb9bcc0, roughness: 0.3, metalness: 0.8 });     // inox escovado
+
+  // ---- emissivos ligados às luzes dos ambientes (1 material por entidade → 1 draw call) ----
+  // Abajures / luminárias de mesa: cúpula de linho que acende com a luz do ambiente.
+  const shade = (key) => ctx.bindEmissive(key, new THREE.MeshStandardMaterial({ color: 0xe8e1d2, roughness: 0.9,
+    emissive: 0xffd9a8, emissiveIntensity: 0, side: THREE.DoubleSide }), 0.85, { min: 0 });
+  const shadePast = shade('pastoral'), shadeAdm = shade('administrativo');
+  // Fita de LED (luz quente) — sancas e balcão
+  const led = (key, max = 1.4) => ctx.bindEmissive(key, new THREE.MeshStandardMaterial({ color: 0xfff1dc, roughness: 0.5,
+    emissive: 0xffe2b8, emissiveIntensity: 0 }), max, { min: 0 });
+  const ledRec = led('recepcao'), ledPast = led('pastoral', 1.1);
+  // Papel de parede dos monitores: degradê grafite/roxo (Base Music) com o logo oficial.
+  // A tela é 16:9 e a textura é quadrada: desenha com escala horizontal = altura/largura.
+  const SCR_A = 0.56;
+  const wallTex = ctx.makeTex(512, (g, s) => {
+    const gr = g.createLinearGradient(0, 0, s, s);
+    gr.addColorStop(0, '#221d2e'); gr.addColorStop(0.55, '#35295a'); gr.addColorStop(1, '#141219');
+    g.fillStyle = gr; g.fillRect(0, 0, s, s);
+    g.save(); g.scale(SCR_A, 1);
+    const W = s / SCR_A, lw = s * 0.34;
+    g.globalAlpha = 0.08; g.fillStyle = '#b88cff';
+    for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo(W * (0.1 + i * 0.2), 0); g.lineTo(W * (0.18 + i * 0.2), 0); g.lineTo(W * (0.02 + i * 0.22), s); g.lineTo(W * (-0.06 + i * 0.22), s); g.fill(); }
+    g.globalAlpha = 1;
+    ctx.logo.draw(g, W / 2 - lw / 2, s * 0.2, lw, { layout: 'full', color: '#f4f5f7' });
+    g.fillStyle = 'rgba(8,8,10,0.85)'; g.fillRect(0, s * 0.93, W, s * 0.07);                   // barra de tarefas
+    g.fillStyle = '#c9c4d6'; for (let i = 0; i < 6; i++) g.fillRect(W / 2 - 0.2 * s + i * 0.075 * s, s * 0.947, 0.04 * s, 0.035 * s);
+    g.restore();
+  });
+  wallTex.wrapS = wallTex.wrapT = THREE.ClampToEdgeWrapping;
+  const screen = (key) => ctx.bindEmissive(key, new THREE.MeshStandardMaterial({ color: 0xffffff, map: wallTex, roughness: 0.22,
+    emissive: 0xffffff, emissiveMap: wallTex, emissiveIntensity: 0.1 }), 0.95, { min: 0.1 });
+  const scrPast = screen('pastoral'), scrRec = screen('recepcao'), scrAdm = screen('administrativo');
 
   // ---- utilidades ------------------------------------------------------------
   // tubo reto alinhado a um eixo, de a até b ([x, y, z])
@@ -70,10 +113,6 @@ function roomAdministrativo(ctx) {
     const m = cyl(r, r, L, mat, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2, 10);
     if (Math.abs(dx) > 1e-6) m.rotation.z = PI / 2; else if (Math.abs(dz) > 1e-6) m.rotation.x = PI / 2;
     return put(m);
-  };
-  const plane = (w, h, mat, x, y, z, ry = 0) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-    m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = false; m.receiveShadow = false; return put(m);
   };
 
   // ======================= BUILDERS (origem no centro da base; frente = +z) =======================
@@ -140,24 +179,37 @@ function roomAdministrativo(ctx) {
     return g;
   };
   // Monitor em pedestal (frente +z)
-  const monitor = (w = 0.6) => {
+  const monitor = (w = 0.6, scr = null) => {
     const g = G();
     g.add(box(0.22, 0.012, 0.16, metalBk, 0, 0.006, 0));
     g.add(box(0.04, 0.3, 0.025, metalBk, 0, 0.16, -0.04));
     g.add(box(w, w * 0.58, 0.028, metalBk, 0, 0.3, -0.02));
-    g.add(box(w - 0.03, w * 0.58 - 0.03, 0.006, M.screenOff, 0, 0.3, -0.004, nc));
+    if (scr) {                                                                   // tela com o papel de parede do logo
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.024, w * 0.58 - 0.024), scr);
+      p.position.set(0, 0.3, -0.0055); p.castShadow = false; g.add(p);
+    } else g.add(box(w - 0.03, w * 0.58 - 0.03, 0.006, M.screenOff, 0, 0.3, -0.004, nc));
+    return g;
+  };
+  // Luminária de mesa articulada (base, 2 hastes, cúpula que acende com a luz do ambiente)
+  const deskLamp = (sh) => {
+    const g = G();
+    g.add(cyl(0.07, 0.075, 0.02, metalBk, 0, 0.01, 0, 14));
+    const a1 = box(0.014, 0.36, 0.014, metalBk, 0, 0.19, 0.04); a1.rotation.x = 0.25; g.add(a1);
+    const a2 = box(0.014, 0.3, 0.014, metalBk, 0, 0.4, 0.17); a2.rotation.x = 1.1; g.add(a2);
+    const c = cyl(0.035, 0.075, 0.1, sh, 0, 0.47, 0.3, 14, true); c.rotation.x = 0.35; g.add(c);
     return g;
   };
   // Mesa de trabalho (frente +z = quem senta): tampo claro, laterais pretas, gaveteiro branco
-  const workDesk = (w, d, pc = true, seed = 1) => {
+  const workDesk = (w, d, pc = true, seed = 1, scr = null, lampSh = null) => {
     const g = G();
     g.add(box(w, 0.03, d, woodL, 0, 0.745, 0));
     for (const sx of [-1, 1]) g.add(box(0.04, 0.73, d - 0.04, metalBk, sx * (w / 2 - 0.04), 0.365, 0));
     g.add(box(w - 0.12, 0.34, 0.02, blackM, 0, 0.52, -d / 2 + 0.05));
     g.add(box(0.4, 0.56, d - 0.2, whiteTop, w / 2 - 0.3, 0.29, 0.03));
     for (let i = 0; i < 2; i++) g.add(box(0.2, 0.012, 0.012, metalBk, w / 2 - 0.3, 0.2 + i * 0.24, d / 2 - 0.06));
+    if (lampSh) { const lp = deskLamp(lampSh); lp.position.set(-w / 2 + 0.14, 0.76, -d / 2 + 0.1); lp.rotation.y = 0.5; g.add(lp); }
     if (pc) {
-      const mon = monitor(0.58); mon.position.set(-0.05, 0.76, -d / 2 + 0.16); g.add(mon);
+      const mon = monitor(0.58, scr); mon.position.set(-0.05, 0.76, -d / 2 + 0.16); g.add(mon);
       g.add(box(0.42, 0.018, 0.14, graph, -0.05, 0.769, 0.06));
       const mouse = sph(0.03, metalBk, 0.28, 0.772, 0.07); mouse.scale.set(1, 0.55, 1.4); g.add(mouse);
       g.add(box(0.21, 0.012, 0.297, paper, -w / 2 + 0.25, 0.766, 0.02));
@@ -288,7 +340,7 @@ function roomAdministrativo(ctx) {
     // em cima: luminária de mesa, livros deitados, vaso âmbar; embaixo: cestos
     g.add(cyl(0.07, 0.08, 0.03, metalBk, -0.85, 0.797, 0, 14));
     g.add(cyl(0.012, 0.012, 0.36, metalBk, -0.85, 0.99, 0, 6));
-    g.add(cyl(0.09, 0.14, 0.18, linenLt, -0.85, 1.2, 0, 16, true));
+    g.add(cyl(0.09, 0.14, 0.18, shadePast, -0.85, 1.2, 0, 16, true));
     g.add(box(0.3, 0.04, 0.22, terra, 0.1, 0.803, 0.02)); g.add(box(0.26, 0.04, 0.2, sand, 0.1, 0.843, 0.02)); g.add(box(0.24, 0.035, 0.19, blackM, 0.1, 0.88, 0.02));
     g.add(cyl(0.07, 0.1, 0.28, amber, 0.7, 0.92, 0, 14));
     for (const sx of [-0.6, 0.45]) g.add(box(0.36, 0.22, 0.28, caramel, sx, 0.325, 0));
@@ -311,14 +363,14 @@ function roomAdministrativo(ctx) {
     const g = roundTable(0.21, 0.55);                                            // mesa lateral + abajur
     g.add(cyl(0.07, 0.09, 0.03, metalBk, 0, 0.565, 0, 12));
     g.add(cyl(0.012, 0.012, 0.3, metalBk, 0, 0.72, 0, 6));
-    g.add(cyl(0.1, 0.15, 0.2, linenLt, 0, 0.94, 0, 16, true));
+    g.add(cyl(0.1, 0.15, 0.2, shadePast, 0, 0.94, 0, 16, true));
     place(g, 13.2, 5.05);
   }
   place(plant(0.5, 0.5, 3), 13.35, 3.5);
   place(plant(0.42, 0.55, 5, 0.18, true), 16.52, 0.52);
   // ---- 2 mesas de atendimento (lado direito) + cadeiras de visita ----
   for (const [zc, s] of [[6.0, 1], [8.2, 2]]) {
-    place(workDesk(1.5, 0.72, true, s), 17.85, zc, FX);
+    place(workDesk(1.5, 0.72, true, s, scrPast, shadePast), 17.85, zc, FX);
     place(officeChair(), 18.66, zc, FNX);
     place(shellChair(uphGray), 16.98, zc - 0.3, FX);
     place(shellChair(uphGray), 16.98, zc + 0.3, FX);
@@ -347,8 +399,47 @@ function roomAdministrativo(ctx) {
     });
     place(g, 19.8, 7.0, FNX);
   }
-  // quadro sobre o estar, na parede x=12,75
-  place(frame(0.62, 0.9, amber, blackM), 12.84, 6.4, FX, 1.6);
+  // quadro com o LOGO sobre o estar, na parede x=12,75: tela preta, moldura de madeira clara
+  // (filete) e o logo oficial em champanhe, com uma arandela de LED acima
+  {
+    const g = G();
+    g.add(box(0.74, 0.96, 0.035, woodL, 0, 0, 0, nc));
+    g.add(box(0.7, 0.92, 0.04, blackM, 0, 0, 0.004, nc));
+    place(g, 12.845, 6.4, FX, 1.62);
+    const lg = ctx.logo.mesh(0.44, 0, { layout: 'full', color: '#dcc49a', roughness: 0.35, metalness: 0.5 });
+    lg.rotation.y = FX; lg.position.set(12.871, 1.63, 6.4); put(lg);
+    // arandela linear (preta) com fita de LED voltada para o quadro
+    put(box(0.07, 0.035, 0.6, metalBk, 12.87, 2.2, 6.4));
+    put(box(0.02, 0.006, 0.54, ledPast, 12.89, 2.18, 6.4, nc));
+  }
+  // persiana rolô de linho na parede de vidro (x 14,2–16,6), meio abaixada
+  {
+    put(box(2.56, 0.1, 0.09, blackM, 15.4, 2.33, 9.12));                          // caixa (bandô)
+    put(box(2.46, 0.52, 0.008, linenLt, 15.4, 2.02, 9.1, nc));                    // tecido
+    put(box(2.46, 0.03, 0.02, metalBk, 15.4, 1.75, 9.1, nc));                     // barra de peso
+    put(cyl(0.004, 0.004, 0.7, metalBk, 16.52, 1.9, 9.08, 4));                    // corrente
+  }
+  // violão no suporte (canto entre o aparador e a porta do banheiro) — ministério Base Music
+  {
+    const g = G();
+    // suporte em A preto
+    for (const sx of [-1, 1]) { const l = box(0.02, 0.5, 0.02, metalBk, sx * 0.14, 0.24, 0.05); l.rotation.z = sx * 0.2; g.add(l); }
+    g.add(box(0.3, 0.02, 0.05, metalBk, 0, 0.2, 0.12));
+    g.add(box(0.02, 0.62, 0.02, metalBk, 0, 0.31, -0.1));
+    const v = G(); v.position.set(0, 0.2, 0.08); v.rotation.x = -0.24;         // violão inclinado para trás
+    const lower = cyl(0.18, 0.18, 0.1, rosewood, 0, 0.19, 0, 24); lower.rotation.x = PI / 2; v.add(lower);
+    const upper = cyl(0.135, 0.135, 0.1, rosewood, 0, 0.42, 0, 24); upper.rotation.x = PI / 2; v.add(upper);
+    const top1 = cyl(0.175, 0.175, 0.006, spruce, 0, 0.19, 0.051, 24); top1.rotation.x = PI / 2; v.add(top1);
+    const top2 = cyl(0.13, 0.13, 0.006, spruce, 0, 0.42, 0.051, 24); top2.rotation.x = PI / 2; v.add(top2);
+    const hole = cyl(0.048, 0.048, 0.004, blackM, 0, 0.33, 0.055, 18); hole.rotation.x = PI / 2; v.add(hole);
+    v.add(box(0.1, 0.02, 0.012, rosewood, 0, 0.12, 0.057));                     // cavalete
+    v.add(box(0.05, 0.42, 0.03, rosewood, 0, 0.72, 0.02));                       // braço
+    v.add(box(0.052, 0.4, 0.006, blackM, 0, 0.72, 0.037));                     // escala
+    v.add(box(0.08, 0.16, 0.025, rosewood, 0, 1.0, 0.012));                    // mão
+    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) { const t = cyl(0.008, 0.008, 0.03, M.chrome, sx * 0.05, 0.95 + i * 0.045, 0.012, 6); t.rotation.z = PI / 2; v.add(t); }
+    g.add(v);
+    place(g, 16.4, 4.72, FNX + 0.35);
+  }
 
   // =====================================================================
   // BANHEIRO PASTORAL (x 17,0–20,1 · z 3,1–4,9) — porta em x=17 (z 3,4–4,2)
@@ -381,6 +472,24 @@ function roomAdministrativo(ctx) {
     // toalha na parede z=3,1
     put(box(0.5, 0.02, 0.02, metalBk, 18.3, 1.35, 3.2));
     put(box(0.42, 0.55, 0.04, sand, 18.3, 1.08, 3.215));
+    // espelho com LED atrás (halo que acende com a luz da pastoral), saboneteira e plantinha
+    const halo = cyl(0.3, 0.3, 0.008, ledPast, 17.52, 1.55, 4.806, 32); halo.rotation.x = PI / 2; halo.castShadow = false; put(halo);
+    put(cyl(0.035, 0.035, 0.14, blackM, 17.33, 0.94, 4.7, 12));                   // saboneteira líquida
+    put(cyl(0.01, 0.01, 0.04, blackM, 17.33, 1.03, 4.7, 6));
+    put(cyl(0.05, 0.04, 0.08, ceramic, 17.73, 0.91, 4.72, 12));                   // vasinho
+    put(sph(0.055, frond2, 17.73, 0.99, 4.72));
+    // toalheiro de argola ao lado da bancada, com toalha de rosto
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.008, 6, 20), metalBk);
+    ring.position.set(17.97, 1.12, 4.8); put(ring);
+    put(box(0.2, 0.3, 0.025, linenLt, 17.97, 0.98, 4.795));
+    // lixeira com pedal (inox) ao lado do vaso
+    put(cyl(0.1, 0.09, 0.3, steelBr, 18.78, 0.15, 4.62, 16));
+    put(cyl(0.102, 0.102, 0.02, metalBk, 18.78, 0.31, 4.62, 16));
+    // box: ralo linear, prateleira com frascos e tapete de banho
+    put(box(0.6, 0.004, 0.06, steelBr, 19.55, 0.052, 4.72, nc));
+    put(box(0.12, 0.02, 0.36, steelBr, 19.945, 1.09, 3.56));                     // prateleira de canto
+    for (let i = 0; i < 3; i++) put(cyl(0.025, 0.025, 0.16 - i * 0.02, [amber, ceramic, terra][i], 19.945, 1.1 + (0.16 - i * 0.02) / 2, 3.46 + i * 0.1, 10));
+    put(box(0.3, 0.012, 0.5, sand, 18.86, 0.012, 3.85, nc));
   }
 
   // =====================================================================
@@ -396,8 +505,29 @@ function roomAdministrativo(ctx) {
       // entrada pela tampa (boia) e saída na lateral de baixo
       pipe([x, 1.2, 0.95], [x, 1.5, 0.95], 0.022);
       pipe([x, 0.35, 1.95], [x, 0.35, 2.45], 0.025, pvcBrown);
-      put(cyl(0.04, 0.04, 0.08, pvcBrown, x, 0.35, 2.3, 10)).rotation.x = PI / 2;   // registro
-      put(box(0.04, 0.1, 0.02, M.red, x, 0.42, 2.3));
+      put(cyl(0.04, 0.04, 0.08, pvcBrown, x, 0.35, 2.3, 10)).rotation.x = PI / 2;   // registro de gaveta
+      put(cyl(0.008, 0.008, 0.08, M.chrome, x, 0.42, 2.3, 6));                      // haste + volante vermelho
+      const wh = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.009, 6, 16), M.red);
+      wh.rotation.x = PI / 2; wh.position.set(x, 0.465, 2.3); put(wh);
+      // frisos horizontais do reservatório e trava da tampa
+      for (const y of [0.45, 0.75]) { const r = 0.532 + (y - 0.25) * 0.0976; put(cyl(r, r, 0.03, tankLid, x, y, 1.45, 28)); }
+      put(box(0.06, 0.05, 0.03, tankLid, x + 0.6, 1.07, 1.45));
+    }
+    // extravasor (ladrão): liga os dois reservatórios e sai pelo muro x = 20,1
+    pipe([18.56, 0.98, 1.45], [18.7, 0.98, 1.45], 0.02);
+    pipe([19.86, 0.98, 1.45], [20.0, 0.98, 1.45], 0.02);
+    put(cyl(0.035, 0.035, 0.01, pvc, 20.005, 0.98, 1.45, 12)).rotation.z = PI / 2;   // espelho da saída
+    put(cyl(0.07, 0.07, 0.006, steelBr, 18.6, 0.008, 2.75, 16));                 // ralo
+    // mangueira enrolada no suporte (parede z = 3,1) e escada de alumínio encostada no muro z = 0
+    {
+      const reel = cyl(0.2, 0.2, 0.1, hoseGr, 17.55, 1.15, 2.95, 20); reel.rotation.x = PI / 2; put(reel);
+      const hub = cyl(0.08, 0.08, 0.12, metalBk, 17.55, 1.15, 2.95, 12); hub.rotation.x = PI / 2; put(hub);
+      put(box(0.04, 0.2, 0.05, metalBk, 17.55, 1.0, 2.99));
+      put(box(0.03, 0.9, 0.03, hoseGr, 17.42, 0.62, 2.9));                     // ponta pendurada
+      const lad = G();
+      for (const sx of [-1, 1]) lad.add(box(0.05, 2.1, 0.025, steelBr, sx * 0.2, 1.05, 0));
+      for (let i = 0; i < 6; i++) lad.add(box(0.4, 0.03, 0.02, steelBr, 0, 0.3 + i * 0.3, 0));
+      lad.rotation.x = -0.1; place(lad, 17.62, 0.35, 0);
     }
     pipe([17.6, 1.5, 0.95], [19.8, 1.5, 0.95], 0.025);                          // barrilete de entrada
     pipe([19.8, 1.5, 0.95], [19.8, 1.5, 0.2], 0.025);
@@ -425,34 +555,42 @@ function roomAdministrativo(ctx) {
     put(box(0.62, 0.03, 1.6, whiteTop, 11.3, 0.745, 7.1));
     put(box(0.04, 1.06, 1.6, blackM, 10.99, 0.53, 7.1));
     put(box(0.26, 0.03, 1.66, woodL, 10.96, 1.075, 7.1));
-    for (let i = 0; i < 12; i++) put(box(0.022, 0.96, 0.07, slat, 10.958, 0.5, 6.37 + i * 0.1327));
+    for (let i = 0; i < 12; i++) put(box(0.022, 0.96, 0.07, ripaB, 10.958, 0.5, 6.37 + i * 0.1327));
     for (const z of [6.32, 7.88]) put(box(0.62, 0.73, 0.04, blackM, 11.3, 0.365, z));
     put(box(0.34, 0.55, 0.5, whiteTop, 11.4, 0.28, 7.55));                      // gaveteiro
-    const mon = monitor(0.5); place(mon, 11.12, 7.25, FX, 0.76);
+    const mon = monitor(0.5, scrRec); place(mon, 11.12, 7.25, FX, 0.76);
     put(box(0.14, 0.018, 0.4, graph, 11.4, 0.769, 7.25));                        // teclado
     put(box(0.2, 0.012, 0.28, paper, 11.35, 0.766, 6.65));
     put(cyl(0.035, 0.03, 0.09, terra, 11.5, 0.805, 6.45, 12));
     put(box(0.2, 0.06, 0.12, metalBk, 10.97, 1.12, 6.6));                         // porta-folhetos
     put(box(0.012, 0.2, 0.14, amber, 10.95, 1.2, 6.6, nc)).rotation.z = 0.2;
     place(officeChair(), 12.1, 7.15, FNX);
+    // marca "B" em acrílico preto na frente ripada do balcão + fita de LED sob o tampo alto
+    const mk = ctx.logo.mesh(0.34, 0, { layout: 'mark', color: '#161618', roughness: 0.3 });
+    mk.rotation.y = FNX; mk.position.set(10.944, 0.6, 7.1); put(mk);
+    put(box(0.012, 0.008, 1.56, ledRec, 10.87, 1.056, 7.1, nc));
+    // telefone e porta-canetas no tampo de dentro
+    put(box(0.16, 0.05, 0.2, metalBk, 11.45, 0.785, 6.9)); put(box(0.05, 0.03, 0.18, graph, 11.4, 0.822, 6.9));
+    put(cyl(0.03, 0.03, 0.1, metalBk, 11.5, 0.81, 7.8, 10));
+    // capacho com o logo (grafite, logo claro) logo depois da porta da recepção (x 11,8–12,6)
+    const cap = ctx.logo.mesh(0.9, 0, { layout: 'wide', color: '#d9d4ca', bg: '#1a1a1c', pad: 0.12, roughness: 1 });
+    cap.rotation.x = -PI / 2; cap.position.set(12.2, 0.014, 8.72); put(cap);
   }
-  // painel ripado com o logo na parede x=12,75, atrás do balcão
+  // PAREDE DA MARCA (x = 12,75, atrás do balcão): ripado de madeira clara do rodapé à sanca,
+  // como o painel da fachada, com o LOGO oficial em letras caixa prateadas (ctx.logo.relief)
+  // retroiluminadas — o halo e o brilho das letras acompanham a luz 'recepcao'.
   {
-    for (let i = 0; i < 12; i++) put(box(0.02, 2.2, 0.055, slat, 12.645, 1.2, 6.47 + i * 0.1236));
-    put(box(0.01, 2.2, 1.5, blackM, 12.665, 1.2, 7.15, nc));
-    const tex = ctx.makeTex(512, (g, s) => {
-      g.fillStyle = '#161618'; g.fillRect(0, 0, s, s);
-      g.strokeStyle = '#d2b08a'; g.lineWidth = s * 0.03;
-      g.beginPath(); g.arc(s / 2, s * 0.4, s * 0.25, 0, PI * 2); g.stroke();
-      g.fillStyle = '#e8c9a0'; g.font = `bold ${Math.round(s * 0.34)}px "Montserrat","Helvetica Neue",Arial,sans-serif`;
-      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('B', s / 2, s * 0.415);
-      g.fillStyle = '#f1efea'; g.font = `600 ${Math.round(s * 0.1)}px "Montserrat","Helvetica Neue",Arial,sans-serif`;
-      g.fillText('BASE CHURCH', s / 2, s * 0.82);
-    });
-    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-    const logoMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.15 });
-    put(box(0.03, 0.8, 0.8, metalBk, 12.615, 1.75, 7.15));
-    plane(0.76, 0.76, logoMat, 12.598, 1.75, 7.15, FNX);
+    const Z0 = 6.45, Z1 = 8.05, ZC = (Z0 + Z1) / 2, n = 16, pitch = (Z1 - Z0) / n;
+    put(box(0.012, 2.72, Z1 - Z0 + 0.04, blackM, 12.665, 1.42, ZC, nc));          // fundo preto (sombra entre ripas)
+    for (let i = 0; i < n; i++) put(box(0.03, 2.62, pitch * 0.62, ripaB, 12.64, 1.39, Z0 + pitch * (i + 0.5)));
+    put(box(0.05, 0.08, Z1 - Z0 + 0.04, metalBk, 12.65, 0.04, ZC));               // rodapé preto
+    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.63, 2.74, ZC));               // sanca preta
+    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6, 2.697, ZC, nc));          // fita de LED lavando o ripado
+    const L = ctx.logo.relief(0.7, { layout: 'full', depth: 0.045, layers: 4 });
+    L.rotation.y = FNX; L.position.set(12.622, 1.66, ZC); put(L);
+    ctx.bindEmissive('recepcao', L.userData.face, 0.45, { min: 0.25 });
+    const halo = ctx.glowPlane(1.5, 1.6, 'recepcao', { color: 0xfff1dc, base: 0.32, day: 0.15 });
+    halo.rotation.y = FNX; halo.position.set(12.623, 1.66, ZC); put(halo);
   }
   // 3 poltronas de espera na parede x=9,45, mesinha, planta, bebedouro e quadro
   for (const z of [6.42, 7.22, 8.02]) place(armchair(caramel, caramel, 0.66, 0.7, metalBk), 9.95, z, FX);
@@ -469,6 +607,37 @@ function roomAdministrativo(ctx) {
   }
   place(frame(0.8, 0.56, terra, amber), 10.55, 9.16, FNZ, 1.65);
 
+  // ---- placas de porta (acrílico preto, marca + nome) na face externa da parede z = 9,25 ----
+  // Uma textura só (2 linhas) → 1 material → 1 draw call; cada placa usa a sua faixa de UV.
+  {
+    const PW = 0.26, PH = 0.1, rowH = Math.round(512 * PH / PW);
+    const names = [['RECEPÇÃO'], ['SALA', 'PASTORAL']];
+    const tex = ctx.makeTex(512, (g, s) => {
+      g.fillStyle = '#0f0f11'; g.fillRect(0, 0, s, s);
+      names.forEach((t, i) => {
+        const y0 = i * rowH, pad = rowH * 0.18;
+        g.fillStyle = '#17171a'; g.fillRect(0, y0, s, rowH);
+        ctx.logo.draw(g, pad, y0 + pad, rowH - 2 * pad, { layout: 'mark', color: '#f4f5f7' });
+        g.fillStyle = '#f4f5f7'; g.textBaseline = 'middle'; g.textAlign = 'left';
+        let fs = rowH * (t.length > 1 ? 0.27 : 0.32); g.font = `700 ${fs}px ${ctx.logo.font}`;
+        const maxW = s - rowH - pad * 1.2, w0 = Math.max(...t.map((l) => g.measureText(l).width));
+        if (w0 > maxW) { fs *= maxW / w0; g.font = `700 ${fs}px ${ctx.logo.font}`; }
+        t.forEach((l, k) => g.fillText(l, rowH * 0.98, y0 + rowH / 2 + (k - (t.length - 1) / 2) * fs * 1.12));
+      });
+    });
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.25, metalness: 0.1 });
+    const plate = (i, x) => {
+      const geo = new THREE.PlaneGeometry(PW, PH), uv = geo.attributes.uv;
+      const v1 = 1 - (i * rowH) / 512, v0 = 1 - ((i + 1) * rowH) / 512;
+      for (let k = 0; k < uv.count; k++) uv.setY(k, v0 + uv.getY(k) * (v1 - v0));
+      const m = new THREE.Mesh(geo, mat); m.position.set(x, 1.6, 9.338); m.castShadow = false; put(m);
+      put(box(PW + 0.01, PH + 0.01, 0.01, metalBk, x, 1.6, 9.331, nc));
+    };
+    plate(0, 11.52);                                                             // porta da recepção (x 11,8–12,6)
+    plate(1, 14.0);                                                              // porta da pastoral (x 12,9–13,8)
+  }
+
   // =====================================================================
   // SALA GILVAN (x 17,1–20,1 · z 11,0–14,2) — porta em x=17,1 (z 12,9–13,8)
   // =====================================================================
@@ -478,13 +647,34 @@ function roomAdministrativo(ctx) {
     g.add(cyl(0.07, 0.06, 0.16, ceramic, 0.05, 0.82, 0, 12)); g.add(sph(0.08, frond, 0.05, 0.94, 0));
     const pf = frame(0.2, 0.26, amber, sand); pf.position.set(0.55, 0.87, -0.05); pf.rotation.x = -0.12; g.add(pf);
     g.add(box(0.28, 0.08, 0.2, graph, 0.8, 0.78, 0));
-    place(g, 18.9, 11.33, FZ);
-    place(workDesk(1.3, 0.68, true, 3), 18.6, 12.5, FX);
+    place(g, 18.9, 11.36, FZ);
+    place(workDesk(1.3, 0.68, true, 3, scrAdm, shadeAdm), 18.6, 12.5, FX);
     place(officeChair(), 19.45, 12.5, FNX);
     place(shellChair(caramel), 17.85, 12.07, FX);
     place(shellChair(caramel), 17.85, 12.62, FX);
     place(plant(0.42, 0.4, 9, 0.16, true), 19.68, 13.8);
     place(frame(0.7, 0.5, blackM, terra), 18.6, 14.1, FNZ, 1.65);
+    // 2 prateleiras flutuantes (madeira clara, mão-francesa oculta) na parede x = 20,1, atrás da cadeira:
+    // livros, bíblia, porta-retrato, plantinha e um bloco de madeira com a marca "B"
+    const sh = G();
+    for (const y of [1.45, 1.85]) sh.add(box(0.24, 0.035, 1.3, woodL, 0, y, 0));
+    books(sh, 0, 1.4675, 0, 0.5, 51, 0.18, 0.24);                              // fileira ao longo de z (girada abaixo)
+    sh.children.slice(2).forEach((bk) => { const x0 = bk.position.x; bk.position.x = bk.position.z + 0.01; bk.position.z = x0 - 0.3; bk.rotation.y = PI / 2; });
+    sh.add(box(0.2, 0.05, 0.28, blackM, 0.0, 1.492, 0.38)); sh.add(box(0.19, 0.012, 0.26, amber, 0.0, 1.521, 0.38));
+    sh.add(cyl(0.06, 0.05, 0.12, ceramic, 0.0, 1.927, -0.45, 12)); sh.add(sph(0.08, frond2, 0.0, 2.04, -0.45));
+    sh.add(box(0.05, 0.24, 0.24, woodL, -0.02, 1.987, 0.05));
+    const bm = ctx.logo.mesh(0.19, 0, { layout: 'mark', color: '#1b1b1d', roughness: 0.4 });
+    bm.rotation.y = FNX; bm.position.set(-0.047, 1.987, 0.05); sh.add(bm);
+    const pf2 = frame(0.18, 0.24, sand, terra); pf2.rotation.y = FNX; pf2.rotation.z = 0; pf2.position.set(-0.02, 1.99, 0.42); sh.add(pf2);
+    place(sh, 19.88, 12.55, 0);
+    // cabideiro de pé no canto da porta
+    const cb = G();
+    cb.add(cyl(0.18, 0.2, 0.025, metalBk, 0, 0.0125, 0, 20));
+    cb.add(cyl(0.016, 0.016, 1.72, metalBk, 0, 0.87, 0, 8));
+    for (let i = 0; i < 4; i++) { const hk = box(0.16, 0.016, 0.016, metalBk, Math.cos(i * PI / 2) * 0.07, 1.68, Math.sin(i * PI / 2) * 0.07); hk.rotation.y = -i * PI / 2; hk.rotation.z = 0.35 * (i % 2 ? 1 : 1); cb.add(hk); }
+    cb.add(box(0.34, 0.62, 0.1, graph, 0.1, 1.36, 0.03));                      // blazer pendurado
+    cb.add(box(0.24, 0.3, 0.06, caramel, -0.07, 1.42, -0.1));                   // bolsa
+    place(cb, 17.45, 11.4, 0.6);
   }
 
   // =====================================================================
@@ -499,10 +689,13 @@ function roomAdministrativo(ctx) {
     g.add(box(0.12, 0.012, 0.08, metalBk, 0.42, 1.101, 0.1));
     g.add(box(0.3, 0.12, 0.22, paper, -0.45, 0.8, 0.02));                       // resmas
     g.add(box(0.08, 0.28, 0.25, book[1], -0.2, 0.88, 0)); g.add(box(0.08, 0.28, 0.25, book[6], -0.11, 0.88, 0));
-    place(g, 19.2, 14.55, FZ);
+    place(g, 19.2, 14.6, FZ);
+    // logo 'wide' em acrílico preto (letras caixa finas) na parede z = 14,2, acima da multifuncional
+    const LW = ctx.logo.relief(0.95, { layout: 'wide', depth: 0.018, layers: 3, color: 0x1b1b1d, sideColor: 0x0d0d0f, metalness: 0.25, roughness: 0.35 });
+    LW.position.set(19.2, 1.74, 14.279); put(LW);
     // 2 estações de trabalho
     for (const [zc, s] of [[15.95, 4], [17.8, 5]]) {
-      place(workDesk(1.3, 0.68, true, s), 18.6, zc, FX);
+      place(workDesk(1.3, 0.68, true, s, scrAdm), 18.6, zc, FX);
       place(officeChair(), 19.45, zc, FNX);
       place(shellChair(caramel), 17.95, zc, FX);
     }
@@ -521,7 +714,19 @@ function roomAdministrativo(ctx) {
     a.add(cyl(0.08, 0.06, 0.18, ceramic, 0.08, 1.42, 0, 12)); a.add(sph(0.1, frond2, 0.08, 1.56, 0));
     place(a, 17.8, 18.6, FNZ);
     place(plant(0.42, 0.4, 13, 0.16, true), 19.68, 18.6);
-    place(frame(0.6, 0.8, sand, terra), 19.985, 16.88, FNX, 1.55);
+    // mural de cortiça (escala do culto, avisos) na parede x = 20,1, entre as estações
+    {
+      const g2 = G();
+      g2.add(box(1.1, 0.78, 0.03, metalBk, 0, 0, 0));
+      g2.add(box(1.04, 0.72, 0.012, cork, 0, 0, 0.018, nc));
+      const notes = [[-0.36, 0.18, 0.21, 0.297, paper], [-0.1, 0.2, 0.18, 0.18, sand], [0.16, 0.16, 0.21, 0.297, paper], [0.4, 0.2, 0.15, 0.15, amber],
+        [-0.34, -0.17, 0.26, 0.18, linenLt], [-0.04, -0.16, 0.21, 0.297, paper], [0.24, -0.17, 0.2, 0.14, terra], [0.42, -0.18, 0.1, 0.14, paper]];
+      notes.forEach(([x, y, w, h, m], i) => {
+        const n = box(w, h, 0.004, m, x, y, 0.027, nc); n.rotation.z = ((i * 37) % 7 - 3) * 0.015; g2.add(n);
+        g2.add(sph(0.012, i % 2 ? M.red : amber, x, y + h / 2 - 0.025, 0.032));
+      });
+      place(g2, 19.995, 16.88, FNX, 1.58);
+    }
     // relógio de parede na parede z=19
     const clk = cyl(0.16, 0.16, 0.03, metalBk, 18.9, 2.05, 18.9, 24); clk.rotation.x = PI / 2; put(clk);
     const face = cyl(0.145, 0.145, 0.006, ceramic, 18.9, 2.05, 18.882, 24); face.rotation.x = PI / 2; face.castShadow = false; put(face);

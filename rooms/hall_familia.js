@@ -22,7 +22,7 @@ function roomHallFamilia(ctx) {
   const nc = { cast: false };
 
   // Materiais locais (mesmas opções → mesmo material → menos draw calls)
-  const slat     = std({ color: 0xcfa97c, roughness: 0.7 });                      // ripado madeira clara
+  const slat     = std({ color: 0xd3b08e, roughness: 0.7 });                      // ripado madeira clara (tom da fachada)
   const felt     = std({ color: 0x19191b, roughness: 1 });                        // fundo preto do ripado
   const black    = std({ color: 0x141416, roughness: 0.45, metalness: 0.45 });    // metal preto
   const quartz   = std({ color: 0x1d1d20, roughness: 0.25, metalness: 0.1 });     // tampo preto
@@ -39,7 +39,11 @@ function roomHallFamilia(ctx) {
   const ceramic  = std({ color: 0xf4f4f2, roughness: 0.3 });
   const paper    = std({ color: 0xf6f1e6, roughness: 0.9 });
   const coffee   = std({ color: 0x3b2417, roughness: 0.4 });
-  const ledWarm  = std({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });
+  // LED âmbar (degraus, balcão, testeira): material próprio (não compartilhado com outras salas),
+  // aceso junto com a luz do hall
+  const ledWarm  = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });
+  ctx.bindEmissive('hall', ledWarm, 1.0, { min: 0.1 });
+  const frost    = std({ color: 0xf1f3f4, roughness: 0.85, transparent: true, opacity: 0.55 });   // vidro jateado
   const rugHall  = std({ color: 0x4a4b50, roughness: 1 });
   const rugEdge  = std({ color: 0x8a6a4c, roughness: 1 });
   const mat      = std({ color: 0x232325, roughness: 1 });
@@ -108,6 +112,13 @@ function roomHallFamilia(ctx) {
   const plane = (w, h, material, x, y, z, ry = 0) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material);
     m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = false; m.receiveShadow = false; return put(m);
+  };
+  // Plano que mostra só uma faixa (linhas v0–v1) de uma textura-atlas
+  const atlasPlane = (w, h, material, v0, v1, u0 = 0, u1 = 1) => {
+    const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) { uv.setY(i, uv.getY(i) > 0.5 ? v1 : v0); uv.setX(i, uv.getX(i) > 0.5 ? u1 : u0); }
+    uv.needsUpdate = true;
+    const m = new THREE.Mesh(g, material); m.castShadow = false; m.receiveShadow = false; return m;
   };
   const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   const FONT = '"Montserrat","Helvetica Neue",Arial,sans-serif';
@@ -180,24 +191,30 @@ function roomHallFamilia(ctx) {
     for (let x = 5.79; x < 10.12; x += 0.075) L.push([0.04, 2.7, 0.028, x, 1.4, WZ + 0.034]);
     put(mergeBoxes(L, slat, false));
   }
-  // Faixa preta com o letreiro "Bem-vindo à Base" (emissivo suave)
-  put(box(3.9, 0.66, 0.03, felt, 7.95, 2.18, WZ + 0.063, { cast: false, receive: false }));
-  put(box(3.94, 0.02, 0.05, amber, 7.95, 1.84, WZ + 0.06, nc));
-  const signMat = canvasMat(3.8 / 0.62, (g, W, Hh) => {
-    g.clearRect(0, 0, W, Hh);
-    const cy = Hh * 0.53, r = Hh * 0.4;
-    g.textBaseline = 'middle';
-    g.font = `500 ${Hh * 0.56}px ${FONT}`; const t1 = 'Bem-vindo à ', w1 = g.measureText(t1).width;
-    g.font = `800 ${Hh * 0.6}px ${FONT}`; const w2 = g.measureText('Base').width;
-    const total = r * 2 + Hh * 0.35 + w1 + w2, x0 = (W - total) / 2;
-    // logo "B" num círculo
-    g.strokeStyle = '#f7f2ea'; g.lineWidth = Hh * 0.07; g.beginPath(); g.arc(x0 + r, cy, r, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = '#f7f2ea'; g.textAlign = 'center'; g.font = `800 ${Hh * 0.52}px ${FONT}`; g.fillText('B', x0 + r, cy + Hh * 0.02);
-    g.textAlign = 'left'; g.font = `500 ${Hh * 0.56}px ${FONT}`;
-    const tx = x0 + r * 2 + Hh * 0.35; g.fillText(t1, tx, cy);
-    g.fillStyle = '#f5b76c'; g.font = `800 ${Hh * 0.6}px ${FONT}`; g.fillText('Base', tx + w1, cy);
-  }, 1.0, true);
-  plane(3.8, 0.62, signMat, 7.95, 2.18, WZ + 0.082);
+  // Letreiro em letras-caixa prateadas sobre o ripado claro — o mesmo logo da fachada (ctx.logo),
+  // com halo de retroiluminação e brilho ligados à luz do hall
+  const PZ = WZ + 0.048;                                   // face das ripas
+  {
+    const halo = ctx.glowPlane(3.6, 1.7, 'hall', { color: 0xffe0b0, base: 0.32, day: 0.2 });
+    halo.position.set(7.95, 2.15, PZ + 0.004); ctx.add(halo);
+    const LG = ctx.logo.relief(2.15, { layout: 'wide', depth: 0.05, layers: 4 });
+    LG.position.set(7.95, 2.17, PZ + 0.002); ctx.add(LG);
+    ctx.bindEmissive('hall', LG.userData.face, 0.45, { min: 0.05 });
+    // faixa preta com a frase de boas-vindas, abaixo do logo (acende com o hall)
+    put(box(1.96, 0.25, 0.012, felt, 7.95, 1.47, PZ + 0.006, { cast: false }));
+    put(box(1.96, 0.012, 0.016, amber, 7.95, 1.339, PZ + 0.008, nc));
+    const welcome = canvasMat(1.88 / 0.22, (g, W, Hh) => {
+      g.clearRect(0, 0, W, Hh);
+      g.textBaseline = 'middle'; g.textAlign = 'left';
+      g.font = `600 ${Hh * 0.62}px ${FONT}`; const t1 = 'Bem-vindo à ', w1 = g.measureText(t1).width;
+      g.font = `800 ${Hh * 0.66}px ${FONT}`; const w2 = g.measureText('Base').width;
+      const x0 = (W - w1 - w2) / 2;
+      g.fillStyle = '#f4efe6'; g.font = `600 ${Hh * 0.62}px ${FONT}`; g.fillText(t1, x0, Hh * 0.54);
+      g.fillStyle = '#f0b36a'; g.font = `800 ${Hh * 0.66}px ${FONT}`; g.fillText('Base', x0 + w1, Hh * 0.54);
+    }, 0.8, true);
+    ctx.bindEmissive('hall', welcome, 0.8, { min: 0.2 });
+    plane(1.88, 0.22, welcome, 7.95, 1.47, PZ + 0.0135);
+  }
 
   // Balcão de boas-vindas em madeira ripada (x 6,3–9,5 · z 45,0–45,65), frente para +z
   {
@@ -210,6 +227,27 @@ function roomHallFamilia(ctx) {
     put(box(L + 0.1, 0.04, 0.66, quartz, cx, 1.03, zc + 0.02));                  // tampo preto
     put(box(L - 0.1, 0.03, 0.4, slat, cx, 0.76, zc - 0.44));                     // bancada de trabalho (lado de dentro)
     put(box(L - 0.1, 0.03, 0.02, ledWarm, cx, 0.03, zc + 0.31, nc));             // LED no rodapé
+    // Medalhão preto com a marca (anel + B) em relevo no centro da frente ripada
+    {
+      const fz = zc + 0.29 + 0.0125, my = 0.56;
+      const disc = cyl(0.25, 0.25, 0.022, felt, cx, my, fz + 0.011, 36); disc.rotation.x = Math.PI / 2; put(disc);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.008, 6, 40), amber); rim.position.set(cx, my, fz + 0.02); put(rim);
+      const MK = ctx.logo.relief(0.36, { layout: 'mark', depth: 0.02, layers: 3 });
+      MK.position.set(cx, my, fz + 0.022); ctx.add(MK);
+      ctx.bindEmissive('hall', MK.userData.face, 0.3, { min: 0.05 });
+    }
+    // Plaquinha acrílica "Base Kids · check-in" sobre o tampo
+    {
+      const kids = canvasMat(0.3 / 0.14, (g, W, Hh) => {
+        g.fillStyle = '#1a1a1c'; g.fillRect(0, 0, W, Hh);
+        ctx.logo.draw(g, W * 0.05, Hh * 0.14, Hh * 0.72, { layout: 'mark', color: '#f4efe6' });
+        g.fillStyle = '#f4efe6'; g.textAlign = 'left'; g.textBaseline = 'middle';
+        g.font = `800 ${Hh * 0.3}px ${FONT}`; g.fillText('BASE KIDS', W * 0.34, Hh * 0.38);
+        g.fillStyle = '#f0b36a'; g.font = `500 ${Hh * 0.22}px ${FONT}`; g.fillText('check-in aqui', W * 0.34, Hh * 0.7);
+      }, 0.25);
+      put(rot(box(0.32, 0.16, 0.012, black, 7.9, 1.13, zc + 0.24), -0.3));
+      const kp = plane(0.3, 0.14, kids, 7.9, 1.13, zc + 0.24); kp.rotation.x = -0.3; kp.position.z += 0.007; kp.position.y += 0.002;
+    }
     // Tablets de check-in (Base Kids), porta-folhetos, vaso e sininho
     for (const x of [7.0, 8.8]) {
       put(box(0.1, 0.012, 0.1, black, x, 1.056, zc + 0.05));
@@ -316,7 +354,8 @@ function roomHallFamilia(ctx) {
       g.fillStyle = '#1b1c1e'; g.fillRect(0, 0, W, Hh);
       g.strokeStyle = 'rgba(240,179,106,0.9)'; g.lineWidth = Hh * 0.012; g.strokeRect(W * 0.04, Hh * 0.06, W * 0.92, Hh * 0.88);
       g.fillStyle = '#f4efe6'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.font = `800 ${Hh * 0.15}px ${FONT}`; g.fillText('CAFÉ DA BASE', W / 2, Hh * 0.22);
+      ctx.logo.draw(g, W * 0.1, Hh * 0.12, Hh * 0.2, { layout: 'mark', color: '#f4efe6' });
+      g.font = `800 ${Hh * 0.15}px ${FONT}`; g.fillText('CAFÉ DA BASE', W * 0.56, Hh * 0.22);
       g.fillStyle = '#f0b36a'; g.fillRect(W * 0.35, Hh * 0.33, W * 0.3, Hh * 0.012);
       g.fillStyle = '#e8e2d6'; g.font = `500 ${Hh * 0.085}px ${FONT}`; g.textAlign = 'left';
       const rows = [['Espresso', 'R$ 5'], ['Cappuccino', 'R$ 8'], ['Café coado', 'grátis'], ['Chá gelado', 'R$ 6']];
@@ -349,8 +388,8 @@ function roomHallFamilia(ctx) {
       const bg = g.createLinearGradient(0, 0, 0, Hh); bg.addColorStop(0, '#16171a'); bg.addColorStop(1, '#0b0b0d');
       g.fillStyle = bg; g.fillRect(0, 0, W, Hh);
       g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-      g.fillStyle = '#f0b36a'; g.font = `800 ${W * 0.1}px ${FONT}`; g.fillText('AVISOS', W * 0.08, Hh * 0.1);
-      g.fillStyle = '#f4efe6'; g.font = `300 ${W * 0.055}px ${FONT}`; g.fillText('Base Church · 802 Sul', W * 0.08, Hh * 0.145);
+      ctx.logo.draw(g, W * 0.08, Hh * 0.035, W * 0.5, { layout: 'wide', color: '#f4efe6' });
+      g.fillStyle = '#f0b36a'; g.font = `800 ${W * 0.075}px ${FONT}`; g.fillText('AVISOS DA SEMANA', W * 0.08, Hh * 0.178);
       const cards = [
         ['#6e46ff', 'CULTO DE CELEBRAÇÃO', 'Domingo · 9h e 18h'],
         ['#c98a3c', 'BASE KIDS', 'Check-in no balcão'],
@@ -358,7 +397,7 @@ function roomHallFamilia(ctx) {
         ['#a65a3a', 'CAFÉ COM O PASTOR', 'Sábado · 8h30'],
       ];
       cards.forEach(([c, t, s], i) => {
-        const y = Hh * (0.19 + i * 0.165), h = Hh * 0.145;
+        const y = Hh * (0.205 + i * 0.16), h = Hh * 0.14;
         g.fillStyle = 'rgba(255,255,255,0.06)'; rr(g, W * 0.06, y, W * 0.88, h, W * 0.03); g.fill();
         g.fillStyle = c; rr(g, W * 0.06, y, W * 0.035, h, W * 0.015); g.fill();
         g.fillStyle = '#ffffff'; g.font = `700 ${W * 0.062}px ${FONT}`; g.fillText(t, W * 0.14, y + h * 0.42);
@@ -372,12 +411,26 @@ function roomHallFamilia(ctx) {
       g.fillStyle = '#f4efe6'; g.font = `500 ${W * 0.05}px ${FONT}`; g.fillText('Inscreva-se', W * 0.33, qy + q * 0.4);
       g.fillStyle = '#f0b36a'; g.fillText('basechurch.app', W * 0.33, qy + q * 0.7);
     }, 0.9);
+    ctx.bindEmissive('hall', tot, 0.9, { min: 0.3 });
     plane(0.58, 1.04, tot, x, 1.3, z + 0.032);
   }
 
   // Capacho na entrada e placas "TEMPLO" (sobre as portas de vidro) e "Banheiros"
-  put(box(2.1, 0.012, 0.8, mat, 12.0, 0.01, 49.1, nc));
-  put(box(1.9, 0.004, 0.6, felt, 12.0, 0.018, 49.1, nc));
+  // Capacho de borracha grafite com o logo (anel à esquerda, BASE/CHURCH à direita) logo depois da porta
+  put(box(2.16, 0.012, 1.18, mat, 12.0, 0.006, 48.9, nc));
+  {
+    const cap = ctx.logo.mesh(2.04, 0, { layout: 'wide', color: '#d9d4ca', bg: '#1a1a1c', pad: 0.12, roughness: 1 });
+    cap.rotation.x = -Math.PI / 2; cap.position.set(12.0, 0.0135, 48.9); cap.receiveShadow = true; ctx.add(cap);
+  }
+  // Portas de vidro do templo: faixa jateada de segurança e a marca em adesivo jateado nas duas folhas
+  {
+    const ad = ctx.logo.mesh(0.44, 0.44, { layout: 'mark', opacity: 0.72, cast: false, side: THREE.DoubleSide, roughness: 0.7 });
+    for (const [x, w] of [[11.235, 1.12], [12.485, 1.12]]) {
+      put(box(w, 0.07, 0.026, frost, x, 1.02, 44.0, { cast: false, receive: false }));
+      put(box(w, 0.018, 0.026, frost, x, 0.94, 44.0, { cast: false, receive: false }));
+      const a = new THREE.Mesh(ad.geometry, ad.material); a.position.set(x, 1.45, 44.015); a.castShadow = a.receiveShadow = false; ctx.add(a);
+    }
+  }
   put(box(1.2, 0.26, 0.02, felt, 11.85, 2.62, WZ + 0.012, nc));
   const tpl = canvasMat(1.16 / 0.22, (g, W, Hh) => {
     g.clearRect(0, 0, W, Hh);
@@ -385,6 +438,7 @@ function roomHallFamilia(ctx) {
     g.fillText('T E M P L O', W / 2, Hh * 0.54);
   }, 0.7, true);
   plane(1.16, 0.22, tpl, 11.85, 2.62, WZ + 0.024);
+  ctx.bindEmissive('hall', tpl, 0.7, { min: 0.25 });
   const wcs = canvasMat(0.9 / 0.2, (g, W, Hh) => {
     g.fillStyle = '#18181a'; g.fillRect(0, 0, W, Hh);
     g.fillStyle = '#f4efe6'; g.textBaseline = 'middle';
@@ -399,6 +453,93 @@ function roomHallFamilia(ctx) {
     g.fillStyle = '#f0b36a'; g.beginPath(); g.moveTo(W * 0.8, Hh * 0.35); g.lineTo(W * 0.9, Hh * 0.52); g.lineTo(W * 0.8, Hh * 0.69); g.lineTo(W * 0.8, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.46); g.lineTo(W * 0.8, Hh * 0.46); g.closePath(); g.fill();
   }, 0.7);
   plane(0.9, 0.2, wcs, 15.955, 2.52, 45.2, -Math.PI / 2);
+  ctx.bindEmissive('hall', wcs, 0.7, { min: 0.25 });
+
+  // Placas pretas sobre as portas (atlas numa textura só): Sala da Família, WC PCD e WC
+  {
+    const tex = ctx.makeTex(1024, (g, s) => {
+      const rh = s / 3;
+      const row = (i, draw) => { g.save(); g.translate(0, i * rh); g.fillStyle = '#1a1a1c'; g.fillRect(0, 0, s, rh);
+        g.strokeStyle = 'rgba(240,179,106,0.55)'; g.lineWidth = 4; g.strokeRect(10, 10, s - 20, rh - 20); draw(); g.restore(); };
+      const txt = (t1, t2) => {
+        g.textAlign = 'left'; g.textBaseline = 'middle';
+        g.fillStyle = '#f4efe6'; g.font = `800 ${rh * 0.3}px ${FONT}`; g.fillText(t1, rh * 1.05, rh * 0.4);
+        g.fillStyle = '#f0b36a'; g.font = `500 ${rh * 0.19}px ${FONT}`; g.fillText(t2, rh * 1.05, rh * 0.72);
+      };
+      row(0, () => { ctx.logo.draw(g, rh * 0.18, rh * 0.16, rh * 0.68, { layout: 'mark', color: '#f4efe6' }); txt('Sala da Família', 'Base Kids · 0 a 3 anos'); });
+      row(1, () => {
+        g.fillStyle = '#1f5fae'; rr(g, rh * 0.16, rh * 0.14, rh * 0.72, rh * 0.72, rh * 0.08); g.fill();
+        g.strokeStyle = '#ffffff'; g.fillStyle = '#ffffff'; g.lineCap = 'round'; g.lineWidth = rh * 0.06;
+        const ox = rh * 0.16, oy = rh * 0.14, u = rh * 0.72;
+        g.beginPath(); g.arc(ox + u * 0.45, oy + u * 0.18, u * 0.08, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.moveTo(ox + u * 0.43, oy + u * 0.3); g.lineTo(ox + u * 0.45, oy + u * 0.55); g.lineTo(ox + u * 0.68, oy + u * 0.55); g.lineTo(ox + u * 0.78, oy + u * 0.8); g.stroke();
+        g.beginPath(); g.moveTo(ox + u * 0.44, oy + u * 0.42); g.lineTo(ox + u * 0.62, oy + u * 0.42); g.stroke();
+        g.beginPath(); g.arc(ox + u * 0.42, oy + u * 0.66, u * 0.2, -Math.PI * 0.15, Math.PI * 1.25); g.stroke();
+        txt('WC PCD', 'acessível · barras de apoio');
+      });
+      row(2, () => {
+        g.fillStyle = '#f4efe6';
+        for (const [cx, fem] of [[rh * 0.36, false], [rh * 0.68, true]]) {
+          g.beginPath(); g.arc(cx, rh * 0.3, rh * 0.08, 0, Math.PI * 2); g.fill();
+          if (fem) { g.beginPath(); g.moveTo(cx, rh * 0.42); g.lineTo(cx - rh * 0.13, rh * 0.78); g.lineTo(cx + rh * 0.13, rh * 0.78); g.closePath(); g.fill(); }
+          else g.fillRect(cx - rh * 0.08, rh * 0.42, rh * 0.16, rh * 0.38);
+        }
+        txt('WC', 'Sala da Família');
+      });
+    });
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    const pm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.2 });
+    ctx.bindEmissive('hall', pm, 0.35, { min: 0.1 });
+    const sign = (i, x, y, z, ry) => {
+      const b = box(0.56, 0.2, 0.02, black, x, y, z); b.rotation.y = ry; put(b);
+      const p = atlasPlane(0.54, 0.18, pm, 1 - (i + 1) / 3, 1 - i / 3);
+      p.position.set(x + Math.sin(ry) * 0.0115, y, z + Math.cos(ry) * 0.0115); p.rotation.y = ry; put(p);
+    };
+    sign(0, 4.087, 2.42, 47.05, Math.PI / 2);      // hall → Sala da Família
+    sign(1, 4.087, 2.42, 44.85, Math.PI / 2);      // hall → WC PCD
+    sign(2, 0.9, 2.42, 46.387, 0);                 // Sala da Família → WC
+  }
+
+  // Tríptico (foto de culto: silhuetas de mãos erguidas contra a luz âmbar do palco) acima do sofá do lounge
+  {
+    const art = canvasMat(1.5 / 0.7, (g, W, Hh) => {
+      const bg = g.createLinearGradient(0, 0, 0, Hh); bg.addColorStop(0, '#22140e'); bg.addColorStop(0.55, '#7a3f1f'); bg.addColorStop(0.8, '#d98c3f'); bg.addColorStop(1, '#2a1a12');
+      g.fillStyle = bg; g.fillRect(0, 0, W, Hh);
+      const sun = g.createRadialGradient(W * 0.52, Hh * 0.62, 0, W * 0.52, Hh * 0.62, W * 0.35);
+      sun.addColorStop(0, 'rgba(255,226,170,0.95)'); sun.addColorStop(0.35, 'rgba(255,170,90,0.45)'); sun.addColorStop(1, 'rgba(255,140,60,0)');
+      g.fillStyle = sun; g.fillRect(0, 0, W, Hh);
+      for (let i = 0; i < 7; i++) {                              // feixes
+        const x = W * (0.1 + i * 0.13), gr = g.createLinearGradient(x, 0, W * 0.52, Hh * 0.62);
+        gr.addColorStop(0, 'rgba(255,220,170,0.28)'); gr.addColorStop(1, 'rgba(255,220,170,0)');
+        g.fillStyle = gr; g.beginPath(); g.moveTo(x - W * 0.012, 0); g.lineTo(x + W * 0.012, 0); g.lineTo(W * 0.52, Hh * 0.62); g.closePath(); g.fill();
+      }
+      let k = 11; const r2 = () => { k = (k * 9301 + 49297) % 233280; return k / 233280; };
+      for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,${190 + (r2() * 50) | 0},140,${0.12 + r2() * 0.3})`; g.beginPath(); g.arc(r2() * W, r2() * Hh * 0.6, 3 + r2() * 14, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = '#120b08';                                     // plateia em silhueta
+      for (let i = 0; i < 17; i++) {
+        const x = W * (0.02 + i * 0.061 + (r2() - 0.5) * 0.02), hy = Hh * (0.8 + r2() * 0.05);
+        g.beginPath(); g.arc(x, hy, Hh * 0.045, 0, Math.PI * 2); g.fill();
+        g.fillRect(x - Hh * 0.07, hy + Hh * 0.03, Hh * 0.14, Hh);
+        if (r2() > 0.45) { g.save(); g.translate(x + Hh * 0.05, hy); g.rotate(0.15 + r2() * 0.25); g.fillRect(-Hh * 0.012, -Hh * 0.28, Hh * 0.024, Hh * 0.28); g.beginPath(); g.arc(0, -Hh * 0.29, Hh * 0.02, 0, Math.PI * 2); g.fill(); g.restore(); }
+        if (r2() > 0.6) { g.save(); g.translate(x - Hh * 0.05, hy); g.rotate(-0.15 - r2() * 0.25); g.fillRect(-Hh * 0.012, -Hh * 0.26, Hh * 0.024, Hh * 0.26); g.beginPath(); g.arc(0, -Hh * 0.27, Hh * 0.02, 0, Math.PI * 2); g.fill(); g.restore(); }
+      }
+    }, 0.12);
+    [49.11, 48.55, 47.99].forEach((z, i) => {
+      put(box(0.03, 0.72, 0.52, black, 4.092, 1.68, z));
+      const p = atlasPlane(0.48, 0.68, art, 0, 1, i / 3, (i + 1) / 3);
+      p.position.set(4.109, 1.68, z); p.rotation.y = Math.PI / 2; put(p);
+    });
+  }
+
+  // Totem de álcool em gel ao lado da porta principal
+  {
+    const x = 10.38, z = 49.22;
+    put(cyl(0.16, 0.17, 0.02, black, x, 0.01, z, 18));
+    put(cyl(0.022, 0.022, 1.05, black, x, 0.54, z, 8));
+    put(box(0.13, 0.22, 0.1, whiteF, x, 1.15, z + 0.02));
+    put(box(0.11, 0.05, 0.02, black, x, 1.1, z + 0.075));
+    put(box(0.14, 0.02, 0.1, black, x, 0.62, z + 0.03));
+  }
 
   // =====================================================================
   // ESCADA EM U (x 13,62–15,94 · z 44,21–49,54) até o mezanino (y 3,0)
@@ -539,8 +680,8 @@ function roomHallFamilia(ctx) {
       }
       // telão ao fundo com o logo
       g.fillStyle = '#0b0b10'; g.fillRect(W * 0.34, Hh * 0.14, W * 0.32, Hh * 0.3);
-      g.strokeStyle = '#f4efe6'; g.lineWidth = Hh * 0.012; g.beginPath(); g.arc(W * 0.5, Hh * 0.29, Hh * 0.09, 0, Math.PI * 2); g.stroke();
-      g.fillStyle = '#f4efe6'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 ${Hh * 0.11}px ${FONT}`; g.fillText('B', W * 0.5, Hh * 0.295);
+      ctx.logo.draw(g, W * 0.5 - Hh * 0.105, Hh * 0.158, Hh * 0.21, { layout: 'full', color: '#f4efe6' });
+      g.textBaseline = 'middle';
       // palco e banda (silhuetas)
       g.fillStyle = '#0a0812'; g.fillRect(0, Hh * 0.62, W, Hh * 0.38);
       g.fillStyle = '#120d20';
@@ -556,6 +697,7 @@ function roomHallFamilia(ctx) {
       g.fillStyle = '#fff'; g.font = `700 ${Hh * 0.05}px ${FONT}`; g.fillText('Culto de Celebração', W * 0.04, Hh * 0.845);
       g.fillStyle = '#d6d0c6'; g.font = `400 ${Hh * 0.04}px ${FONT}`; g.fillText('Base Church · transmissão para a Sala da Família', W * 0.04, Hh * 0.89);
     }, 0.95);
+    ctx.bindEmissive('familia', live, 0.95, { min: 0.35 });
     plane(1.04, 0.58, live, 3.87, 1.5, 48.55, -Math.PI / 2);
 
     // Trocador (fraldário) sob a janela: cômoda branca, colchonete e cestos
@@ -573,6 +715,16 @@ function roomHallFamilia(ctx) {
     // Cortinas leves (laterais da janela x 0,6–3,2) e varão
     put(cyl(0.012, 0.012, 3.5, black, 1.9, 2.35, 49.5, 8)).rotation.z = Math.PI / 2;
     for (const x of [0.36, 3.44]) put(box(0.32, 2.2, 0.03, sheer, x, 1.2, 49.52, nc));
+    // Frase adesiva na parede z = 46,3 (acima da prateleira)
+    {
+      const dec = canvasMat(1.5 / 0.3, (g, W, Hh) => {
+        g.clearRect(0, 0, W, Hh); g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillStyle = '#6f8a6a'; g.font = `italic 600 ${Hh * 0.38}px Georgia, "Times New Roman", serif`; g.fillText('Deixai vir a mim as criancinhas', W / 2, Hh * 0.36);
+        g.fillStyle = '#c47f68'; g.font = `600 ${Hh * 0.2}px ${FONT}`; g.fillText('MARCOS 10.14', W / 2, Hh * 0.8);
+      }, 0, true);
+      dec.polygonOffset = true; dec.polygonOffsetFactor = -2; dec.polygonOffsetUnits = -2;
+      plane(1.5, 0.3, dec, 2.2, 2.08, 46.379);
+    }
     // Quadros na parede x = 0 (acima do sofá) e prateleira com livrinhos na parede z = 46,3
     [[47.9, 0.42, toys[2]], [48.45, 0.5, blush], [49.0, 0.42, toys[1]]].forEach(([z, s, c]) => {
       put(box(0.025, s, s, woodLt, 0.1, 1.55, z)); put(box(0.012, s - 0.08, s - 0.08, c, 0.115, 1.55, z, nc));
@@ -601,6 +753,15 @@ function roomHallFamilia(ctx) {
     put(box(0.03, 0.1, 0.1, black, 1.805, 0.7, 44.55));                   // papeleira (parede x = 1,9)
     put(cyl(0.05, 0.05, 0.09, paper, 1.75, 0.66, 44.55, 12)).rotation.x = Math.PI / 2;
     put(box(1.7, 1.2, 0.012, tileWall, 0.96, 0.6, 44.082, nc));          // revestimento atrás do vaso
+    // painel grafite atrás da cuba (destaca o espelho redondo), toalheiro e secador de mãos
+    put(box(0.012, 2.1, 1.0, std({ color: 0x2e2f33, roughness: 0.5 }), 0.093, 1.05, 44.95, nc));
+    const tr = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.008, 6, 20), black); tr.rotation.y = Math.PI / 2; tr.position.set(0.12, 1.12, 45.8); put(tr);
+    put(box(0.02, 0.26, 0.14, std({ color: 0xbfc4b8, roughness: 1 }), 0.125, 0.98, 45.8, nc));
+    put(box(0.12, 0.24, 0.26, black, 1.76, 1.2, 45.7));
+    put(box(0.02, 0.03, 0.18, M.chrome, 1.695, 1.07, 45.7));
+    // vaso com planta pequena sobre a cuba
+    put(cyl(0.045, 0.035, 0.09, ceramic, 0.2, 0.885, 45.12, 10));
+    for (let i = 0; i < 3; i++) put(sph(0.045, frond2, 0.2 + (i - 1) * 0.025, 0.97 + (i % 2) * 0.02, 45.12));
   }
 
   // =====================================================================
@@ -633,6 +794,8 @@ function roomHallFamilia(ctx) {
     put(cyl(0.12, 0.1, 0.3, black, 3.7, 0.15, 46.0, 14));
     put(box(0.12, 0.12, 0.03, black, 2.02, 0.95, 45.55).rotateY(Math.PI / 2));
     put(box(1.95, 1.2, 0.012, tileWall, 2.95, 0.6, 46.218, nc));        // revestimento atrás do vaso
+    put(box(0.12, 0.24, 0.26, black, 3.84, 1.1, 45.75));                  // secador de mãos (parede x = 4,0)
+    put(box(0.02, 0.03, 0.18, M.chrome, 3.775, 0.97, 45.75));
     // símbolo de acessibilidade na parede ao lado do lavatório
     put(box(0.2, 0.2, 0.01, std({ color: 0x1f5fae, roughness: 0.5 }), 3.3, 1.5, 44.082, nc));
   }

@@ -3,10 +3,14 @@ function roomTemploPalco(ctx) {
   // PALCO DO TEMPLO · plataforma x 1,2–14,85 · z 13,4–17,6 · topo y 0,6
   // Backstage (z 12,55–13,4) no nível do piso, atrás do telão, com acesso pela
   // porta de vidro x 12,9–15,1 e pelas escadinhas laterais.
-  // Paleta: tablado preto fosco, estrutura grafite, ripado escuro, acentos âmbar.
+  // Conceito "black box" (a Igreja Preta): tablado preto fosco, cortinas de molton
+  // preto nas paredes em volta do palco, estrutura grafite, ripado escuro com
+  // filetes âmbar e o logo oficial em LED acima do telão.
   // Objetos do cartão NÃO recriados: telão (moldura z 13,44–13,54 · tela z 13,55),
-  // 4 refletores (x 3,5/6,5/9,5/12,5 · y 4,6 · z 16,6), LEDs do som (x 1,5 e
-  // 14,55 · y 0,65 · z 17,5) e splits das paredes laterais.
+  // 4 refletores (x 3,5/6,5/9,5/12,5 · y 4,6 · z 16,6) com os feixes (x ±1,2 m,
+  // z 14–16,6), LEDs do som (x 1,5 e 14,55 · y 0,65 · z 17,5) e splits das paredes.
+  // Emissivos ligados às entidades (ctx.bindEmissive): LEDs/âmbar/logo → 'palco';
+  // LEDs de status dos equipamentos → 'som'.
   // ---------------------------------------------------------------------------
   const THREE = ctx.THREE, M = ctx.M;
   const box = (...a) => ctx.box(...a), cyl = (...a) => ctx.cyl(...a), sph = (...a) => ctx.sph(...a);
@@ -33,7 +37,9 @@ function roomTemploPalco(ctx) {
   const deck     = std({ color: 0x161618, roughness: 0.92 });                        // tablado preto fosco
   const deckSeam = std({ color: 0x0a0a0b, roughness: 1 });
   const skirt    = std({ color: 0x0f0f11, roughness: 1 });                           // saia de tecido da testeira
+  const molton   = std({ color: 0x0d0d0f, roughness: 1 });   // cortina de molton preto
   const trim     = std({ color: 0x3a3b3f, roughness: 0.4, metalness: 0.6 });         // cantoneira de alumínio escovado
+  const bezel    = std({ color: 0x17181b, roughness: 0.35, metalness: 0.6 });        // perfil preto da moldura do telão
   const amber    = std({ color: 0xffb35c, emissive: 0xff9a2e, emissiveIntensity: 0.9, roughness: 0.4 });
   const truss    = std({ color: 0x2a2b2f, roughness: 0.4, metalness: 0.6 });         // treliça grafite
   const trussLt  = std({ color: 0x55575d, roughness: 0.35, metalness: 0.7 });
@@ -43,6 +49,7 @@ function roomTemploPalco(ctx) {
   const backing  = std({ color: 0x0c0c0d, roughness: 1 });
   const ledPanel = std({ color: 0x0d0e14, emissive: 0x7a66ff, emissiveIntensity: 0.28, roughness: 0.35 });
   const ledPanel2 = std({ color: 0x0d0e14, emissive: 0xff8a3d, emissiveIntensity: 0.22, roughness: 0.35 });
+  const lensAmb  = std({ color: 0xffe2b8, emissive: 0xffb466, emissiveIntensity: 1.2, roughness: 0.3 });     // lente dos uplights
   const acrylic  = std({ color: 0xdfeaf2, roughness: 0.05, transparent: true, opacity: 0.22, depthWrite: false });
   const acrylicEdge = std({ color: 0xeaf4fb, roughness: 0.1, transparent: true, opacity: 0.45 });
   const chromeK  = M.chrome;
@@ -52,16 +59,28 @@ function roomTemploPalco(ctx) {
   const keysWhite = std({ color: 0xf4f2ec, roughness: 0.5 });
   const woodGtr  = std({ color: 0xc58a4a, roughness: 0.5 });                         // violão (tampo)
   const woodDk   = std({ color: 0x6b3f22, roughness: 0.5 });
+  const woodLt   = std({ color: 0xc9a27a, roughness: 0.65 });                        // ripado claro (como na fachada)
   const sunburst = std({ color: 0x8b2f2f, roughness: 0.35, metalness: 0.1 });        // guitarra vermelha
   const bassBody = std({ color: 0x1e3d5c, roughness: 0.35, metalness: 0.1 });        // baixo azul
   const rubber   = std({ color: 0x101011, roughness: 1 });
   const cable    = std({ color: 0x0b0b0c, roughness: 0.8 });
+  const steel    = std({ color: 0x8d9096, roughness: 0.35, metalness: 0.8 });        // cintas / cabos de aço
   const potBlack = std({ color: 0x151517, roughness: 0.45, metalness: 0.1 });        // vaso preto (como na fachada)
   const cica     = std({ color: 0x2f5a2c, roughness: 0.9 });
   const cica2    = std({ color: 0x3d6e36, roughness: 0.9 });
   const pebble   = std({ color: 0xeceae4, roughness: 1 });
-  const ledRed   = M.lightRed, ledW = M.lightWhite;
+  const ledRed   = std({ color: 0x4a0d0d, emissive: 0xff3030, emissiveIntensity: 0.7, roughness: 0.4 });
+  const ledW     = std({ color: 0x6a6660, emissive: 0xfff1d0, emissiveIntensity: 0.5, roughness: 0.4 });
   const ledGreen = std({ color: 0x1e5a2e, emissive: 0x3ee07a, emissiveIntensity: 0.7 });
+
+  // Brilho que acompanha as entidades (com o palco apagado, ficam num mínimo discreto)
+  ctx.bindEmissive('palco', ledPanel, 0.28);
+  ctx.bindEmissive('palco', ledPanel2, 0.22);
+  ctx.bindEmissive('palco', amber, 0.9, { min: 0.15 });
+  ctx.bindEmissive('palco', lensAmb, 1.2, { min: 0 });
+  ctx.bindEmissive('som', ledGreen, 0.7);
+  ctx.bindEmissive('som', ledRed, 0.7);
+  ctx.bindEmissive('som', ledW, 0.5);
 
   // ======================= PLATAFORMA =======================
   const X0 = 1.2, X1 = 14.85, Z0 = 13.4, Z1 = 17.6, CX = (X0 + X1) / 2, CZ = (Z0 + Z1) / 2;
@@ -109,6 +128,40 @@ function roomTemploPalco(ctx) {
   sideStair(0.36, 1, 14.6);
   sideStair(15.69, -1, 14.6);
 
+  // ======================= BLACK BOX: CORTINAS DE MOLTON PRETO =======================
+  // Molton (0–2,96 m) nas paredes em volta do palco, entre os pilares, para a luz colorida
+  // do palco não pintar o branco das paredes. Pregas em onda (uma malha por trecho) e trilho no topo.
+  // Laterais: face esquerda x 0,092 (z 12,62–16,68 e 17,12–18,36; a plateia começa em 18,45),
+  // direita x 15,958 (z 12,62–18,08, antes do pilar de z 18,3). Fundo (z 12,49): x 0,22–1,23 e 15,12–15,83.
+  const HC = 2.95, PLEAT = 0.24;
+  const curtain = (axis, face, dir, a, b) => {
+    // axis 'x': parede com normal em x (face em x = face), trecho z a–b; 'z': parede com normal em z, trecho x a–b.
+    // dir = sentido para dentro do templo (+1/−1)
+    const len = b - a, seg = Math.max(8, Math.round(len / 0.04));
+    const geo = new THREE.PlaneGeometry(len, HC, seg, 1);
+    if (axis === 'x') geo.rotateY(dir * Math.PI / 2); else if (dir < 0) geo.rotateY(Math.PI);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const s = axis === 'x' ? p.getZ(i) : p.getX(i), t = (s + len / 2) / PLEAT * Math.PI * 2;
+      const f = 0.5 + 0.38 * Math.sin(t) + 0.12 * Math.sin(2 * t + 0.7);
+      const o = dir * (0.004 + 0.036 * f);
+      if (axis === 'x') p.setX(i, o); else p.setZ(i, o);
+    }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, molton); m.castShadow = false; m.receiveShadow = true;
+    const mid = (a + b) / 2;
+    if (axis === 'x') m.position.set(face, 0.012 + HC / 2, mid); else m.position.set(mid, 0.012 + HC / 2, face);
+    put(m);
+    // trilho de cortina (perfil preto) no topo
+    if (axis === 'x') put(box(0.04, 0.035, len + 0.02, truss, face + dir * 0.03, 0.012 + HC + 0.02, mid, nc));
+    else put(box(len + 0.02, 0.035, 0.04, truss, mid, 0.012 + HC + 0.02, face + dir * 0.03, nc));
+  };
+  curtain('x', 0.092, 1, 12.62, 16.68);
+  curtain('x', 0.092, 1, 17.12, 18.36);
+  curtain('x', 15.958, -1, 12.62, 18.08);
+  curtain('z', 12.492, 1, 0.22, 1.23);
+  curtain('z', 12.492, 1, 15.12, 15.83);
+
   // ======================= FUNDO: RIPADO + ESTRUTURA DO TELÃO =======================
   // Painel ripado escuro (em pé no piso do backstage, face em z 13,4), dos dois lados do telão
   const ripado = (xa, xb) => {
@@ -122,6 +175,17 @@ function roomTemploPalco(ctx) {
   };
   ripado(1.25, 4.62);
   ripado(11.38, 12.8);
+  // Uplights âmbar no tablado, lavando o ripado de baixo para cima (halo aditivo aceso com o palco)
+  for (const x of [1.52, 12.1]) {
+    const g = G();
+    g.add(box(0.2, 0.02, 0.16, M.dark, 0, 0.01, 0));
+    for (const sx of [-1, 1]) g.add(box(0.012, 0.14, 0.05, M.dark, sx * 0.1, 0.08, 0, nc));
+    const can = rot(cyl(0.075, 0.085, 0.16, M.dark, 0, 0.11, 0.01, 14), -0.35); g.add(can);
+    const lens = rot(cyl(0.066, 0.066, 0.01, lensAmb, 0, 0.19, -0.02, 14), -0.35); lens.castShadow = false; g.add(lens);
+    place(g, x, 13.6, 0, Y0);
+    const wash = ctx.glowPlane(1.3, 3.8, 'palco', { color: 0xff9a3c, base: 0.7, day: 0.2 });
+    wash.position.set(x, Y0 + 1.9, 13.39); put(wash);
+  }
   // Painéis de LED laterais estreitos (emissivo fraco; não iluminam)
   for (const [x, mat] of [[4.42, ledPanel], [11.58, ledPanel]]) {
     put(box(0.42, 3.5, 0.05, M.dark, x, 3.0, 13.405));
@@ -129,6 +193,10 @@ function roomTemploPalco(ctx) {
   }
   // Base de palco sob o telão (tapa o vão entre o tablado e a moldura, abaixo da tela)
   put(box(6.24, 0.56, 0.05, M.dark, 8.0, Y0 + 0.28, 13.43, nc));
+  // Moldura do telão: perfil preto acetinado em volta da tela (fora da área da imagem)
+  put(box(6.14, 0.045, 0.03, bezel, 8.0, 4.7225, 13.555, nc));
+  put(box(6.14, 0.045, 0.03, bezel, 8.0, 1.2775, 13.555, nc));
+  for (const x of [4.9775, 11.0225]) put(box(0.045, 3.4, 0.03, bezel, x, 3.0, 13.555, nc));
   // Estrutura do telão: 2 torres de treliça no backstage + travessa no topo (atrás/acima da moldura)
   const trussSeg = (ax, ay, az, bx, by, bz, s, bay, parent = null) => {
     // treliça quadrada (4 banzos) de A a B; s = lado; bay = passo das diagonais
@@ -137,8 +205,7 @@ function roomTemploPalco(ctx) {
     const u = Math.abs(dir.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
     const v = new THREE.Vector3().crossVectors(dir, u).normalize(); u.crossVectors(v, dir).normalize();
     const h = s / 2;
-    const corner = (i) => [u.clone().multiplyScalar(i === 0 || i === 3 ? -h : h).add(v.clone().multiplyScalar(i < 2 ? -h : h))];
-    const cs = [0, 1, 2, 3].map((i) => corner(i)[0]);
+    const cs = [0, 1, 2, 3].map((i) => u.clone().multiplyScalar(i === 0 || i === 3 ? -h : h).add(v.clone().multiplyScalar(i < 2 ? -h : h)));
     const P = (t, c) => A.clone().addScaledVector(dir, t).add(c);
     for (const c of cs) { const p = P(0, c), q = P(L, c); bar(p.x, p.y, p.z, q.x, q.y, q.z, 0.024, truss, 8, parent); }
     const n = Math.max(1, Math.round(L / bay));
@@ -160,24 +227,50 @@ function roomTemploPalco(ctx) {
   trussSeg(4.9, 5.2, 12.98, 11.1, 5.2, 12.98, 0.29, 0.7);
   for (const x of [6.0, 8.0, 10.0]) bar(x, 5.05, 13.0, x, 4.83, 13.42, 0.012, chromeK, 6);   // correntes da moldura
 
+  // ======================= LOGO EM LED ACIMA DO TELÃO =======================
+  // Letras caixa (anel + B) em pé sobre a travessa do telão, presas por uma base preta e duas
+  // mãos-francesas; face acesa junto com o palco e halo retroiluminado atrás.
+  {
+    const LX = 8.0, LW = 1.2, LZ = 12.965, LB = 5.4, LY = LB + LW / 2;   // base do logo em y 5,4 (topo da travessa: 5,345)
+    put(box(0.9, 0.05, 0.32, M.dark, LX, 5.37, 12.98));                   // base / calha de fiação
+    for (const x of [LX - 0.32, LX + 0.32]) {
+      put(box(0.03, 0.34, 0.03, M.dark, x, LB + 0.17, LZ - 0.03, nc));   // montantes atrás da face
+      bar(x, 5.39, 12.84, x, LB + 0.3, LZ - 0.03, 0.01, M.dark, 5);         // mão-francesa
+    }
+    const halo = ctx.glowPlane(2.8, 2.8, 'palco', { color: 0xc2b4ff, base: 0.55, day: 0.2 });
+    halo.position.set(LX, LY, LZ - 0.05); put(halo);
+    const led = ctx.logo.relief(LW, { layout: 'mark', depth: 0.06, layers: 3, emissiveColor: 0xffffff });
+    led.position.set(LX, LY, LZ); put(led);
+    ctx.bindEmissive('palco', led.userData.face, 1.35);
+  }
+
   // ======================= TRELIÇA FRONTAL + TORRES (segura os 4 refletores do cartão) =======================
-  const TZ = 16.6, TY = 5.11, TS = 0.29;
+  // Ground support: 2 torres no palco e a travessa passando por elas, com balanço de ~1 m para
+  // os lados, onde ficam pendurados os line arrays (nada termina solto no ar).
+  const TZ = 16.6, TY = 5.11, TS = 0.29, TXA = 0.5, TXB = 15.55;
   for (const x of [1.55, 14.45]) {
     put(box(0.7, 0.02, 0.7, truss, x, Y0 + 0.01, TZ));
     trussSeg(x, Y0 + 0.02, TZ, x, TY - TS / 2, TZ, TS, 0.6);
     put(box(TS + 0.04, TS + 0.04, TS + 0.04, truss, x, TY, TZ));      // bloco de canto
+    // estabilizadores (outriggers) na base da torre
+    for (const [dx, dz] of [[0.42, 0], [-0.42, 0], [0, 0.42], [0, -0.42]]) {
+      const ex = x + dx, ez = TZ + dz;
+      if (ex < X0 + 0.05 || ex > X1 - 0.05) continue;
+      bar(x + dx * 0.4, Y0 + 0.35, TZ + dz * 0.4, ex, Y0 + 0.03, ez, 0.014, truss, 6);
+    }
   }
-  trussSeg(1.55 + TS / 2 + 0.02, TY, TZ, 14.45 - TS / 2 - 0.02, TY, TZ, TS, 0.5);
+  trussSeg(TXA, TY, TZ, TXB, TY, TZ, TS, 0.5);
+  for (const x of [TXA, TXB]) put(box(0.03, TS + 0.03, TS + 0.03, truss, x, TY, TZ, nc));   // tampas das pontas
   // abraçadeiras (clamps) dos refletores, logo abaixo do banzo inferior
   for (const x of [3.5, 6.5, 9.5, 12.5]) {
     put(box(0.06, 0.05, TS + 0.03, truss, x, TY - TS / 2 - 0.035, TZ, nc));
     put(box(0.03, 0.03, 0.03, trussLt, x, TY - TS / 2 - 0.07, TZ, nc));
   }
   // cabos de alimentação correndo pela treliça e descendo pela torre da direita
-  bar(2.0, TY + 0.1, TZ - 0.16, 14.3, TY + 0.1, TZ - 0.16, 0.011, cable, 5);
+  bar(0.9, TY + 0.1, TZ - 0.16, 15.15, TY + 0.1, TZ - 0.16, 0.011, cable, 5);
   bar(14.3, TY + 0.1, TZ - 0.16, 14.3, Y0 + 0.05, TZ - 0.16, 0.011, cable, 5);
 
-  // ======================= LINE ARRAYS SUSPENSOS (x ≈ 0,85 e 15,15 · y 3,4–5,45 · z ≈ 17,15) =======================
+  // ======================= LINE ARRAYS (pendurados nas pontas da treliça · x 0,9 e 15,15 · y ≈ 2,8–4,8) =======================
   const lineArray = () => {
     const g = G();
     g.add(box(0.8, 0.06, 0.62, truss, 0, 0.03, -0.05));                         // bumper
@@ -196,12 +289,17 @@ function roomTemploPalco(ctx) {
       g.add(cab);
       py = cy + dy; pz = cz + dz;
     }
-    // cintas de aço subindo até a estrutura do teto
-    for (const sx of [-1, 1]) g.add(bar(sx * 0.3, 0.06, -0.05, sx * 0.3, 1.2, -0.05, 0.008, chromeK, 5, g));
+    // manilhas + cintas curtas de aço até o banzo inferior da treliça (y 4,965)
+    for (const sx of [-1, 1]) {
+      bar(sx * 0.3, 0.06, -0.05, sx * 0.24, 0.21, -0.05, 0.009, steel, 5, g);
+      g.add(box(0.04, 0.03, 0.02, steel, sx * 0.3, 0.075, -0.05, nc));
+    }
+    // cabo de sinal descendo pela traseira
+    bar(0.2, 0.06, -0.33, 0.2, -1.95, -0.52, 0.009, cable, 4, g);
     return g;
   };
-  place(lineArray(), 0.85, 17.15, 0.3, 5.45);
-  place(lineArray(), 15.15, 17.15, -0.3, 5.45);
+  place(lineArray(), 0.9, TZ, 0.3, 4.75);
+  place(lineArray(), 15.15, TZ, -0.3, 4.75);
 
   // ======================= SUBWOOFERS NO PISO, À FRENTE DO PALCO =======================
   const sub = () => {
@@ -213,6 +311,13 @@ function roomTemploPalco(ctx) {
     return g;
   };
   for (const x of [3.05, 3.7, 12.35, 13.0]) place(sub(), x, 17.98, 0);
+  // front fills sobre os subs de dentro (caixinhas inclinadas para as primeiras fileiras)
+  for (const x of [3.7, 12.35]) {
+    const g = G();
+    const b = box(0.36, 0.22, 0.26, matte, 0, 0.13, 0); b.rotation.x = -0.18; g.add(b);
+    const f = box(0.32, 0.18, 0.01, grille, 0, 0.15, 0.13, nc); f.rotation.x = -0.18; g.add(f);
+    place(g, x, 17.98, x < 8 ? 0.25 : -0.25, 0.58);
+  }
 
   // ======================= BANDA =======================
   const P = (g, x, z, ry = 0) => place(g, x, z, ry, Y0);
@@ -227,11 +332,12 @@ function roomTemploPalco(ctx) {
     const g = G();
     // tapete
     g.add(box(1.6, 0.006, 1.4, std({ color: 0x3a2320, roughness: 1 }), 0, 0.003, 0, nc));
-    // bumbo (deitado, pele para +z)
+    // bumbo (deitado, pele para +z) com o logo da igreja na pele de resposta preta
     const kick = rot(cyl(0.28, 0.28, 0.42, drumShell, 0, 0.29, 0.2, 20), Math.PI / 2); g.add(kick);
-    const kh = rot(cyl(0.265, 0.265, 0.01, M.dark, 0, 0.29, 0.415, 20), Math.PI / 2); g.add(kh);   // pele de resposta preta
-    { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.012, 6, 28), amber); ring.position.set(0, 0.29, 0.422); g.add(ring); }  // aro âmbar (logo)
-    g.add(rot(cyl(0.07, 0.07, 0.012, drumHead, 0, 0.29, 0.421, 16), Math.PI / 2));
+    const kh = rot(cyl(0.265, 0.265, 0.01, M.dark, 0, 0.29, 0.415, 20), Math.PI / 2); g.add(kh);
+    g.add(rot(cyl(0.283, 0.283, 0.022, chromeK, 0, 0.29, 0.405, 20), Math.PI / 2));     // aro
+    const kl = ctx.logo.mesh(0.42, 0, { layout: 'mark', color: '#f4f5f7', roughness: 0.6 });
+    kl.position.set(0, 0.29, 0.4215); g.add(kl);
     for (const sx of [-1, 1]) g.add(bar(sx * 0.2, 0.1, 0.35, sx * 0.3, 0.0, 0.45, 0.01, chromeK, 5, g));
     // caixa, tons, surdo
     const drum = (r, h, x, y, z, tilt = 0) => {
@@ -385,7 +491,8 @@ function roomTemploPalco(ctx) {
   };
   for (const [x, z, ry] of [[5.0, 17.15, Math.PI], [6.35, 17.2, Math.PI], [9.65, 17.2, Math.PI], [11.0, 17.15, Math.PI], [RX + 1.2, 16.05, -2.4], [12.2, 15.95, 2.66]]) P(wedge(), x, z, ry);
 
-  // --- Púlpito de acrílico no centro-frente (z ≈ 16,9) com logo "B" ---
+  // --- Púlpito de acrílico no centro-frente (z ≈ 16,9): ripado claro por dentro com o letreiro
+  //     BASE CHURCH em letras caixa prateadas, como uma miniatura da fachada ---
   {
     const g = G();
     g.add(box(0.66, 0.04, 0.46, M.dark, 0, 0.02, 0));                          // base preta
@@ -393,17 +500,13 @@ function roomTemploPalco(ctx) {
     for (const sx of [-1, 1]) g.add(box(0.02, 1.02, 0.4, acrylic, sx * 0.3, 0.55, 0, nc));
     const tp = box(0.64, 0.025, 0.46, acrylicEdge, 0, 1.08, 0, nc); tp.rotation.x = -0.18; g.add(tp);
     g.add(box(0.5, 0.02, 0.02, amber, 0, 0.05, 0.2, nc));                     // LED na base
-    // ripado de madeira clara dentro da peça (lembra a fachada)
-    for (let i = 0; i < 7; i++) g.add(box(0.035, 0.9, 0.035, std({ color: 0xc9a27a, roughness: 0.65 }), -0.21 + i * 0.07, 0.5, 0.06));
-    // logo
-    const logo = ctx.makeTex(128, (c, s) => {
-      c.clearRect(0, 0, s, s);
-      c.strokeStyle = '#ffffff'; c.lineWidth = s * 0.07; c.beginPath(); c.arc(s / 2, s / 2, s * 0.4, 0, Math.PI * 2); c.stroke();
-      c.fillStyle = '#ffffff'; c.font = `bold ${Math.round(s * 0.52)}px Arial, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText('B', s / 2, s / 2 + s * 0.03);
-    });
-    const lm = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.22), new THREE.MeshStandardMaterial({ map: logo, transparent: true, roughness: 0.5, depthWrite: false }));
-    lm.position.set(0, 0.78, 0.212); lm.castShadow = false; g.add(lm);
+    // miolo preto com o letreiro BASE CHURCH em letras caixa prateadas, ladeado por ripas de
+    // madeira clara (miniatura do painel da fachada)
+    g.add(box(0.5, 0.9, 0.02, backing, 0, 0.5, 0.035));
+    for (const x of [-0.225, -0.17, 0.17, 0.225]) g.add(box(0.035, 0.9, 0.035, woodLt, x, 0.5, 0.06));
+    const lg = ctx.logo.relief(0.27, { layout: 'full', depth: 0.02, layers: 3 });
+    lg.position.set(0, 0.66, 0.047); g.add(lg);
+    ctx.bindEmissive('palco', lg.userData.face, 0.3, { min: 0.1 });
     // microfone gooseneck + bíblia aberta
     g.add(bar(0.18, 1.1, -0.1, 0.1, 1.38, 0.05, 0.006, M.dark, 5, g));
     g.add(sph(0.018, M.graphite, 0.1, 1.39, 0.06));
@@ -425,6 +528,12 @@ function roomTemploPalco(ctx) {
   floorCable([[5.0, 17.15], [5.4, 16.8], [6.35, 17.2]]);
   floorCable([[9.65, 17.2], [10.6, 16.8], [11.0, 17.15]]);
   floorCable([[11.85, 14.14], [12.4, 14.4], [12.85, 14.5]]);
+  // marcações de posição (fita crepe cinza em "T") dos cantores
+  const tape = std({ color: 0x8e8c86, roughness: 0.95 });
+  for (const [x, z] of [[5.0, 16.75], [6.35, 16.9], [9.65, 16.9], [11.0, 16.75]]) {
+    put(box(0.16, 0.002, 0.025, tape, x, Y0 + 0.002, z, nc));
+    put(box(0.025, 0.002, 0.1, tape, x, Y0 + 0.002, z - 0.06, nc));
+  }
   // pedaleira de guitarra
   put(box(0.55, 0.05, 0.22, M.dark, 10.8, Y0 + 0.025, 15.4));
   for (let i = 0; i < 4; i++) { put(box(0.09, 0.03, 0.1, [sunburst, bassBody, cream, M.graphite][i], 10.6 + i * 0.13, Y0 + 0.065, 15.4)); put(sph(0.008, ledRed, 10.6 + i * 0.13, Y0 + 0.085, 15.34)); }
@@ -449,8 +558,8 @@ function roomTemploPalco(ctx) {
     }
     return g;
   };
-  place(cicaPot(0.8), 0.62, 18.1, 0);
-  place(cicaPot(0.8), 15.43, 18.1, 0);
+  place(cicaPot(0.8), 0.78, 18.1, 0);
+  place(cicaPot(0.8), 15.27, 18.1, 0);
   P(cicaPot(0.85), 14.35, 13.85, 0);
 
   // ======================= BACKSTAGE (z 12,55–13,4, nível do piso) =======================
@@ -466,10 +575,18 @@ function roomTemploPalco(ctx) {
     }
     return g;
   };
+  // estêncil do logo na tampa dos cases (uma textura/material só → funde num draw call)
+  const stencil = ctx.logo.mesh(0.42, 0, { layout: 'wide', color: '#e9e6df', roughness: 0.85 });
+  const stamp = (x, y, z, ry = 0) => {
+    const m = new THREE.Mesh(stencil.geometry, stencil.material);
+    m.rotation.set(-Math.PI / 2, 0, ry); m.position.set(x, y + 0.002, z); m.castShadow = false; m.receiveShadow = true; put(m);
+  };
   // (x 0,2–1,25 fica livre: passagem do templo para o backstage)
   place(roadCase(0.9, 0.55, 0.6), 1.8, 12.97, 0);
   place(roadCase(0.9, 0.45, 0.6, false), 1.8, 12.97, 0, 0.64);
+  stamp(1.8, 1.09, 12.97);
   place(roadCase(0.7, 0.7, 0.55), 2.85, 12.95, 0);
+  stamp(2.85, 0.79, 12.95, 0.1);
   // rack de receptores sem fio (LEDs verdes) + cabo em carretel
   {
     const g = roadCase(0.6, 1.0, 0.55);
@@ -487,6 +604,7 @@ function roomTemploPalco(ctx) {
     place(g, 7.3, 12.95, 0);
   }
   place(roadCase(1.1, 0.35, 0.45), 8.9, 12.95, 0);
+  stamp(8.9, 0.44, 12.95, -0.05);
   // estojos de instrumento encostados
   for (const [x, mat] of [[11.7, M.dark], [12.1, std({ color: 0x3b2a1e, roughness: 0.8 })]]) {
     const c = box(0.4, 1.05, 0.12, mat, x, 0.53, 12.72); c.rotation.z = 0.08; put(c);

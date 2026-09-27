@@ -83,7 +83,11 @@ Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass
 - **Ar do templo** (`ac_templo`, climate): 5 splits de parede (0,22 × 0,3 × 0,9) em y 2,55 — (0,2, z 22,1), (0,2, z 29,6), (0,2, z 38,0) (fora dos pilares), (15,85, z 38,6), (15,85, z 41,6).
 - **Ar da sala pastoral** (`ac_pastoral`): split em (14,9, 2,4, 0,2) na parede z=0.
 - Luminárias pendentes/refletores de cada item (posições na tabela de ITEMS do cartão). Não coloque nada num raio de 0,4 m delas.
-  Refletor do letreiro (modo Fachada): (8,9; 8,05; 50,35), preso à platibanda acima do logo. Arandela do pátio: no muro x = 0 em (0,16; 2,8; 6,2).
+  Refletor do letreiro (**sempre visível**, não é mais `ext`): (8,9; 8,05; 50,35), preso ao topo do painel ripado acima do logo.
+  Plateia: 10 **pendentes lineares de LED** (2,4 m ao longo de z) em y 5,0, x 4 e 12 (z 19,5 / 25 / 30,5 / 36 / 41,5), pendurados por cabos
+  até os **2 trilhos de teto que o próprio cartão cria** (y 6,43, seção 0,06, z ≈ 18,3–42,7, x 4 e 12) — não duplique os trilhos.
+  O corredor central (x ≈ 8) fica livre de pendentes: não pendure nada ali acima de 3 m (cortaria as vistas do palco). Feixes de luz (cones aditivos)
+  saem dos 4 refletores do palco em direção ao fundo do palco: não ponha peças altas no caminho (x ±1,2 m de cada refletor, z 14–16,6). Arandela do pátio: no muro x = 0 em (0,16; 2,8; 6,2).
 - **Calçada** (`calcada`, piso grafite): faixa da frente fora dos jardins e o trecho x 16–23 (z 49,6–51).
 
 ## API disponível no `ctx` (igual ao casa-chefe, com extras)
@@ -95,8 +99,70 @@ Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass
   → CanvasTexture (use só para letreiro/logo, telas e sinalização); `ctx.SPEC` (constantes de alturas: `H_TEMPLO` 8,5, `H_ALA` 4,5, `H_FUNDOS` 3,6).
 - Tudo o que você cria é fundido por material automaticamente (`mergeStatic`), então muitas peças pequenas custam pouco em draw calls,
   mas **não use InstancedMesh** (o merge não entende instâncias) e reaproveite materiais (`ctx.std` com as mesmas opções → mesmo material).
-  No merge, materiais simples quase iguais (cor ±16/255, rugosidade/metal ±0,2; sem mapa, transparência nem emissivo) viram um só.
+  No merge, materiais simples quase iguais (cor ±22/255, rugosidade/metal ±0,25; sem mapa, transparência nem emissivo) viram um só,
+  e materiais **idênticos** com mapa/emissivo/transparência (mesma textura — o mesmo objeto — e mesmas opções) também — por isso
+  reaproveite texturas (`ctx.logo.tex` tem cache). Os ligados a `ctx.bindEmissive` nunca são trocados por outro.
+  Peças rente ao chão (topo ≤ 0,1 m) com `cast: false` entram no grupo das que projetam sombra do mesmo material (economiza draw call).
   Os pisos das zonas ficam em y = 0,004 e o gramado geral em y = −0,03.
+
+### Logo oficial — `ctx.logo` (use SEMPRE isto; não desenhe o logo à mão)
+Uma única função de desenho, com as proporções medidas na foto da fachada: anel espesso (raio externo 0,29, traço 0,046 em
+unidades da largura de "BASE") com o "B" bold centrado; "BASE" (altura de maiúscula 0,33) e "CHURCH" logo abaixo (0,235),
+as duas palavras com a **mesma largura**. A fonte (Arial/Helvetica/Liberation/Roboto Bold) é medida no canvas e ajustada à
+altura/largura exatas, então o resultado é igual em Windows, Android e Linux. Layouts:
+`'full'` (anel em cima + BASE/CHURCH; proporção h/w 1,255) · `'mark'` (só anel + B; 1:1) · `'wide'` (anel à esquerda e texto à
+direita; h/w 0,40) · `'text'` (só BASE/CHURCH; h/w 0,615).
+- `ctx.logo.tex(opts)` → `CanvasTexture` com a proporção do layout, fundo transparente (cache: mesmas opções → mesma textura).
+  opts: `{ layout, color ('#f4f5f7' ou 0xRRGGBB), bg (cor de fundo; padrão transparente), glow (0–1: halo desfocado p/ LED/neon),
+  size (px da maior dimensão, 1024), pad (margem) }`. `tex.userData.aspect` = altura/largura.
+- `ctx.logo.mesh(w, h, opts)` → `Mesh` plano **virado para +z**, centro na origem (sem `h`, sai da proporção). Já vem com
+  `alphaTest 0,5` (ou `transparent` se `opacity < 1`) e `polygonOffset` (cole a 2–5 mm da parede/piso sem z-fighting).
+  opts extras: `{ emissive (intensidade; 0 = sem brilho), emissiveColor, roughness, metalness, envMapIntensity, opacity, side, offset (false desliga o polygonOffset), cast }`.
+- `ctx.logo.relief(w, opts)` → `Group` de **letras caixa** (camadas empilhadas: laterais cinza + face prateada), largura w,
+  virado para +z, **fundo em z = 0** (encoste na parede e posicione o grupo), centro em x = y = 0. Altura = `w × aspect`.
+  opts: `{ layout, depth (0,08), layers (4), color (face 0xf4f5f7), sideColor (0x8a8d92), drop ([dx, dy] da lateral), emissive, emissiveColor, metalness, roughness }`.
+  `group.userData.face` = material da face (para ligar o brilho à entidade), `userData.w/h` = medidas.
+- `ctx.logo.draw(g2d, x, y, w, { layout, color, weight })` desenha num canvas seu (canto superior esquerdo, largura w px;
+  devolve a altura) e `ctx.logo.aspect(layout)` dá h/w — para telas/cartazes que misturam logo e texto. `ctx.logo.font` = pilha de fontes.
+- O telão (`_drawTelao`) usa a mesma função: parado mostra o logo completo; tocando, a marca + o título + "BASE MUSIC".
+
+Exemplos:
+```js
+// letreiro da fachada: BASE com ~75 % da largura do painel ripado (3,46 m), acende com a luz 'fachada'
+const L = ctx.logo.relief(2.6, { depth: 0.08 }); L.position.set(8.93, 5.25, 49.83); ctx.add(L);
+ctx.bindEmissive('fachada', L.userData.face, 0.9);
+const halo = ctx.glowPlane(3.9, 3.9, 'fachada', { color: 0xfff1dc, base: 0.45 }); halo.position.set(8.93, 5.25, 49.895); ctx.add(halo);
+// logo em LED acima do telão, aceso com o palco
+const led = ctx.logo.mesh(1.2, 0, { layout: 'mark', emissive: 1.2 }); led.position.set(8.0, 5.75, 13.5); ctx.add(led);
+ctx.bindEmissive('palco', led.material, 1.2);
+// adesivo jateado na porta de vidro (x 11,2, virado para +z)
+const ad = ctx.logo.mesh(0.45, 0.45, { layout: 'mark', opacity: 0.7, cast: false }); ad.position.set(11.2, 1.45, 44.09); ctx.add(ad);
+// capacho: logo claro em fundo grafite, deitado no piso
+const cap = ctx.logo.mesh(2.0, 0, { layout: 'wide', color: '#d9d4ca', bg: '#1a1a1c', pad: 0.12 });   // h = 2,0 × proporção (não estique)
+cap.rotation.x = -Math.PI / 2; cap.position.set(12.0, 0.012, 48.9); ctx.add(cap);
+```
+
+### Brilho ligado às entidades
+- `ctx.bindEmissive(key, material, max = 1, { min = 0,08 })` → o `emissiveIntensity` do material passa a seguir a entidade:
+  `max × (min + (1 − min) × nível)` (nível 0–1, com o fade e o brilho da luz). Vale depois do merge (o material é o mesmo).
+  Use em LEDs de palco (`'palco'`), status do som (`'som'`), letreiros (`'fachada'`), telas de TV etc. Material com `emissive` ≠ preto.
+- `ctx.glowPlane(w, h, key, { color, base = 0,45, day = 0,35, tex: 'glow' | 'frame' })` → plano aditivo (bloom barato) virado
+  para +z que acende com a entidade (opacidade `nível × base`, × `day` de dia). `'frame'` = moldura vazada (halo em volta de telas).
+  Planos da mesma entidade com as mesmas opções (`color`, `base`, `day`, `tex`) compartilham o material e são fundidos num
+  draw call; o cartão acende/apaga pelo material. Posicione e `ctx.add`.
+- `ctx.TEX` = texturas prontas do cartão (`TEX.glow`, `TEX.wood`, `TEX.tileGray`…) — reaproveite em vez de criar outra.
+
+### Renderização (o que mudou e cuidados)
+- Tone mapping **Neutral**, exposição 1,0 (antes ACES 1,15): as cores saem como você escreve — um branco 0xffffff estoura menos,
+  pretos ficam pretos, e cores saturadas continuam saturadas. Não "compense" clareando materiais.
+- De dia há menos luz ambiente chapada (hemisfério 0,85, ambiente 0,12) e mais reflexo do céu (environment 0,9): metal/cromo e
+  vidro refletem mais. `M.glass` agora é Standard com `envMapIntensity 1,6` (reflete em ângulo rasante); `M.glassDark` é vidro fumê.
+- `M.wallDark` (preto da fachada/muros) tem **juntas de painel** em espaço de mundo (verticais a cada 1,25 m, horizontais a cada
+  3 m) e não é unificado com outros pretos no merge. Para preto liso use `ctx.std({ color: 0x1a1a1c })`.
+- **Orçamento de GPU**: os materiais PBR já usam ~250 vetores de uniform e 13 samplers (26 luzes + 9 sombras). Nos pisos/decoração,
+  **no máximo 2 mapas por material** (ex.: `map` + `bumpMap`); nada de `normalMap`/`roughnessMap` grandes. Emissivos e texturas de
+  canvas ficam fora do merge: prefira compartilhar a mesma textura/material.
+- Rótulos: tamanho fixo na tela, somem perto da câmera e, de longe, só os ambientes principais aparecem.
 
 ## Regras para as funções de decoração
 1. Escreva APENAS `function room<Nome>(ctx) { … }` no seu arquivo `rooms/<arquivo>.js` (sem import/export, sem código fora da função,

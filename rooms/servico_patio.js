@@ -2,24 +2,31 @@ function roomServicoPatio(ctx) {
   // ---------------------------------------------------------------------------
   // FUNDOS / SERVIÇO (z 0–12,4)
   //  · Estacionamento interno (x 0–4,9): 2 sedãs ao longo de z (centros x 2,4 · z 3,8 e 8,8),
-  //    faixas de vaga pintadas, batentes de roda, torneira com mangueira no muro x=0.
-  //    O portão de correr (parede z=0) e a arandela do pátio (2,4; 2,8; 6,2) são do cartão.
+  //    faixas de vaga pintadas, batentes de roda, torneira com mangueira no muro x=0 e a
+  //    coleta seletiva (4 lixeiras + placa) perto do portão, na face externa do almoxarifado.
+  //    O portão de correr (parede z=0) e a arandela do pátio (0,16; 2,8; 6,2) são do cartão.
   //  · Almoxarifado (x 4,9–8,6 · z 0–3,9): 3 estantes de aço com caixas e organizadores,
-  //    cases de som (rack com rodízios, mesa de som, caixas), caixa de som PA, pilhas de
-  //    cadeiras empilháveis, escada de alumínio encostada, balde com rodo.
+  //    cases de som (rack com rodízios, mesa de som, caixas) com estêncil "BASE MUSIC",
+  //    caixa de som PA, pilhas de cadeiras empilháveis, escada de alumínio, balde com rodo.
   //  · Cozinha (x 8,6–12,75 · z 0–3,9): bancada em L (madeira clara + granito preto), cuba,
   //    cooktop com forno e coifa, armários aéreos brancos, geladeira inox, micro-ondas,
-  //    garrafões de café, escorredor, mesa de apoio inox, purificador e lixeira.
+  //    garrafões de café, escorredor, mesa de apoio inox, purificador, lixeira e lousa
+  //    "Café da Base" com o logo oficial na parede x=12,75.
   //    Janela (x 9,2–10,8) e porta (x 11,6–12,5) da parede z=3,9 ficam livres.
-  //  · Pátio: coleta seletiva (4 lixeiras + placa), ipê-amarelo em floreira preta, banco
-  //    ripado, bicicletário com 2 bicicletas, abrigo de gás, cicas em vasos pretos na porta
-  //    de vidro do templo.
+  //  · Pátio: PAREDÃO DA MARCA na face externa do almoxarifado (z=3,9 · x 5,0–7,3): ripado de
+  //    madeira clara como o da fachada, logo oficial em letras caixa (ctx.logo.relief), sanca
+  //    com fita de LED, halo e floreira preta com uplights. Medalhão com o "B" no piso
+  //    (x 11,1 · z 10,85), no caminho recepção → templo. Ipê-amarelo florido (copa de tufos
+  //    pequenos, galhos e flores caídas no chão), banco ripado com LED sob o assento,
+  //    bicicletário com 2 bicicletas, abrigo de gás, cicas em vasos pretos na porta do templo.
   //  · Jardim interno (x 7,5–9,45 · z 5,8–10,2): meio-fio, 2 palmeiras, cica, arbustos,
   //    forração, pedras brancas e spots de chão (só emissivo, sem luz real).
   //  · Jardim pastoral (x 12,75–20,1 · z 9,25–11,0): pisantes de concreto ligando a porta
   //    da pastoral e o pátio à porta PM01, canteiros com forração, buxinhos, moreias e ráfis.
   // Livres: rotas das portas (PM01, recepção, pastoral, vidro do templo, cozinha, almox.),
   // luminárias do cartão (cozinha 10,7/6,75 · y 2,7 · z 1,95) e a arandela do pátio.
+  // Brilhos da decoração (spots, LEDs do paredão e do banco, logo) seguem 'estacionamento'
+  // (a luz externa dos fundos) via ctx.bindEmissive — apagados de dia, acesos à noite.
   // ---------------------------------------------------------------------------
   const { THREE, M, box, cyl, sph, place, add, std, rnd } = ctx;
   const G = () => new THREE.Group();
@@ -57,10 +64,17 @@ function roomServicoPatio(ctx) {
     pebble: std({ color: 0xeceae4, roughness: 0.95 }), pebble2: std({ color: 0xd9d5cb, roughness: 0.95 }),
     rock: std({ color: 0x8f8b82, roughness: 0.95 }), slab: std({ color: 0xbdb9b0, roughness: 0.95 }),
     spotBody: std({ color: 0x2a2b2e, roughness: 0.5, metalness: 0.4 }),
-    spotLens: std({ color: 0xfff3d6, emissive: 0xffd9a0, emissiveIntensity: 0.6, roughness: 0.4 }),
+    // emissivos com opções exclusivas (o cache de std é do cartão inteiro): acendem com 'estacionamento'
+    spotLens: std({ color: 0xfff3d6, emissive: 0xffd9a0, emissiveIntensity: 0.6, roughness: 0.39 }),
+    led: std({ color: 0xfff0d8, emissive: 0xffd49a, emissiveIntensity: 0.1, roughness: 0.43 }),
+    ripa: std({ color: 0xd9b8a0, roughness: 0.72 }), ripaFundo: std({ color: 0xa8876f, roughness: 0.85 }),
+    medal: std({ color: 0x2b2c30, roughness: 0.85 }), ipe3: std({ color: 0xf2c94a, roughness: 0.95 }),
     gasDoor: std({ color: 0x9aa0a6, roughness: 0.6, metalness: 0.4 }), thermoR: std({ color: 0x8b2f2f, roughness: 0.5 }),
     fruitO: std({ color: 0xe08a2a, roughness: 0.7 }), fruitG: std({ color: 0x7ca23a, roughness: 0.7 }),
   };
+  // spots de chão, fitas de LED e uplights: quase apagados de dia, acesos com a luz externa dos fundos
+  if (ctx.bindEmissive) { ctx.bindEmissive('estacionamento', P.spotLens, 1.5); ctx.bindEmissive('estacionamento', P.led, 1.8); }
+  const logo = ctx.logo;
 
   // ---- builders locais ------------------------------------------------------------------------
   // cilindro entre dois pontos (tubos de bicicleta, bicicletário, galhos, cabo do rodo)
@@ -179,6 +193,19 @@ function roomServicoPatio(ctx) {
   place(flightCase(0.72, 0.16, 0.56), 5.42, 1.25, PI / 2, 0.71);                 // mesa de som em cima
   place(flightCase(0.52, 0.5, 0.5), 5.36, 2.05);                                 // caixas de retorno
   place(flightCase(0.46, 0.4, 0.44), 5.36, 2.05, 0.08, 0.51);
+  // Estêncil branco "BASE MUSIC" (logo oficial) nos cases: lateral do rack, tampa da mesa de som e case de cima
+  const stencilTex = ctx.makeTex(256, (g2, s) => {
+    g2.clearRect(0, 0, s, s);
+    logo.draw(g2, s * 0.25, s * 0.04, s * 0.5, { layout: 'mark', color: '#ecebe6' });
+    g2.fillStyle = '#ecebe6'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.font = `700 ${Math.round(s * 0.15)}px ${logo.font}`; g2.fillText('BASE', s / 2, s * 0.68);
+    g2.font = `700 ${Math.round(s * 0.1)}px ${logo.font}`; g2.fillText('M U S I C', s / 2, s * 0.84);
+  });
+  const stencilMat = new THREE.MeshStandardMaterial({ map: stencilTex, alphaTest: 0.5, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const stencil = (sz, x, y, z, rx, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(sz, sz), stencilMat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0, 'YXZ'); m.receiveShadow = true; add(m); return m; };
+  stencil(0.24, 5.7235, 0.26, 1.25, 0, PI / 2);                                   // lateral do rack (abaixo da alça)
+  stencil(0.3, 5.42, 0.8715, 1.25, -PI / 2, PI / 2);                              // tampa da mesa de som
+  stencil(0.26, 5.36, 0.9115, 2.05, -PI / 2, 0.08);                               // case de retorno de cima
   // Caixa de som PA (grade frontal voltada para a sala)
   add(box(0.44, 0.72, 0.38, P.caseBlk, 5.32, 0.36, 2.78));
   add(box(0.012, 0.6, 0.32, P.grille, 5.546, 0.38, 2.78, nc));
@@ -290,9 +317,28 @@ function roomServicoPatio(ctx) {
   add(cyl(0.012, 0.012, 0.06, M.chrome, 8.79, 1.2, 2.95, 8));
   add(cyl(0.15, 0.14, 0.46, M.steel, 8.93, 0.23, 3.56, 16));
   add(cyl(0.155, 0.155, 0.03, P.trim, 8.93, 0.475, 3.56, 16));
+  // Lousa "Café da Base" com o logo oficial na parede x=12,75 (acima da mesa inox, virada para −x)
+  {
+    const BW = 0.66, BH = 0.5, A = BH / BW;
+    const boardTex = ctx.makeTex(512, (g2, s) => {
+      g2.fillStyle = '#26282a'; g2.fillRect(0, 0, s, s);
+      g2.save(); g2.scale(1, 1 / A);                                                // área lógica s × s·A
+      const hh = s * A, chalk = '#ebe8df';
+      logo.draw(g2, s * 0.14, hh * 0.08, s * 0.72, { layout: 'wide', color: chalk });
+      g2.fillStyle = chalk; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+      g2.fillRect(s * 0.14, hh * 0.52, s * 0.72, 3);
+      g2.font = `700 ${Math.round(s * 0.075)}px ${logo.font}`; g2.fillText('CAFÉ DA BASE', s / 2, hh * 0.64);
+      g2.font = `400 ${Math.round(s * 0.05)}px ${logo.font}`; g2.fillText('domingo · 8h30 · 10h30 · 18h', s / 2, hh * 0.78);
+      g2.fillText('quarta · 19h30', s / 2, hh * 0.9);
+      g2.restore();
+    });
+    add(box(0.02, BH + 0.04, BW + 0.04, P.woodL, 12.664, 1.74, 1.85, nc));
+    const bm = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.9 }));
+    bm.position.set(12.652, 1.74, 1.85); bm.rotation.y = -PI / 2; bm.receiveShadow = true; add(bm);
+  }
 
   // ========================================= PÁTIO =========================================
-  // Coleta seletiva encostada no almoxarifado (face externa z=3,98): papel, plástico, vidro, metal
+  // Coleta seletiva perto do portão, encostada na face externa do almoxarifado (x = 4,825), frente para −x
   const recBin = (mat) => {
     const g = G();
     g.add(box(0.42, 0.78, 0.44, mat, 0, 0.43, 0));
@@ -302,7 +348,7 @@ function roomServicoPatio(ctx) {
     for (const sx of [-1, 1]) { const w = cyl(0.05, 0.05, 0.04, P.trim, sx * 0.19, 0.05, -0.17, 12); w.rotation.z = PI / 2; g.add(w); }
     return g;
   };
-  [P.binBlue, P.binRed, P.binGreen, P.binYel].forEach((m, i) => place(recBin(m), 5.25 + i * 0.5, 4.3));
+  [P.binBlue, P.binRed, P.binGreen, P.binYel].forEach((m, i) => place(recBin(m), 4.48, 1.0 + i * 0.5, -PI / 2));
   // placa "COLETA SELETIVA" (sinalização)
   const signTex = ctx.makeTex(512, (g2, s) => {
     g2.fillStyle = '#f2f0ea'; g2.fillRect(0, 0, s, s);
@@ -310,26 +356,82 @@ function roomServicoPatio(ctx) {
     g2.fillText('COLETA SELETIVA', s / 2, (s * 0.1875) / 2); g2.restore();
     ['#2f5f9e', '#b23a2e', '#2f7a3e', '#d9a82a'].forEach((c, i) => { g2.fillStyle = c; g2.fillRect((i * s) / 4, s * 0.86, s / 4, s * 0.14); });
   });
-  add(box(1.62, 0.32, 0.02, P.trim, 6.0, 1.3, 3.985, nc));
-  add(box(1.58, 0.28, 0.004, new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.8 }), 6.0, 1.3, 3.997, nc));
+  // placa acima da janela do almoxarifado (verga em y 2,15), virada para −x
+  add(box(0.02, 0.32, 1.62, P.trim, 4.814, 2.38, 1.75, nc));
+  const signM = new THREE.Mesh(new THREE.PlaneGeometry(1.58, 0.28), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.8 }));
+  signM.position.set(4.802, 2.38, 1.75); signM.rotation.y = -PI / 2; add(signM);
 
-  // Ipê-amarelo em floreira redonda preta (acento âmbar no pátio)
+  // ---- PAREDÃO DA MARCA (face externa do almoxarifado, z = 3,975, virado para o pátio) ----
+  // Ripado de madeira clara igual ao da fachada + logo oficial em letras caixa prateadas.
+  // Fica de frente para a câmera inicial (que olha de +z/+x) e vira o "ponto de foto" do pátio.
+  {
+    const x0 = 5.02, x1 = 7.3, W = x1 - x0, cx = (x0 + x1) / 2, y0 = 0.02, y1 = 2.84, Hh = y1 - y0, ym = (y0 + y1) / 2;
+    add(box(W, Hh, 0.02, P.ripaFundo, cx, ym, 3.987, nc));                                   // fundo
+    const n = Math.floor((W - 0.03) / 0.075);
+    for (let i = 0; i <= n; i++) add(box(0.046, Hh, 0.035, P.ripa, x0 + 0.03 + i * 0.075 + (W - 0.06 - n * 0.075) / 2, ym, 4.0145));
+    // sanca preta no topo com fita de LED embaixo (lava o ripado de cima para baixo)
+    add(box(W + 0.06, 0.06, 0.16, P.trim, cx, y1 + 0.03, 4.05));
+    add(box(W - 0.06, 0.012, 0.025, P.led, cx, y1 - 0.006, 4.1, nc));
+    for (const sx of [-1, 1]) add(box(0.03, Hh + 0.06, 0.07, P.trim, cx + sx * (W / 2 + 0.015), ym + 0.03, 4.01));   // perfis laterais
+    // logo oficial (anel + B + BASE/CHURCH) em relevo, acende de leve à noite
+    const L = logo.relief(1.08, { depth: 0.05, layers: 4 });
+    L.position.set(cx, 1.78, 4.034); add(L);
+    if (ctx.bindEmissive) ctx.bindEmissive('estacionamento', L.userData.face, 0.6, { min: 0.3 });   // de dia fica branco-prata, à noite brilha
+    if (ctx.glowPlane) { const h = ctx.glowPlane(W + 0.3, Hh + 0.3, 'estacionamento', { color: 0xffc98f, base: 0.55, day: 0.12 }); h.position.set(cx, ym + 0.1, 4.1); add(h); }
+    // floreira preta ao pé do painel: grama-preta (moreia/ráfis) e 2 uplights
+    add(box(W, 0.4, 0.36, P.potBlk, cx, 0.2, 4.245));
+    add(box(W - 0.06, 0.02, 0.3, M.soil, cx, 0.39, 4.245, nc));
+    for (let k = 0; k < 7; k++) {
+      const px = x0 + 0.2 + k * (W - 0.4) / 6;
+      if (k === 1 || k === 5) { add(cyl(0.035, 0.04, 0.05, P.spotBody, px, 0.425, 4.16, 10)); add(flat(cyl(0.028, 0.028, 0.006, P.spotLens, px, 0.452, 4.16, 10))); continue; }
+      // touceira de grama-preta: lâminas finas abrindo em leque a partir do centro
+      const tuft = G();
+      for (let i = 0; i < 8; i++) frond(tuft, px + j(0.02), 0.4, 4.245 + j(0.02), 0.34 + rnd() * 0.16, 0.028, (i / 8) * PI * 2 + j(0.3), -(0.75 + rnd() * 0.45), i % 3 ? P.strap : P.leafDk);
+      add(tuft);
+    }
+  }
+
+  // ---- Medalhão com o "B" no piso do pátio (concreto grafite + logo claro + aro de aço) ----
+  {
+    const mx = 11.1, mz = 10.85;
+    add(flat(cyl(0.72, 0.72, 0.012, P.medal, mx, 0.01, mz, 40)));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.72, 0.755, 48), P.alu); ring.rotation.x = -PI / 2; ring.position.set(mx, 0.0165, mz); ring.receiveShadow = true; add(ring);
+    const mk2 = logo.mesh(1.12, 1.12, { layout: 'mark', color: '#e3dfd5', roughness: 0.8 }); mk2.rotation.x = -PI / 2; mk2.position.set(mx, 0.0175, mz); add(mk2);
+  }
+
+  // Ipê-amarelo florido em floreira redonda preta (acento âmbar no pátio):
+  // tronco + 3 galhos saindo do topo (com ramos finos), copa em guarda-chuva de ~22 tufos pequenos
+  // achatados e flores caídas no chão em volta da floreira.
   const ipe = () => {
     const g = G();
-    g.add(cyl(0.62, 0.58, 0.45, P.potBlk, 0, 0.225, 0, 22));
-    g.add(cyl(0.56, 0.56, 0.02, M.soil, 0, 0.44, 0, 22));
-    g.add(cyl(0.08, 0.13, 2.3, M.trunk, 0, 1.55, 0, 10));
-    tube(g, [0, 2.2, 0], [-0.55, 2.85, 0.2], 0.05, M.trunk); tube(g, [0, 2.35, 0], [0.45, 2.95, -0.3], 0.045, M.trunk); tube(g, [0, 2.5, 0], [0.1, 3.2, 0.4], 0.04, M.trunk);
-    // copa em guarda-chuva: tufos pequenos (anel externo mais baixo, miolo mais alto), poucos verdes
-    const mats = [P.ipe, P.ipe2, P.ipe, P.ipe, P.leafLt, P.ipe2];
-    for (let i = 0; i < 12; i++) {
-      const outer = i < 8, a = (i / (outer ? 8 : 4)) * PI * 2 + (outer ? 0 : 0.4) + j(0.2), r = outer ? 0.75 + j(0.12) : 0.32 + j(0.08);
-      const s = sph((outer ? 0.34 : 0.4) + j(0.05), mats[i % 6], Math.cos(a) * r, (outer ? 2.95 : 3.3) + j(0.12), Math.sin(a) * r);
-      s.scale.y = 0.72; g.add(s);
+    g.add(cyl(0.62, 0.56, 0.45, P.potBlk, 0, 0.225, 0, 24));
+    g.add(cyl(0.645, 0.645, 0.04, P.potBlk, 0, 0.45, 0, 24));                  // borda
+    g.add(cyl(0.575, 0.575, 0.02, M.soil, 0, 0.462, 0, 22));
+    g.add(cyl(0.065, 0.12, 2.05, M.trunk, 0, 1.45, 0, 10));
+    const top = [0, 2.42, 0], tips = [[-0.62, 2.98, 0.28], [0.58, 3.02, -0.26], [0.06, 3.12, 0.64], [0.12, 3.0, -0.62]];
+    tips.forEach((t, i) => {
+      tube(g, i < 3 ? top : [0, 2.1, 0], t, i < 3 ? 0.04 : 0.028, M.trunk);
+      const d = V(t[0], 0, t[2]).normalize();
+      for (const s of [-1, 1]) {
+        const e = [t[0] + (d.x * 0.3 - d.z * 0.22 * s), t[1] + 0.18, t[2] + (d.z * 0.3 + d.x * 0.22 * s)];
+        tube(g, t, e, 0.016, M.trunk, 6);
+      }
+    });
+    const mats = [P.ipe, P.ipe3, P.ipe2, P.ipe, P.ipe3, P.ipe, P.ipe2, P.leafLt, P.ipe, P.ipe3, P.ipe];
+    for (let i = 0; i < 28; i++) {
+      const t = (i + 0.5) / 28, a = i * 2.39996 + j(0.3), rr = 1.08 * Math.sqrt(t);
+      const s = sph(0.14 + rnd() * 0.1, mats[i % mats.length], Math.cos(a) * rr + j(0.18), 3.0 + 0.45 * (1 - t) + j(0.12), Math.sin(a) * rr + j(0.18));
+      s.scale.set(1, 0.7, 1); s.rotation.y = rnd() * PI; g.add(s);
     }
+    for (let i = 0; i < 5; i++) { const a = rnd() * PI * 2, r = 0.15 + rnd() * 0.35; g.add(flat(cyl(0.05, 0.05, 0.004, P.ipe, Math.cos(a) * r, 0.474, Math.sin(a) * r, 8))); }
     return g;
   };
   place(ipe(), 6.1, 6.55);
+  // flores caídas no piso em volta da floreira
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * PI * 2 + j(0.25), r = 0.74 + rnd() * 0.55;
+    add(flat(cyl(0.05, 0.05, 0.004, i % 3 ? P.ipe : P.ipe2, 6.1 + Math.cos(a) * r, 0.008, 6.55 + Math.sin(a) * r, 8)));
+  }
 
   // Banco ripado de madeira clara com pés pretos (de frente para o jardim interno)
   const bench = (L) => {
@@ -342,6 +444,7 @@ function roomServicoPatio(ctx) {
     }
     for (let i = 0; i < 5; i++) g.add(box(L, 0.03, 0.075, P.woodL, 0, 0.445, 0.17 - i * 0.085));
     for (let i = 0; i < 3; i++) { const s = box(L, 0.075, 0.025, P.woodL, 0, 0.62 + i * 0.11, -0.225 - i * 0.013); s.rotation.x = -0.12; g.add(s); }
+    g.add(box(L - 0.34, 0.01, 0.02, P.led, 0, 0.422, 0.15, nc));                // fita de LED sob o assento
     return g;
   };
   place(bench(1.6), 7.02, 9.0, PI / 2);
