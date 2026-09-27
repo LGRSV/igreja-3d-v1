@@ -1,0 +1,156 @@
+<meta charset="utf-8">
+<title>Igreja 3D — Base Church</title>
+<meta name="description" content="Planta 3D interativa da Base Church (Palmas-TO): gire, dê zoom e comande luzes, telão, som e ar por ambiente.">
+<style>
+  :root {
+    --bg: #eef1f6; --fg: #17203a; --muted: #5b6785; --line: #d7dce8; --accent: #b86a12; --accent-soft: #fff1dc;
+    --banner-bg: #fff8ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #0a0f1e; --fg: #e6edf7; --muted: #9aa6bd; --line: #1f2a44; --accent: #ffc46b; --accent-soft: #1d2438; --banner-bg: #10172a; }
+  }
+  :root[data-theme="dark"] { --bg: #0a0f1e; --fg: #e6edf7; --muted: #9aa6bd; --line: #1f2a44; --accent: #ffc46b; --accent-soft: #1d2438; --banner-bg: #10172a; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .app { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+  .banner { flex: none; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    padding: 8px 16px; background: var(--banner-bg); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.35; }
+  .banner b { color: var(--accent); letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
+  .banner span { color: var(--muted); }
+  .toast { position: fixed; left: 50%; top: 56px; transform: translateX(-50%); background: var(--accent-soft); color: var(--fg); border: 1px solid var(--line);
+    padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 5; }
+  .toast.show { opacity: 1; }
+  igreja3d-card { flex: 1; min-height: 0; --igreja3d-height: 100%; border-radius: 0; }
+  .timectl { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .timectl input { width: 160px; accent-color: var(--accent); }
+  .timectl output { min-width: 44px; font-variant-numeric: tabular-nums; color: var(--fg); font-weight: 600; }
+  .timectl button { font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+</style>
+<div class="app">
+  <div class="banner" role="status">
+    <div><b>Demo</b> &nbsp;<span>Estados simulados (noite de culto) — clique num ambiente ou num bloco para alternar. No Home Assistant o cartão lê e comanda as entidades reais.</span></div>
+    <label class="timectl"><span>Hora do dia</span><input id="hora" type="range" min="0" max="1439" step="5" aria-label="Hora simulada"><output id="horaOut">agora</output><button id="horaAgora" type="button">agora</button></label>
+  </div>
+  <igreja3d-card id="card"></igreja3d-card>
+</div>
+<div class="toast" id="toast"></div>
+<script type="module">
+/*__CARD_MODULE__*/
+
+// ------------------------------------------------------------------
+// Mock do objeto `hass` só para a demo (estados simulados: noite de culto)
+// ------------------------------------------------------------------
+const states = {};
+const ago = (min) => new Date(Date.now() - min * 60000).toISOString();
+const mk = (id, state, attributes = {}, min = 0) => { states[id] = { entity_id: id, state, attributes, last_changed: ago(min) }; };
+mk('light.palco_rgb', 'on', { friendly_name: 'Palco RGB', rgb_color: [140, 60, 230], brightness: 255, supported_color_modes: ['rgb'] }, 6);
+mk('light.templo_plateia', 'on', { friendly_name: 'Plateia', brightness: 77, supported_color_modes: ['brightness'] }, 6);
+mk('media_player.telao_led', 'playing', { friendly_name: 'Telão LED', media_title: 'Louvor — Base Music', volume_level: 0.6 }, 6);
+mk('switch.som_templo', 'on', { friendly_name: 'Som do templo' }, 40);
+mk('climate.ar_templo', 'cool', { friendly_name: 'Ar do templo', temperature: 22, current_temperature: 24.5, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry', 'heat_cool'] }, 55);
+mk('light.hall_entrada', 'on', { friendly_name: 'Hall de entrada' }, 70);
+mk('light.fachada_letreiro', 'on', { friendly_name: 'Fachada / letreiro' }, 95);
+mk('light.estacionamento', 'on', { friendly_name: 'Estacionamento' }, 95);
+mk('light.sala_pastoral', 'off', { friendly_name: 'Sala pastoral' }, 180);
+mk('climate.ar_sala_pastoral', 'off', { friendly_name: 'Ar da sala pastoral', temperature: 23, current_temperature: 27, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry'] }, 180);
+mk('light.recepcao', 'off', { friendly_name: 'Recepção' }, 175);
+mk('light.administrativo', 'off', { friendly_name: 'Administrativo' }, 190);
+mk('light.circulacao', 'on', { friendly_name: 'Circulação' }, 80);
+mk('light.sala_midia', 'on', { friendly_name: 'Sala de mídia' }, 60);
+mk('light.voluntariado', 'off', { friendly_name: 'Voluntariado' }, 50);
+mk('light.cozinha', 'off', { friendly_name: 'Cozinha' }, 120);
+mk('light.banheiros', 'on', { friendly_name: 'Banheiros' }, 75);
+mk('light.sala_familia', 'on', { friendly_name: 'Sala da família' }, 30);
+mk('binary_sensor.presenca_templo', 'on', { friendly_name: 'Presença no templo', device_class: 'occupancy' }, 58);
+mk('binary_sensor.porta_principal', 'off', { friendly_name: 'Porta principal', device_class: 'door' }, 9);
+mk('sensor.temperatura_templo', '24.5', { friendly_name: 'Temperatura do templo', unit_of_measurement: '°C', device_class: 'temperature' }, 2);
+// Automações de exemplo do HA; last_triggered simulado
+const autos = [['automation.fachada_no_por_do_sol', 'Fachada acende no pôr do sol', 95], ['automation.ar_templo_antes_do_culto', 'Ar do templo 1 h antes do culto', 55],
+  ['automation.abrir_igreja_domingo', 'Abrir a igreja (domingo 17h30)', 100], ['automation.presenca_acende_hall', 'Presença acende o hall', 70],
+  ['automation.fechar_tudo_meia_noite', 'Fechar tudo à meia-noite', 1400], ['automation.expediente_seg_sex', 'Expediente (seg–sex 8h)', 700],
+  ['automation.aviso_porta_aberta', 'Aviso: porta aberta depois das 23h', 0]];
+for (const [id, name, min] of autos) mk(id, id === 'automation.aviso_porta_aberta' ? 'off' : 'on', { friendly_name: name, last_triggered: min ? ago(min) : null, mode: 'single' }, 99999);
+
+const toastEl = document.getElementById('toast'); let toastT = 0;
+const toast = (msg) => { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2600); };
+
+const card = document.getElementById('card');
+const push = () => { card.hass = { states: { ...states }, language: 'pt', callService }; };
+// Simula os serviços que o cartão usa (com a latência de um interruptor Wi-Fi)
+function callService(domain, service, data) {
+  const id = data && data.entity_id; const s = states[id]; if (!s) return;
+  const set = (state, attrs) => { s.state = state; if (attrs) Object.assign(s.attributes, attrs); s.last_changed = new Date().toISOString(); push(); };
+  const later = (fn) => setTimeout(fn, 220);
+  const isMedia = domain === 'media_player' || id.startsWith('media_player.');
+  const isClimate = id.startsWith('climate.');
+  if (service === 'toggle') later(() => set(isMedia ? (s.state === 'off' ? 'playing' : 'off') : isClimate ? (s.state === 'off' ? 'cool' : 'off') : (s.state === 'on' ? 'off' : 'on')));
+  else if (service === 'turn_on') {
+    const attrs = {};
+    if (data.rgb_color) attrs.rgb_color = data.rgb_color;
+    if (data.brightness_pct != null) attrs.brightness = Math.round(data.brightness_pct * 2.55);
+    if (data.brightness != null) attrs.brightness = data.brightness;
+    if (isMedia && !s.attributes.media_title) attrs.media_title = 'Louvor — Base Music';
+    later(() => set(isMedia ? 'playing' : isClimate ? 'cool' : 'on', attrs));
+  }
+  else if (service === 'turn_off') later(() => set('off'));
+  else if (service === 'set_hvac_mode') later(() => set(data.hvac_mode));
+  else if (service === 'set_temperature') later(() => set(s.state, { temperature: data.temperature }));
+  else if (service === 'media_play_pause') later(() => set(s.state === 'playing' ? 'paused' : 'playing'));
+  else if (service === 'volume_up') set(s.state, { volume_level: Math.min(1, +((s.attributes.volume_level || 0.3) + 0.05).toFixed(2)) });
+  else if (service === 'volume_down') set(s.state, { volume_level: Math.max(0, +((s.attributes.volume_level || 0.3) - 0.05).toFixed(2)) });
+  else if (domain === 'automation' && service === 'trigger') {
+    // efeito plausível de cada automação de exemplo
+    const on = (...ids) => ids.forEach((k) => { states[k].state = 'on'; });
+    const fx = {
+      'automation.fachada_no_por_do_sol': () => on('light.fachada_letreiro', 'light.estacionamento'),
+      'automation.ar_templo_antes_do_culto': () => { states['climate.ar_templo'].state = 'cool'; },
+      'automation.abrir_igreja_domingo': () => on('light.fachada_letreiro', 'light.estacionamento', 'light.hall_entrada', 'light.banheiros', 'light.recepcao'),
+      'automation.presenca_acende_hall': () => on('light.hall_entrada'),
+      'automation.fechar_tudo_meia_noite': () => { for (const k of Object.keys(states)) if (k.startsWith('light.') || k.startsWith('switch.') || k.startsWith('climate.') || k.startsWith('media_player.')) states[k].state = 'off'; },
+      'automation.expediente_seg_sex': () => on('light.administrativo', 'light.sala_pastoral', 'light.recepcao', 'light.circulacao'),
+    };
+    later(() => { (fx[id] || (() => {}))(); s.attributes.last_triggered = new Date().toISOString(); push(); });
+  }
+}
+card.addEventListener('hass-more-info', (e) => {
+  const id = e.detail.entityId; const s = states[id]; if (!s) return;
+  if (id.startsWith('climate.')) { s.state = s.state === 'off' ? 'cool' : 'off'; toast(`No Home Assistant isso abre o painel do ${s.attributes.friendly_name}. Na demo: ${s.state === 'off' ? 'desligado' : 'ligado (frio)'}.`); }
+  else if (id.startsWith('media_player.')) { s.state = { playing: 'paused', paused: 'off', off: 'playing' }[s.state] || 'playing'; toast(`No Home Assistant isso abre o controle do telão. Na demo: ${s.state}.`); }
+  else if (id === 'binary_sensor.porta_principal') { s.state = s.state === 'on' ? 'off' : 'on'; toast(`No Home Assistant isso abre o sensor da porta. Na demo: porta ${s.state === 'on' ? 'aberta' : 'fechada'}.`); }
+  else if (id.startsWith('binary_sensor.') || id.startsWith('sensor.')) { toast(`No Home Assistant isso abre o painel de ${s.attributes.friendly_name}.`); return; }
+  s.last_changed = new Date().toISOString();
+  push();
+});
+card.setConfig({ title: 'Base Church', labels: true, mode: 'auto', height: '100%' });
+push();
+// Ganchos para testes: window.demo.set('palco', 'on', { rgb_color: [255,0,0] }) · window.demo.setAll(false)
+window.demo = {
+  states,
+  set(key, state, attrs) {
+    const id = card.entity(key) || key; const s = states[id]; if (!s) return false;
+    s.state = String(state); if (attrs) Object.assign(s.attributes, attrs); s.last_changed = new Date().toISOString(); push(); return true;
+  },
+  setAll(on) {
+    for (const [id, s] of Object.entries(states)) {
+      if (id.startsWith('light.') || id.startsWith('switch.')) s.state = on ? 'on' : 'off';
+      else if (id.startsWith('media_player.')) s.state = on ? 'playing' : 'off';
+      else if (id.startsWith('climate.')) s.state = on ? 'cool' : 'off';
+      else continue;
+      if (on && id === 'light.templo_plateia') s.attributes.brightness = 255;
+      s.last_changed = new Date().toISOString();
+    }
+    push();
+  },
+};
+// Controle de hora simulada (só na demo): anda o relógio e o sol
+const hora = document.getElementById('hora'), horaOut = document.getElementById('horaOut');
+const fmtTZ = (dt) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(dt);
+const nowMin = () => { const p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date()); const h = +p.find((x) => x.type === 'hour').value % 24, m = +p.find((x) => x.type === 'minute').value; return h * 60 + m; };
+hora.value = nowMin();
+hora.addEventListener('input', () => {
+  const target = +hora.value, cur = nowMin();
+  const dt = new Date(Date.now() + (target - cur) * 60000);
+  card.setSimTime(dt); horaOut.textContent = fmtTZ(dt);
+});
+document.getElementById('horaAgora').addEventListener('click', () => { card.setSimTime(null); hora.value = nowMin(); horaOut.textContent = 'agora'; });
+</script>
