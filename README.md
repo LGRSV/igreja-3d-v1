@@ -75,7 +75,7 @@ weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
 latitude: -10.27                 # clima (sempre) e posição do sol fora do HA — no HA o sol usa
 longitude: -48.33                #  a localização configurada no próprio HA (hass.config)
-orientation: 180      # para onde a fachada (lado do estacionamento) aponta: 0=N, 90=L, 180=S, 270=O — A CONFIRMAR
+orientation: 90       # para onde a fachada (lado do estacionamento) aponta: 0=N, 90=L, 180=S, 270=O (Base Church: leste)
 entities:
   # ---- Templo ----
   palco:          light.palco_rgb              # refletores do palco (RGB + brilho)
@@ -224,8 +224,8 @@ não no HA nem no GitHub.
 - A geometria é **aproximada** a partir da planta de layout do térreo (Uõma Arquitetura, NOV/2024,
   escala 1:100) — precisão de ~0,1 m, não é levantamento. Alturas externas (8,5 / 4,5 / 3,6 m) e a
   fachada vêm de uma foto; o mobiliário é ilustrativo.
-- **Orientação real do prédio a confirmar**: o padrão `orientation: 180` supõe a fachada virada para o
-  sul. Ajuste para o sol nascer do lado certo (0 = N, 90 = L, 180 = S, 270 = O).
+- **Orientação**: a fachada da Base Church é virada para o **leste** (`orientation: 90`) — o sol da manhã
+  bate na fachada e o da tarde nos fundos. Para outro prédio ajuste (0 = N, 90 = L, 180 = S, 270 = O).
 - As entidades de `entities:` são exemplos — troque pelos IDs reais antes de usar.
 - O Three.js é carregado do jsDelivr (`three@0.170.0`): o **dispositivo que abre o dashboard** precisa
   de internet; o HA em si não.
