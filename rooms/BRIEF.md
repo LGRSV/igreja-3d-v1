@@ -9,8 +9,11 @@ O cartão (`igreja3d-card.js`) é um fork do motor do `casa-chefe` (Three.js r17
 - **Z** cresce para a **frente** (fachada e estacionamento ficam em z ≈ 49,7+; os fundos, com o portão de correr, em z = 0).
 - **Y** para cima; piso em y = 0.
 - Paredes: espessura `T = 0,15` centrada nas linhas abaixo. No modo normal (casinha de boneca, sem teto)
-  **todas as paredes têm `H = 3,0 m`**. O botão **Fachada** mostra o grupo externo (`ctx.ext`): paredes altas,
-  platibandas, telhados e revestimento da fachada.
+  as paredes têm `H = 3,0 m`, **exceto a parede do palco** (divisa x = 0 no trecho do templo, z 12,4–44,0), que o cartão
+  já cria com **8,5 m, preta por dentro** (é o fundo do palco). O botão **Fachada** mostra o grupo externo (`ctx.ext`):
+  paredes altas, platibandas, telhados e revestimento da fachada.
+- **Referência máxima = fotos e vídeos do cliente** (`templo_foto.jpg`, v1–v8): acabamento, mobiliário, equipamentos e
+  disposição seguem a referência; a planta só manda nas paredes/portas.
 - Alturas externas (modo Fachada): bloco Templo + Hall (x 0–16,05 · z 12,4–49,65) = **8,5 m**; ala direita
   (x 16,05–20,1 · z 11,0–49,5) = **4,5 m**; bloco dos fundos (z 0–12,4: almoxarifado, cozinha, recepção, sala pastoral) = **3,6 m**.
 
@@ -39,7 +42,7 @@ O cartão (`igreja3d-card.js`) é um fork do motor do `casa-chefe` (Three.js r17
 | WC masculino | 17,1 – 20,1 | 37,0 – 40,8 | |
 | Hall dos banheiros (18,6 m²) | 16,05 – 20,1 | 40,8 – 44,3 | + faixa x 16,05–17,1 · z 37,0–40,8 |
 | WC feminino (13,4 m²) | 16,05 – 20,1 | 44,3 – 49,5 | antecâmara x 16,05–17,1 |
-| **Templo (501,7 m²)** | 0 – 16,05 | 12,4 – 44,0 | palco no fundo (z pequeno), plateia virada para −z |
+| **Templo (501,7 m²)** | 0 – 16,05 | 12,4 – 44,0 | **palco na parede lateral longa x = 0**, plateia virada para −x (ver "Geometria do templo") |
 | Hall de entrada (62,7 m²) | 4,0 – 16,05 | 44,0 – 49,65 | escada em x 13,3–16,0 · z 44,4–49,4 |
 | WC | 0 – 1,9 | 44,0 – 46,3 | |
 | WC PCD | 1,9 – 4,0 | 44,0 – 46,3 | |
@@ -48,10 +51,18 @@ O cartão (`igreja3d-card.js`) é um fork do motor do `casa-chefe` (Three.js r17
 | Calçada da frente | −3 – 23 | 49,6 – 51 | intertravado grafite (fora dos jardins) |
 | Estacionamento frontal | −3 – 23 | 51 – 60 | intertravado espinha de peixe terracota, vagas PCD |
 
+### Pisos (o cartão cria; não cubra)
+- **Laminado carvalho/mel** (réguas 1,2 × 0,2 m ao longo de z, leve brilho) + **rodapé de madeira** (7 cm): corredor, circulação,
+  circ., mídia, voluntariado, depósito, Gilvan, administrativo, recepção, sala pastoral, sala da família.
+- **Porcelanato bege claro 0,9 × 0,9** (rejunte fino): WC masc., WC fem., hall dos banheiros, WC, WC PCD, WC pastoral.
+- **Templo: porcelanato cinza-claro 0,9 × 0,9 POLIDO** (rugosidade 0,13, reflete luzes e ambiente) + rodapé cinza.
+- Hall, cozinha, almoxarifado e áreas externas: como antes.
+
 ## Paredes e aberturas (linha de centro)
 Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass` (vidro até 2,25), `open` (vão), `gate` (portão).
 - `wallX(0, 0–20,1)`: gate x 0,3–4,7.
-- `wallZ(0, 0–49,65)` e `wallZ(20,1, 0–49,5)` — muros/paredes laterais (divisa).
+- `wallZ(0, 0–49,65)` e `wallZ(20,1, 0–49,5)` — muros/paredes laterais (divisa). `wallZ(0)` é feita em 3 trechos:
+  z 0–12,4 (3 m), **z 12,4–44,0 = parede do palco, 8,5 m, face interna preta (`M.pretoFosco`)**, z 44,0–49,65 (3 m).
 - `wallX(49,65, 0–16,05)`: window x 0,6–3,2 (família); **glassdoor x 10,9–13,1 = porta principal de vidro (2 folhas pretas, abrem para fora com `binary_sensor` da porta = on)**.
 - `wallX(49,5, 16,05–20,1)`: window alta x 17,6–19,6 (WC fem).
 - Almoxarifado/cozinha: `wallZ(4,9, 0–3,9)` window z 1,0–2,0 · `wallZ(8,6, 0–3,9)` · `wallX(3,9, 4,9–12,75)` door x 7,5–8,4 (almox.), window x 9,2–10,8, door x 11,6–12,5 (cozinha).
@@ -60,8 +71,10 @@ Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass
 - `wallX(9,25, 9,45–20,1)`: door x 11,8–12,6 (recepção), door x 12,9–13,8 (pastoral), glass x 14,2–16,6.
 - Caixa/banheiro: `wallZ(17,0, 0–4,9)` window z 1,2–2,2, door z 3,4–4,2 · `wallX(3,1, 17,0–20,1)` · `wallX(4,9, 17,0–20,1)`.
 - `wallX(11,0, 16,05–20,1)`: door x 16,15–17,0 (PM01, entrada lateral); window x 17,9–19,9 (J13, Gilvan).
-- **Templo** `wallX(12,4, 0–16,05)`: glass x 12,9–15,1 (acesso ao backstage).
-- **Templo** `wallZ(16,05, 11,0–49,65)`: glass z 19,2–22,6 · window z 23,6–27,7 (J12 da mídia, peitoril 1,1 — termina antes do pilar de z 28,0) · window z 29,9–31,9 · door z 34,2–35,1 (circ.) · open z 44,4–46,0 (hall → banheiros).
+- **Templo** `wallX(12,4, 0–16,05)`: parede comum de 3 m (ponta do templo), glass x 12,9–15,1.
+- **Templo** `wallZ(16,05, 11,0–49,65)`: glass z 19,2–22,6 · window z 23,6–27,7 (J12 da mídia, peitoril 1,1 — de frente para o palco) · window z 29,9–31,9 · **door z 34,2–35,1 preta de correr** (trilho aparente do lado do templo, x ≈ 15,93, y 2,21–2,31, até z ≈ 36,0) · open z 44,4–46,0 (hall → banheiros).
+- **Faces internas do perímetro do templo PRETAS** (revestimento de 12 mm, `M.pretoFosco`, face a 0,087 m do eixo): x = 0 (8,5 m),
+  z = 12,4, x = 16,05 (z 12,475–43,925) e z = 44,0 (3 m). O lado dos cômodos vizinhos continua claro (greige).
 - `wallZ(17,1, 11,0–19,0)`: door z 12,9–13,8 (Gilvan), door z 14,4–15,3 (Adm.), window z 16,8–18,3 (J05).
 - `wallX(14,2, 17,1–20,1)` · `wallX(19,0, 17,1–20,1)`.
 - Mídia: `wallX(23,3, 16,05–18,9)` door x 17,9–18,8 · `wallZ(18,9, 23,3–28,0)`.
@@ -70,24 +83,76 @@ Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass
 - `wallX(44,3, 17,1–20,1)` · `wallZ(17,1, 44,3–49,5)` door z 45,0–45,8 (WC fem.).
 - **Templo ↔ Hall** `wallX(44,0, 0–16,05)`: glass x 10,6–13,1 (portas de vidro do templo).
 - Família/WCs: `wallZ(1,9, 44,0–46,3)` · `wallZ(4,0, 44,0–49,65)` door z 44,4–45,3 (WC PCD), door z 46,6–47,5 (família) · `wallX(46,3, 0–4,0)` door x 0,5–1,3 (WC).
-- Pilares do templo (0,4×0,4, altura 3,05 no modo normal): x = 0 em z = 12,4 · 16,9 · 21,4 · 25,9 · 30,4 · 35,0 · 39,5 · 44,0 (`PILLARS_L`);
-  x = 16,05 em z = 12,4 · 18,3 · 23,2 · 28,0 · 33,7 · 39,3 · 44,0 (`PILLARS_R`, como na planta: fora do vidro, das janelas e da porta lateral);
-  e em z = 12,4 / 44,0 também em x = 5,4 e 10,5. As listas estão em `ctx.PILLARS_L` / `ctx.PILLARS_R`.
-- Paredes externas: pretas por fora, com revestimento branco de 12 mm por dentro (só entre as faces internas das paredes vizinhas).
+- Pilares do templo (0,4×0,4, altura 3,05 no modo normal), **metade voltada para o templo preta**: x = 0 em z = 12,4 · 16,9 · 21,4 · 25,9 ·
+  30,4 · 35,0 · 39,5 · 44,0 (`PILLARS_L` — por dentro do templo **só nos cantos z 12,4 e 44,0**: no trecho do palco a face da
+  parede x = 0 fica lisa, x ≥ 0,087 livre para telas/telão/perfis); x = 16,05 em z = 12,4 · 18,3 · 23,2 · 28,0 · 33,7 · 39,3 · 44,0
+  (`PILLARS_R`, x 15,85–16,25); e em z = 12,4 / 44,0 também em x = 5,4 e 10,5. As listas estão em `ctx.PILLARS_L` / `ctx.PILLARS_R`.
+- Paredes internas: pintura **greige ~#d6d2cb** (`M.wall`). Paredes externas: pretas por fora, com revestimento claro de 12 mm por
+  dentro (só entre as faces internas das paredes vizinhas).
+- **Portas internas** (`door`): folha lisa de **cedro com veio** (`M.door`, ≈ #a8662f), batente + **guarnição de madeira de 7 cm nas duas
+  faces** (`M.doorFrame`; a guarnição avança 0,016 m sobre a parede e 6 cm além do vão), **alavanca cromada dos dois lados**
+  (y 1,02, a 0,1 m do batente do lado `b`). Nada a menos de 0,1 m do vão na parede.
+- **Janelas/visores/vidros internos**: caixilho **preto** (`M.frameDark`) e vidro **levemente fumê** (`M.glassSmoke`).
+
+## Geometria do templo (CORREÇÃO DO CLIENTE: palco na parede lateral x = 0)
+O templo (x 0–16,05 · z 12,4–44,0) é largo e raso em relação ao palco: o palco fica encostado na **parede longa x = 0**, a plateia
+olha para **−x** e a sala de mídia (visor J12 na parede x = 16,05, z 23,6–27,7) fica **de frente para o palco**.
+- **Palco** (decoração do palco): x 0,15–5,0 · z 19,6–36,6 (16,6 m de frente, 4,85 m de fundo), **topo y = 1,0**; piso claro
+  bege/madeira clara, **testeira (face x = 5,0) preta**; escadas com corrimão inox nas duas pontas (perto de z 19,6 e 36,6);
+  2 caixinhas/retornos pretos no piso à frente do palco.
+- **Parede do palco** x = 0: preta em altura total (8,5 m) — o cartão cria. Face interna em x = 0,087.
+- **Telão LED** (cartão): 8,4 × 3,0 m, z 23,9–32,3, y 1,15–4,15, plano em x 0,25 virado para +x; moldura preta fina = painel
+  x 0,12–0,24, z 23,85–32,35, y 1,10–4,20. Brilho aditivo em volta (x 0,29, 10,6 × 4,8 m). Não cubra nem encoste (≥ 0,1 m).
+- **Telas brancas de projeção** (decoração do palco): ~3,2 × 2,4 m em z 19,9–23,1 e 33,1–36,3, y 3,9–6,3, na face da parede
+  (x ≈ 0,12, virada para +x); acendem levemente com o telão (`ctx.bindEmissive('telao', mat, …)`).
+- **Treliça de luz** (decoração do palco): treliça preta tipo escada em y ≈ 6,3, x ≈ 0,6, de z 20,5 a 35,5, com o **banzo inferior
+  em y ≈ 6,30** (o grampo dos moving heads sobe até y 6,30 em x 0,8). Nela ficam as luminárias `palco` do cartão.
+- **Cobertura aparente** (decoração da plateia): tesouras metálicas **brancas** (`M.aluminioBranco`) atravessando o templo em x
+  (0 → 16,05), banzo inferior y ≈ 7,6, superior ≈ 8,6, em z ≈ 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3, apoiadas em
+  pilares/perfis pretos que sobem até ≈ 8,6 nas duas laterais (em x = 0 junto à parede alta; em x = 16,05 acima da parede de 3 m);
+  terças finas; lampadinhas quentes no beiral (opcional). **Os high-bays da `plateia` se prendem no banzo inferior (y 7,6)** das
+  tesouras de z 18,5 / 23,5 / 33,5 / 38,5 — a tesoura de z 28,5 fica sem luminária.
+- **Line arrays** (decoração do palco): pendurados por correntes até as tesouras, na frente das telas brancas (x ≈ 1,6,
+  z ≈ 21,5 e ≈ 34,7), 2 clusters por lado (um para frente, um angulado).
+- **Plateia** (decoração da plateia): cadeiras pretas estofadas de encosto alto voltadas para −x, de x ≈ 6,3 a ≈ 15,5, em blocos com
+  corredor central perpendicular ao palco (z ≈ 28,1) e corredores laterais; blocos das pontas levemente angulados para o centro
+  (v6/v8); ~500 lugares. Livres: acesso do hall (vidro x 10,6–13,1 em z = 44), porta de vidro z = 12,4 (x 12,9–15,1), aberturas da
+  parede x = 16,05 (vidro z 19,2–22,6, visor z 23,6–28,4, janela z 29,9–31,9, porta preta z 34,2–35,1 + trilho até z 36,0, vão
+  z 44,4–46,0), escadas do palco e os ares (abaixo).
+
+**Como ficou na v1.2 (as-built — respeite ao mexer em qualquer um dos lados):**
+- Palco (`templo_palco.js`): escadas à frente da testeira em x 5,0–6,3 · z 19,65–20,75 e 35,45–36,55 (6 espelhos, corrimão inox
+  dos dois lados); caixinhas no piso em z 25,3 / 30,9; bateria sobre praticável x 0,55–3,05 · z 22,0–24,8; barra de fixação do
+  telão com grampos em y 4,36. **Telas brancas em z 19,9–23,1 e 33,7–36,9** (a do lado z alto foi deslocada para não bater no
+  pilar da tesoura de z 33,5). **Treliça de luz em z 23,1–33,1** (termina ~0,8 m além do telão, como na foto), mãos-francesas até a
+  parede em z 23,3 e 32,9. Line arrays pendurados em barras de rigging em y 7,5 (x 1,6) entre as tesouras (z 18,4–23,6 e 33,4–38,6).
+- Plateia (`templo_plateia.js`): **414 lugares** — 2 blocos centrais retos 12 × 10 (z 20,9–27,22 e 28,98–35,3; corredor central
+  1,76 m) e 2 blocos das pontas angulados ~8,6° (z 13,72–19,3 e 36,9–42,55), cadeiras em x 5,75–14,72 (1ª fileira central em
+  x 6,62). Corredores de ~1,3–1,45 m junto às paredes z = 12,4 / 44 e passagem de ~1,25 m ao longo de x = 16,05. Pilares na
+  parede do palco: inteiros fora do palco/telas, em z 23,55 e 32,65 nascem no piso do palco, em z 28,5 e 33,5 só acima de y 6,95.
+  Segunda treliça de luz (preta, 0,3 × 0,3) sobre a plateia em x 5,55, y 6,72–7,0, z 19,9–36,3, pendurada nas tesouras.
+- **A cobertura interna (tesouras, terças, pilares altos, treliça da plateia, lampadinhas) é um grupo `userData.keep` que some no
+  modo Fachada** (`visible` segue `!ctx.ext.visible`): o telhado em meia-água do modo Fachada (face de baixo de y ≈ 8,1 em x = 0
+  a ≈ 7,5 em x = 16) é mais baixo que as tesouras perto de x = 16.
 
 ## Objetos do cartão (ligados a entidades — NÃO recrie nem cubra)
-- **Palco**: plataforma x 1,2–14,85 · z 13,4–17,6, topo y = 0,6 (construída pela decoração do palco). Faixa de backstage z 12,55–13,4 atrás do telão.
-- **Telão LED** (`telao`, media_player): tela 6,0 × 3,4 m, x 5,0–11,0, y 1,3–4,7, plano em z 13,55 virado para +z.
-- **Luzes do palco** (`palco`, RGB): 4 refletores pendurados em y 4,6 em z 16,6, x 3,5 / 6,5 / 9,5 / 12,5 — a treliça que os segura (y ≈ 4,8) é da decoração do palco.
-- **Som** (`som`, switch): 2 LEDs de status nas quinas frontais do palco (x 1,5 e 14,55, y 0,65, z 17,5).
-- **Ar do templo** (`ac_templo`, climate): 5 splits de parede (0,22 × 0,3 × 0,9) em y 2,55 — (0,2, z 22,1), (0,2, z 29,6), (0,2, z 38,0) (fora dos pilares), (15,85, z 38,6), (15,85, z 41,6).
+- **Telão LED** (`telao`, media_player): ver acima (8,4 × 3,0, plano em x 0,25, centro y 2,65 · z 28,1). Luz do telão em (2,1; 2,8; 28,1).
+- **Luzes do palco** (`palco`, RGB): **4 moving heads** em x 0,8, y 6,05, z 23,9 / 26,7 / 29,5 / 32,3 (base até y 6,30, garfo
+  z ± 0,15), mirando (1; −1,25; 0) — **+x e para baixo, sobre o palco**. Feixes volumetricos (cones aditivos de 5,8 m) vão da lente
+  até ≈ (4,4; 1,5): **nada alto no caminho** (faixa x 0,8–4,6 × z de cada cabeça ± 1 m acima do piso do palco + 1,5 m) e **nada a
+  menos de 0,35 m das cabeças**. As PointLights ficam 1,2 m à frente da lente.
+- **Som** (`som`, switch): 2 LEDs de status nas quinas frontais do palco — base 0,1 × 0,05 × 0,16 em (4,9; 1,025; 19,8) e (4,9; 1,025; 36,4),
+  LED em y 1,065. Não cubra (degraus/corrimão começam fora de z 19,6–19,95 e 36,25–36,6 na quina x 4,85–4,95).
+- **Ar do templo** (`ac_templo`, climate): **5 unidades grandes** (1,25 × 0,26 × 0,30) em y 2,6 (topo 2,73) — **nenhuma na parede do palco**:
+  (15,825; z 15,3), (15,825; z 30,9 — acima da janela), (15,825; z 41,6) na parede x = 16,05; (x 7,95; z 12,625) e (x 7,95; z 43,775)
+  nas pontas. Deixe 0,3 m livres em volta.
 - **Ar da sala pastoral** (`ac_pastoral`): split em (14,9, 2,4, 0,2) na parede z=0.
 - Luminárias pendentes/refletores de cada item (posições na tabela de ITEMS do cartão). Não coloque nada num raio de 0,4 m delas.
   Refletor do letreiro (**sempre visível**, não é mais `ext`): (8,9; 8,05; 50,35), preso ao topo do painel ripado acima do logo.
-  Plateia: 10 **pendentes lineares de LED** (2,4 m ao longo de z) em y 5,0, x 4 e 12 (z 19,5 / 25 / 30,5 / 36 / 41,5), pendurados por cabos
-  até os **2 trilhos de teto que o próprio cartão cria** (y 6,43, seção 0,06, z ≈ 18,3–42,7, x 4 e 12) — não duplique os trilhos.
-  O corredor central (x ≈ 8) fica livre de pendentes: não pendure nada ali acima de 3 m (cortaria as vistas do palco). Feixes de luz (cones aditivos)
-  saem dos 4 refletores do palco em direção ao fundo do palco: não ponha peças altas no caminho (x ±1,2 m de cada refletor, z 14–16,6). Arandela do pátio: no muro x = 0 em (0,16; 2,8; 6,2).
+  **Plateia**: 12 **high-bays redondos** (Ø 0,64 m, altura 0,25) com o difusor em y ≈ 7,1, pendurados por haste curta até o banzo
+  inferior das tesouras (y 7,6), em x 7,2 / 10,6 / 14,0 × z 18,5 / 23,5 / 33,5 / 38,5 (reais: (7,2|14,0; 23,5) e (7,2|14,0; 33,5)).
+  **Não há mais pendentes lineares nem trilhos de teto** (y 6,43) — a cobertura/tesouras é da decoração da plateia.
+  Arandela do pátio: no muro x = 0 em (0,16; 2,8; 6,2).
 - **Calçada** (`calcada`, piso grafite): faixa da frente fora dos jardins e o trecho x 16–23 (z 49,6–51).
 
 ## API disponível no `ctx` (igual ao casa-chefe, com extras)
@@ -151,6 +216,17 @@ cap.rotation.x = -Math.PI / 2; cap.position.set(12.0, 0.012, 48.9); ctx.add(cap)
   Planos da mesma entidade com as mesmas opções (`color`, `base`, `day`, `tex`) compartilham o material e são fundidos num
   draw call; o cartão acende/apaga pelo material. Posicione e `ctx.add`.
 - `ctx.TEX` = texturas prontas do cartão (`TEX.glow`, `TEX.wood`, `TEX.tileGray`…) — reaproveite em vez de criar outra.
+
+### Acabamentos prontos em `ctx.M` (v1.2 — fotos/vídeos do cliente)
+- `M.marmorato` (cimento queimado/marmorato cinza manchado), `M.acustico` (placa acústica grafite 0,5 × 0,5 com juntas),
+  `M.porcelanatoCinza` (porcelanato cinza-claro 0,9 × 0,9) e `M.marmoreMarrom` (mármore "marrom imperador", placas 0,9 × 0,9):
+  **padrões calculados em espaço de mundo** (repetem em metros em qualquer peça, sem UV e sem textura/sampler a mais).
+  **Não clone** (o `clone()` perde o padrão): reaproveite o mesmo objeto; peças com o mesmo material fundem num draw call.
+- `M.pretoFosco` (paredes/pilares do templo; não é unificado com outros pretos), `M.aluminioBranco` (tesouras), `M.glassSmoke`
+  (vidro fumê dos visores internos), `M.door` (cedro com veio), `M.doorFrame`, `M.baseboardWood`, `M.baseboardGray`.
+- Texturas novas em `ctx.TEX`: `laminate`, `porcelainBeige`, `porcelainGray`, `cedar`.
+- `ctx.std({ map: tex, … })` pode receber textura: a chave do cache usa o **uuid** da textura (antes serializava a imagem inteira
+  em data URL a cada chamada — segundos por construção da cena).
 
 ### Renderização (o que mudou e cuidados)
 - Tone mapping **Neutral**, exposição 1,0 (antes ACES 1,15): as cores saem como você escreve — um branco 0xffffff estoura menos,

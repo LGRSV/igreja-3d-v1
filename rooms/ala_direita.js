@@ -1,83 +1,87 @@
 function roomAlaDireita(ctx) {
   // ---------------------------------------------------------------------------
   // ALA DIREITA (x 16,05–20,1 · z 11,0–49,5): corredor da entrada lateral,
-  // circulação, sala de mídia (piso elevado 0,30 m — degraus "Abaixo" da planta),
-  // voluntariado, circ./depósito/área técnica, WC masculino, hall dos banheiros
-  // e WC feminino. Paleta da igreja: preto, grafite, madeira clara (ripado),
-  // branco; acentos âmbar/terracota. Telas (mídia, TV da agenda) e placas usam
-  // CanvasTexture (ctx.makeTex). Nada de luzes: o cartão cuida da iluminação.
-  // Marca: sempre via ctx.logo (capacho da entrada lateral, painel retroiluminado da
-  // circulação, neon da mídia, ripado com letras caixa no voluntariado, jateado no
-  // espelho do hall dos banheiros, e dentro das telas/cartazes com ctx.logo.draw).
-  // Telas e fitas de LED seguem as entidades com ctx.bindEmissive.
+  // circulação, sala de mídia, voluntariado, circ./depósito/área técnica,
+  // WC masculino, hall dos banheiros e WC feminino.
+  // REFERÊNCIA MÁXIMA = vídeos do cliente: v4 (mídia: placas acústicas grafite,
+  // bancada preta no visor, road case turquesa, cadeiras azul/preto e plásticas),
+  // v2 (voluntariado: cortina, sofás cinza, letreiro "FAÇAM TUDO…", poltronas
+  // capitonê terracota, parede de marmorato com split, prateleiras, buffet
+  // grafite + frigobar; depósito com estantes pretas e caixas organizadoras),
+  // v3 (banheiros: porcelanato cinza até 1,3 m e marrom imperador acima, bancada
+  // branca com cubas de apoio, espelhos com moldura de LED fria, bebedouro inox,
+  // entrada com faixa azul-escura e pictograma), v1/v5 (corredores: fundo em
+  // marmorato, placa vermelha "SAÍDA DE EMERGÊNCIA").
+  // Pisos, rodapés, portas e caixilhos são do cartão. Nada de luzes.
   // Faces internas das paredes: x 16,125 (templo) · 17,025/17,175 · 18,825/18,975
   // · 20,013 (muro, com revestimento) · z 19,075 · 23,225/23,375 · 27,925/28,075
   // · 33,825/33,975 · 35,825/35,975 · 36,925/37,075 · 40,725/40,875 ·
-  // 44,225/44,375 · 49,413. Pilares 0,4×0,4 do templo avançam até x 16,25 em
-  // z 21,4 · 25,9 · 30,4 · 35,0 · 39,5 · 44,0.
+  // 44,225/44,375 · 49,413. Pilares do templo (lado claro até x 16,25) em
+  // z 12,4 · 18,3 · 23,2 · 28,0 · 33,7 · 39,3 · 44,0 (±0,2).
   // ---------------------------------------------------------------------------
-  const { THREE, box, cyl, sph, place, add, std, rnd, M, F } = ctx;
+  const { THREE, box, cyl, sph, place, add, std, rnd, M } = ctx;
   const PI = Math.PI, HPI = PI / 2;
   const G = () => new THREE.Group();
   const nc = { cast: false };
 
   // ---- materiais (ctx.std com as mesmas opções → mesmo material → merge) ----
-  const woodL   = std({ color: 0xcfa97c, roughness: 0.7 });                 // madeira clara (ripado, tampos)
-  const woodM   = std({ color: 0xa87c52, roughness: 0.72 });                // madeira média (molduras)
+  const woodL   = std({ color: 0xcfa97c, roughness: 0.7 });                 // madeira clara
+  const woodM   = std({ color: 0xa87c52, roughness: 0.72 });                // madeira média (pés, molduras)
   const black   = std({ color: 0x18181b, roughness: 0.5, metalness: 0.2 }); // estrutura preta
+  const blackGl = std({ color: 0x151517, roughness: 0.22 });                 // plástico preto brilhante
   const graph   = std({ color: 0x3a3b3f, roughness: 0.6 });                 // cinza grafite
   const graphL  = std({ color: 0x5b5d63, roughness: 0.7 });
-  const hpl     = std({ color: 0x45474c, roughness: 0.45 });                // divisórias HPL grafite
+  const hpl     = std({ color: 0x45474c, roughness: 0.45 });                // divisórias das cabines
   const white   = std({ color: 0xf1f0ec, roughness: 0.5 });
+  const quartz  = std({ color: 0xf4f2ee, roughness: 0.25 });                // bancada de quartzo branco
   const china   = std({ color: 0xf7f7f5, roughness: 0.18 });                // louça sanitária
-  const stone   = std({ color: 0x2c2d31, roughness: 0.28, metalness: 0.1 }); // granito preto (bancadas)
-  const porc    = std({ color: 0x55565b, roughness: 0.35 });                // porcelanato grafite (parede dos mictórios / degraus)
-  const carpet  = std({ color: 0x6a6c71, roughness: 1 });                   // carpete do piso elevado da mídia
-  const acoustic = std({ color: 0x3f4146, roughness: 1 });                  // painéis acústicos
-  const terra   = std({ color: 0xb3643f, roughness: 0.92 });                // estofado terracota
-  const amber   = std({ color: 0xc98a3c, roughness: 0.85 });                // estofado âmbar
-  const fabricG = std({ color: 0x8e9095, roughness: 0.97 });                // sofá cinza
-  const cork    = std({ color: 0xb98e5e, roughness: 1 });
-  const cardb   = std({ color: 0xb58b5b, roughness: 0.95 });                // papelão
-  const basinDk = std({ color: 0x9aa0a6, roughness: 0.3, metalness: 0.5 }); // fundo da cuba inox
+  const smoke   = std({ color: 0x1c2126, roughness: 0.08, metalness: 0.5 }); // vidro fumê/preto (portas das cabines)
+  const inox    = std({ color: 0xc4c9cd, roughness: 0.3, metalness: 0.75 }); // aço inox escovado
+  const benchTop = std({ color: 0x1d1d20, roughness: 0.32 });               // tampo preto da bancada da mídia
+  const blueSeat = std({ color: 0x27406e, roughness: 0.85 });               // tecido azul das cadeiras de operador
+  const turq    = std({ color: 0x1fa3c2, roughness: 0.35, metalness: 0.2 }); // road case azul-turquesa
+  const padBlue = std({ color: 0x2c4fa0, roughness: 0.8 });
+  const terraV  = std({ color: 0xb4531e, roughness: 0.82 });                // veludo terracota (poltronas)
+  const terraD  = std({ color: 0x7a3413, roughness: 0.9 });                 // botões do capitonê
+  const sofaG   = std({ color: 0x9e9e9b, roughness: 0.97 });                // sofá cinza
+  const sofaG2  = std({ color: 0xaaaaa7, roughness: 0.97 });
+  sofaG.userData.noShare = true; sofaG2.userData.noShare = true;                // o merge não troca o cinza do sofá por outro tom
+  const pilDk   = std({ color: 0x46474b, roughness: 0.97 });                // almofada cinza-escuro
+  const curtain = std({ color: 0xc9c8c4, roughness: 1 });                   // cortina cinza-claro
+  const slate   = std({ color: 0x4b525c, roughness: 0.6 });                 // buffet cinza-grafite (azulado)
+  const shelfG  = std({ color: 0x5d636b, roughness: 0.55 });                // prateleiras flutuantes
+  const gold    = std({ color: 0xc9a24f, roughness: 0.3, metalness: 0.85 }); // puxadores dourados
+  const redCup  = std({ color: 0xc62222, roughness: 0.4 });
+  const greenGl = std({ color: 0x4d7a52, roughness: 0.15, transparent: true, opacity: 0.75 });
+  const clearGl = std({ color: 0xe6eef2, roughness: 0.08, transparent: true, opacity: 0.35 });
+  const clearBx = std({ color: 0xdfe6ea, roughness: 0.2, transparent: true, opacity: 0.42 }); // caixa organizadora transparente
+  const lidG    = std({ color: 0x7c8087, roughness: 0.5 });
   const redExt  = std({ color: 0xc4201b, roughness: 0.35, metalness: 0.1 });
-  const water   = std({ color: 0x7fb4e0, roughness: 0.1, transparent: true, opacity: 0.6 });
   const pvc     = std({ color: 0xe9e9e4, roughness: 0.6 });
   const copper  = std({ color: 0xb8733f, roughness: 0.35, metalness: 0.7 });
   const potBlk  = std({ color: 0x1c1c1e, roughness: 0.55 });
   const frond   = std({ color: 0x2f5a2a, roughness: 0.9 });
   const frond2  = std({ color: 0x3d6e34, roughness: 0.9 });
   const trunk   = std({ color: 0x5b4632, roughness: 1 });
+  const navyBand = std({ color: 0x0e2a4f, roughness: 0.85 });              // faixa azul-escura da entrada dos banheiros
   const ledG    = std({ color: 0x0f2a18, emissive: 0x22c55e, emissiveIntensity: 1.2 });
   const ledR    = std({ color: 0x3a0a0a, emissive: 0xff3030, emissiveIntensity: 1.2 });
   const ledB    = std({ color: 0x0a1a3a, emissive: 0x3aa0ff, emissiveIntensity: 1.2 });
   const ledA    = std({ color: 0x3a2a0a, emissive: 0xffb040, emissiveIntensity: 1.2 });
-  // fitas de LED: um material por ambiente (opções levemente diferentes → materiais distintos),
-  // cada um ligado à luz do seu ambiente
-  const ledStrip = (key, r) => ctx.bindEmissive(key, std({ color: 0xfff1d8, emissive: 0xffe2b0, emissiveIntensity: 0.9, roughness: r }), 1.1, { min: 0.1 });
-  const ledWv   = ledStrip('voluntariado', 0.5);
-  const ledWb   = ledStrip('banheiros', 0.51);
-  const ledWm   = ledStrip('midia', 0.52);
-  const ledWc   = ledStrip('circulacao', 0.53);
-  const ripa    = std({ color: 0xd9b8a0, roughness: 0.72 });                 // ripado (mesmo tom da fachada)
-  const ripaFd  = std({ color: 0xa8876f, roughness: 0.85 });                 // fundo do ripado
-  const matte   = std({ color: 0x1a1a1c, roughness: 0.92 });                 // preto fosco liso (painéis)
-  const porcW   = std({ color: 0xd9d4cc, roughness: 0.3 });                  // porcelanato claro (WC fem.)
-  const rugMat  = std({ color: 0x55575c, roughness: 1 });
-  const rugEdge = std({ color: 0x9a6a45, roughness: 1 });
-  const lampW   = std({ color: 0xf4f4f0, roughness: 0.3 });                   // luminária de emergência
-  const papers  = [white, std({ color: 0xf3d77a, roughness: 1 }), std({ color: 0xe9a86a, roughness: 1 }), std({ color: 0xa9cbe6, roughness: 1 }), std({ color: 0xcfe3b0, roughness: 1 })];
-  const bins    = [graphL, std({ color: 0x2f5f8b, roughness: 0.6 }), amber, cardb, std({ color: 0x3f7d3a, roughness: 0.7 }), terra];
+  const lampW   = std({ color: 0xf4f4f0, roughness: 0.3 });                 // luminária de emergência / placas
+  // moldura de LED fria dos espelhos (v3): acende com a luz dos banheiros
+  const ledCold = ctx.bindEmissive('banheiros', std({ color: 0xe8f7ff, emissive: 0xbfeaff, emissiveIntensity: 1, roughness: 0.4 }), 1.4, { min: 0.12 });
+  // plafon quadrado dos corredores: acende com a circulação
+  const plafMat = ctx.bindEmissive('circulacao', std({ color: 0xf7f5ef, emissive: 0xfff4e0, emissiveIntensity: 1, roughness: 0.4 }), 1.1, { min: 0.05 });
+  const bins    = [graphL, std({ color: 0x2f5f8b, roughness: 0.6 }), std({ color: 0xc98a3c, roughness: 0.85 }), std({ color: 0x3f7d3a, roughness: 0.7 }), redCup, white];
 
   // ---- utilidades ------------------------------------------------------------
-  // cilindro deitado ao longo de X ou Z
   const rod = (r, len, mat, x, y, z, axis, seg = 8) => {
     const m = cyl(r, r, len, mat, x, y, z, seg);
     if (axis === 'x') m.rotation.z = HPI; else if (axis === 'z') m.rotation.x = HPI;
     return add(m);
   };
-  // Material com CanvasTexture desenhada num espaço virtual W×100 (W = 100·aspecto),
-  // para o texto não sair esticado numa face de proporção `aspect`.
+  // Material com CanvasTexture desenhada num espaço virtual W×100 (W = 100·aspecto)
   const texMat = (aspect, draw, glow = 0, size = 256) => {
     const W = 100 * aspect, Hv = 100;
     const tex = ctx.makeTex(size, (g, s) => { g.save(); g.scale(s / W, s / Hv); draw(g, W, Hv); g.restore(); });
@@ -85,9 +89,19 @@ function roomAlaDireita(ctx) {
       : new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 });
   };
   const text = (g, str, x, y, px, color, weight = 'bold', align = 'center') => {
-    g.font = `${weight} ${px}px sans-serif`; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(str, x, y);
+    g.font = `${weight} ${px}px Arial, Helvetica, sans-serif`; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(str, x, y);
   };
-  // Cica / palmeira em vaso preto (como na fachada). reach = alcance das folhas
+  // Revestimento de 12 mm numa parede: axis 'z' = parede ao longo de Z (face em f, sala para o lado dir),
+  // 'x' = parede ao longo de X. (a, b) = trecho ao longo da parede, (y0, y1) = alturas.
+  const clad = (axis, f, dir, a, b, y0, y1, mat, t = 0.012) => {
+    if (b - a < 0.01 || y1 - y0 < 0.01) return null;
+    const c = f + dir * t / 2, ym = (y0 + y1) / 2;
+    return add(axis === 'z' ? box(t, y1 - y0, b - a, mat, c, ym, (a + b) / 2, nc) : box(b - a, y1 - y0, t, mat, (a + b) / 2, ym, c, nc));
+  };
+  // meia parede dos banheiros: porcelanato cinza até 1,3 m e marrom imperador (ou marmorato) acima
+  const WAIN = 1.3, YB = 0.095, YT = 2.985;
+  const wetWall = (axis, f, dir, a, b, upper) => { clad(axis, f, dir, a, b, YB, WAIN, M.porcelanatoCinza); clad(axis, f, dir, a, b, WAIN, YT, upper); };
+  // Cica em vaso preto (como na fachada)
   const cica = (x, z, reach = 0.45, s = 1) => {
     const g = G();
     g.add(cyl(0.19, 0.15, 0.46, potBlk, 0, 0.23, 0, 16));
@@ -104,31 +118,27 @@ function roomAlaDireita(ctx) {
     g.scale.setScalar(s);
     return place(g, x, z, 0);
   };
-  // Placa fotoluminescente do extintor (NBR 13434: fundo vermelho, pictograma branco)
+  // Placa do extintor (fundo vermelho, pictograma branco)
   const extSign = texMat(0.77, (g, W, Hh) => {
     g.fillStyle = '#c4201b'; g.fillRect(0, 0, W, Hh);
     g.strokeStyle = '#f7f1e6'; g.lineWidth = 2.2; g.strokeRect(4, 4, W - 8, Hh - 8);
     g.fillStyle = '#f7f1e6'; const cx = W / 2;
     g.beginPath(); g.moveTo(cx - 11, 30); g.lineTo(cx + 11, 30); g.lineTo(cx + 11, 72); g.quadraticCurveTo(cx + 11, 78, cx + 5, 78);
-    g.lineTo(cx - 5, 78); g.quadraticCurveTo(cx - 11, 78, cx - 11, 72); g.closePath(); g.fill();     // cilindro
-    g.fillRect(cx - 4, 20, 8, 10); g.fillRect(cx - 12, 16, 22, 5);                                  // válvula e gatilho
-    g.lineWidth = 3; g.beginPath(); g.moveTo(cx + 9, 18); g.quadraticCurveTo(cx + 24, 22, cx + 20, 46); g.stroke(); // mangueira
+    g.lineTo(cx - 5, 78); g.quadraticCurveTo(cx - 11, 78, cx - 11, 72); g.closePath(); g.fill();
+    g.fillRect(cx - 4, 20, 8, 10); g.fillRect(cx - 12, 16, 22, 5);
+    g.lineWidth = 3; g.beginPath(); g.moveTo(cx + 9, 18); g.quadraticCurveTo(cx + 24, 22, cx + 20, 46); g.stroke();
     text(g, 'EXTINTOR', cx, 89, 10, '#f7f1e6');
   });
-  // Extintor de parede com placa. face = x da face da parede, dir = lado da sala (±1)
   const extintor = (xf, z, dir) => {
     const xc = xf + dir * 0.09;
     add(box(0.01, 0.5, 0.2, black, xf + dir * 0.005, 0.62, z));
     add(cyl(0.075, 0.075, 0.46, redExt, xc, 0.55, z, 14));
-    add(cyl(0.076, 0.076, 0.05, black, xc, 0.36, z, 14));                                     // etiqueta/cinta
+    add(cyl(0.076, 0.076, 0.05, black, xc, 0.36, z, 14));
     add(cyl(0.03, 0.04, 0.08, black, xc, 0.82, z, 10));
     add(box(0.12, 0.02, 0.03, black, xf + dir * 0.1, 0.87, z));
-    add(cyl(0.016, 0.016, 0.01, white, xc + dir * 0.03, 0.82, z + 0.03, 10)).rotation.z = HPI; // manômetro
-    add(cyl(0.01, 0.01, 0.34, black, xc + dir * 0.03, 0.66, z - 0.085, 6));                   // mangueira
-    add(cyl(0.018, 0.012, 0.07, black, xc + dir * 0.03, 0.46, z - 0.085, 8));                  // difusor
+    add(cyl(0.01, 0.01, 0.34, black, xc + dir * 0.03, 0.66, z - 0.085, 6));
     add(box(0.006, 0.26, 0.2, extSign, xf + dir * 0.004, 1.42, z, nc));
   };
-  // Placa de porta (texto ou pictograma) colada numa parede ao longo de Z (face em xf) ou de X (face em zf)
   const plaque = (axis, c, t, y, w, h, mat) => add(axis === 'z' ? box(0.01, h, w, mat, c, y, t, nc) : box(w, h, 0.01, mat, t, y, c, nc));
   const doorSign = (label) => texMat(2.2, (g, W, Hh) => {
     g.fillStyle = '#141416'; g.fillRect(0, 0, W, Hh);
@@ -136,11 +146,11 @@ function roomAlaDireita(ctx) {
     text(g, label, 12, 42, 24, '#f3efe6', 'bold', 'left');
     ctx.logo.draw(g, W - 40, 26, 30, { layout: 'mark', color: '#8d8f95' });
   }, 0, 512);
-  // Placa de SAÍDA (sempre acesa: bloco autônomo). arrow: -1 esquerda, 0 nenhuma, 1 direita
+  // Placa verde de SAÍDA (bloco autônomo, sempre acesa). arrow: -1 esquerda, 0 nenhuma, 1 direita
   const exitMat = (arrow) => texMat(2.6, (g, W, Hh) => {
     g.fillStyle = '#0f7a3a'; g.fillRect(0, 0, W, Hh);
     g.fillStyle = '#f2fff4';
-    const mx = arrow < 0 ? W - 48 : 28;                                                          // bonequinho correndo (no sentido da seta)
+    const mx = arrow < 0 ? W - 48 : 28;
     g.save(); if (arrow < 0) { g.translate(2 * mx + 8, 0); g.scale(-1, 1); }
     g.beginPath(); g.arc(mx + 10, 24, 7, 0, PI * 2); g.fill();
     g.lineWidth = 7; g.lineCap = 'round'; g.strokeStyle = '#f2fff4';
@@ -153,13 +163,11 @@ function roomAlaDireita(ctx) {
       g.beginPath(); g.moveTo(ax + s * 14, 50); g.lineTo(ax - s * 4, 30); g.lineTo(ax - s * 4, 70); g.closePath(); g.fill();
     }
   }, 0.9);
-  // axis 'x' = parede ao longo de X (face em zf, sinal virado para dir·z); 'z' = parede ao longo de Z
   const exitSign = (axis, f, t, y, dir, arrow = 0) => {
     const m = exitMat(arrow);
     if (axis === 'x') { add(box(0.36, 0.15, 0.03, lampW, t, y, f + dir * 0.015)); add(box(0.33, 0.125, 0.004, m, t, y, f + dir * 0.032, nc)); }
     else { add(box(0.03, 0.15, 0.36, lampW, f + dir * 0.015, y, t)); add(box(0.004, 0.125, 0.33, m, f + dir * 0.032, y, t, nc)); }
   };
-  // Luminária de emergência (2 faróis) na parede; mesmas convenções de exitSign
   const emerg = (axis, f, t, y, dir) => {
     const g = G();
     g.add(box(0.32, 0.075, 0.06, lampW, 0, 0, 0.03));
@@ -167,79 +175,67 @@ function roomAlaDireita(ctx) {
     g.add(box(0.03, 0.01, 0.004, ledG, 0, 0.012, 0.062, nc));
     if (axis === 'x') place(g, t, f, dir > 0 ? 0 : PI, y); else place(g, f, t, dir > 0 ? HPI : -HPI, y);
   };
-  // Plano do logo (ctx.logo.mesh) virado para +z → posiciona e gira em torno de Y
-  const logoAt = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; return add(m); };
-  const picto = (fem) => texMat(0.78, (g, W, Hh) => {
-    g.fillStyle = '#141416'; g.fillRect(0, 0, W, Hh);
-    g.fillStyle = '#f3efe6'; const cx = W / 2;
-    g.beginPath(); g.arc(cx, 20, 8, 0, Math.PI * 2); g.fill();
-    if (fem) { g.beginPath(); g.moveTo(cx, 30); g.lineTo(cx + 17, 64); g.lineTo(cx - 17, 64); g.closePath(); g.fill(); g.fillRect(cx - 8, 64, 5, 12); g.fillRect(cx + 3, 64, 5, 12); }
-    else { g.fillRect(cx - 12, 31, 24, 30); g.fillRect(cx - 11, 60, 9, 18); g.fillRect(cx + 2, 60, 9, 18); }
-    text(g, fem ? 'FEMININO' : 'MASCULINO', cx, 89, 11, '#c98a3c');
+  // Plano virado para +z (logo/brilho) → posiciona e gira em torno de Y
+  const at = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; return add(m); };
+  // Pictograma dos banheiros (placa curva de alumínio sobre a porta, v3): fem = mulher, senão homem
+  const picto = (fem) => texMat(1.6, (g, W, Hh) => {
+    g.fillStyle = '#e9ebed'; g.fillRect(0, 0, W, Hh);
+    g.fillStyle = '#2a2b2f'; const cx = W / 2;
+    g.beginPath(); g.arc(cx, 18, 8, 0, PI * 2); g.fill();
+    if (fem) { g.beginPath(); g.moveTo(cx, 28); g.lineTo(cx + 15, 62); g.lineTo(cx - 15, 62); g.closePath(); g.fill(); g.fillRect(cx - 7, 62, 5, 14); g.fillRect(cx + 2, 62, 5, 14); }
+    else { g.fillRect(cx - 11, 29, 22, 30); g.fillRect(cx - 10, 58, 8, 18); g.fillRect(cx + 2, 58, 8, 18); }
+    text(g, fem ? 'MULHER' : 'HOMEM', cx, 88, 11, '#2a2b2f');
   });
-
-  // Cadeira de estofado terracota/âmbar e pés de madeira (frente = +z local)
-  const chairV = (mat) => {
+  const doorPicto = (axis, f, t, dir, fem) => {
+    const m = picto(fem);
+    if (axis === 'z') { add(box(0.03, 0.2, 0.34, inox, f + dir * 0.015, 2.36, t)); add(box(0.004, 0.18, 0.3, m, f + dir * 0.032, 2.36, t, nc)); }
+    else { add(box(0.34, 0.2, 0.03, inox, t, 2.36, f + dir * 0.015)); add(box(0.3, 0.18, 0.004, m, t, 2.36, f + dir * 0.032, nc)); }
+  };
+  // Espelho com moldura de LED fria. face = parede; ry = rotação que leva +z para a sala
+  const ledMirror = (x, y, z, w, h, ry) => {
     const g = G();
-    g.add(box(0.44, 0.06, 0.44, mat, 0, 0.46, 0));
-    const back = box(0.44, 0.36, 0.05, mat, 0, 0.72, -0.2); back.rotation.x = -0.1; g.add(back);
-    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(cyl(0.017, 0.013, 0.44, woodM, sx * 0.18, 0.22, sz * 0.18, 8));
-    return g;
+    g.add(box(w, h, 0.012, M.mirror, 0, 0, 0.006, nc));
+    const s = 0.018;
+    g.add(box(w + s * 2, s, 0.012, ledCold, 0, h / 2 + s / 2, 0.012, nc)); g.add(box(w + s * 2, s, 0.012, ledCold, 0, -h / 2 - s / 2, 0.012, nc));
+    g.add(box(s, h, 0.012, ledCold, -w / 2 - s / 2, 0, 0.012, nc)); g.add(box(s, h, 0.012, ledCold, w / 2 + s / 2, 0, 0.012, nc));
+    place(g, x, z, ry, y);
+    const halo = ctx.glowPlane(w + 0.34, h + 0.34, 'banheiros', { color: 0xcdefff, base: 0.5, day: 0.25, tex: 'frame' });
+    const n = new THREE.Vector3(Math.sin(ry), 0, Math.cos(ry));
+    at(halo, x + n.x * 0.02, y, z + n.z * 0.02, ry);
   };
-  // Monitor em pedestal, tela para +z local
-  const monitor = (w, h, mat, lift = 0.12) => {
+  // Cuba de apoio retangular branca com torneira de mesa cromada (frente = +z local)
+  const vessel = () => {
     const g = G();
-    g.add(box(0.22, 0.012, 0.16, black, 0, 0.006, 0));
-    g.add(box(0.05, lift + h * 0.4, 0.03, black, 0, (lift + h * 0.4) / 2, -0.035));
-    g.add(box(w + 0.02, h + 0.02, 0.025, black, 0, lift + h / 2, -0.005));
-    g.add(box(w, h, 0.004, mat, 0, lift + h / 2, 0.0095, nc));
+    g.add(box(0.46, 0.12, 0.34, china, 0, 0.06, 0));
+    g.add(box(0.4, 0.004, 0.28, std({ color: 0xdfe3e6, roughness: 0.2 }), 0, 0.119, 0, nc));
+    g.add(cyl(0.014, 0.018, 0.3, M.chrome, 0, 0.15, -0.23, 10));
+    g.add(box(0.022, 0.022, 0.15, M.chrome, 0, 0.3, -0.165));
     return g;
-  };
-  // Cabines sanitárias: faixa x xa–xb, parede do fundo em zw, frente em zf, n cabines.
-  // sides = [divisória no lado xa?, divisória no lado xb?]; cut = recuo das divisórias
-  // junto da parede do fundo (janela alta), completado por um trecho baixo.
-  const cabins = (xa, xb, zw, zf, n, sides, cut = 0) => {
-    const sg = Math.sign(zf - zw), w = (xb - xa) / n, PY0 = 0.15, PH = 1.85, py = PY0 + PH / 2;
-    const zw2 = zw + sg * cut, len = Math.abs(zf - zw2), zc = (zf + zw2) / 2;
-    for (let i = 0; i <= n; i++) {
-      if ((i === 0 && !sides[0]) || (i === n && !sides[1])) continue;
-      const x = xa + i * w;
-      add(box(0.025, PH, len, hpl, x, py, zc));
-      if (cut) add(box(0.025, 1.4, cut, hpl, x, PY0 + 0.7, zw + sg * cut / 2));
-    }
-    const dw = Math.min(0.62, w - 0.2), pl = (w - dw) / 2;
-    for (let i = 0; i < n; i++) {
-      const x0 = xa + i * w, c = x0 + w / 2;
-      add(box(pl - 0.008, PH, 0.025, hpl, x0 + pl / 2, py, zf));
-      add(box(pl - 0.008, PH, 0.025, hpl, x0 + w - pl / 2, py, zf));
-      add(box(dw - 0.008, PH - 0.06, 0.03, woodL, c, py + 0.02, zf));                         // porta (madeira clara)
-      add(box(0.05, 0.025, 0.012, i % 2 ? ledR : ledG, c + dw / 2 - 0.08, 1.05, zf + sg * 0.021, nc)); // livre/ocupado
-      add(box(0.02, 0.02, 0.12, M.chrome, c + dw / 2 - 0.08, 0.95, zf + sg * 0.03));          // puxador
-      const t = F.toilet(); place(t, c, zw + sg * 0.3, sg > 0 ? 0 : PI);
-      add(box(0.13, 0.12, 0.09, M.steel, c + 0.32, 0.72, zw + sg * 0.05));                   // papeleira
-    }
-    add(box(xb - xa, 0.03, 0.04, M.steel, (xa + xb) / 2, PY0 + PH + 0.015, zf));             // travessa superior
-  };
-  // Mictório de parede (parede ao longo de Z em x = xf, sala em −x)
-  const urinal = (xf, z) => {
-    add(box(0.1, 0.62, 0.34, china, xf - 0.05, 0.86, z));
-    const bowl = cyl(0.16, 0.13, 0.52, china, xf - 0.17, 0.83, z, 16); bowl.scale.set(0.8, 1, 1); add(bowl);
-    add(cyl(0.02, 0.02, 0.2, M.chrome, xf - 0.06, 1.27, z, 8));
   };
 
   // =====================================================================
   // CORREDOR DA ENTRADA LATERAL (x 16,05–17,1 · z 11,0–19,0)
   // Portas em x=17,1: Gilvan z 12,9–13,8 · Adm. z 14,4–15,3; porta PM01 em z=11.
   // =====================================================================
-  // capacho de borracha grafite com a marca (anel + B) em bege, legível de quem chega pela frente
-  add(box(0.8, 0.012, 0.62, matte, 16.58, 0.008, 11.45, nc));
+  add(box(0.8, 0.012, 0.62, std({ color: 0x1a1a1c, roughness: 0.92 }), 16.58, 0.008, 11.45, nc));   // capacho grafite com a marca
   { const m = ctx.logo.mesh(0.44, 0, { layout: 'mark', color: '#bdb6a8', roughness: 1, cast: false }); m.rotation.x = -HPI; m.position.set(16.58, 0.0155, 11.45); add(m); }
-  exitSign('x', 11.075, 16.575, 2.38, 1);                                                    // SAÍDA sobre a porta PM01
+  // placa vermelha "SAÍDA DE EMERGÊNCIA" sobre a porta lateral (v5)
+  const sosMat = texMat(1.45, (g, W, Hh) => {
+    g.fillStyle = '#c21d1d'; g.fillRect(0, 0, W, Hh);
+    g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(4, 4, W - 8, Hh - 8);
+    g.fillStyle = '#ffffff'; g.fillRect(12, 12, W - 24, 34);
+    text(g, 'SAÍDA', W / 2, 30, 26, '#c21d1d', '900');
+    text(g, 'DE', W / 2, 60, 15, '#ffffff');
+    text(g, 'EMERGÊNCIA', W / 2, 80, 15, '#ffffff');
+  }, 0, 512);
+  add(box(0.36, 0.25, 0.008, sosMat, 16.575, 2.5, 11.08, nc));
   emerg('z', 17.025, 16.25, 2.45, -1);
   extintor(17.025, 12.1, -1);
   plaque('z', 17.018, 12.62, 1.6, 0.3, 0.13, doorSign('SALA GILVAN'));
   plaque('z', 17.018, 14.17, 1.6, 0.3, 0.13, doorSign('ADMINISTRATIVO'));
-  // cartazes emoldurados na parede do templo (entre os pilares de z 12,4 e 18,3): série e Base Jovem
+  // plafons quadrados embutidos (forro): só a placa de LED
+  for (const z of [12.9, 16.3]) add(box(0.32, 0.02, 0.32, plafMat, 16.58, 2.975, z, nc));
+  // cartazes emoldurados na parede do templo (entre os pilares de z 12,4 e 18,3)
   const poster1 = texMat(0.72, (g, W, Hh) => {
     const gr = g.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, '#1b1b1f'); gr.addColorStop(1, '#3a2a1f');
     g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
@@ -247,7 +243,7 @@ function roomAlaDireita(ctx) {
     g.fillStyle = '#c98a3c'; g.fillRect(W / 2 - 10, 33, 20, 1.2);
     text(g, 'SÉRIE', W / 2, 42, 6, '#cfcfd4');
     text(g, 'RAÍZES', W / 2, 55, 15, '#f4f5f7', '900');
-    g.strokeStyle = '#c98a3c'; g.lineWidth = 1.2;                                                 // raízes estilizadas
+    g.strokeStyle = '#c98a3c'; g.lineWidth = 1.2;
     for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(W / 2, 64); g.quadraticCurveTo(W / 2 + i * 4, 72, W / 2 + i * 8, 82 - Math.abs(i)); g.stroke(); }
     text(g, 'DOMINGOS · 9H E 18H', W / 2, 92, 4.6, '#cfcfd4');
   }, 0, 512);
@@ -262,54 +258,39 @@ function roomAlaDireita(ctx) {
   }, 0, 512);
   [[13.9, poster1], [15.6, poster2]].forEach(([z, pm]) => {
     add(box(0.03, 0.9, 0.66, black, 16.14, 1.55, z));
-    add(box(0.006, 0.84, 0.6, white, 16.157, 1.55, z, nc));                                    // passe-partout
+    add(box(0.006, 0.84, 0.6, white, 16.157, 1.55, z, nc));
     add(box(0.004, 0.76, 0.54, pm, 16.161, 1.55, z, nc));
   });
 
   // =====================================================================
   // CIRCULAÇÃO (x 16,05–20,1 · z 19,0–23,3) + corredor x 18,9–20,1 · z 23,3–28,0
+  // Fundo em marmorato: parede x = 20,1 (circulação + corredor da mídia) e a parede
+  // da mídia (z 23,3) vista de quem entra pelo corredor lateral.
   // =====================================================================
-  // Degraus "Abaixo" para a mídia (piso elevado 0,30 m), x 17,8–19,2
-  add(box(1.4, 0.1, 0.57, porc, 18.5, 0.05, 22.905));
-  add(box(1.4, 0.1, 0.27, porc, 18.5, 0.15, 23.055));
-  add(box(1.4, 0.012, 0.04, black, 18.5, 0.106, 22.64, nc));                                // frisos antiderrapantes
-  add(box(1.4, 0.012, 0.04, black, 18.5, 0.206, 22.94, nc));
-  // Bebedouro de coluna (galão) junto à parede z=19
-  {
-    const g = G();
-    g.add(box(0.32, 0.95, 0.32, white, 0, 0.475, 0));
-    g.add(box(0.33, 0.04, 0.33, graphL, 0, 0.97, 0));
-    g.add(box(0.22, 0.22, 0.01, graph, 0, 0.76, 0.162));
-    g.add(box(0.04, 0.045, 0.04, redExt, -0.05, 0.84, 0.18));
-    g.add(box(0.04, 0.045, 0.04, std({ color: 0x2f6fb8, roughness: 0.4 }), 0.05, 0.84, 0.18));
-    g.add(box(0.22, 0.02, 0.09, M.steel, 0, 0.66, 0.2));
-    g.add(cyl(0.05, 0.05, 0.06, water, 0, 1.02, 0, 12));
-    g.add(cyl(0.135, 0.135, 0.36, water, 0, 1.23, 0, 16));
-    g.add(cyl(0.05, 0.12, 0.06, water, 0, 1.44, 0, 16));
-    place(g, 17.5, 19.33, 0);
-  }
+  clad('z', 20.013, -1, 19.075, 27.925, 0.075, 2.985, M.marmorato);
+  clad('x', 23.225, -1, 16.26, 17.8, 0.075, 2.985, M.marmorato);
+  for (const [x, z] of [[18.1, 20.4], [18.1, 22.1], [19.5, 26.6]]) add(box(0.32, 0.02, 0.32, plafMat, x, 2.975, z, nc));
   // Aparador + quadro de avisos na parede z=19
   {
     const g = G();
     g.add(box(1.2, 0.04, 0.4, woodL, 0, 0.8, 0));
     g.add(box(1.14, 0.2, 0.36, black, 0, 0.68, 0));
-    for (const sx of [-0.3, 0.3]) g.add(box(0.2, 0.012, 0.01, woodL, sx, 0.68, 0.181, nc));   // puxadores
+    for (const sx of [-0.3, 0.3]) g.add(box(0.2, 0.012, 0.01, woodL, sx, 0.68, 0.181, nc));
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(box(0.03, 0.58, 0.03, black, sx * 0.55, 0.29, sz * 0.16));
-    g.add(cyl(0.07, 0.09, 0.22, potBlk, -0.38, 0.93, 0, 12));                                 // vaso com planta
+    g.add(cyl(0.07, 0.09, 0.22, potBlk, -0.38, 0.93, 0, 12));
     g.add(sph(0.14, frond2, -0.38, 1.12, 0)); g.add(sph(0.1, frond, -0.32, 1.2, 0.04));
-    g.add(box(0.21, 0.02, 0.15, papers[0], 0.05, 0.83, 0.05)); g.add(box(0.21, 0.02, 0.15, papers[1], 0.07, 0.85, 0.04)); // folhetos
+    g.add(box(0.21, 0.02, 0.15, white, 0.05, 0.83, 0.05));
     g.add(box(0.17, 0.05, 0.24, black, 0.38, 0.845, 0.0));                                   // Bíblia
-    g.add(box(0.1, 0.006, 0.244, ledA, 0.38, 0.845, 0.0, nc));                               // marcador (fita)
     place(g, 18.9, 19.37, 0);
     add(box(1.24, 0.84, 0.03, woodM, 18.9, 1.62, 19.09));                                    // quadro de avisos
-    add(box(1.16, 0.76, 0.012, cork, 18.9, 1.62, 19.111, nc));
-    for (let i = 0; i < 8; i++) {
-      const p = box(0.18 + rnd() * 0.06, 0.22 + rnd() * 0.06, 0.004, papers[i % papers.length], 18.42 + (i % 4) * 0.32 + rnd() * 0.04, 1.8 - Math.floor(i / 4) * 0.34 + rnd() * 0.04, 19.119, nc);
+    add(box(1.16, 0.76, 0.012, std({ color: 0xb98e5e, roughness: 1 }), 18.9, 1.62, 19.111, nc));
+    const papers = [white, std({ color: 0xf3d77a, roughness: 1 }), std({ color: 0xa9cbe6, roughness: 1 })];
+    for (let i = 0; i < 6; i++) {
+      const p = box(0.2, 0.25, 0.004, papers[i % 3], 18.5 + (i % 3) * 0.4 + rnd() * 0.04, 1.8 - Math.floor(i / 3) * 0.36, 19.119, nc);
       p.rotation.z = (rnd() - 0.5) * 0.12; add(p);
-      add(sph(0.012, i % 2 ? ledR : redExt, p.position.x, p.position.y + 0.1, 19.123));
     }
   }
-  // Banco ripado na parede x=20,1 (sala de espera)
+  // Banco ripado na parede de marmorato (sala de espera)
   {
     const g = G();
     for (let i = 0; i < 5; i++) g.add(box(0.066, 0.035, 1.6, woodL, -0.16 + i * 0.08, 0.45, 0));
@@ -317,20 +298,17 @@ function roomAlaDireita(ctx) {
       g.add(box(0.4, 0.03, 0.05, black, 0, 0.418, sz));
       g.add(box(0.035, 0.42, 0.035, black, -0.17, 0.21, sz)); g.add(box(0.035, 0.42, 0.035, black, 0.17, 0.21, sz));
     }
-    place(g, 19.73, 20.85, 0);
+    place(g, 19.72, 20.85, 0);
   }
-  // Painel preto fosco com o logo retroiluminado atrás do banco (parede x=20,1): acende com a circulação
-  add(box(0.03, 1.12, 2.3, matte, 19.998, 1.78, 20.85));
-  add(box(0.012, 0.012, 2.2, ledWc, 19.976, 2.33, 20.85, nc));                                 // fita de LED rasante no topo
-  {
-    const lg = ctx.logo.mesh(1.75, 0, { layout: 'wide', color: '#f4f5f7', emissive: 1, roughness: 0.35, cast: false });
-    logoAt(lg, 19.979, 1.74, 20.85, -HPI); ctx.bindEmissive('circulacao', lg.material, 0.85, { min: 0.12 });
-    const halo = ctx.glowPlane(2.6, 1.4, 'circulacao', { color: 0xfff1dc, base: 0.45, day: 0.2 });
-    logoAt(halo, 19.975, 1.76, 20.85, -HPI);
-  }
+  // quadros no marmorato, acima do banco
+  [[20.3, 0xcfa97c], [21.35, 0x8d8f95]].forEach(([z, c]) => {
+    add(box(0.03, 0.62, 0.46, black, 19.985, 1.55, z));
+    add(box(0.006, 0.56, 0.4, white, 19.967, 1.55, z, nc));
+    add(box(0.006, 0.36, 0.22, std({ color: c, roughness: 0.9 }), 19.963, 1.57, z, nc));
+  });
   exitSign('x', 19.075, 17.55, 2.45, 1, -1);                                                  // SAÍDA ← (corredor lateral)
-  emerg('x', 23.225, 16.75, 2.5, -1);
-  cica(16.58, 22.72, 0.4);
+  emerg('x', 23.213, 16.75, 2.5, -1);
+  cica(16.62, 22.75, 0.34);
   // Corredor da mídia: TV com a agenda da semana (parede x=20,1) e quadros (parede x=18,9)
   const agenda = texMat(1.75, (g, W, Hh) => {
     const gr = g.createLinearGradient(0, 0, W, Hh); gr.addColorStop(0, '#15151a'); gr.addColorStop(1, '#2a2230');
@@ -346,48 +324,54 @@ function roomAlaDireita(ctx) {
     ctx.logo.draw(g, W - 40, 84, 28, { layout: 'wide', color: '#8d8f95' });
   }, 0.8, 512);
   ctx.bindEmissive('circulacao', agenda, 0.8, { min: 0.12 });
-  add(box(0.04, 0.6, 1.04, black, 19.99, 1.6, 25.1));
-  add(box(0.004, 0.55, 0.98, agenda, 19.968, 1.6, 25.1, nc));
-  [[24.3, terra, amber], [26.6, woodL, terra]].forEach(([z, a, b]) => {
+  add(box(0.04, 0.6, 1.04, black, 19.978, 1.6, 25.1));
+  add(box(0.004, 0.55, 0.98, agenda, 19.956, 1.6, 25.1, nc));
+  [[24.3, 0xb3643f, 0xc98a3c], [26.6, 0xcfa97c, 0xb3643f]].forEach(([z, a, b]) => {
     add(box(0.03, 0.72, 0.52, black, 18.99, 1.6, z));
     add(box(0.006, 0.64, 0.44, white, 19.007, 1.6, z, nc));
-    add(box(0.008, 0.46, 0.12, a, 19.012, 1.6, z - 0.1, nc));
-    add(box(0.008, 0.2, 0.2, b, 19.014, 1.72, z + 0.1, nc));
+    add(box(0.008, 0.46, 0.12, std({ color: a, roughness: 0.9 }), 19.012, 1.6, z - 0.1, nc));
+    add(box(0.008, 0.2, 0.2, std({ color: b, roughness: 0.9 }), 19.014, 1.72, z + 0.1, nc));
   });
 
   // =====================================================================
-  // MÍDIA (x 16,05–18,9 · z 23,3–28,0) — piso elevado FP = 0,30 m.
-  // Bancada de 4,4 m sob a janela J12 (vista para o templo), 6 cadeiras viradas
-  // para −x, rack de equipamentos na parede x=18,9. Porta x 17,9–18,8 (z=23,3).
+  // MÍDIA (x 16,05–18,9 · z 23,3–28,0) — v4. Piso laminado do cartão.
+  // Placas acústicas grafite em todas as paredes; bancada preta longa sob o visor
+  // J12 (de frente para o palco); cadeiras de operador azul/preto; cadeiras
+  // plásticas pretas na parede oposta; gabinete com impressora; split e câmera.
+  // Porta x 17,9–18,8 (z=23,3) → giro x 17,9–18,8 · z 23,4–24,3 livre.
   // =====================================================================
-  const FP = 0.3, DT = FP + 0.76;                                                           // piso e tampo da bancada
-  add(box(2.57, FP, 4.54, carpet, 17.535, FP / 2, 25.65));                                  // piso elevado (carpete)
-  add(box(0.12, FP, 4.3, carpet, 16.19, FP / 2, 25.6));                                      // faixa junto à parede, entre os pilares z 23,2 e 28,0
-  // Telas (CanvasTexture)
+  const AC = M.acustico, AY0 = 0.08, AY1 = 2.98;
+  clad('z', 16.125, 1, 23.41, 27.79, 2.2, AY1, AC, 0.04);                                   // acima do visor
+  clad('z', 16.125, 1, 23.41, 27.79, AY0, 1.05, AC, 0.04);                                  // abaixo do peitoril
+  clad('x', 23.375, 1, 16.26, 17.8, AY0, AY1, AC, 0.04);                                    // parede da porta
+  clad('x', 23.375, 1, 17.8, 18.785, 2.3, AY1, AC, 0.04);                                   // acima da porta
+  clad('z', 18.825, -1, 23.415, 27.885, AY0, AY1, AC, 0.04);                                // parede oposta ao visor
+  clad('x', 27.925, -1, 16.26, 18.785, AY0, AY1, AC, 0.04);                                 // fundo (split + câmera)
+  add(box(0.04, 2.9, 0.085, AC, 16.27, 1.53, 27.8425, nc));                                 // pilar revestido
+  // Telas (CanvasTexture): multiview, transmissão, slides e DAW
   const stage = (g, x, y, w, h, kind) => {
     const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, '#120b24'); gr.addColorStop(1, '#3b1f5e');
     g.fillStyle = gr; g.fillRect(x, y, w, h);
     if (kind === 'plateia') {
       g.fillStyle = '#3a2a1a'; g.fillRect(x, y, w, h);
       g.fillStyle = '#1a1210';
-      for (let r = 0; r < 4; r++) for (let c = 0; c < 9; c++) { g.beginPath(); g.arc(x + (c + 0.5 + (r % 2) * 0.4) * w / 9, y + h * (0.35 + r * 0.18), w * 0.035 + r * 0.6, 0, Math.PI * 2); g.fill(); }
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 9; c++) { g.beginPath(); g.arc(x + (c + 0.5 + (r % 2) * 0.4) * w / 9, y + h * (0.35 + r * 0.18), w * 0.035 + r * 0.6, 0, PI * 2); g.fill(); }
       g.fillStyle = '#5a3fd0'; g.fillRect(x + w * 0.35, y + h * 0.05, w * 0.3, h * 0.18);
       return;
     }
     if (kind === 'close') {
-      g.fillStyle = '#e8c9a8'; g.beginPath(); g.arc(x + w / 2, y + h * 0.42, h * 0.2, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#18181b'; g.beginPath(); g.ellipse(x + w / 2, y + h * 1.02, w * 0.3, h * 0.42, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#2a1f1a'; g.beginPath(); g.arc(x + w / 2, y + h * 0.34, h * 0.2, Math.PI, 0); g.fill();
+      g.fillStyle = '#e8c9a8'; g.beginPath(); g.arc(x + w / 2, y + h * 0.42, h * 0.2, 0, PI * 2); g.fill();
+      g.fillStyle = '#18181b'; g.beginPath(); g.ellipse(x + w / 2, y + h * 1.02, w * 0.3, h * 0.42, 0, 0, PI * 2); g.fill();
+      g.fillStyle = '#2a1f1a'; g.beginPath(); g.arc(x + w / 2, y + h * 0.34, h * 0.2, PI, 0); g.fill();
       return;
     }
-    g.fillStyle = '#6d4fe0'; g.fillRect(x + w * 0.28, y + h * 0.1, w * 0.44, h * 0.34);            // telão
+    g.fillStyle = '#6d4fe0'; g.fillRect(x + w * 0.28, y + h * 0.1, w * 0.44, h * 0.34);
     g.fillStyle = 'rgba(255,220,160,0.25)';
     for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(x + w * (0.2 + i * 0.2), y); g.lineTo(x + w * (0.12 + i * 0.2), y + h * 0.7); g.lineTo(x + w * (0.28 + i * 0.2), y + h * 0.7); g.fill(); }
-    g.fillStyle = '#0c0c0e'; g.fillRect(x, y + h * 0.72, w, h * 0.28);                            // palco
+    g.fillStyle = '#0c0c0e'; g.fillRect(x, y + h * 0.72, w, h * 0.28);
     g.fillStyle = '#050506';
     const n = kind === 'wide' ? 5 : 1;
-    for (let i = 0; i < n; i++) { const px = x + w * (n === 1 ? 0.5 : 0.18 + i * 0.16); g.fillRect(px - w * 0.02, y + h * 0.5, w * 0.04, h * 0.23); g.beginPath(); g.arc(px, y + h * 0.47, w * 0.022, 0, Math.PI * 2); g.fill(); }
-    if (kind === 'pulpito') { g.fillStyle = '#cfa97c'; g.fillRect(x + w * 0.44, y + h * 0.6, w * 0.12, h * 0.14); }
+    for (let i = 0; i < n; i++) { const px = x + w * (n === 1 ? 0.5 : 0.18 + i * 0.16); g.fillRect(px - w * 0.02, y + h * 0.5, w * 0.04, h * 0.23); g.beginPath(); g.arc(px, y + h * 0.47, w * 0.022, 0, PI * 2); g.fill(); }
   };
   const camMat = texMat(1.7778, (g, W, Hh) => {
     g.fillStyle = '#000'; g.fillRect(0, 0, W, Hh);
@@ -405,12 +389,11 @@ function roomAlaDireita(ctx) {
     g.fillStyle = '#e02424'; g.fillRect(6, 6, 30, 11); text(g, '● AO VIVO', 21, 11.5, 6.5, '#fff');
     g.fillStyle = 'rgba(20,20,24,0.85)'; g.fillRect(10, 74, 110, 14); g.fillStyle = '#c98a3c'; g.fillRect(10, 74, 3, 14);
     text(g, 'Culto de Celebração · Base Church', 17, 81, 6.5, '#fff', 'bold', 'left');
-    ctx.logo.draw(g, W - 20, 5, 13, { layout: 'mark', color: '#ffffff' });                    // "bug" da transmissão
+    ctx.logo.draw(g, W - 20, 5, 13, { layout: 'mark', color: '#ffffff' });
   }, 0.85, 512);
   const waveMat = texMat(1.7778, (g, W, Hh) => {
     g.fillStyle = '#16181c'; g.fillRect(0, 0, W, Hh);
     g.fillStyle = '#23262c'; g.fillRect(0, 0, W, 8);
-    for (let i = 0; i < 16; i++) { g.fillStyle = '#3a3e46'; g.fillRect(24 + i * 9, 2, 0.5, 5); }
     const cols = ['#e0703a', '#3aa0ff', '#22c55e', '#c98a3c', '#b06cff', '#e04a6a'];
     for (let t = 0; t < 6; t++) {
       const y0 = 10 + t * 14.5, mid = y0 + 6.5;
@@ -429,206 +412,264 @@ function roomAlaDireita(ctx) {
     text(g, 'e mui digno de louvor', W / 2, 58, 13, '#ffffff');
     ctx.logo.draw(g, W / 2 - 13, 78, 26, { layout: 'wide', color: '#c98a3c' });
   }, 0.85, 512);
-  // telas da mídia acompanham o culto: vídeo/slides com o telão, DAW com o som (apagadas = tela escura)
   for (const m of [camMat, liveMat, slidesMat]) ctx.bindEmissive('telao', m, 0.85, { min: 0.1 });
   ctx.bindEmissive('som', waveMat, 0.85, { min: 0.1 });
-
-  // ---- bancada longa junto à J12 (x 16,27–16,92 · z 23,45–27,85) ----
-  add(box(0.65, 0.04, 4.4, woodL, 16.595, DT - 0.02, 25.65));
-  add(box(0.02, 0.12, 4.4, black, 16.915, DT - 0.1, 25.65));                                  // testeira preta
-  for (const z of [23.47, 25.02, 26.7, 27.83]) add(box(0.6, DT - FP - 0.04, 0.03, black, 16.6, (FP + DT - 0.04) / 2, z)); // pés/painéis
-  add(box(0.1, 0.08, 4.3, graph, 16.36, FP + 0.55, 25.65));                                   // calha de cabos
-  for (const z of [24.25, 27.25]) {                                                            // gabinetes dos PCs
-    add(box(0.2, 0.45, 0.44, black, 16.45, FP + 0.225, z));
-    add(box(0.005, 0.2, 0.012, ledB, 16.552, FP + 0.3, z - 0.15, nc));
+  // Monitor em pedestal, tela para +z local
+  const monitor = (w, h, mat, lift = 0.1) => {
+    const g = G();
+    g.add(box(0.22, 0.012, 0.16, black, 0, 0.006, 0));
+    g.add(box(0.05, lift + h * 0.4, 0.03, black, 0, (lift + h * 0.4) / 2, -0.035));
+    g.add(box(w + 0.02, h + 0.02, 0.025, black, 0, lift + h / 2, -0.005));
+    g.add(box(w, h, 0.004, mat, 0, lift + h / 2, 0.0095, nc));
+    return g;
+  };
+  // ---- bancada preta longa sob o visor (x 16,2–16,9 · z 23,45–27,75, tampo y 0,78) ----
+  const DT = 0.78;
+  add(box(0.7, 0.035, 4.3, benchTop, 16.55, DT - 0.0175, 25.6));
+  add(box(0.02, 0.1, 4.3, black, 16.89, DT - 0.085, 25.6));                                 // testeira
+  for (const z of [23.47, 25.6, 27.73]) add(box(0.64, DT - 0.035, 0.03, black, 16.53, (DT - 0.035) / 2, z));
+  add(box(0.02, 0.5, 4.3, black, 16.215, 0.5, 25.6));                                        // fundo (esconde os cabos)
+  for (const z of [24.25, 26.95]) {                                                          // gabinetes dos PCs no chão
+    add(box(0.42, 0.44, 0.2, black, 16.47, 0.22, z));
+    add(box(0.004, 0.012, 0.012, ledB, 16.682, 0.4, z + 0.06, nc));
   }
-  // Estação de vídeo / transmissão (z 23,5–25,0)
-  place(monitor(0.62, 0.36, camMat), 16.42, 24.0, HPI, DT);
-  place(monitor(0.53, 0.3, liveMat), 16.42, 24.68, HPI, DT);
-  add(box(0.22, 0.045, 0.42, graph, 16.74, DT + 0.0225, 24.33));                              // switcher de vídeo
-  add(box(0.03, 0.006, 0.34, ledR, 16.7, DT + 0.047, 24.33, nc));                             // barramento PGM
-  add(box(0.03, 0.006, 0.34, ledG, 16.745, DT + 0.047, 24.33, nc));                           // barramento PVW
-  add(box(0.03, 0.006, 0.34, graphL, 16.79, DT + 0.047, 24.33, nc));
-  add(box(0.06, 0.004, 0.1, ledB, 16.67, DT + 0.047, 24.2, nc));                              // visor
-  add(box(0.05, 0.03, 0.04, black, 16.78, DT + 0.06, 24.49));                                  // alavanca T
-  add(cyl(0.008, 0.008, 0.12, M.chrome, 16.78, DT + 0.13, 24.49, 6));
-  add(box(0.15, 0.02, 0.42, black, 16.8, DT + 0.01, 24.8));                                    // teclado
-  add(box(0.13, 0.004, 0.39, graphL, 16.8, DT + 0.022, 24.8, nc));
-  { const m = sph(0.03, black, 16.8, DT + 0.015, 25.08); m.scale.set(1.4, 0.55, 1); add(m); }
-  // Estação de áudio: mesa de som digital (z 25,44–26,30), retornos e DAW
-  place(monitor(0.6, 0.34, waveMat, 0.16), 16.39, 25.87, HPI, DT);
-  add(box(0.42, 0.07, 0.86, graph, 16.71, DT + 0.035, 25.87));                                // corpo da mesa
-  add(box(0.1, 0.1, 0.86, graph, 16.55, DT + 0.12, 25.87));                                   // ponte dos medidores
-  add(box(0.004, 0.06, 0.22, waveMat, 16.602, DT + 0.125, 25.87, nc));                        // tela da mesa
-  add(box(0.03, 0.004, 0.3, ledG, 16.55, DT + 0.172, 25.6, nc));                              // medidores LED
-  add(box(0.03, 0.004, 0.3, ledA, 16.55, DT + 0.172, 26.14, nc));
-  for (let i = 0; i < 17; i++) {
-    const z = 25.49 + i * 0.047 + (i === 16 ? 0.02 : 0);
-    add(box(0.13, 0.004, 0.008, black, 16.83, DT + 0.072, z, nc));                            // trilho do fader
-    add(box(0.028, 0.022, 0.02, i === 16 ? redExt : white, 16.79 + ((i * 37) % 7) * 0.012, DT + 0.083, z)); // fader
-    if (i < 16) add(cyl(0.008, 0.008, 0.016, i % 4 === 0 ? amber : black, 16.64, DT + 0.078, z, 8)); // knob
+  // monitores (costas para o vidro, telas para os operadores)
+  place(monitor(0.56, 0.33, camMat), 16.4, 23.95, HPI, DT);
+  place(monitor(0.56, 0.33, liveMat), 16.4, 24.62, HPI, DT);
+  place(monitor(0.5, 0.3, slidesMat), 16.4, 25.4, HPI, DT);
+  place(monitor(0.5, 0.3, waveMat), 16.4, 27.3, HPI, DT);
+  // teclados, mouses e mouse pads azuis
+  const kb = (x, z, len = 0.44) => { add(box(0.15, 0.022, len, black, x, DT + 0.011, z)); add(box(0.12, 0.004, len - 0.04, graph, x, DT + 0.024, z, nc)); };
+  kb(16.72, 24.28); kb(16.72, 25.4); kb(16.68, 26.95, 0.46);
+  for (const [z, pad] of [[24.72, true], [25.8, true], [27.3, false]]) {
+    if (pad) add(box(0.26, 0.003, 0.3, padBlue, 16.74, DT + 0.0015, z, nc));
+    const ms = sph(0.03, black, 16.74, DT + 0.013, z); ms.scale.set(1.5, 0.5, 1); add(ms);
   }
-  add(box(0.012, 0.004, 0.36, ledA, 16.69, DT + 0.071, 25.68, nc));                           // teclas de mute
-  add(box(0.012, 0.004, 0.36, ledB, 16.69, DT + 0.071, 26.06, nc));
-  for (const z of [25.2, 26.55]) {                                                             // retornos de estúdio
-    add(box(0.19, 0.28, 0.17, black, 16.42, DT + 0.14, z));
-    rod(0.055, 0.012, graph, 16.52, DT + 0.1, z, 'x', 16);
-    rod(0.02, 0.012, graphL, 16.52, DT + 0.22, z, 'x', 10);
-  }
-  { const hp = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.012, 6, 14, PI), black); hp.position.set(16.88, DT + 0.02, 26.5); hp.rotation.set(-HPI, 0, 0); hp.castShadow = true; add(hp); }
-  // Estação de projeção (slides) + mesa de luz (z 26,75–27,8)
-  place(monitor(0.53, 0.3, slidesMat), 16.42, 27.08, HPI, DT);
+  // road case azul-turquesa (fechado, sobre a bancada)
   {
-    const g = G();                                                                              // notebook com os slides
-    g.add(box(0.32, 0.016, 0.22, M.steel, 0, 0.008, 0));
-    g.add(box(0.27, 0.004, 0.1, graphL, 0, 0.018, 0.02, nc));
-    const lid = box(0.32, 0.21, 0.012, M.steel, 0, 0.11, -0.12); lid.rotation.x = -0.22; g.add(lid);
-    const scr = box(0.29, 0.18, 0.004, slidesMat, 0, 0.112, -0.112, nc); scr.rotation.x = -0.22; g.add(scr);
-    place(g, 16.76, 26.98, HPI, DT);
+    const x = 16.52, z = 26.2, w = 0.44, h = 0.26, L = 0.64, y = DT + h / 2;
+    add(box(w, h, L, turq, x, y, z));
+    add(box(w + 0.006, 0.018, L + 0.006, M.chrome, x, y + 0.03, z));                         // perfil da tampa
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const sy of [-1, 1]) add(box(0.05, 0.05, 0.05, M.chrome, x + sx * (w / 2 - 0.02), y + sy * (h / 2 - 0.02), z + sz * (L / 2 - 0.02))); // cantoneiras
+    for (const sz of [-0.16, 0.16]) add(box(0.012, 0.05, 0.07, M.chrome, x + w / 2 + 0.006, y + 0.03, z + sz));           // fechos
+    const lbl = texMat(2.2, (g, W, Hh) => { g.fillStyle = '#1b8fac'; g.fillRect(0, 0, W, Hh); text(g, 'MÍDIA · BASE', W / 2, 52, 30, '#e8f7fb', '900'); });
+    add(box(0.004, 0.07, 0.3, lbl, x + w / 2 + 0.003, y - 0.04, z, nc));
   }
-  add(box(0.22, 0.05, 0.36, graph, 16.76, DT + 0.025, 27.55));                                // mesa de luz
-  for (let i = 0; i < 8; i++) add(box(0.026, 0.02, 0.018, white, 16.8 + ((i * 3) % 5) * 0.01, DT + 0.06, 27.42 + i * 0.036));
-  add(box(0.06, 0.004, 0.3, ledA, 16.68, DT + 0.051, 27.55, nc));
-  add(cyl(0.04, 0.035, 0.1, white, 16.86, DT + 0.05, 25.28, 12));                              // caneca
-  add(cyl(0.035, 0.035, 0.2, std({ color: 0x2f6fb8, roughness: 0.3 }), 16.86, DT + 0.1, 27.8, 12)); // garrafa d'água
-  // Cadeiras de operador (6, viradas para a janela / templo)
-  for (const z of [24.0, 24.72, 25.44, 26.16, 26.88, 27.6]) place(F.officeChair(), 17.3, z, -HPI, FP);
-  // ---- rack de equipamentos (parede x=18,9) ----
-  add(box(0.59, 1.9, 0.59, black, 18.445, FP + 0.95, 27.545));                               // rack 19" alto
-  const rackU = [[0.09, graph], [0.13, graphL], [0.09, graph], [0.18, black], [0.09, graphL], [0.13, graph], [0.22, graphL]];
-  let ry = FP + 1.75;
-  rackU.forEach(([h, m], i) => {
-    add(box(0.012, h - 0.01, 0.48, m, 18.144, ry - h / 2, 27.545));
-    add(box(0.006, 0.012, 0.12 + (i % 3) * 0.08, [ledG, ledB, ledA, ledG][i % 4], 18.136, ry - h / 2, 27.44, nc));
-    ry -= h + 0.05;
+  // difusor de varetas (vidro + 4 varetas de madeira), perto do vidro
+  {
+    const x = 16.33, z = 26.72;
+    add(cyl(0.035, 0.04, 0.1, clearGl, x, DT + 0.05, z, 12));
+    add(cyl(0.032, 0.036, 0.05, std({ color: 0xe0c070, roughness: 0.3, transparent: true, opacity: 0.6 }), x, DT + 0.026, z, 12));
+    for (let i = 0; i < 4; i++) {
+      const a = i * HPI + 0.4, st = cyl(0.004, 0.004, 0.3, woodL, x + Math.cos(a) * 0.04, DT + 0.22, z + Math.sin(a) * 0.04, 5);
+      st.rotation.set(Math.sin(a) * 0.18, 0, -Math.cos(a) * 0.18); add(st);
+    }
+  }
+  // switcher/processador de vídeo preto com botões (painel frontal para o operador)
+  {
+    add(box(0.3, 0.07, 0.44, black, 16.72, DT + 0.035, 27.5));
+    const pnl = texMat(6.3, (g, W, Hh) => {
+      g.fillStyle = '#141416'; g.fillRect(0, 0, W, Hh);
+      g.fillStyle = '#2f5d7a'; g.fillRect(40, 20, 90, 55);                                  // visor
+      for (let i = 0; i < 10; i++) { g.fillStyle = i === 2 ? '#ff5050' : i === 6 ? '#58e07a' : '#d9dce0'; g.fillRect(170 + (i % 5) * 46, i < 5 ? 14 : 56, 34, 30); }
+      g.fillStyle = '#9a9ca2'; g.beginPath(); g.arc(W - 70, 50, 26, 0, PI * 2); g.fill();
+      g.fillStyle = '#ff3030'; g.fillRect(W - 24, 40, 10, 20);
+    }, 0.6, 512);
+    add(box(0.004, 0.066, 0.43, pnl, 16.872, DT + 0.035, 27.5, nc));
+  }
+  add(box(0.13, 0.05, 0.09, black, 16.4, DT + 0.025, 26.85));                                // conversor / carregadores
+  add(box(0.004, 0.006, 0.02, ledG, 16.466, DT + 0.035, 26.85, nc));
+  // cadeiras de operador: estrutura preta, assento e encosto azuis (frente = +z local)
+  const opChair = () => {
+    const g = G();
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * PI * 2; const sp = box(0.3, 0.03, 0.04, black, Math.cos(a) * 0.15, 0.05, Math.sin(a) * 0.15); sp.rotation.y = -a; g.add(sp); g.add(sph(0.028, black, Math.cos(a) * 0.29, 0.03, Math.sin(a) * 0.29)); }
+    g.add(cyl(0.025, 0.025, 0.36, M.chrome, 0, 0.25, 0, 8));
+    g.add(box(0.46, 0.04, 0.44, black, 0, 0.44, 0));
+    g.add(box(0.46, 0.07, 0.44, blueSeat, 0, 0.495, 0.01));
+    g.add(box(0.05, 0.36, 0.04, black, 0, 0.62, -0.23));
+    const bk = box(0.44, 0.44, 0.06, blueSeat, 0, 0.84, -0.25); bk.rotation.x = -0.1; g.add(bk);
+    for (const sx of [-1, 1]) { g.add(box(0.03, 0.2, 0.03, black, sx * 0.24, 0.56, -0.02)); g.add(box(0.06, 0.03, 0.26, black, sx * 0.24, 0.67, 0.0)); }
+    return g;
+  };
+  for (const [z, r] of [[24.3, 0.12], [25.5, -0.08], [26.95, 0.18]]) place(opChair(), 17.32, z, -HPI + r);
+  // cadeiras plásticas pretas (monobloco) na parede oposta, viradas para a sala
+  const plasticChair = () => {
+    const g = G();
+    g.add(box(0.44, 0.035, 0.42, blackGl, 0, 0.44, 0.01));
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const l = cyl(0.02, 0.016, 0.44, blackGl, sx * 0.19, 0.22, sz * 0.18, 8); l.rotation.set(sz * 0.08, 0, -sx * 0.08); g.add(l); }
+    for (const sx of [-1, 1]) { const u = box(0.035, 0.44, 0.03, blackGl, sx * 0.19, 0.67, -0.2); u.rotation.x = -0.14; g.add(u); }
+    const tr = box(0.42, 0.06, 0.035, blackGl, 0, 0.89, -0.235); tr.rotation.x = -0.14; g.add(tr);
+    for (const sx of [-0.07, 0.07]) { const s = box(0.04, 0.36, 0.02, blackGl, sx, 0.66, -0.205); s.rotation.x = -0.14; g.add(s); }
+    return g;
+  };
+  for (const z of [24.75, 25.35, 25.95]) place(plasticChair(), 18.5, z, -HPI);
+  // gabinete preto com impressora, spray e papéis
+  add(box(0.42, 0.78, 0.6, black, 18.55, 0.39, 26.65));
+  add(box(0.004, 0.7, 0.004, graph, 18.338, 0.4, 26.65, nc));
+  add(box(0.02, 0.12, 0.02, M.chrome, 18.33, 0.55, 26.57));
+  add(box(0.36, 0.17, 0.4, graph, 18.56, 0.865, 26.56));                                    // impressora
+  add(box(0.3, 0.012, 0.3, white, 18.56, 0.956, 26.56, nc));
+  add(box(0.2, 0.004, 0.28, white, 18.4, 0.84, 26.56, nc));
+  add(cyl(0.03, 0.03, 0.2, std({ color: 0xe8e4d8, roughness: 0.4 }), 18.62, 0.88, 26.87, 10)); // spray
+  add(cyl(0.031, 0.031, 0.04, std({ color: 0x35a043, roughness: 0.4 }), 18.62, 1.0, 26.87, 10));
+  // caixa de som/case no chão junto ao fundo
+  add(box(0.36, 0.5, 0.3, graph, 17.95, 0.27, 27.7));
+  add(box(0.3, 0.4, 0.006, std({ color: 0x2a2c30, roughness: 1 }), 17.95, 0.3, 27.547, nc));
+  for (const sx of [-0.14, 0.14]) add(cyl(0.02, 0.02, 0.03, black, 17.95 + sx, 0.015, 27.62, 8));
+  // receptor sem fio preto com LEDs na parede (v4_01)
+  add(box(0.04, 0.26, 0.07, black, 18.765, 1.35, 24.5));
+  add(box(0.004, 0.18, 0.012, ledR, 18.743, 1.35, 24.5, nc));
+  // split branco no fundo e câmera de segurança no canto
+  add(box(0.85, 0.28, 0.2, white, 17.55, 2.56, 27.785));
+  add(box(0.8, 0.02, 0.004, graph, 17.55, 2.45, 27.683, nc));
+  add(box(0.08, 0.06, 0.004, ledB, 17.2, 2.6, 27.683, nc));
+  const secCam = (x, y, z, ry) => {
+    const g = G();
+    g.add(box(0.08, 0.04, 0.03, white, 0, 0, -0.015));
+    g.add(box(0.025, 0.08, 0.025, white, 0, -0.04, 0.02));
+    const b = cyl(0.035, 0.04, 0.14, white, 0, -0.09, 0.07, 12); b.rotation.x = HPI + 0.35; g.add(b);
+    const ln = cyl(0.028, 0.028, 0.004, black, 0, -0.114, 0.137, 12); ln.rotation.x = HPI + 0.35; g.add(ln);
+    place(g, x, z, ry, y);
+  };
+  secCam(18.65, 2.88, 27.885, PI);
+  emerg('x', 23.415, 16.95, 2.5, 1);
+
+  // =====================================================================
+  // VOLUNTARIADO (x 16,05–20,1 · z 28,0–33,9) — v2.
+  // Portas: z=28 x 19,0–19,9 · z=33,9 x 16,2–17,0 (giros livres); janela p/ o templo
+  // z 29,9–31,9 coberta pela cortina. Parede x=20,1 em marmorato.
+  // =====================================================================
+  // cortina cinza-claro do piso ao teto ao longo da parede do templo (pregas em zigue-zague)
+  {
+    const z0 = 28.24, z1 = 32.94, x = 16.295, step = 0.088, Hc = 2.92;
+    add(box(0.05, 0.035, z1 - z0 + 0.06, graph, x, 2.965, (z0 + z1) / 2));                   // trilho
+    let i = 0;
+    for (let z = z0 + step / 2; z < z1; z += step, i++) { const p = box(0.1, Hc, 0.012, curtain, x, 0.02 + Hc / 2, z); p.rotation.y = HPI + (i % 2 ? 0.52 : -0.52); add(p); }
+  }
+  // sofás cinza (2, em fila junto à cortina), frente para +x
+  const pilGeo = texMat(1, (g, W, Hh) => {
+    g.fillStyle = '#f4f3ee'; g.fillRect(0, 0, W, Hh);
+    const cols = ['#f2c230', '#1d1d1f', '#f4f3ee', '#f2c230', '#8e8f92', '#1d1d1f'];
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      const x = c * 25, y = r * 25, k = (r * 3 + c * 5) % cols.length;
+      g.fillStyle = cols[k]; g.beginPath();
+      if ((r + c) % 2) { g.moveTo(x, y); g.lineTo(x + 25, y); g.lineTo(x, y + 25); } else { g.moveTo(x + 25, y); g.lineTo(x + 25, y + 25); g.lineTo(x, y + 25); }
+      g.closePath(); g.fill();
+      g.fillStyle = cols[(k + 2) % cols.length]; g.beginPath(); g.moveTo(x + 12.5, y + 5); g.lineTo(x + 20, y + 20); g.lineTo(x + 5, y + 20); g.closePath(); g.fill();
+    }
   });
-  add(box(0.01, 1.8, 0.55, M.glass, 18.125, FP + 0.95, 27.545, { cast: false, receive: false })); // porta de vidro
-  add(box(0.45, 0.8, 2.7, black, 18.515, FP + 0.4, 25.75));                                   // armário baixo
-  add(box(0.47, 0.03, 2.72, woodL, 18.515, FP + 0.815, 25.75));
-  for (let i = 0; i < 4; i++) add(box(0.01, 0.72, 0.66, graph, 18.286, FP + 0.42, 24.74 + i * 0.675));
-  const TOP = FP + 0.83;
-  add(box(0.12, 0.05, 0.5, black, 18.52, TOP + 0.025, 24.8));                                 // base de carga dos microfones
-  add(box(0.004, 0.012, 0.4, ledG, 18.458, TOP + 0.03, 24.8, nc));
-  for (let i = 0; i < 4; i++) {
-    const z = 24.62 + i * 0.12;
-    add(cyl(0.018, 0.014, 0.22, graph, 18.52, TOP + 0.16, z, 10));
-    add(sph(0.026, graphL, 18.52, TOP + 0.285, z));
-  }
-  for (let k = 0; k < 2; k++) {                                                                 // receptores sem fio
-    add(box(0.3, 0.085, 0.42, graph, 18.55, TOP + 0.045 + k * 0.09, 25.6));
-    add(box(0.004, 0.03, 0.1, ledB, 18.398, TOP + 0.045 + k * 0.09, 25.5, nc));
-    add(box(0.004, 0.012, 0.08, ledG, 18.398, TOP + 0.045 + k * 0.09, 25.7, nc));
-  }
-  for (const z of [25.42, 25.78]) add(cyl(0.006, 0.006, 0.2, black, 18.6, TOP + 0.28, z, 6));  // antenas
-  add(box(0.36, 0.3, 0.6, graph, 18.53, TOP + 0.15, 26.55));                                  // case de transporte
-  for (const [dy, dz] of [[0.15, 0.3], [0.15, -0.3], [-0.15, 0.3], [-0.15, -0.3]]) add(box(0.37, 0.02, 0.02, M.steel, 18.53, TOP + 0.15 + dy, 26.55 + dz));
-  { const coil = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 6, 16), black); coil.position.set(18.53, TOP + 0.318, 26.55); coil.rotation.x = HPI; coil.castShadow = true; add(coil); }
-  // painéis acústicos na parede x=18,9 (sobre o armário baixo)
-  // e, no centro, painel de feltro preto com a marca em neon branco-frio (acende com a mídia)
-  for (let r = 0; r < 2; r++) for (const c of [0, 3]) add(box(0.04, 0.46, 0.6, (r + c) % 3 === 1 ? amber : acoustic, 18.8, 1.72 + r * 0.5, 24.75 + c * 0.65));
-  add(box(0.04, 0.96, 1.24, matte, 18.8, 1.97, 25.725));
+  const sofa = (L, pillows) => {
+    const g = G(), D = 0.9;
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(box(0.05, 0.06, 0.05, woodM, sx * (L / 2 - 0.08), 0.03, sz * (D / 2 - 0.08)));
+    g.add(box(L, 0.28, D, sofaG, 0, 0.2, 0));
+    g.add(box(L, 0.38, 0.16, sofaG, 0, 0.53, -D / 2 + 0.08));                              // encosto (estrutura)
+    for (const sx of [-1, 1]) g.add(box(0.2, 0.3, D, sofaG, sx * (L / 2 - 0.1), 0.49, 0));  // braços
+    const cw = (L - 0.44) / 2;
+    for (const sx of [-1, 1]) {
+      g.add(box(cw - 0.02, 0.15, D - 0.2, sofaG2, sx * cw / 2, 0.415, 0.08));                // assentos
+      const bc = box(cw - 0.03, 0.42, 0.18, sofaG2, sx * cw / 2, 0.66, -D / 2 + 0.22); bc.rotation.x = -0.14; g.add(bc); // almofadas do encosto
+    }
+    pillows.forEach(([px, mat, ry]) => { const p = box(0.42, 0.42, 0.12, mat, px, 0.68, -D / 2 + 0.36); p.rotation.set(-0.3, ry, 0); g.add(p); });
+    return g;
+  };
+  place(sofa(2.05, [[-0.72, pilDk, 0.1], [0.62, pilGeo, -0.12]]), 16.81, 29.4, HPI);
+  place(sofa(2.05, [[-0.7, pilGeo, 0.12], [-0.3, pilDk, -0.05], [0.7, pilDk, 0.1]]), 16.81, 31.6, HPI);
+  // letreiro 3D preto na parede z=28: "FAÇAM TUDO / COMO PARA / O SENHOR" (camadas empilhadas = letra caixa)
   {
-    const neon = ctx.logo.mesh(0.7, 0, { layout: 'mark', color: '#ffffff', emissive: 1.3, emissiveColor: 0xd9ccff, roughness: 0.4, cast: false });
-    logoAt(neon, 18.777, 1.97, 25.725, -HPI); ctx.bindEmissive('midia', neon.material, 1.4, { min: 0.1 });
-    const halo = ctx.glowPlane(1.5, 1.2, 'midia', { color: 0x8a70ff, base: 0.55, day: 0.3 });   // brilho roxo (Base Music)
-    logoAt(halo, 18.774, 1.97, 25.725, -HPI);
+    const Wm = 1.62, Hm = 0.86, A = Wm / Hm;
+    const tex = ctx.makeTex(1024, (g, s) => {
+      g.clearRect(0, 0, s, s); g.save(); g.scale(s / (100 * A), s / 100);
+      const lines = ['FAÇAM  TUDO', 'COMO  PARA', 'O  SENHOR'];
+      g.fillStyle = '#ffffff'; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+      g.font = '900 30px "Arial Black", "Arial Narrow", Arial, Helvetica, sans-serif';
+      const sx = (100 * A - 4) / g.measureText(lines[0]).width;
+      g.strokeStyle = '#ffffff'; g.lineWidth = 1.6; g.lineJoin = 'round';
+      lines.forEach((t, i) => { g.save(); g.translate(2, 27 + i * 33.5); g.scale(sx, 1); g.fillText(t, 0, 0); g.strokeText(t, 0, 0); g.restore(); });
+      g.restore();
+    });
+    const geo = new THREE.PlaneGeometry(Wm, Hm);
+    const side = new THREE.MeshStandardMaterial({ map: tex, color: 0x3a3a3d, alphaTest: 0.5, roughness: 0.6 });
+    const face = new THREE.MeshStandardMaterial({ map: tex, color: 0x161618, alphaTest: 0.5, roughness: 0.45 });
+    [[0.004, side], [0.011, side], [0.018, side], [0.025, face]].forEach(([dz, m]) => {
+      const p = new THREE.Mesh(geo, m); p.position.set(17.66, 2.08, 28.075 + dz); p.receiveShadow = true; add(p);
+    });
   }
-  // sinal "NO AR" sobre a porta (lado de dentro)
-  const noAr = texMat(3, (g, W, Hh) => { g.fillStyle = '#9e0f0f'; g.fillRect(0, 0, W, Hh); text(g, 'NO AR', W / 2, 54, 62, '#fff1f1'); }, 0.9);
-  ctx.bindEmissive('telao', noAr, 1.1, { min: 0.04 });                                          // acende durante a transmissão
-  add(box(0.012, 0.01, 4.3, ledWm, 16.283, DT + 0.005, 25.65, nc));                              // fita de LED atrás dos monitores (luz de fundo)
-  emerg('x', 27.925, 16.95, 2.5, -1);
-  add(box(0.38, 0.14, 0.05, black, 18.35, 2.4, 23.4));
-  add(box(0.34, 0.11, 0.004, noAr, 18.35, 2.4, 23.426, nc));
-
-  // =====================================================================
-  // VOLUNTARIADO (x 16,05–20,1 · z 28,0–33,9)
-  // Portas: z=28 x 19,0–19,9 · z=33,9 x 16,2–17,0; janela p/ o templo z 29,9–31,9.
-  // =====================================================================
-  // Parede de marca atrás do sofá (face z 28,075, x 16,3–18,8 — antes da porta x 19,0): ripado de
-  // madeira clara como o da fachada, com o logo em letras caixa prateadas (brilho leve com a luz da sala)
-  {
-    const x0 = 16.3, x1 = 18.8, zf = 28.075, yh = 2.72;
-    add(box(x1 - x0, yh, 0.012, ripaFd, (x0 + x1) / 2, yh / 2, zf + 0.006));
-    for (let x = x0 + 0.03; x < x1 - 0.02; x += 0.075) add(box(0.042, yh, 0.022, ripa, x, yh / 2, zf + 0.023));
-    add(box(x1 - x0 + 0.02, 0.035, 0.05, matte, (x0 + x1) / 2, yh + 0.0175, zf + 0.025));      // arremate superior
-    add(box(x1 - x0 + 0.02, 0.07, 0.04, matte, (x0 + x1) / 2, 0.035, zf + 0.02));               // rodapé
-    const L = ctx.logo.relief(0.74, { depth: 0.045, layers: 3 });
-    L.position.set(17.55, 1.86, zf + 0.036); add(L);
-    ctx.bindEmissive('voluntariado', L.userData.face, 0.35, { min: 0 });
-  }
-  // tapete grafite com borda terracota sob a mesa
-  add(box(2.3, 0.008, 3.2, rugEdge, 17.55, 0.006, 30.95, nc));
-  add(box(2.14, 0.004, 3.04, rugMat, 17.55, 0.012, 30.95, nc));
-  emerg('z', 20.013, 28.75, 2.5, -1);
-  place(F.sofa(2.5, 0.85, fabricG), 17.52, 28.6, 0);
-  for (const [x, m, a] of [[16.62, terra, 0.25], [18.42, amber, -0.2]]) { const c = box(0.4, 0.38, 0.12, m, x, 0.66, 28.42); c.rotation.set(-0.25, a, 0); add(c); }
-  // mesa 1,3 × 2,5 com 8 cadeiras
-  add(box(1.3, 0.04, 2.5, woodL, 17.55, 0.75, 30.95));
-  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) add(box(0.05, 0.73, 0.05, black, 17.55 + sx * 0.58, 0.365, 30.95 + sz * 1.17));
-  add(box(1.14, 0.06, 0.03, black, 17.55, 0.7, 29.8)); add(box(1.14, 0.06, 0.03, black, 17.55, 0.7, 32.1));
-  for (const [i, z] of [29.99, 30.63, 31.27, 31.91].entries()) {
-    place(chairV(i % 2 ? amber : terra), 16.74, z, HPI);
-    place(chairV(i % 2 ? terra : amber), 18.36, z, -HPI);
-  }
-  add(box(0.32, 0.02, 0.22, M.steel, 17.3, 0.78, 30.4));                                      // notebook fechado
-  add(box(0.21, 0.015, 0.3, white, 17.8, 0.777, 31.5)); add(box(0.21, 0.012, 0.3, papers[1], 17.83, 0.79, 31.52)); // papéis
-  add(cyl(0.055, 0.055, 0.3, black, 17.55, 0.92, 30.95, 12));                                 // garrafa térmica
-  add(cyl(0.02, 0.02, 0.04, black, 17.55, 1.09, 30.95, 8));
-  for (const [dx, dz] of [[-0.2, -0.25], [0.18, -0.3], [-0.22, 0.28], [0.2, 0.24]]) add(cyl(0.035, 0.03, 0.08, white, 17.55 + dx, 0.81, 30.95 + dz, 10)); // xícaras
-  // armário com escaninhos na parede x=20,1 (x 19,52–19,93 · z 29,6–32,2)
-  add(box(0.37, 0.06, 2.56, black, 19.745, 0.03, 30.9));
-  add(box(0.41, 0.84, 2.6, woodL, 19.725, 0.48, 30.9));
-  for (const z of [30.25, 30.9, 31.55]) add(box(0.004, 0.8, 0.008, black, 19.518, 0.48, z, nc));
-  for (const z of [29.92, 30.58, 31.22, 31.88]) add(box(0.012, 0.16, 0.02, black, 19.512, 0.72, z + (z < 30.9 ? 0.25 : -0.25)));
-  add(box(0.43, 0.03, 2.62, black, 19.725, 0.915, 30.9));
-  add(box(0.02, 1.05, 2.6, woodL, 19.92, 1.455, 30.9));                                       // fundo
-  for (const y of [1.28, 1.63]) add(box(0.39, 0.025, 2.6, black, 19.72, y, 30.9));
-  add(box(0.43, 0.03, 2.64, woodL, 19.725, 1.995, 30.9));                                     // tampo superior
-  for (let i = 0; i <= 5; i++) add(box(0.39, 1.05, 0.025, black, 19.72, 1.455, 29.6125 + i * 0.515));
-  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) {
-    if (rnd() < 0.25) continue;
-    const y0 = 0.93 + r * 0.35 + 0.0125, z = 29.87 + c * 0.515;
-    if (rnd() < 0.5) add(box(0.3, 0.07 + rnd() * 0.08, 0.34, bins[(r * 5 + c) % bins.length], 19.74, y0 + 0.06, z)); // coletes/caixas
-    else for (let k = 0; k < 3; k++) add(box(0.26, 0.26, 0.03, papers[(k + c) % papers.length], 19.76, y0 + 0.13, z - 0.1 + k * 0.08)); // pastas
-  }
-  // bancada com pia na parede z=33,9 (x 17,6–20,0)
-  add(box(2.36, 0.08, 0.52, black, 18.8, 0.04, 33.55));
-  add(box(2.4, 0.82, 0.58, white, 18.8, 0.49, 33.52));
-  [[17.905, M.steel], [18.5, woodL], [19.095, woodL], [19.69, woodL]].forEach(([x, m]) => add(box(0.585, 0.78, 0.012, m, x, 0.49, 33.225)));
-  add(box(2.42, 0.03, 0.62, stone, 18.8, 0.915, 33.51));
-  add(box(0.52, 0.01, 0.44, M.steel, 19.3, 0.935, 33.49));                                    // cuba inox
-  add(box(0.44, 0.004, 0.36, basinDk, 19.3, 0.9415, 33.49, nc));
-  add(cyl(0.014, 0.014, 0.3, M.chrome, 19.3, 1.08, 33.74, 8));
-  add(box(0.025, 0.025, 0.18, M.chrome, 19.3, 1.22, 33.66));
-  add(box(0.48, 0.28, 0.36, black, 17.92, 1.07, 33.6));                                        // micro-ondas
-  add(box(0.3, 0.2, 0.004, std({ color: 0x1d2a33, roughness: 0.1, metalness: 0.3 }), 17.88, 1.07, 33.418, nc));
-  add(box(0.004, 0.012, 0.06, ledA, 18.1, 1.16, 33.418, nc));
-  add(box(0.2, 0.32, 0.22, black, 18.42, 1.09, 33.64));                                        // cafeteira
-  add(cyl(0.065, 0.06, 0.13, std({ color: 0x2a1c14, roughness: 0.2 }), 18.42, 1.0, 33.5, 12));
-  for (const [x, m] of [[18.72, terra], [18.86, M.steel]]) { add(cyl(0.055, 0.055, 0.3, m, x, 1.08, 33.62, 12)); add(cyl(0.03, 0.03, 0.04, black, x, 1.25, 33.62, 8)); }
-  add(cyl(0.14, 0.1, 0.07, woodL, 19.78, 0.965, 33.55, 16));                                  // fruteira
-  for (const [dx, dz, m] of [[-0.04, 0.02, amber], [0.05, -0.03, std({ color: 0x6f9a3a, roughness: 0.6 })], [0.01, 0.06, redExt]]) add(sph(0.04, m, 19.78 + dx, 1.02, 33.55 + dz));
-  add(box(2.4, 0.62, 0.34, woodL, 18.8, 1.95, 33.645));                                       // armário aéreo
-  for (const x of [18.2, 18.8, 19.4]) add(box(0.008, 0.58, 0.004, black, x, 1.95, 33.473, nc));
-  add(box(2.3, 0.012, 0.02, ledWv, 18.8, 1.634, 33.52, nc));                                   // fita LED sob o aéreo
-  // quadro branco da escala (parede do templo, z 32,05–32,95)
-  const escala = texMat(1.14, (g, W, Hh) => {
-    g.fillStyle = '#f7f7f4'; g.fillRect(0, 0, W, Hh);
-    text(g, 'ESCALA DE VOLUNTÁRIOS', W / 2, 11, 7.5, '#1f4fa8');
-    const cols = ['Recepção', 'Mídia', 'Kids', 'Louvor'], names = ['Ana', 'Lucas', 'Júlia', 'Pedro', 'Rute', 'Marcos', 'Bia', 'Davi', 'Sara', 'João', 'Léo', 'Eva'];
-    g.strokeStyle = '#9aa3b0'; g.lineWidth = 0.6;
-    for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(6 + i * 25.5, 18); g.lineTo(6 + i * 25.5, 92); g.stroke(); }
-    for (let r = 0; r <= 4; r++) { g.beginPath(); g.moveTo(6, 18 + r * 18.5); g.lineTo(108, 18 + r * 18.5); g.stroke(); }
-    cols.forEach((c, i) => text(g, c, 18.75 + i * 25.5, 27, 6, '#b3643f'));
-    for (let r = 0; r < 3; r++) for (let i = 0; i < 4; i++) text(g, names[(r * 4 + i) % names.length], 18.75 + i * 25.5, 46 + r * 18.5, 6, r === 1 ? '#c42020' : '#1f4fa8', 'normal');
+  // 2 poltronas capitonê terracota com pés de madeira, sob o letreiro (frente = +z)
+  const armchair = () => {
+    const g = G();
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const l = cyl(0.022, 0.014, 0.22, woodM, sx * 0.27, 0.11, sz * 0.24, 8); l.rotation.set(sz * 0.12, 0, -sx * 0.12); g.add(l); }
+    g.add(box(0.66, 0.2, 0.6, terraV, 0, 0.32, 0));
+    g.add(box(0.5, 0.09, 0.5, terraV, 0, 0.465, 0.03));
+    const bk = box(0.66, 0.56, 0.13, terraV, 0, 0.7, -0.24); bk.rotation.x = -0.08; g.add(bk);
+    for (const sx of [-1, 1]) g.add(box(0.09, 0.2, 0.58, terraV, sx * 0.285, 0.52, 0.0));
+    for (const [bx, by] of [[-0.16, 0.6], [0, 0.6], [0.16, 0.6], [-0.08, 0.78], [0.08, 0.78]]) g.add(sph(0.014, terraD, bx, by, -0.168 - (by - 0.6) * 0.08));
+    return g;
+  };
+  place(armchair(), 17.62, 28.52, 0.04);
+  place(armchair(), 18.34, 28.52, -0.04);
+  secCam(16.4, 2.88, 28.075, 0.6);
+  // parede x = 20,1 em marmorato (face da sala), com split no alto
+  clad('z', 20.013, -1, 28.075, 33.825, 0.075, 2.985, M.marmorato);
+  add(box(0.22, 0.3, 0.9, white, 19.89, 2.58, 29.5));
+  add(box(0.004, 0.02, 0.85, graph, 19.778, 2.46, 29.5, nc));
+  add(box(0.004, 0.05, 0.1, redCup, 19.778, 2.64, 29.15, nc));
+  // 2 prateleiras flutuantes cinza com quadros e planta pendente
+  for (const y of [1.72, 2.2]) add(box(0.22, 0.04, 1.55, shelfG, 19.9, y, 31.25));
+  const art = [std({ color: 0xe8e2d4, roughness: 0.9 }), std({ color: 0xd9cdb4, roughness: 0.9 })];
+  [[30.7, 0.3, 0.24, 0], [31.0, 0.34, 0.26, 1], [31.55, 0.28, 0.24, 0]].forEach(([z, h, w, k]) => {
+    const f = box(0.025, h, w, woodL, 19.93, 1.74 + h / 2, z); f.rotation.z = 0.08; add(f);
+    const a = box(0.004, h - 0.05, w - 0.05, art[k], 19.915, 1.74 + h / 2, z, nc); a.rotation.z = 0.08; add(a);
   });
-  add(box(0.02, 0.8, 0.92, M.steel, 16.135, 1.5, 32.5));
-  add(box(0.004, 0.74, 0.86, escala, 16.147, 1.5, 32.5, nc));
-  cica(19.66, 32.7, 0.33);
+  add(box(0.004, 0.14, 0.1, black, 19.9, 1.8, 31.0, nc)).rotation.z = 0.08;                // silhueta no quadro
+  add(cyl(0.035, 0.03, 0.09, black, 19.88, 1.785, 31.85, 10));                               // porta-lápis
+  add(box(0.08, 0.07, 0.07, woodM, 19.9, 1.775, 32.0));                                       // casinha decorativa
+  {
+    add(cyl(0.07, 0.06, 0.12, white, 19.88, 2.28, 31.92, 12));                                // planta pendente
+    for (let i = 0; i < 14; i++) {
+      const t = i / 13, lf = sph(0.038 - t * 0.012, i % 2 ? frond : frond2, 19.83 - rnd() * 0.07, 2.3 - t * 0.62, 31.92 + (rnd() - 0.5) * 0.2 + t * 0.07);
+      lf.scale.set(0.5, 1.3, 1); add(lf);
+    }
+  }
+  // buffet cinza-grafite (2 módulos sobre rodízios) com tampo de madeira e puxadores dourados
+  const buffet = (z0, z1) => {
+    const L = z1 - z0, zc = (z0 + z1) / 2, x0 = 19.5, D = 0.46, xc = x0 + D / 2;
+    add(box(D, 0.8, L, slate, xc, 0.46, zc));
+    add(box(D + 0.03, 0.03, L + 0.02, woodL, xc - 0.015, 0.875, zc));
+    add(box(0.004, 0.006, L - 0.04, black, x0 - 0.002, 0.68, zc, nc));                        // junta das gavetas
+    const nd = 3, dw = L / nd;
+    for (let i = 0; i < nd; i++) {
+      const zd = z0 + dw * (i + 0.5);
+      if (i) add(box(0.004, 0.76, 0.006, black, x0 - 0.002, 0.46, z0 + dw * i, nc));
+      add(sph(0.017, gold, x0 - 0.012, 0.78, zd));
+      add(sph(0.017, gold, x0 - 0.012, 0.58, zd + (i === 1 ? -0.1 : 0.1)));
+    }
+    for (const sz of [-1, 1]) for (const sx of [0.08, D - 0.08]) add(cyl(0.025, 0.025, 0.04, black, x0 + sx, 0.03, zc + sz * (L / 2 - 0.08), 10)).rotation.x = HPI;
+  };
+  buffet(29.1, 30.65); buffet(30.65, 32.2);
+  // sobre o buffet: jarra, taças verdes, copos vermelhos, bandeja com café, caixa de lenços
+  const TY = 0.89;
+  add(cyl(0.06, 0.055, 0.22, clearGl, 19.74, TY + 0.11, 29.95, 14));
+  for (const dz of [0.18, 0.3]) { add(cyl(0.035, 0.02, 0.07, greenGl, 19.72, TY + 0.13, 29.95 + dz, 12)); add(cyl(0.006, 0.006, 0.08, greenGl, 19.72, TY + 0.05, 29.95 + dz, 6)); add(cyl(0.03, 0.03, 0.008, greenGl, 19.72, TY + 0.004, 29.95 + dz, 12)); }
+  for (const dz of [0, 0.1]) add(cyl(0.035, 0.03, 0.1, redCup, 19.66, TY + 0.05, 30.95 + dz, 12));
+  add(box(0.3, 0.02, 0.42, black, 19.74, TY + 0.01, 31.45));                                 // bandeja
+  add(cyl(0.055, 0.055, 0.26, black, 19.78, TY + 0.15, 31.35, 12));                           // garrafa térmica
+  add(box(0.1, 0.12, 0.1, std({ color: 0x5a3a24, roughness: 0.6 }), 19.7, TY + 0.08, 31.55)); // pote de café
+  add(box(0.16, 0.1, 0.24, white, 19.74, TY + 0.05, 32.0));                                   // caixa de lenços
+  // frigobar inox ao lado e poltrona preta no canto
+  add(box(0.48, 0.85, 0.5, inox, 19.73, 0.43, 32.53));
+  add(box(0.004, 0.006, 0.46, black, 19.488, 0.7, 32.53, nc));
+  add(box(0.02, 0.3, 0.02, black, 19.475, 0.5, 32.35));
+  {
+    const g = G(), tub = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.34, 0.5, 20, 1, true, PI * 0.65, PI * 1.7), blackGl);
+    tub.position.y = 0.6; tub.castShadow = true; tub.receiveShadow = true; g.add(tub);
+    g.add(cyl(0.34, 0.33, 0.14, blackGl, 0, 0.42, 0, 20));
+    for (let i = 0; i < 4; i++) { const a = i * HPI + PI / 4, l = cyl(0.012, 0.012, 0.36, black, Math.cos(a) * 0.24, 0.17, Math.sin(a) * 0.24, 6); l.rotation.set(Math.sin(a) * 0.2, 0, -Math.cos(a) * 0.2); g.add(l); }
+    place(g, 19.36, 33.28, -2.2);
+  }
+  emerg('x', 33.825, 17.9, 2.5, -1);
 
   // =====================================================================
-  // CIRC. (x 16,05–17,1 · z 33,9–37,0) — só passagem: extintor e sinalização
+  // CIRC. (x 16,05–17,1 · z 33,9–37,0) — passagem: extintor e sinalização
   // =====================================================================
   extintor(17.025, 36.55, -1);
   const wcSign = texMat(3, (g, W, Hh) => {
@@ -639,140 +680,188 @@ function roomAlaDireita(ctx) {
   plaque('z', 17.018, 36.1, 1.95, 0.42, 0.14, wcSign);
 
   // =====================================================================
-  // DEPÓSITO (x 17,1–20,1 · z 33,9–35,9) — porta em x=17,1 (z 34,6–35,4)
+  // DEPÓSITO (x 17,1–20,1 · z 33,9–35,9) — v2: estantes de aço preto com caixas
+  // organizadoras (transparentes/cinza com tampa), caixa preta de parede, mesinha.
+  // Porta em x=17,1 (z 34,6–35,4) → x 17,18–18,1 livre.
   // =====================================================================
-  const shelf = (x, z, w, d, h, levels, ry) => {
-    const g = G(), mt = M.steel;
-    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(box(0.035, h, 0.035, graphL, sx * (w / 2 - 0.018), h / 2, sz * (d / 2 - 0.018)));
+  const rack = (x0, x1, z0, D, h, levels) => {
+    const w = x1 - x0, xc = (x0 + x1) / 2, zc = z0 + D / 2;
+    for (const sx of [x0 + 0.015, x1 - 0.015]) for (const sz of [z0 + 0.015, z0 + D - 0.015]) add(box(0.03, h, 0.03, black, sx, h / 2, sz));
     for (let i = 0; i < levels; i++) {
-      const y = 0.1 + (i * (h - 0.14)) / (levels - 1);
-      g.add(box(w, 0.02, d, mt, 0, y, 0));
-      let px = -w / 2 + 0.06;
-      while (px < w / 2 - 0.2) {
-        const bw = 0.2 + rnd() * 0.18, bh = 0.14 + rnd() * 0.16;
-        if (px + bw > w / 2 - 0.03) break;
-        if (rnd() < 0.82) g.add(box(bw, bh, d * (0.7 + rnd() * 0.2), bins[Math.floor(rnd() * bins.length)], px + bw / 2, y + 0.01 + bh / 2, 0));
-        px += bw + 0.04;
+      const y = 0.08 + (i * (h - 0.12)) / (levels - 1);
+      add(box(w, 0.02, D, black, xc, y, zc));
+      if (i === levels - 1) { if (rnd() < 0.7) add(box(0.5, 0.26, D - 0.06, rnd() < 0.5 ? lidG : std({ color: 0xd8cdb4, roughness: 0.9 }), xc - 0.1, y + 0.14, zc)); continue; }
+      let px = x0 + 0.04;
+      const gap = (h - 0.12) / (levels - 1) - 0.05;
+      while (px < x1 - 0.25) {
+        const bw = Math.min(0.26 + rnd() * 0.18, x1 - 0.04 - px), bh = Math.min(gap - 0.02, 0.2 + rnd() * 0.12);
+        if (bw < 0.2) break;
+        const bxc = px + bw / 2, by = y + 0.01 + bh / 2;
+        if (rnd() < 0.62) {
+          add(box(bw, bh, D - 0.06, clearBx, bxc, by, zc, nc));                                 // caixa transparente
+          add(box(bw * 0.8, bh * 0.6, D - 0.14, bins[Math.floor(rnd() * bins.length)], bxc, y + 0.01 + bh * 0.3, zc)); // conteúdo
+          add(box(bw + 0.012, 0.022, D - 0.05, rnd() < 0.5 ? lidG : white, bxc, by + bh / 2 + 0.011, zc)); // tampa
+        } else {
+          add(box(bw, bh, D - 0.06, rnd() < 0.5 ? graph : lidG, bxc, by, zc));                  // caixa cinza
+          add(box(bw + 0.012, 0.022, D - 0.05, graph, bxc, by + bh / 2 + 0.011, zc));
+        }
+        px += bw + 0.03;
       }
     }
-    return place(g, x, z, ry);
   };
-  shelf(19.72, 34.9, 1.62, 0.42, 2.0, 5, HPI);                                                // estante na parede x=20,1
-  shelf(18.72, 35.55, 1.3, 0.4, 1.8, 4, 0);                                                   // estante na parede z=35,9
-  const stack = (x, z, n, mat) => {                                                           // cadeiras empilhadas
-    const g = G();
-    for (let i = 0; i < n; i++) {
-      g.add(box(0.44, 0.03, 0.42, mat, 0, 0.45 + i * 0.055, 0.015 * i));
-      const b = box(0.42, 0.3, 0.025, mat, 0, 0.72 + i * 0.055, -0.2 + 0.015 * i); b.rotation.x = -0.12; g.add(b);
-    }
-    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(box(0.022, 0.45 + n * 0.055, 0.022, black, sx * 0.2, (0.45 + n * 0.055) / 2, sz * 0.18 + 0.008 * n));
-    return place(g, x, z, 0);
-  };
-  stack(17.48, 34.28, 7, graph);
-  stack(18.02, 34.28, 6, white);
-  for (const [x, y, z, w, h, d] of [[18.78, 0.18, 34.3, 0.5, 0.36, 0.4], [18.78, 0.5, 34.3, 0.42, 0.28, 0.36], [19.22, 0.15, 34.28, 0.34, 0.3, 0.34]]) {
-    add(box(w, h, d, cardb, x, y, z));                                                         // caixas de papelão
-    add(box(w + 0.004, 0.03, 0.06, std({ color: 0xd8c8a0, roughness: 0.8 }), x, y + h / 2 - 0.01, z, nc)); // fita
+  rack(18.2, 19.08, 34.02, 0.45, 1.95, 5);
+  rack(19.1, 19.98, 34.02, 0.45, 1.95, 5);
+  add(box(0.06, 0.5, 0.36, black, 19.98, 1.55, 35.25));                                        // caixa preta de parede
+  add(box(0.012, 0.06, 0.03, M.chrome, 19.947, 1.5, 35.1));
+  {                                                                                            // mesinha preta de apoio
+    add(box(0.42, 0.025, 0.34, black, 19.7, 0.74, 35.6));
+    for (const sz of [-0.15, 0.15]) { add(box(0.4, 0.025, 0.025, black, 19.7, 0.06, 35.6 + sz)); add(box(0.025, 0.72, 0.025, black, 19.505, 0.37, 35.6 + sz)); add(box(0.025, 0.72, 0.025, black, 19.895, 0.37, 35.6 + sz)); }
   }
-  {                                                                                            // ventilador de pé guardado
-    const g = G();
-    g.add(cyl(0.16, 0.18, 0.04, black, 0, 0.02, 0, 16));
-    g.add(cyl(0.015, 0.015, 1.0, M.chrome, 0, 0.52, 0, 8));
-    const head = cyl(0.21, 0.21, 0.1, graphL, 0, 1.1, 0, 18); head.rotation.x = HPI; g.add(head);
-    g.add(box(0.12, 0.12, 0.12, black, 0, 1.1, -0.1));
-    place(g, 17.45, 35.62, 0.3);
+  // caixas organizadoras empilhadas no chão (transparentes)
+  for (const [x, y, h, c] of [[18.55, 0.12, 0.24, 1], [18.55, 0.36, 0.2, 5], [19.05, 0.13, 0.26, 3]]) {
+    add(box(0.46, h, 0.36, clearBx, x, y + 0.005, 35.6, nc));
+    add(box(0.38, h * 0.6, 0.28, bins[c], x, y - h * 0.18, 35.6));
+    add(box(0.47, 0.02, 0.37, white, x, y + h / 2 + 0.015, 35.6));
   }
 
   // =====================================================================
   // ÁREA TÉCNICA / SHAFT (x 17,1–20,1 · z 35,9–37,0): quadros e tubulações
   // =====================================================================
-  add(box(0.55, 0.8, 0.12, std({ color: 0xc9ccd0, roughness: 0.5, metalness: 0.3 }), 17.75, 1.55, 36.04)); // QDC
-  add(box(0.5, 0.003, 0.004, graphL, 17.75, 1.3, 36.102, nc));
-  add(box(0.12, 0.08, 0.004, std({ color: 0xf2c200, roughness: 0.6 }), 17.75, 1.8, 36.103, nc)); // aviso de choque
-  add(box(0.5, 0.6, 0.25, black, 18.5, 1.7, 36.1));                                           // rack de rede
-  add(box(0.004, 0.012, 0.3, ledG, 18.5, 1.75, 36.227, nc)); add(box(0.2, 0.012, 0.004, ledB, 18.5, 1.6, 36.227, nc));
-  add(box(2.7, 0.06, 0.12, M.steel, 18.6, 2.72, 36.06));                                       // eletrocalha
-  rod(0.018, 1.0, graphL, 17.75, 2.2, 36.04, 'y'); rod(0.018, 0.8, graphL, 18.5, 2.3, 36.1, 'y'); // eletrodutos
-  for (const [x, z, r] of [[19.8, 36.7, 0.075], [19.58, 36.75, 0.05], [19.82, 36.42, 0.04]]) rod(r, 2.96, pvc, x, 1.48, z, 'y', 14);
-  for (const x of [19.35, 19.42]) { rod(0.028, 2.9, black, x, 1.45, 36.8, 'y', 8); }          // linhas do ar (isoladas)
-  rod(0.012, 0.5, copper, 19.35, 0.5, 36.8, 'y'); rod(0.02, 2.5, copper, 19.55, 1.3, 36.3, 'y');
-  add(cyl(0.05, 0.05, 0.02, redExt, 19.55, 1.2, 36.24, 12)).rotation.x = HPI;                 // registro
-  add(cyl(0.07, 0.07, 0.006, black, 18.9, 0.004, 36.5, 12));                                  // ralo
+  add(box(0.55, 0.8, 0.12, std({ color: 0xc9ccd0, roughness: 0.5, metalness: 0.3 }), 17.75, 1.55, 36.04));
+  add(box(0.12, 0.08, 0.004, std({ color: 0xf2c200, roughness: 0.6 }), 17.75, 1.8, 36.103, nc));
+  add(box(0.5, 0.6, 0.25, black, 18.5, 1.7, 36.1));
+  add(box(0.004, 0.012, 0.3, ledG, 18.5, 1.75, 36.227, nc));
+  add(box(2.7, 0.06, 0.12, M.steel, 18.6, 2.72, 36.06));
+  rod(0.018, 1.0, graphL, 17.75, 2.2, 36.04, 'y'); rod(0.018, 0.8, graphL, 18.5, 2.3, 36.1, 'y');
+  for (const [x, z, r] of [[19.8, 36.7, 0.075], [19.58, 36.75, 0.05]]) rod(r, 2.96, pvc, x, 1.48, z, 'y', 14);
+  for (const x of [19.35, 19.42]) rod(0.028, 2.9, black, x, 1.45, 36.8, 'y', 8);
+  rod(0.02, 2.5, copper, 19.55, 1.3, 36.3, 'y');
 
   // =====================================================================
-  // WC MASCULINO (x 17,1–20,1 · z 37,0–40,8) — porta em z=40,8 (x 18,2–19,0)
+  // BANHEIROS — v3: porcelanato cinza até 1,3 m e marrom imperador (ou marmorato)
+  // acima; bancadas de quartzo branco com cubas de apoio retangulares; espelhos com
+  // moldura de LED fria; cabines com portas de vidro fumê e ferragens pretas.
   // =====================================================================
+  // Cabines: faixa x xa–xb, parede do fundo em zw, frente em zf, n cabines.
+  const cabins = (xa, xb, zw, zf, n, sides, cut = 0) => {
+    const sg = Math.sign(zf - zw), w = (xb - xa) / n, PY0 = 0.12, PH = 1.95, py = PY0 + PH / 2;
+    const zw2 = zw + sg * cut, len = Math.abs(zf - zw2), zc = (zf + zw2) / 2;
+    for (let i = 0; i <= n; i++) {
+      if ((i === 0 && !sides[0]) || (i === n && !sides[1])) continue;
+      const x = xa + i * w;
+      add(box(0.025, PH, len, hpl, x, py, zc));
+      if (cut) add(box(0.025, 1.4, cut, hpl, x, PY0 + 0.7, zw + sg * cut / 2));
+      add(box(0.03, 0.05, 0.03, black, x, 0.06, zf - sg * 0.02));                            // pé
+    }
+    const dw = Math.min(0.64, w - 0.16), pl = (w - dw) / 2;
+    for (let i = 0; i < n; i++) {
+      const x0 = xa + i * w, c = x0 + w / 2;
+      add(box(pl - 0.008, PH, 0.025, smoke, x0 + pl / 2, py, zf));
+      add(box(pl - 0.008, PH, 0.025, smoke, x0 + w - pl / 2, py, zf));
+      add(box(dw - 0.008, PH - 0.06, 0.02, smoke, c, py + 0.02, zf));                         // porta de vidro fumê
+      for (const hy of [0.4, 1.75]) add(box(0.05, 0.08, 0.034, black, c - dw / 2 + 0.03, hy, zf)); // dobradiças
+      add(box(0.02, 0.2, 0.05, black, c + dw / 2 - 0.07, 1.0, zf));                           // puxador/tarjeta
+      const t = new THREE.Group();
+      t.add(box(0.36, 0.4, 0.2, china, 0, 0.2, -0.05)); t.add(box(0.38, 0.05, 0.5, china, 0, 0.42, 0.08)); t.add(box(0.36, 0.34, 0.14, white, 0, 0.62, -0.2));
+      place(t, c, zw + sg * 0.3, sg > 0 ? 0 : PI);
+      add(box(0.13, 0.12, 0.09, black, c + 0.3, 0.72, zw + sg * 0.05));                       // papeleira preta
+    }
+    add(box(xb - xa, 0.03, 0.04, black, (xa + xb) / 2, PY0 + PH + 0.015, zf));               // travessa superior
+  };
+  const urinal = (xf, z) => {
+    add(box(0.1, 0.62, 0.34, china, xf - 0.05, 0.86, z));
+    const bowl = cyl(0.16, 0.13, 0.52, china, xf - 0.17, 0.83, z, 16); bowl.scale.set(0.8, 1, 1); add(bowl);
+    add(cyl(0.02, 0.02, 0.2, M.chrome, xf - 0.06, 1.27, z, 8));
+  };
+
+  // ---- WC MASCULINO (x 17,1–20,1 · z 37,0–40,8) — porta em z=40,8 (x 18,2–19,0) ----
+  wetWall('z', 20.013, -1, 37.075, 40.725, M.marmoreMarrom);
   cabins(17.175, 19.45, 37.075, 38.45, 2, [false, true]);
-  add(box(0.44, 0.14, 0.36, china, 19.73, 0.8, 37.265));                                      // lavatório suspenso
-  add(box(0.34, 0.004, 0.24, std({ color: 0xdfe3e6, roughness: 0.2 }), 19.73, 0.872, 37.28, nc));
-  add(cyl(0.012, 0.012, 0.16, M.chrome, 19.73, 0.95, 37.12, 8)); add(box(0.02, 0.02, 0.1, M.chrome, 19.73, 1.02, 37.17));
-  add(box(0.42, 0.55, 0.01, M.mirror, 19.73, 1.45, 37.083, nc));
-  add(box(0.012, 2.1, 2.2, porc, 20.006, 1.05, 39.6));                                        // parede grafite dos mictórios
+  add(box(0.5, 0.04, 1.15, quartz, 19.75, 0.86, 37.72));                                     // bancada de quartzo
+  add(box(0.02, 0.12, 1.15, quartz, 19.49, 0.8, 37.72));
+  place(vessel(), 19.72, 37.72, -HPI, 0.88);
+  ledMirror(19.995, 1.6, 37.72, 0.55, 0.8, -HPI);
   for (const z of [38.85, 39.55, 40.25]) urinal(20.0, z);
-  for (const z of [39.2, 39.9]) add(box(0.42, 0.85, 0.02, hpl, 19.79, 1.0, z));              // divisórias dos mictórios
-  add(cyl(0.14, 0.12, 0.45, M.steel, 17.45, 0.225, 40.45, 14));                               // lixeira
-  add(box(0.08, 0.2, 0.13, white, 19.973, 1.12, 37.42));                                      // saboneteira de parede
-  add(box(0.004, 0.06, 0.05, graphL, 19.931, 1.07, 37.42, nc));
+  for (const z of [39.2, 39.9]) add(box(0.42, 0.85, 0.02, smoke, 19.79, 1.0, z));
   { const g = G();                                                                             // secador de mãos
-    g.add(box(0.28, 0.34, 0.2, M.steel, 0, 0, 0.1)); g.add(box(0.2, 0.02, 0.1, black, 0, -0.17, 0.12));
-    g.add(box(0.03, 0.03, 0.004, ledB, 0.09, 0.12, 0.202, nc));
-    place(g, 20.013, 37.95, -HPI, 1.2); }
-  add(cyl(0.07, 0.07, 0.006, black, 18.6, 0.004, 39.8, 12));                                 // ralo
+    g.add(box(0.28, 0.34, 0.2, inox, 0, 0, 0.1)); g.add(box(0.2, 0.02, 0.1, black, 0, -0.17, 0.12));
+    place(g, 17.175, 39.4, HPI, 1.2); }
+  add(cyl(0.14, 0.12, 0.45, inox, 17.45, 0.225, 40.45, 14));
+  doorPicto('x', 40.887, 18.6, 1, false);
 
-  // =====================================================================
-  // HALL DOS BANHEIROS (x 16,05–20,1 · z 40,8–44,3 + faixa x 16,05–17,1 · z 37,0–40,8)
-  // =====================================================================
-  add(box(2.7, 0.04, 0.52, stone, 18.65, 0.86, 43.96));                                       // bancada (granito preto)
-  add(box(2.7, 0.16, 0.02, stone, 18.65, 0.76, 43.71));                                       // saia
-  add(box(2.7, 0.1, 0.02, stone, 18.65, 0.93, 44.21));                                        // frontão
-  add(box(2.6, 0.012, 0.012, ledWb, 18.65, 0.678, 43.73, nc));                                 // LED sob a bancada
-  for (const x of [17.64, 18.27, 18.9, 19.53]) {                                              // 4 cubas de apoio
-    const b = cyl(0.19, 0.14, 0.12, china, x, 0.94, 43.93, 20); b.scale.set(1.15, 1, 0.85); add(b);
-    const w = cyl(0.165, 0.165, 0.004, std({ color: 0xdfe3e6, roughness: 0.2 }), x, 1.001, 43.93, 20); w.scale.set(1.15, 1, 0.85); add(w);
-    add(cyl(0.013, 0.013, 0.26, black, x, 1.01, 44.14, 8)); add(box(0.022, 0.022, 0.13, black, x, 1.13, 44.08)); // torneira preta
-    add(cyl(0.03, 0.03, 0.14, white, x + 0.26, 0.95, 44.12, 10));                             // saboneteira
+  // ---- HALL DOS BANHEIROS (x 16,05–20,1 · z 40,8–44,3 + faixa x 16,05–17,1 · z 37,0–40,8) ----
+  wetWall('z', 20.013, -1, 40.875, 44.225, M.marmoreMarrom);                                 // parede do bebedouro
+  wetWall('x', 44.225, -1, 17.1, 20.013, M.marmoreMarrom);                                   // parede da bancada
+  wetWall('x', 40.875, 1, 17.1, 18.1, M.marmorato);                                          // parede da porta do WC masc.
+  wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
+  clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
+  wetWall('z', 16.125, 1, 37.0, 39.08, M.marmorato);                                         // parede do templo (pilar em z 39,3)
+  wetWall('z', 16.125, 1, 39.52, 43.78, M.marmorato);
+  wetWall('z', 17.025, -1, 37.0, 40.8, M.marmorato);                                         // faixa de circulação
+  // bancada branca de quartzo com 3 cubas de apoio retangulares e espelhos com LED
+  add(box(2.6, 0.04, 0.5, quartz, 18.66, 0.86, 43.96));
+  add(box(2.6, 0.13, 0.02, quartz, 18.66, 0.775, 43.72));
+  for (const x of [17.8, 18.66, 19.52]) { place(vessel(), x, 43.98, PI, 0.88); ledMirror(x, 1.62, 44.213, 0.56, 0.82, PI); }
+  add(box(0.1, 0.34, 0.26, white, 19.945, 1.35, 43.35));                                       // papel-toalha
+  // bebedouro industrial inox (4 torneiras, calha) + lixeiras inox com pedal + porta-copos
+  {
+    const g = G(), L = 1.2;                                                                    // frente = +z local
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(box(0.04, 0.1, 0.04, inox, sx * (L / 2 - 0.04), 0.05, sz * 0.15 - 0.05));
+    g.add(box(L, 1.0, 0.38, inox, 0, 0.6, -0.05));
+    g.add(box(L + 0.02, 0.03, 0.4, inox, 0, 1.115, -0.05));
+    g.add(box(L - 0.06, 0.07, 0.2, inox, 0, 0.8, 0.24));                                      // calha
+    g.add(box(L - 0.1, 0.004, 0.16, std({ color: 0x8a9096, roughness: 0.3, metalness: 0.6 }), 0, 0.834, 0.24, nc));
+    for (let i = 0; i < 4; i++) { const tx = -0.42 + i * 0.28; g.add(box(0.03, 0.03, 0.08, M.chrome, tx, 0.95, 0.18)); g.add(cyl(0.012, 0.012, 0.05, M.chrome, tx, 0.93, 0.22, 8)); }
+    g.add(box(0.16, 0.2, 0.004, white, -0.35, 0.6, 0.142, nc));                                // etiqueta
+    for (let i = 0; i < 5; i++) g.add(box(0.28, 0.012, 0.004, graphL, 0.3, 0.45 + i * 0.03, 0.142, nc)); // grelha
+    add(g); g.position.set(19.75, 0, 42.0); g.rotation.y = -HPI;
   }
-  add(box(2.66, 0.96, 0.006, black, 18.65, 1.58, 44.221, nc));                                // espelho com moldura
-  add(box(2.6, 0.9, 0.01, M.mirror, 18.65, 1.58, 44.212, nc));
-  add(box(2.5, 0.015, 0.015, ledWb, 18.65, 2.045, 44.2, nc));
-  { const et = ctx.logo.mesh(0.36, 0.36, { layout: 'mark', color: '#eef2f4', opacity: 0.55, roughness: 0.6, cast: false });   // jateado no espelho
-    logoAt(et, 19.72, 1.84, 44.2045, PI); }
-  emerg('x', 40.875, 17.55, 2.5, 1);
-  add(box(0.1, 0.34, 0.26, white, 19.96, 1.35, 43.2));                                        // papel-toalha
-  add(box(0.004, 0.05, 0.16, graphL, 19.908, 1.2, 43.2, nc));
-  add(cyl(0.15, 0.13, 0.5, M.steel, 19.8, 0.25, 43.25, 14));                                  // lixeira
-  cica(19.66, 41.3, 0.33);
-  plaque('x', 40.885, 19.35, 1.6, 0.2, 0.26, picto(false));                                   // placa WC masc.
+  for (const z of [42.95, 43.3]) {
+    add(cyl(0.13, 0.12, 0.5, inox, 19.82, 0.25, z, 16));
+    add(cyl(0.132, 0.132, 0.03, black, 19.82, 0.515, z, 16));
+    add(box(0.08, 0.02, 0.06, black, 19.66, 0.02, z));
+  }
+  add(box(0.08, 0.32, 0.1, black, 19.97, 1.32, 41.2));                                         // porta-copos
+  add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
+  emerg('x', 40.887, 17.55, 2.5, 1);
+  // entrada (vão x=16,05 · z 44,4–46,0, lado do hall de entrada): faixa azul-escura e placa com pictograma
+  {
+    const xf = 15.975 - 0.006;
+    add(box(0.012, 0.69, 2.02, navyBand, xf, 2.645, 45.2, nc));                                // verga
+    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 44.3, nc));                                  // ombreiras
+    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 46.1, nc));
+    const pg = texMat(1.1, (g, W, Hh) => {
+      g.fillStyle = '#1f5fae'; g.fillRect(0, 0, W, Hh);
+      g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(4, 4, W - 8, Hh - 8);
+      g.fillStyle = '#ffffff';
+      for (const [cx, fem] of [[W * 0.32, false], [W * 0.68, true]]) {
+        g.beginPath(); g.arc(cx, 20, 7, 0, PI * 2); g.fill();
+        if (fem) { g.beginPath(); g.moveTo(cx, 29); g.lineTo(cx + 13, 60); g.lineTo(cx - 13, 60); g.closePath(); g.fill(); g.fillRect(cx - 6, 60, 4, 14); g.fillRect(cx + 2, 60, 4, 14); }
+        else { g.fillRect(cx - 9, 29, 18, 28); g.fillRect(cx - 8, 56, 7, 18); g.fillRect(cx + 1, 56, 7, 18); }
+      }
+      text(g, 'TOILETTE', W / 2, 88, 12, '#ffffff');
+    });
+    add(box(0.01, 0.3, 0.33, pg, xf - 0.011, 2.66, 44.75, nc));
+  }
 
-  // =====================================================================
-  // WC FEMININO (x 17,1–20,1 · z 44,3–49,5) + antecâmara x 16,05–17,1
+  // ---- WC FEMININO (x 17,1–20,1 · z 44,3–49,5) + antecâmara x 16,05–17,1 ----
   // Porta em x=17,1 (z 45,0–45,8) → área de giro x 17,1–18,0 livre.
-  // =====================================================================
-  cabins(18.05, 20.013, 44.375, 45.85, 2, [true, false]);                                     // 2 cabines junto à parede z=44,3
-  cabins(17.175, 20.013, 49.413, 47.75, 3, [false, false], 0.08);                             // 3 cabines junto à fachada
-  add(box(0.8, 0.3, 0.04, graph, 17.6, 0.8, 44.395));                                         // fraldário
+  wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
+  cabins(18.05, 20.013, 44.375, 45.85, 2, [true, false]);
+  cabins(17.175, 20.013, 49.413, 47.75, 3, [false, false], 0.08);
+  add(box(0.8, 0.3, 0.04, graph, 17.6, 0.8, 44.395));                                        // fraldário
   add(box(0.8, 0.1, 0.46, white, 17.6, 0.9, 44.645));
-  add(box(0.7, 0.03, 0.38, amber, 17.6, 0.965, 44.65));
-  add(box(0.5, 0.04, 1.5, stone, 19.75, 0.86, 46.75));                                        // bancada com 2 cubas
-  add(box(0.02, 0.16, 1.5, stone, 19.51, 0.76, 46.75));
-  for (const z of [46.38, 47.12]) {
-    const b = cyl(0.17, 0.13, 0.12, china, 19.73, 0.94, z, 20); b.scale.set(0.85, 1, 1.1); add(b);
-    const w = cyl(0.145, 0.145, 0.004, std({ color: 0xdfe3e6, roughness: 0.2 }), 19.73, 1.001, z, 20); w.scale.set(0.85, 1, 1.1); add(w);
-    add(cyl(0.013, 0.013, 0.26, black, 19.95, 1.01, z, 8)); add(box(0.13, 0.022, 0.022, black, 19.89, 1.13, z));
-  }
-  add(box(0.012, 2.2, 1.8, porcW, 20.007, 1.1, 46.8));                                         // porcelanato claro atrás das cubas
-  add(box(0.006, 0.9, 1.42, black, 19.998, 1.58, 46.75, nc));
-  add(box(0.01, 0.84, 1.36, M.mirror, 19.99, 1.58, 46.75, nc));
-  add(box(0.004, 0.012, 1.3, ledWb, 19.986, 2.05, 46.75, nc));                                 // LED sobre o espelho
-  for (const z of [46.75]) { add(cyl(0.035, 0.035, 0.16, black, 19.9, 0.96, z, 12)); add(cyl(0.012, 0.012, 0.05, M.chrome, 19.9, 1.06, z, 6)); } // sabonete líquido
+  add(box(0.7, 0.03, 0.38, std({ color: 0xc98a3c, roughness: 0.85 }), 17.6, 0.965, 44.65));
+  add(box(0.5, 0.04, 1.6, quartz, 19.75, 0.86, 46.8));                                       // bancada de quartzo
+  add(box(0.02, 0.12, 1.6, quartz, 19.49, 0.8, 46.8));
+  for (const z of [46.4, 47.2]) { place(vessel(), 19.72, z, -HPI, 0.88); ledMirror(19.995, 1.62, z, 0.52, 0.8, -HPI); }
   { const g = G();                                                                             // vaso com flores na bancada
-    g.add(cyl(0.05, 0.04, 0.14, porcW, 0, 0.07, 0, 12));
-    for (const [dx, dz, dy, m] of [[0, 0, 0.26, amber], [0.04, 0.02, 0.23, white], [-0.03, 0.03, 0.24, terra], [0.01, -0.04, 0.22, white]]) { g.add(cyl(0.004, 0.004, dy, frond, dx * 0.5, 0.14 + dy / 2 - 0.04, dz * 0.5, 5)); g.add(sph(0.028, m, dx, 0.12 + dy, dz)); }
-    place(g, 19.82, 47.38, 0, 0.88); }
-  add(cyl(0.07, 0.07, 0.006, black, 18.6, 0.004, 46.8, 12));                                  // ralo
-  add(cyl(0.12, 0.1, 0.4, M.steel, 19.8, 0.2, 45.98, 14));                                    // lixeira
-  // antecâmara: placa, espelho de corpo inteiro, banco e cica
-  plaque('z', 17.018, 46.1, 1.6, 0.2, 0.26, picto(true));
+    g.add(cyl(0.05, 0.04, 0.14, white, 0, 0.07, 0, 12));
+    for (const [dx, dz, dy] of [[0, 0, 0.26], [0.04, 0.02, 0.23], [-0.03, 0.03, 0.24]]) { g.add(cyl(0.004, 0.004, dy, frond, dx * 0.5, 0.14 + dy / 2 - 0.04, dz * 0.5, 5)); g.add(sph(0.028, dy > 0.25 ? redCup : white, dx, 0.12 + dy, dz)); }
+    place(g, 19.86, 46.8, 0, 0.88); }
+  add(cyl(0.12, 0.1, 0.4, inox, 19.8, 0.2, 45.98, 14));
+  // antecâmara: pictograma sobre a porta, espelho de corpo inteiro, banco e cica
+  doorPicto('z', 17.025, 45.4, -1, true);
   add(box(0.012, 1.62, 0.62, black, 17.018, 1.2, 46.95));
   add(box(0.008, 1.54, 0.54, M.mirror, 17.009, 1.2, 46.95, nc));
   {
