@@ -9,6 +9,70 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.2 — templo e acabamentos reais (fotos e vídeos do cliente)
+
+A v1.2 refaz o templo e os acabamentos a partir da foto do templo e dos vídeos enviados pela igreja,
+que passaram a ser a referência principal. A planta continua valendo para paredes e portas.
+
+**Templo com o palco na parede lateral**
+- **O palco agora fica na parede lateral longa (x = 0), a pedido do cliente.** Ele é "atravessado": tem 16,6 m
+  de frente, 4,85 m de fundo e 1,0 m de altura, e a plateia fica virada para ele. A **sala de mídia fica de frente
+  para o palco**, e pelo visor dela se vê o culto.
+- A **parede do palco é preta e tem 8,5 m de altura** mesmo na vista de casinha de boneca, porque é o fundo do
+  palco. As outras paredes do templo continuam com 3 m para deixar o interior à mostra, e as faces internas delas
+  também são pretas.
+- **O telão de LED tem 8,4 × 3,0 m** e fica logo acima do piso do palco. Ao lado dele há **duas telas brancas de
+  projeção**, que acendem de leve com o telão.
+- **A treliça preta fica acima do telão**, com os **4 moving heads** do `palco`, pares e barras de LED. Os feixes
+  seguem a cor RGB. Há ainda **line arrays** pendurados por correntes (dois clusters por lado) e uma segunda
+  treliça de luz sobre a plateia.
+- **O palco segue a foto:**
+  - piso de madeira clara com testeira preta;
+  - escadas com corrimão inox nas duas pontas;
+  - bateria Pearl sobre praticável preto;
+  - teclado em suporte X, violão e baixo em pedestais;
+  - microfones, retornos e pedaleiras.
+- **A cobertura fica aparente**, com tesouras metálicas brancas a cada 5 m, pilares e vigas pretos, terças e um
+  cordão de lampadinhas quentes no beiral. Os **12 high-bays redondos** da `plateia` ficam pendurados nas tesouras.
+  No modo Fachada a cobertura interna some.
+- **A plateia tem 414 cadeiras pretas estofadas de encosto alto** em 4 blocos. O corredor central fica alinhado
+  com o centro do palco, e os blocos das pontas são levemente angulados, como nos vídeos. Os corredores deixam
+  livres as portas, o visor da mídia e o acesso do hall.
+- **O piso do templo é de porcelanato cinza-claro 0,9 × 0,9 polido**, que reflete as luzes.
+- **Paredes do templo:** 5 ares grandes no alto, nenhum deles na parede do palco. Há também extintores com placa,
+  placas de SAÍDA acesas e uma porta preta de correr com a placa "SAÍDA DE EMERGÊNCIA".
+
+**Acabamentos do prédio**
+- **Piso:**
+  - laminado carvalho/mel com rodapé de madeira nos corredores, salas, mídia, voluntariado e escritórios;
+  - porcelanato bege 0,9 × 0,9 nos banheiros.
+- **Paredes:** internas em greige, com paredes de destaque em **marmorato** (cimento queimado).
+- **Portas e janelas:** portas de **cedro** com guarnição de madeira e alavanca cromada; visores e janelas internas
+  com caixilho preto e vidro fumê.
+- **Mídia (v4):** placas acústicas grafite, bancada preta longa sob o visor, monitores, road case turquesa e
+  cadeiras de operador com assento e encosto azuis.
+- **Voluntariado (v2):** letreiro "FAÇAM TUDO COMO PARA O SENHOR", poltronas terracota, sofás cinza, cortina,
+  buffet grafite com tampo de madeira e frigobar.
+- **Depósito:** estantes de aço preto com caixas organizadoras.
+- **Banheiros (v3):**
+  - porcelanato cinza até 1,3 m, com **mármore marrom imperador** acima;
+  - bancadas de quartzo com cubas de apoio e espelhos com moldura de LED que acendem com `banheiros`;
+  - cabines de vidro fumê;
+  - bebedouro inox;
+  - faixa azul com a placa na entrada.
+- **Hall e Sala da Família:** parede de marmorato no hall; WC e WC PCD no mesmo padrão dos banheiros; sala da
+  família com marmorato, sofá cinza e cortinas.
+- **A vista inicial ficou um pouco mais à direita.** Ela mostra o palco e o telão em diagonal sem perder o
+  letreiro da fachada.
+
+**Motor**
+- **Materiais com padrão calculado no espaço** (`M.marmorato`, `M.acustico`, `M.porcelanatoCinza`,
+  `M.marmoreMarrom`): repetem em metros em qualquer peça, sem textura nem sampler a mais.
+- **Novos estilos de luminária:** `moving` (moving head de treliça) e `hang` (high-bay preso a uma estrutura).
+- **Novas opções de parede:** revestimento por lado (`clad`) e porta preta de correr (`style: 'black'`).
+- **Correção de desempenho:** o cache de materiais (`ctx.std`) serializava a imagem inteira de uma textura a
+  cada chamada, o que custava cerca de 2,5 s por construção da cena. Agora usa o uuid da textura.
+
 ## Novidades da v1.1 — logo, renderização e decoração
 
 **Logo da Base Church (fiel à foto da fachada)**
@@ -114,7 +178,7 @@ longitude: -48.33                #  a localização configurada no próprio HA (
 orientation: 90       # para onde a fachada (lado do estacionamento) aponta: 0=N, 90=L, 180=S, 270=O (Base Church: leste)
 entities:
   # ---- Templo ----
-  palco:          light.palco_rgb              # refletores do palco (RGB + brilho)
+  palco:          light.palco_rgb              # moving heads do palco (RGB + brilho)
   plateia:        light.templo_plateia         # luminárias da plateia (brilho)
   telao:          media_player.telao_led       # telão LED: acende e mostra o título tocando
   som:            switch.som_templo            # LEDs verdes nas quinas do palco
@@ -158,7 +222,8 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
 - **Fachada**: o botão *Fachada* mostra o prédio como ele é por fora — bloco preto de 8,5 m do templo
   e do hall, painel ripado de madeira clara com o logo "B / BASE CHURCH", ala direita de 4,5 m com o
   beiral de treliça e forro amadeirado, condensadoras no telhado, platibandas e coberturas. Desligado,
-  volta a vista de casinha de boneca (paredes de 3 m, sem teto). O **painel ripado com o letreiro BASE
+  volta a vista de casinha de boneca (paredes de 3 m, sem teto — exceto a parede preta de 8,5 m atrás do palco,
+  com a cobertura aparente de tesouras brancas por cima do templo). O **painel ripado com o letreiro BASE
   CHURCH e o refletor ficam visíveis nos dois modos** (a identidade do prédio vista da rua); os rótulos dos
   ambientes somem enquanto o modo Fachada está ligado.
 - **Entorno**: estacionamento frontal em intertravado espinha de peixe, vagas PCD, cerca-viva e cicas na
@@ -210,7 +275,7 @@ Coordenadas em metros (X → direita a partir do muro esquerdo, Z → frente; fa
 |---|---|---|
 | Fundos (z 0–12,4) | Estacionamento interno e pátio · Almoxarifado · Cozinha · Recepção · Sala Pastoral (+ banheiro) · Caixa d'água · jardins | `estacionamento` · `cozinha` · `recepcao` · `pastoral` |
 | Ala direita (x 16–20) | Corredor da entrada lateral · Sala Gilvan · Administrativo · Circulação · Mídia · Voluntariado · Depósito · Área técnica · WC Masc. · Hall dos banheiros · WC Fem. | `circulacao` · `administrativo` · `midia` · `voluntariado` · `banheiros` |
-| Templo (z 12,4–44) | Palco com telão, banda e treliça · plateia de ~500 cadeiras · backstage | `plateia` (piso), `palco` (refletores), `telao`, `som`, `ac_templo` |
+| Templo (z 12,4–44) | Palco na parede lateral x = 0 com telão, telas de projeção, banda, treliça e line arrays · plateia de 414 cadeiras virada para −x · cobertura aparente | `plateia` (piso, high-bays), `palco` (moving heads), `telao`, `som`, `ac_templo` |
 | Entrada (z 44–49,65) | Hall com balcão, café, lounge e escada · Sala da Família · WC · WC PCD | `hall` · `familia` · `banheiros` |
 | Frente (z > 49,7) | Jardins, calçada, estacionamento frontal com vagas PCD | `fachada` · `estacionamento` |
 
@@ -220,8 +285,8 @@ Tudo está em metros no topo de `igreja3d-card.js` (X → direita, Z → frente)
 `rooms/BRIEF.md`:
 
 - `ZONES` — os pisos (ambientes), a textura de cada um e qual entidade o clique alterna.
-- `ITEMS` — luminárias: posição `p`, intensidade `i` (cd), alcance `d` (m), estilo (refletor com feixe, pendente linear de LED, pendente
-  industrial, poste, arandela) e quais projetam sombra.
+- `ITEMS` — luminárias: posição `p`, intensidade `i` (cd), alcance `d` (m), estilo (refletor com feixe, moving head, pendente linear de LED,
+  high-bay industrial, poste, arandela) e quais projetam sombra.
 - `PILLARS_L` / `PILLARS_R` — pilares do templo nas paredes x = 0 e x = 16,05.
 - `_buildWalls()` — paredes com portas (`door`), janelas (`window`), vidro (`glass`), porta de vidro de
   2 folhas (`glassdoor`), vãos (`open`) e portão (`gate`).
@@ -240,10 +305,11 @@ na demo, `window.demo.set('palco','on',{rgb_color:[255,0,0]})` e `window.demo.se
 Medido na demo (Chromium, vista padrão 1400×900). A cena roda no dispositivo que abre o dashboard,
 não no HA nem no GitHub.
 
-- ~6.900 malhas (paredes, cadeiras, palco, móveis, fachada) são fundidas por material na
-  inicialização: **6.946 → 272 draw calls** na cena + **171 → 12** no grupo da Fachada. No total, a vista
-  padrão desenha **~420 draw calls por quadro** (com pisos, luminárias, rótulos, halos e feixes); a v1.0
-  desenhava ~372 com bem menos decoração (vista de topo 334 → 414; interior do templo 222 → 237).
+- ~5.200 malhas (paredes, palco, móveis, fachada) são fundidas por material na inicialização:
+  **5.152 → 250 draw calls** na cena + **171 → 12** no grupo da Fachada. As 414 cadeiras e a cobertura do templo
+  já saem fundidas da própria decoração (4.418 peças → 14 malhas). No total, a vista padrão desenha **~405 draw
+  calls por quadro** (com pisos, luminárias, rótulos, halos e feixes). A v1.1 desenhava ~419; a vista de topo
+  caiu de 414 para 399 e o interior do templo de 237 para 221.
   Materiais simples praticamente iguais (±22/255 na cor, ±0,25 na rugosidade) são unificados antes da
   fusão; materiais **idênticos** com textura/emissivo/transparência também (ex.: as laterais de todas as
   letras caixa do logo), os halos da mesma entidade compartilham material e as peças de uma mesma
@@ -257,16 +323,17 @@ não no HA nem no GitHub.
   Fachada muda; nas transições dia/noite e com o sol andando só a sombra do sol é refeita.
 - Tone mapping Neutral (exposição 1,0): o preto da fachada fica preto e as cores do palco e do telão
   ficam fiéis. O telão não passa pelo tone mapping e tem um halo de LED em volta; os 4 refletores do
-  palco têm feixe de luz falso (cone aditivo, 4 draw calls) que segue a cor RGB e o brilho da entidade.
-- Construção da cena (`_build3D`): **~0,48 s** com os shaders já em cache (v1.0: ~0,39 s no mesmo teste) e
-  ~8–11 s na primeira vez, quase tudo compilação de shader — medido em Chromium com SwiftShader (CPU, sem GPU);
-  numa GPU real é bem menos. ~307 mil triângulos (v1.0: ~260 mil), 29 programas de shader, no máximo 13 das 16
-  unidades de textura por material (map + bump + ao + ambiente + 9 sombras).
+  palco (moving heads) têm feixe de luz falso (cone aditivo, 4 draw calls) que segue a cor RGB e o brilho da entidade.
+- Construção da cena (`_build3D`): **~0,55 s** com os shaders já em cache (v1.1: ~0,58 s no mesmo teste) e
+  ~10–11 s na primeira vez, quase tudo compilação de shader. A medição é em Chromium com SwiftShader (CPU, sem GPU);
+  numa GPU real é bem menos. São **~252 mil triângulos** (v1.1: ~307 mil) e 33 programas de shader (v1.1: 29; os 4 a
+  mais são os padrões em espaço de mundo). Cada material usa no máximo 13 das 16 unidades de textura
+  (map + bump + ao + ambiente + 9 sombras).
 - Sombras só recalculam quando um estado muda; nada é renderizado parado (só quando a câmera se
   move, um estado muda ou o telão está tocando, a 30 fps).
 - Pixel ratio adaptativo (orçamento de ~2,4 Mpx por quadro; 1,4 Mpx em `leve`).
 - Ligar/desligar luz não recompila shaders (todas as luzes ficam ativas com intensidade zero).
-- No disco o cartão tem ~480 KB (a demo `index.html`, com o cartão embutido, ~490 KB).
+- No disco o cartão tem ~485 KB (a demo `index.html`, com o cartão embutido, ~497 KB).
 
 ## Observações
 

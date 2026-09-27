@@ -3,8 +3,13 @@ function roomHallFamilia(ctx) {
   // HALL DE ENTRADA (x 4,0–16,05 · z 44,0–49,65) + SALA DA FAMÍLIA (x 0–4,0 ·
   // z 46,3–49,65) + WC (x 0–1,9) e WC PCD (x 1,9–4,0) · z 44,0–46,3.
   // Paleta da fachada: preto, ripado de madeira clara, branco e grafite, com
-  // acentos âmbar/terracota. Na Sala da Família, tons suaves (sálvia, creme,
-  // rosado) e brinquedos coloridos.
+  // acentos âmbar/terracota. Acabamentos reais (fotos/vídeos do cliente):
+  // paredes de destaque em marmorato (x = 4,0 no hall; x = 0 na Sala da Família),
+  // WCs no padrão dos banheiros (v3): porcelanato cinza até 1,2 m + mármore
+  // "marrom imperador" na parede da bancada / marmorato nas outras, bancada branca
+  // com cuba de apoio, torneira de parede, espelho com moldura de LED e lixeira
+  // inox de pedal; faixa azul-marinho no acesso aos banheiros. Sala da Família:
+  // laminado (cartão) + marmorato, sofá cinza, cortina cinza, brinquedos.
   // Livres: rota porta principal → portas de vidro do templo (x 10,3–13,6),
   // vão para os banheiros (x = 16,05, z 44,4–46,0: passa por baixo do patamar
   // superior da escada), portas em x = 4,0 e a porta do WC (z = 46,3).
@@ -48,20 +53,28 @@ function roomHallFamilia(ctx) {
   const rugEdge  = std({ color: 0x8a6a4c, roughness: 1 });
   const mat      = std({ color: 0x232325, roughness: 1 });
   // Sala da família
-  const sage     = std({ color: 0x8fa38a, roughness: 0.95 });
   const cream    = std({ color: 0xe9e1d3, roughness: 0.95 });
-  const blush    = std({ color: 0xd9a38f, roughness: 0.95 });
   const woodLt   = std({ color: 0xd8b98f, roughness: 0.7 });
   const whiteF   = std({ color: 0xf1efea, roughness: 0.6 });
   const wicker   = std({ color: 0xb9925a, roughness: 0.95 });
   const net      = std({ color: 0xf4f1ea, roughness: 1, transparent: true, opacity: 0.42 });
-  const sheer    = std({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.35 });
   const toys     = [0xe0574a, 0xf2b53a, 0x4f9bd9, 0x5bb36a, 0x9a6ad0, 0xf08fb0].map((c) => std({ color: c, roughness: 0.6 }));
   const eva      = [0xf2c14e, 0x7cc4e8, 0x9fd49a, 0xf4a3a0].map((c) => std({ color: c, roughness: 0.95 }));
+  const fabricG  = std({ color: 0x8e9095, roughness: 0.97 });                     // sofá cinza (igual ao voluntariado)
+  const fabricD  = std({ color: 0x55575c, roughness: 0.97 });                     // almofada cinza-escuro
+  const mustard  = std({ color: 0xd9a53a, roughness: 0.95 });                     // almofada/manta mostarda
+  const curtain  = std({ color: 0xcfcdc8, roughness: 1 });                        // cortina cinza-claro
+  // Acabamentos reais do cartão (padrão em espaço de mundo: NÃO clonar, só reusar)
+  const MARM = M.marmorato, PORC = M.porcelanatoCinza, MARR = M.marmoreMarrom;
   // WCs
-  const tileWall = std({ color: 0xe9ebe8, roughness: 0.4 });
   const grabBar  = std({ color: 0xd9dde1, roughness: 0.25, metalness: 0.85 });
   const alarm    = std({ color: 0xc4201b, roughness: 0.4 });
+  const quartzW  = std({ color: 0xefeae0, roughness: 0.28 });                     // bancada de quartzo branco
+  const basinIn  = std({ color: 0xdedcd6, roughness: 0.2 });                      // fundo da cuba
+  const navy     = std({ color: 0x1b2d4f, roughness: 0.7 });                      // faixa azul-marinho (acesso aos banheiros)
+  // moldura de LED dos espelhos (luz fria, v3) — acende com a luz dos banheiros
+  const ledCool  = new THREE.MeshStandardMaterial({ color: 0xd8f7ff, emissive: 0x7fe6ff, emissiveIntensity: 1.1, roughness: 0.4 });
+  ctx.bindEmissive('banheiros', ledCool, 1.3, { min: 0.12 });
 
   // ------------------------------------------------------------ utilidades
   // Funde várias caixas numa só geometria (ripados etc.) — item: [w, h, d, x, y, z, rx, ry, rz]
@@ -119,6 +132,26 @@ function roomHallFamilia(ctx) {
     for (let i = 0; i < uv.count; i++) { uv.setY(i, uv.getY(i) > 0.5 ? v1 : v0); uv.setX(i, uv.getX(i) > 0.5 ? u1 : u0); }
     uv.needsUpdate = true;
     const m = new THREE.Mesh(g, material); m.castShadow = false; m.receiveShadow = false; return m;
+  };
+  // Revestimento de parede (12 mm) colado na face f de uma parede. axis 'x' = parede com x fixo (corre em z),
+  // 'z' = parede com z fixo (corre em x); dir = lado do ambiente (±1); a–b = trecho ao longo da parede; y0–y1.
+  const CL = 0.012;
+  const clad = (axis, f, dir, a, b, y0, y1, material) => {
+    if (b - a < 0.01 || y1 - y0 < 0.01) return null;
+    const c = f + dir * CL / 2, m = (a + b) / 2, y = (y0 + y1) / 2;
+    return put(axis === 'x' ? box(CL, y1 - y0, b - a, material, c, y, m, nc) : box(b - a, y1 - y0, CL, material, m, y, c, nc));
+  };
+  // Parede de banheiro no padrão real: porcelanato cinza até 1,2 m + (mármore marrom | marmorato) em cima.
+  // cuts = vãos [a, b] (portas, já com a folga de 0,1 m); acima de yTop do vão o revestimento superior continua.
+  const wcWall = (axis, f, dir, a, b, upper, y0 = 0.09, cuts = [], yCut = 2.28) => {
+    let cur = a;
+    for (const [ca, cb] of cuts) { clad(axis, f, dir, cur, ca, y0, 1.2, PORC); clad(axis, f, dir, cur, ca, 1.2, 2.99, upper); cur = cb; }
+    clad(axis, f, dir, cur, b, y0, 1.2, PORC); clad(axis, f, dir, cur, b, 1.2, 2.99, upper);
+    for (const [ca, cb] of cuts) clad(axis, f, dir, ca, cb, yCut, 2.99, upper);
+    // filete de acabamento (inox escovado) na junta das duas placas
+    let c2 = a;
+    for (const [ca, cb] of cuts) { if (ca - c2 > 0.02) put(axis === 'x' ? box(0.006, 0.008, ca - c2, M.steel, f + dir * (CL + 0.002), 1.2, (c2 + ca) / 2, nc) : box(ca - c2, 0.008, 0.006, M.steel, (c2 + ca) / 2, 1.2, f + dir * (CL + 0.002), nc)); c2 = cb; }
+    if (b - c2 > 0.02) put(axis === 'x' ? box(0.006, 0.008, b - c2, M.steel, f + dir * (CL + 0.002), 1.2, (c2 + b) / 2, nc) : box(b - c2, 0.008, 0.006, M.steel, (c2 + b) / 2, 1.2, f + dir * (CL + 0.002), nc));
   };
   const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   const FONT = '"Montserrat","Helvetica Neue",Arial,sans-serif';
@@ -270,16 +303,24 @@ function roomHallFamilia(ctx) {
   place(bigPlant(1.85, 0.22, 3), 5.9, 44.64);
   place(bigPlant(1.7, 0.28, 5), 7.3, 49.02);
 
+  // Parede de destaque em MARMORATO (vídeos): face do hall da parede x = 4,0 (portas com 0,1 m de folga,
+  // o revestimento continua acima delas) e o trecho da parede z = 44,0 até o pilar de x 5,2
+  {
+    const F4 = 4.075;
+    for (const [a, b] of [[44.075, 44.3], [45.4, 46.5], [47.6, 49.563]]) clad('x', F4, 1, a, b, 0.09, 2.99, MARM);
+    for (const [a, b] of [[44.3, 45.4], [46.5, 47.6]]) clad('x', F4, 1, a, b, 2.28, 2.99, MARM);
+    clad('z', 44.075, 1, 4.087, 5.19, 0.09, 2.99, MARM);
+  }
   // Banco de madeira ripada entre as portas da parede x = 4,0 + quadro
   {
     const S = [];
     for (let i = 0; i < 6; i++) S.push([0.055, 0.04, 1.0, 4.19 + i * 0.065, 0.45, 45.95]);
     put(mergeBoxes(S, slat));
     for (const z of [45.55, 46.35]) { put(box(0.36, 0.43, 0.04, black, 4.35, 0.215, z)); }
-    put(box(0.03, 0.8, 0.95, black, 4.1, 1.55, 45.95));
-    put(box(0.012, 0.7, 0.85, slat, 4.12, 1.55, 45.95, nc));
-    put(box(0.014, 0.28, 0.28, felt, 4.128, 1.55, 45.95, nc));
-    put(cyl(0.07, 0.07, 0.016, amber, 4.132, 1.55, 45.95, 20)).rotation.z = Math.PI / 2;
+    put(box(0.03, 0.8, 0.95, black, 4.102, 1.55, 45.95));
+    put(box(0.012, 0.7, 0.85, slat, 4.123, 1.55, 45.95, nc));
+    put(box(0.014, 0.28, 0.28, felt, 4.134, 1.55, 45.95, nc));
+    put(cyl(0.07, 0.07, 0.016, amber, 4.141, 1.55, 45.95, 20)).rotation.z = Math.PI / 2;
   }
 
   // Lounge: sofá grafite na parede x = 4,0, mesa de centro, 2 poltronas caramelo e tapete
@@ -440,9 +481,10 @@ function roomHallFamilia(ctx) {
   plane(1.16, 0.22, tpl, 11.85, 2.62, WZ + 0.024);
   ctx.bindEmissive('hall', tpl, 0.7, { min: 0.25 });
   const wcs = canvasMat(0.9 / 0.2, (g, W, Hh) => {
-    g.fillStyle = '#18181a'; g.fillRect(0, 0, W, Hh);
-    g.fillStyle = '#f4efe6'; g.textBaseline = 'middle';
-    // pictogramas (masc., fem., PCD) + seta
+    g.fillStyle = '#2458a0'; g.fillRect(0, 0, W, Hh);
+    g.strokeStyle = '#ffffff'; g.lineWidth = Hh * 0.04; g.strokeRect(Hh * 0.06, Hh * 0.06, W - Hh * 0.12, Hh * 0.88);
+    g.fillStyle = '#ffffff'; g.textBaseline = 'middle';
+    // pictogramas (masc., fem.) + seta — placa azul como a da entrada dos banheiros (v3)
     const ic = (cx, fem) => {
       g.beginPath(); g.arc(cx, Hh * 0.26, Hh * 0.09, 0, Math.PI * 2); g.fill();
       if (fem) { g.beginPath(); g.moveTo(cx, Hh * 0.38); g.lineTo(cx - Hh * 0.13, Hh * 0.78); g.lineTo(cx + Hh * 0.13, Hh * 0.78); g.closePath(); g.fill(); }
@@ -450,10 +492,39 @@ function roomHallFamilia(ctx) {
     };
     ic(W * 0.07, false); ic(W * 0.14, true);
     g.textAlign = 'left'; g.font = `600 ${Hh * 0.4}px ${FONT}`; g.fillText('Banheiros', W * 0.21, Hh * 0.54);
-    g.fillStyle = '#f0b36a'; g.beginPath(); g.moveTo(W * 0.8, Hh * 0.35); g.lineTo(W * 0.9, Hh * 0.52); g.lineTo(W * 0.8, Hh * 0.69); g.lineTo(W * 0.8, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.46); g.lineTo(W * 0.8, Hh * 0.46); g.closePath(); g.fill();
+    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(W * 0.8, Hh * 0.35); g.lineTo(W * 0.9, Hh * 0.52); g.lineTo(W * 0.8, Hh * 0.69); g.lineTo(W * 0.8, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.46); g.lineTo(W * 0.8, Hh * 0.46); g.closePath(); g.fill();
   }, 0.7);
   plane(0.9, 0.2, wcs, 15.955, 2.52, 45.2, -Math.PI / 2);
   ctx.bindEmissive('hall', wcs, 0.7, { min: 0.25 });
+  // Faixa/sanca AZUL-MARINHO emoldurando o acesso aos banheiros (vão x = 16,05, z 44,4–46,0; v3_01)
+  clad('x', 15.975, -1, 44.3, 46.1, 2.3, 2.8, navy);
+  clad('x', 15.975, -1, 44.3, 44.4, 0.09, 2.3, navy);
+  clad('x', 15.975, -1, 46.0, 46.1, 0.09, 2.3, navy);
+  put(box(0.15, 0.012, 1.6, navy, 16.05, 2.293, 45.2, nc));                      // intradorso do vão
+  for (const z of [44.407, 45.993]) put(box(0.15, 2.2, 0.012, navy, 16.05, 1.19, z, nc));
+  // Extintor (pó ABC) com placa, entre as portas de vidro do templo e a escada
+  {
+    const x = 13.38, z = 44.175;
+    put(box(0.12, 0.06, 0.04, black, x, 1.6, 44.095));                            // suporte
+    put(cyl(0.085, 0.085, 0.52, alarm, x, 1.25, z, 16));
+    put(sph(0.085, alarm, x, 1.51, z)).scale.y = 0.5;
+    put(cyl(0.02, 0.025, 0.08, black, x, 1.57, z, 8));
+    put(box(0.12, 0.025, 0.03, black, x + 0.03, 1.62, z));                       // gatilho
+    put(bar(x + 0.06, 1.55, z + 0.03, x + 0.1, 1.15, z + 0.06, 0.012, black));   // mangueira
+    put(box(0.18, 0.18, 0.006, alarm, x, 1.9, 44.078, nc));                        // placa
+    put(box(0.05, 0.1, 0.004, whiteF, x, 1.9, 44.083, nc));
+  }
+  // Placa de SAÍDA (verde, sempre acesa) sobre a porta principal, lado do hall
+  {
+    const ex = canvasMat(0.42 / 0.16, (g, W, Hh) => {
+      g.fillStyle = '#0f8a3c'; g.fillRect(0, 0, W, Hh);
+      g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `800 ${Hh * 0.56}px ${FONT}`; g.fillText('SAÍDA', W * 0.58, Hh * 0.54);
+      g.beginPath(); g.moveTo(W * 0.08, Hh * 0.5); g.lineTo(W * 0.2, Hh * 0.25); g.lineTo(W * 0.2, Hh * 0.75); g.closePath(); g.fill();
+    }, 0.9);
+    put(box(0.44, 0.18, 0.03, whiteF, 12.0, 2.52, 49.548));
+    plane(0.42, 0.16, ex, 12.0, 2.52, 49.532, Math.PI);
+  }
 
   // Placas pretas sobre as portas (atlas numa textura só): Sala da Família, WC PCD e WC
   {
@@ -495,8 +566,8 @@ function roomHallFamilia(ctx) {
       const p = atlasPlane(0.54, 0.18, pm, 1 - (i + 1) / 3, 1 - i / 3);
       p.position.set(x + Math.sin(ry) * 0.0115, y, z + Math.cos(ry) * 0.0115); p.rotation.y = ry; put(p);
     };
-    sign(0, 4.087, 2.42, 47.05, Math.PI / 2);      // hall → Sala da Família
-    sign(1, 4.087, 2.42, 44.85, Math.PI / 2);      // hall → WC PCD
+    sign(0, 4.099, 2.42, 47.05, Math.PI / 2);      // hall → Sala da Família
+    sign(1, 4.099, 2.42, 44.85, Math.PI / 2);      // hall → WC PCD
     sign(2, 0.9, 2.42, 46.387, 0);                 // Sala da Família → WC
   }
 
@@ -525,9 +596,9 @@ function roomHallFamilia(ctx) {
       }
     }, 0.12);
     [49.11, 48.55, 47.99].forEach((z, i) => {
-      put(box(0.03, 0.72, 0.52, black, 4.092, 1.68, z));
+      put(box(0.03, 0.72, 0.52, black, 4.103, 1.68, z));
       const p = atlasPlane(0.48, 0.68, art, 0, 1, i / 3, (i + 1) / 3);
-      p.position.set(4.109, 1.68, z); p.rotation.y = Math.PI / 2; put(p);
+      p.position.set(4.12, 1.68, z); p.rotation.y = Math.PI / 2; put(p);
     });
   }
 
@@ -614,15 +685,17 @@ function roomHallFamilia(ctx) {
   // SALA DA FAMÍLIA (x 0,09–3,92 · z 46,38–49,56)
   // =====================================================================
   {
-    // Sofá na parede x = 0 (de frente para a TV), com manta e almofadas
+    // parede de destaque em marmorato (x = 0, face 0,087), como a sala ampla do v1
+    clad('x', 0.087, 1, 46.375, 49.563, 0.07, 2.99, MARM);
+    // Sofá cinza na parede x = 0 (de frente para a TV), almofadas mostarda/grafite e manta
     const S = G();
-    S.add(box(1.8, 0.26, 0.8, sage, 0, 0.28, 0));
-    S.add(box(1.8, 0.44, 0.17, sage, 0, 0.62, -0.315));
-    for (const sx of [-1, 1]) S.add(box(0.14, 0.22, 0.8, sage, sx * 0.83, 0.52, 0));
+    S.add(box(1.8, 0.26, 0.8, fabricG, 0, 0.28, 0));
+    S.add(box(1.8, 0.44, 0.17, fabricG, 0, 0.62, -0.315));
+    for (const sx of [-1, 1]) S.add(box(0.14, 0.22, 0.8, fabricG, sx * 0.83, 0.52, 0));
     for (const sx of [-1, 1]) S.add(box(0.74, 0.1, 0.58, cream, sx * 0.38, 0.46, 0.08));
-    S.add(rot(box(0.36, 0.34, 0.1, blush, -0.5, 0.66, -0.17), -0.15, 0.2));
-    S.add(rot(box(0.34, 0.32, 0.1, cream, 0.5, 0.66, -0.17), -0.15, -0.2));
-    S.add(rot(box(0.6, 0.02, 0.5, blush, 0.45, 0.52, 0.08), 0, 0.1));
+    S.add(rot(box(0.36, 0.34, 0.1, mustard, -0.5, 0.66, -0.17), -0.15, 0.2));
+    S.add(rot(box(0.34, 0.32, 0.1, fabricD, 0.5, 0.66, -0.17), -0.15, -0.2));
+    S.add(rot(box(0.6, 0.02, 0.5, cream, 0.45, 0.52, 0.08), 0, 0.1));
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) S.add(cyl(0.016, 0.012, 0.15, woodLt, sx * 0.82, 0.075, sz * 0.33, 6));
     place(S, 0.58, 48.42, Math.PI / 2);
 
@@ -633,10 +706,10 @@ function roomHallFamilia(ctx) {
     P.add(box(0.7, 0.2, 0.66, cream, 0, 0.36, 0.02));
     P.add(rot(box(0.7, 0.7, 0.16, cream, 0, 0.78, -0.27), -0.14));
     for (const sx of [-1, 1]) { const a = cyl(0.09, 0.09, 0.66, cream, sx * 0.33, 0.54, 0.02, 12); a.rotation.x = Math.PI / 2; P.add(a); }
-    P.add(box(0.52, 0.08, 0.5, sage, 0, 0.5, 0.05));
-    P.add(rot(box(0.4, 0.3, 0.09, blush, 0, 0.72, -0.16), -0.15));
+    P.add(box(0.52, 0.08, 0.5, fabricG, 0, 0.5, 0.05));
+    P.add(rot(box(0.4, 0.3, 0.09, mustard, 0, 0.72, -0.16), -0.15));
     place(P, 2.15, 46.98, 0.72);
-    const pf = cyl(0.2, 0.2, 0.34, sage, 2.64, 0.17, 47.5, 18); put(pf);
+    const pf = cyl(0.2, 0.2, 0.34, fabricD, 2.64, 0.17, 47.5, 18); put(pf);
     put(cyl(0.2, 0.2, 0.02, cream, 2.64, 0.35, 47.5, 18));
 
     // Tapete infantil de EVA (placas coloridas) + brinquedos
@@ -702,19 +775,19 @@ function roomHallFamilia(ctx) {
 
     // Trocador (fraldário) sob a janela: cômoda branca, colchonete e cestos
     {
-      const cx = 2.92, cz = 49.22;
+      const cx = 2.92, cz = 49.19;
       put(box(0.96, 0.86, 0.5, whiteF, cx, 0.45, cz));
       for (let i = 0; i < 3; i++) { put(box(0.9, 0.24, 0.012, woodLt, cx, 0.2 + i * 0.27, cz - 0.255)); put(box(0.14, 0.015, 0.02, M.chrome, cx, 0.27 + i * 0.27, cz - 0.268)); }
       put(box(0.96, 0.03, 0.52, woodLt, cx, 0.895, cz));
-      put(box(0.74, 0.06, 0.46, sage, cx - 0.08, 0.94, cz));
-      for (const sx of [-1, 1]) put(box(0.05, 0.1, 0.46, sage, cx - 0.08 + sx * 0.36, 0.96, cz));
+      put(box(0.74, 0.06, 0.46, fabricG, cx - 0.08, 0.94, cz));
+      for (const sx of [-1, 1]) put(box(0.05, 0.1, 0.46, fabricG, cx - 0.08 + sx * 0.36, 0.96, cz));
       put(box(0.16, 0.12, 0.2, wicker, cx + 0.38, 0.97, cz));
       for (let i = 0; i < 3; i++) put(box(0.13, 0.03, 0.15, whiteF, cx + 0.38, 1.02 + i * 0.032, cz));
       put(box(0.12, 0.06, 0.08, toys[4], cx + 0.39, 1.14, cz + 0.02));
     }
     // Cortinas leves (laterais da janela x 0,6–3,2) e varão
     put(cyl(0.012, 0.012, 3.5, black, 1.9, 2.35, 49.5, 8)).rotation.z = Math.PI / 2;
-    for (const x of [0.36, 3.44]) put(box(0.32, 2.2, 0.03, sheer, x, 1.2, 49.52, nc));
+    for (const x of [0.36, 3.44]) { put(box(0.34, 2.28, 0.04, curtain, x, 1.2, 49.5)); for (let i = 0; i < 3; i++) put(box(0.02, 2.26, 0.02, curtain, x - 0.11 + i * 0.11, 1.2, 49.47, nc)); }
     // Frase adesiva na parede z = 46,3 (acima da prateleira)
     {
       const dec = canvasMat(1.5 / 0.3, (g, W, Hh) => {
@@ -726,8 +799,8 @@ function roomHallFamilia(ctx) {
       plane(1.5, 0.3, dec, 2.2, 2.08, 46.379);
     }
     // Quadros na parede x = 0 (acima do sofá) e prateleira com livrinhos na parede z = 46,3
-    [[47.9, 0.42, toys[2]], [48.45, 0.5, blush], [49.0, 0.42, toys[1]]].forEach(([z, s, c]) => {
-      put(box(0.025, s, s, woodLt, 0.1, 1.55, z)); put(box(0.012, s - 0.08, s - 0.08, c, 0.115, 1.55, z, nc));
+    [[47.9, 0.42, toys[2]], [48.45, 0.5, mustard], [49.0, 0.42, cream]].forEach(([z, s, c]) => {
+      put(box(0.025, s, s, black, 0.112, 1.55, z)); put(box(0.012, s - 0.08, s - 0.08, c, 0.127, 1.55, z, nc));
     });
     put(box(1.1, 0.03, 0.2, woodLt, 2.1, 1.55, 46.48));
     for (let i = 0; i < 7; i++) put(box(0.03, 0.2 - (i % 3) * 0.02, 0.15, toys[i % 6], 1.7 + i * 0.045, 1.66 - (i % 3) * 0.01, 46.49));
@@ -737,66 +810,109 @@ function roomHallFamilia(ctx) {
   }
 
   // =====================================================================
-  // WC (x 0,09–1,82 · z 44,2–46,22) — porta na parede z = 46,3
+  // BANHEIROS (padrão real, v3): builders com origem na face da parede, frente = +z
+  // =====================================================================
+  // Bancada de quartzo branco (tampo grosso de 12 cm) com cuba(s) de apoio retangular(es), torneira de parede
+  // cromada, espelho com moldura de LED fria e "spots" lavando o mármore (planos de brilho da luz dos banheiros)
+  const vanity = (len, depth, top, basins, mw, mh, my0) => {
+    const g = G();
+    g.add(box(len, 0.12, depth, quartzW, 0, top - 0.06, depth / 2));
+    g.add(box(len, 0.18, 0.02, quartzW, 0, top + 0.09, 0.01));                  // espelho de bancada
+    for (const bx of basins) {
+      const bz = depth * 0.56;
+      g.add(box(0.4, 0.13, 0.32, ceramic, bx, top + 0.065, bz));
+      g.add(box(0.34, 0.006, 0.26, basinIn, bx, top + 0.128, bz, nc));
+      const cn = cyl(0.028, 0.028, 0.012, M.chrome, bx, top + 0.3, 0.026, 12); cn.rotation.x = Math.PI / 2; g.add(cn);   // canopla
+      const sp = cyl(0.013, 0.013, 0.2, M.chrome, bx, top + 0.3, 0.12, 8); sp.rotation.x = Math.PI / 2; g.add(sp);
+      g.add(cyl(0.013, 0.01, 0.05, M.chrome, bx, top + 0.28, 0.215, 8));
+      g.add(box(0.016, 0.07, 0.016, M.chrome, bx + 0.07, top + 0.33, 0.05));      // alavanca
+      g.add(cyl(0.03, 0.03, 0.13, M.steel, bx + 0.26 * (bx <= 0 ? 1 : -1), top + 0.065, depth * 0.5, 10));   // saboneteira
+    }
+    // espelho retangular com moldura de LED embutida (4 filetes)
+    const yc = my0 + mh / 2;
+    g.add(box(mw, mh, 0.012, M.mirror, 0, yc, 0.008, nc));
+    const e = 0.055, t = 0.022;
+    g.add(box(mw - 2 * e, t, 0.004, ledCool, 0, my0 + e, 0.016, nc));
+    g.add(box(mw - 2 * e, t, 0.004, ledCool, 0, my0 + mh - e, 0.016, nc));
+    g.add(box(t, mh - 2 * e, 0.004, ledCool, -mw / 2 + e, yc, 0.016, nc));
+    g.add(box(t, mh - 2 * e, 0.004, ledCool, mw / 2 - e, yc, 0.016, nc));
+    // halo frio do espelho + "spots" do forro lavando a parede de mármore
+    const hm = ctx.glowPlane(mw + 0.35, mh + 0.35, 'banheiros', { color: 0x9feeff, base: 0.3, day: 0.12, tex: 'frame' });
+    hm.position.set(0, yc, 0.02); g.add(hm);
+    const n = Math.max(1, Math.round(len / 0.75));
+    for (let i = 0; i < n; i++) {
+      const w = ctx.glowPlane(0.7, 0.9, 'banheiros', { color: 0xffe2bc, base: 0.28, day: 0.1 });
+      w.position.set(-len / 2 + (len / n) * (i + 0.5), 2.5, 0.006); g.add(w);
+    }
+    return g;
+  };
+  // Lixeira inox com pedal
+  const binSteel = (r = 0.13, h = 0.45) => {
+    const g = G();
+    g.add(cyl(r, r * 0.93, h, M.steel, 0, h / 2 + 0.02, 0, 18));
+    g.add(cyl(r + 0.005, r + 0.005, 0.03, M.chrome, 0, h + 0.035, 0, 18));
+    g.add(cyl(r * 0.95, r * 0.95, 0.02, black, 0, 0.01, 0, 18));
+    g.add(box(0.1, 0.02, 0.07, black, 0, 0.03, r + 0.02));
+    return g;
+  };
+
+  // =====================================================================
+  // WC (x 0,087–1,825 · z 44,075–46,225) — porta na parede z = 46,3 (x 0,5–1,3)
   // =====================================================================
   {
-    place(ctx.F.toilet(), 1.35, 44.39, 0);
-    // cuba de apoio suspensa na parede x = 0 + espelho redondo
-    put(box(0.34, 0.04, 0.46, quartz, 0.26, 0.82, 44.95));
-    put(cyl(0.16, 0.12, 0.12, ceramic, 0.27, 0.9, 44.95, 18));
-    put(cyl(0.012, 0.012, 0.2, black, 0.12, 0.94, 44.95, 8));
-    put(box(0.12, 0.02, 0.02, black, 0.17, 1.03, 44.95));
-    const mr = cyl(0.26, 0.26, 0.02, M.mirror, 0.105, 1.55, 44.95, 28); mr.rotation.z = Math.PI / 2; put(mr);
-    const mf = cyl(0.275, 0.275, 0.015, black, 0.097, 1.55, 44.95, 28); mf.rotation.z = Math.PI / 2; put(mf);
-    put(box(0.1, 0.28, 0.24, whiteF, 0.14, 1.35, 45.45));                 // dispenser de papel-toalha
-    put(cyl(0.12, 0.1, 0.3, black, 0.3, 0.15, 45.6, 14));               // lixeira
-    put(box(0.03, 0.1, 0.1, black, 1.805, 0.7, 44.55));                   // papeleira (parede x = 1,9)
-    put(cyl(0.05, 0.05, 0.09, paper, 1.75, 0.66, 44.55, 12)).rotation.x = Math.PI / 2;
-    put(box(1.7, 1.2, 0.012, tileWall, 0.96, 0.6, 44.082, nc));          // revestimento atrás do vaso
-    // painel grafite atrás da cuba (destaca o espelho redondo), toalheiro e secador de mãos
-    put(box(0.012, 2.1, 1.0, std({ color: 0x2e2f33, roughness: 0.5 }), 0.093, 1.05, 44.95, nc));
-    const tr = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.008, 6, 20), black); tr.rotation.y = Math.PI / 2; tr.position.set(0.12, 1.12, 45.8); put(tr);
-    put(box(0.02, 0.26, 0.14, std({ color: 0xbfc4b8, roughness: 1 }), 0.125, 0.98, 45.8, nc));
-    put(box(0.12, 0.24, 0.26, black, 1.76, 1.2, 45.7));
-    put(box(0.02, 0.03, 0.18, M.chrome, 1.695, 1.07, 45.7));
-    // vaso com planta pequena sobre a cuba
-    put(cyl(0.045, 0.035, 0.09, ceramic, 0.2, 0.885, 45.12, 10));
-    for (let i = 0; i < 3; i++) put(sph(0.045, frond2, 0.2 + (i - 1) * 0.025, 0.97 + (i % 2) * 0.02, 45.12));
+    // revestimentos: bancada na parede x = 0 (mármore marrom em cima); marmorato nas outras
+    wcWall('x', 0.087, 1, 44.212, 46.225, MARR);                                  // parede x = 0 (face 0,087)
+    wcWall('z', 44.075, 1, 0.212, 1.825, MARM);                                   // parede z = 44,0
+    wcWall('x', 1.825, -1, 44.087, 46.225, MARM);                                 // parede x = 1,9
+    wcWall('z', 46.225, -1, 0.099, 1.813, MARM, 0.09, [[0.4, 1.4]]);              // parede da porta (z = 46,3)
+    // pilar do canto (x 0–0,2 · z 43,8–44,2) encapado no mesmo padrão
+    put(box(0.125, 1.11, 0.137, PORC, 0.1495, 0.645, 44.1435, nc));
+    put(box(0.125, 1.79, 0.137, MARR, 0.1495, 2.095, 44.1435, nc));
+    // bancada (x 0,099–0,599 · z 44,32–45,22), cuba de apoio e espelho de LED
+    place(vanity(0.9, 0.5, 0.86, [0], 0.72, 0.86, 1.28), 0.099, 44.77, Math.PI / 2);
+    place(ctx.F.toilet(), 1.38, 44.39, 0);
+    // papeleira preta e ducha higiênica na parede x = 1,9; dispenser de papel-toalha e lixeira de pedal
+    put(box(0.03, 0.1, 0.12, black, 1.8, 0.72, 44.72));
+    put(cyl(0.055, 0.055, 0.1, paper, 1.735, 0.69, 44.72, 12)).rotation.x = Math.PI / 2;
+    put(box(0.04, 0.08, 0.05, M.chrome, 1.79, 0.62, 44.3));
+    put(box(0.1, 0.3, 0.26, whiteF, 0.155, 1.4, 45.52));
+    put(box(0.004, 0.08, 0.16, M.screenOff, 0.207, 1.33, 45.52, nc));
+    place(binSteel(0.12, 0.42), 1.62, 45.15);
+    // vasinho com planta sobre a bancada
+    put(cyl(0.045, 0.035, 0.09, ceramic, 0.22, 0.905, 45.12, 10));
+    for (let i = 0; i < 3; i++) put(sph(0.045, frond2, 0.22 + (i - 1) * 0.025, 0.99 + (i % 2) * 0.02, 45.12));
   }
 
   // =====================================================================
-  // WC PCD (x 1,98–3,92 · z 44,08–46,22) — porta na parede x = 4,0 (z 44,4–45,3)
+  // WC PCD (x 1,975–3,925 · z 44,075–46,225) — porta na parede x = 4,0 (z 44,4–45,3)
   // =====================================================================
   {
+    wcWall('z', 44.075, 1, 1.975, 3.925, MARR);                                   // parede da bancada (z = 44,0)
+    wcWall('x', 1.975, 1, 44.087, 46.225, MARM);                                  // parede x = 1,9
+    wcWall('z', 46.225, -1, 1.987, 3.913, MARM);                                  // parede z = 46,3 (atrás do vaso)
+    wcWall('x', 3.925, -1, 44.087, 46.213, MARM, 0.09, [[44.3, 45.4]]);           // parede da porta (x = 4,0)
     place(ctx.F.toilet(), 2.45, 45.88, Math.PI);
     // barras de apoio: lateral (parede x = 1,9), de fundo (z = 46,3) e vertical
-    const XS = 1.975 + 0.05, ZB = 46.225 - 0.05;
+    const XW = 1.987, XS = XW + 0.05, ZW = 46.213, ZB = ZW - 0.05;
     put(bar(XS, 0.76, 45.2, XS, 0.76, 46.05, 0.017, grabBar));
-    for (const z of [45.2, 46.05]) put(bar(1.975, 0.76, z, XS, 0.76, z, 0.015, grabBar));
+    for (const z of [45.2, 46.05]) put(bar(XW, 0.76, z, XS, 0.76, z, 0.015, grabBar));
     put(bar(XS, 0.9, 45.1, XS, 1.6, 45.1, 0.017, grabBar));
-    for (const y of [0.9, 1.6]) put(bar(1.975, y, 45.1, XS, y, 45.1, 0.015, grabBar));
+    for (const y of [0.9, 1.6]) put(bar(XW, y, 45.1, XS, y, 45.1, 0.015, grabBar));
     put(bar(2.1, 0.9, ZB, 2.9, 0.9, ZB, 0.017, grabBar));
-    for (const x of [2.1, 2.9]) put(bar(x, 0.9, 46.225, x, 0.9, ZB, 0.015, grabBar));
-    // lavatório suspenso (sem gabinete) na parede z = 44,0 com barras em U e espelho inclinado
-    const LX = 2.55, LZ = 44.3;
-    put(box(0.52, 0.14, 0.42, ceramic, LX, 0.74, LZ));
-    put(cyl(0.012, 0.012, 0.18, M.chrome, LX, 0.88, LZ - 0.14, 8));
-    put(box(0.02, 0.02, 0.12, M.chrome, LX, 0.96, LZ - 0.09));
-    for (const sx of [-1, 1]) {
-      put(bar(LX + sx * 0.36, 0.78, 44.08, LX + sx * 0.36, 0.78, 44.6, 0.016, grabBar));
-    }
-    put(bar(LX - 0.36, 0.78, 44.6, LX + 0.36, 0.78, 44.6, 0.016, grabBar));
-    const mir = box(0.5, 0.8, 0.02, M.mirror, LX, 1.45, 44.13); mir.rotation.x = 0.08; put(mir);
-    put(box(0.54, 0.84, 0.012, black, LX, 1.45, 44.088));
-    // alarme de emergência (cordão), lixeira e papeleira
-    put(box(0.1, 0.1, 0.03, alarm, 2.0, 0.45, 45.6).rotateY(Math.PI / 2));
-    put(box(0.025, 0.4, 0.02, alarm, 2.02, 0.22, 45.62));
-    put(cyl(0.12, 0.1, 0.3, black, 3.7, 0.15, 46.0, 14));
-    put(box(0.12, 0.12, 0.03, black, 2.02, 0.95, 45.55).rotateY(Math.PI / 2));
-    put(box(1.95, 1.2, 0.012, tileWall, 2.95, 0.6, 46.218, nc));        // revestimento atrás do vaso
-    put(box(0.12, 0.24, 0.26, black, 3.84, 1.1, 45.75));                  // secador de mãos (parede x = 4,0)
-    put(box(0.02, 0.03, 0.18, M.chrome, 3.775, 0.97, 45.75));
-    // símbolo de acessibilidade na parede ao lado do lavatório
-    put(box(0.2, 0.2, 0.01, std({ color: 0x1f5fae, roughness: 0.5 }), 3.3, 1.5, 44.082, nc));
+    for (const x of [2.1, 2.9]) put(bar(x, 0.9, ZW, x, 0.9, ZB, 0.015, grabBar));
+    // bancada suspensa acessível (tampo a 0,80 m, sem gabinete) com cuba de apoio baixa e barras em U
+    const LX = 2.5, ZF = 44.087;
+    place(vanity(0.7, 0.46, 0.8, [0], 0.6, 0.9, 1.05), LX, ZF, 0);
+    for (const sx of [-1, 1]) put(bar(LX + sx * 0.42, 0.76, ZF, LX + sx * 0.42, 0.76, ZF + 0.56, 0.016, grabBar));
+    put(bar(LX - 0.42, 0.76, ZF + 0.56, LX + 0.42, 0.76, ZF + 0.56, 0.016, grabBar));
+    // alarme de emergência (cordão), lixeira de pedal, papeleira e dispenser
+    put(box(0.03, 0.1, 0.1, alarm, XW + 0.015, 0.45, 45.62));
+    put(box(0.02, 0.4, 0.02, alarm, XW + 0.035, 0.22, 45.64));
+    place(binSteel(0.12, 0.42), 3.62, 45.98);
+    put(box(0.03, 0.12, 0.12, black, XW + 0.015, 0.95, 45.55));
+    put(cyl(0.055, 0.055, 0.1, paper, XW + 0.08, 0.9, 45.55, 12)).rotation.x = Math.PI / 2;
+    put(box(0.26, 0.3, 0.1, whiteF, 3.35, 1.4, ZF + 0.05));
+    // símbolo de acessibilidade na parede da bancada
+    put(box(0.2, 0.2, 0.006, std({ color: 0x1f5fae, roughness: 0.5 }), 3.35, 1.85, ZF + 0.003, nc));
   }
 }
