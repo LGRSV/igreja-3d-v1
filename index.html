@@ -46,7 +46,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.2.1';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -92,9 +92,12 @@ export const DEFAULT_ENTITIES = {
 // Estilos: (padrão) pendente · spot = refletor de palco (com feixe) · moving = moving head de treliça (feixe para +x/baixo)
 // · highbay = pendente industrial grande (hang = y da estrutura onde se prende: haste curta, sem cabo no ar) · linear = pendente linear de LED 2,4 m (cabos até o trilho do teto, y 6,43) · pole = poste de 5,5 m · sconce = arandela · lamp = abajur.
 // glowOnly = só lâmpada + halo + emissivo (sem PointLight — economiza luzes reais).
-// liteShadow = mantém a sombra também em `quality: leve` (máx. 3).
+// liteShadow = mantém a sombra em GPU com margem pequena (_tight). Em `quality: leve` nenhuma lâmpada projeta sombra (só o sol).
 // ext = a luminária só aparece no modo Fachada (a luz em si vale sempre).
 // ---------------------------------------------------------------------------
+// quality leve: quantas luzes reais cada item mantém (as outras viram só brilho). Total ≈ 8 + telão.
+const LITE_LIGHTS = { palco: 2, plateia: 2, hall: 1, fachada: 1, estacionamento: 2 };
+
 export const ITEMS = [
   { key: 'palco', label: 'Palco (RGB)', kind: 'light', icon: 'spot', rgb: true, dim: true, color: 0xb88cff,
     fixtures: [
@@ -5971,17 +5974,24 @@ export class Igreja3DCard extends HTMLElement {
       const rt = this._items.get(it.key) || {}; this._items.set(it.key, rt);
       rt.lights = rt.lights || []; rt.fixtures = rt.fixtures || []; rt.target = 0; rt.level = 0; rt.color = new THREE.Color(it.color || 0xffffff);
       if (!it.fixtures) continue;
-      for (const f of it.fixtures) {
+      // quality leve (tablet/celular): poucas luzes reais — cada item principal fica com LITE_LIGHTS[key] delas,
+      // mais fortes e com alcance maior para compensar; as demais viram só halo + emissivo (visual quase igual)
+      const realIdx = it.fixtures.map((f, k) => (f.glowOnly || (this._tight && f.i <= 22)) ? -1 : k).filter((k) => k >= 0);
+      const liteMax = this._lite ? (LITE_LIGHTS[it.key] || 0) : realIdx.length;
+      const step = liteMax > 0 ? realIdx.length / liteMax : Infinity;
+      const keep = new Set(liteMax >= realIdx.length ? realIdx : Array.from({ length: liteMax }, (_, n) => realIdx[Math.floor(n * step + step / 2 - 0.5)]));
+      const boost = keep.size ? realIdx.length / keep.size : 1;
+      for (const [fk, f] of it.fixtures.entries()) {
         const [px, py, pz] = f.p;
         const holder = f.ext ? this._ext : scene;
         // GPU apertada (uniforms/samplers no limite): as luzes fracas das salas viram só halo + emissivo
-        const glowOnly = f.glowOnly || (this._tight && f.i <= 22);
+        const glowOnly = !keep.has(fk);
         if (!glowOnly) {
-          const L = new THREE.PointLight(rt.color, 0, f.d, 2);
+          const L = new THREE.PointLight(rt.color, 0, this._lite ? f.d * Math.min(1.35, Math.sqrt(boost)) : f.d, 2);
           L.position.set(px, f.pole ? py - 0.2 : f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);
           // moving head: a luz sai 1,2 m à frente da lente (ilumina o palco, não a parede atrás da treliça)
           if (f.moving) L.position.addScaledVector(MOVE_DIR, 1.2);
-          if (f.shadow && (!(this._lite || this._tight) || f.liteShadow)) {
+          if (f.shadow && !this._lite && (!this._tight || f.liteShadow)) {
             // 256 (leve: 192): com o PCF de 9 amostras fica igual a 512 e ocupa 1/4 da memória (4 MB por luz em vez de 16)
             const ms = this._lite ? 192 : 256;
             L.castShadow = true; L.shadow.mapSize.set(ms, ms); L.shadow.radius = 2;
@@ -5992,7 +6002,7 @@ export class Igreja3DCard extends HTMLElement {
             L.shadow.autoUpdate = false; L.shadow.needsUpdate = true;
             this._nShadows++;
           }
-          scene.add(L); rt.lights.push({ L, i: f.i }); this._nLights++;
+          scene.add(L); rt.lights.push({ L, i: this._lite ? f.i * boost : f.i }); this._nLights++;
         }
         // uma lente emissiva por entidade (todas acendem juntas) → depois vira uma malha só
         const emis = () => rt.emisMat || (rt.emisMat = new THREE.MeshStandardMaterial({ color: 0xfff6e6, emissive: rt.color, emissiveIntensity: 0, roughness: 0.4 }));
@@ -7052,7 +7062,7 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._renderer) return;
     const w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight);
     // Orçamento de ~2,4 Mpx por quadro: em telas Retina grandes baixa o pixel ratio
-    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, this._lite ? 1.25 : 2, Math.sqrt((this._lite ? 1.4e6 : 2.4e6) / (w * h))));
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, this._lite ? 1.25 : 2, Math.sqrt((this._lite ? 1.0e6 : 2.4e6) / (w * h))));
     this._renderer.setPixelRatio(dpr);
     this._renderer.setSize(w, h, false);
     // Com o painel aberto, a cena é enquadrada na área visível acima dele
