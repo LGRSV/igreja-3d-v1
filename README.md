@@ -169,7 +169,7 @@ labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
-quality: auto         # auto (padrão: leve em celular/tablet ou ≤ 4 GB de RAM) · alta · leve (sombras menores, só 3 luzes com sombra)
+quality: auto         # auto (padrão: leve em celular/tablet ou ≤ 4 GB de RAM) · alta · leve (9 luzes reais, sem sombra de lâmpadas)
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
@@ -314,11 +314,17 @@ não no HA nem no GitHub.
   fusão; materiais **idênticos** com textura/emissivo/transparência também (ex.: as laterais de todas as
   letras caixa do logo), os halos da mesma entidade compartilham material e as peças de uma mesma
   luminária/entidade viram uma malha só.
-- **26 luzes reais** (PointLight: 25 luminárias + a do telão); **8 com sombra** em `quality: alta`,
-  3 em `leve`. As outras 17 luminárias são só "brilho" (emissivo + halo), sem custo de luz.
+- **26 luzes reais** (PointLight: 25 luminárias + a do telão); **8 com sombra** em `quality: alta`.
+  As outras luminárias são só "brilho" (emissivo + halo), sem custo de luz.
+- **`quality: leve`** (automático em celular/tablet, ex. Galaxy Tab S6 Lite): só **9 luzes reais** —
+  palco 2, plateia 2, hall 1, fachada 1, estacionamento 2 e o telão (tabela `LITE_LIGHTS` no topo do
+  arquivo) — mais fortes e com alcance maior para compensar; as demais viram brilho, **nenhuma lâmpada
+  projeta sombra** (só o sol, 1024²) e o pixel ratio fica em ≤ 1,25 (orçamento de 1 Mpx). O visual é
+  praticamente o mesmo; as salas pequenas ficam um pouco mais escuras à noite. Medido no SwiftShader:
+  quadro ~1,7× mais rápido e atualização de sombras de 635 ms → 5 ms.
   Em GPU com pouca margem (< 512 vetores de uniform no fragment ou < 16 samplers) as luzes fracas
   das salas viram só brilho (fica com 16 luzes reais, 3 com sombra) e o cartão avisa no console.
-- Sombras das luzes em 256² (192² no leve): **~64 MB** de GPU no total, contra 160 MB antes. Elas são
+- Sombras das luzes em 256² (no `leve` não há sombra de lâmpadas): **~64 MB** de GPU no total, contra 160 MB antes. Elas são
   desenhadas **uma vez** (a geometria é estática) e só refeitas quando a porta do hall gira ou o modo
   Fachada muda; nas transições dia/noite e com o sol andando só a sombra do sol é refeita.
 - Tone mapping Neutral (exposição 1,0): o preto da fachada fica preto e as cores do palco e do telão
@@ -331,7 +337,7 @@ não no HA nem no GitHub.
   (map + bump + ao + ambiente + 9 sombras).
 - Sombras só recalculam quando um estado muda; nada é renderizado parado (só quando a câmera se
   move, um estado muda ou o telão está tocando, a 30 fps).
-- Pixel ratio adaptativo (orçamento de ~2,4 Mpx por quadro; 1,4 Mpx em `leve`).
+- Pixel ratio adaptativo (orçamento de ~2,4 Mpx por quadro; 1 Mpx em `leve`).
 - Ligar/desligar luz não recompila shaders (todas as luzes ficam ativas com intensidade zero).
 - No disco o cartão tem ~485 KB (a demo `index.html`, com o cartão embutido, ~497 KB).
 
