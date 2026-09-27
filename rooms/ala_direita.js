@@ -6,6 +6,10 @@ function roomAlaDireita(ctx) {
   // e WC feminino. Paleta da igreja: preto, grafite, madeira clara (ripado),
   // branco; acentos âmbar/terracota. Telas (mídia, TV da agenda) e placas usam
   // CanvasTexture (ctx.makeTex). Nada de luzes: o cartão cuida da iluminação.
+  // Marca: sempre via ctx.logo (capacho da entrada lateral, painel retroiluminado da
+  // circulação, neon da mídia, ripado com letras caixa no voluntariado, jateado no
+  // espelho do hall dos banheiros, e dentro das telas/cartazes com ctx.logo.draw).
+  // Telas e fitas de LED seguem as entidades com ctx.bindEmissive.
   // Faces internas das paredes: x 16,125 (templo) · 17,025/17,175 · 18,825/18,975
   // · 20,013 (muro, com revestimento) · z 19,075 · 23,225/23,375 · 27,925/28,075
   // · 33,825/33,975 · 35,825/35,975 · 36,925/37,075 · 40,725/40,875 ·
@@ -48,7 +52,20 @@ function roomAlaDireita(ctx) {
   const ledR    = std({ color: 0x3a0a0a, emissive: 0xff3030, emissiveIntensity: 1.2 });
   const ledB    = std({ color: 0x0a1a3a, emissive: 0x3aa0ff, emissiveIntensity: 1.2 });
   const ledA    = std({ color: 0x3a2a0a, emissive: 0xffb040, emissiveIntensity: 1.2 });
-  const ledW    = std({ color: 0xfff1d8, emissive: 0xffe2b0, emissiveIntensity: 0.9 });
+  // fitas de LED: um material por ambiente (opções levemente diferentes → materiais distintos),
+  // cada um ligado à luz do seu ambiente
+  const ledStrip = (key, r) => ctx.bindEmissive(key, std({ color: 0xfff1d8, emissive: 0xffe2b0, emissiveIntensity: 0.9, roughness: r }), 1.1, { min: 0.1 });
+  const ledWv   = ledStrip('voluntariado', 0.5);
+  const ledWb   = ledStrip('banheiros', 0.51);
+  const ledWm   = ledStrip('midia', 0.52);
+  const ledWc   = ledStrip('circulacao', 0.53);
+  const ripa    = std({ color: 0xd9b8a0, roughness: 0.72 });                 // ripado (mesmo tom da fachada)
+  const ripaFd  = std({ color: 0xa8876f, roughness: 0.85 });                 // fundo do ripado
+  const matte   = std({ color: 0x1a1a1c, roughness: 0.92 });                 // preto fosco liso (painéis)
+  const porcW   = std({ color: 0xd9d4cc, roughness: 0.3 });                  // porcelanato claro (WC fem.)
+  const rugMat  = std({ color: 0x55575c, roughness: 1 });
+  const rugEdge = std({ color: 0x9a6a45, roughness: 1 });
+  const lampW   = std({ color: 0xf4f4f0, roughness: 0.3 });                   // luminária de emergência
   const papers  = [white, std({ color: 0xf3d77a, roughness: 1 }), std({ color: 0xe9a86a, roughness: 1 }), std({ color: 0xa9cbe6, roughness: 1 }), std({ color: 0xcfe3b0, roughness: 1 })];
   const bins    = [graphL, std({ color: 0x2f5f8b, roughness: 0.6 }), amber, cardb, std({ color: 0x3f7d3a, roughness: 0.7 }), terra];
 
@@ -87,21 +104,71 @@ function roomAlaDireita(ctx) {
     g.scale.setScalar(s);
     return place(g, x, z, 0);
   };
+  // Placa fotoluminescente do extintor (NBR 13434: fundo vermelho, pictograma branco)
+  const extSign = texMat(0.77, (g, W, Hh) => {
+    g.fillStyle = '#c4201b'; g.fillRect(0, 0, W, Hh);
+    g.strokeStyle = '#f7f1e6'; g.lineWidth = 2.2; g.strokeRect(4, 4, W - 8, Hh - 8);
+    g.fillStyle = '#f7f1e6'; const cx = W / 2;
+    g.beginPath(); g.moveTo(cx - 11, 30); g.lineTo(cx + 11, 30); g.lineTo(cx + 11, 72); g.quadraticCurveTo(cx + 11, 78, cx + 5, 78);
+    g.lineTo(cx - 5, 78); g.quadraticCurveTo(cx - 11, 78, cx - 11, 72); g.closePath(); g.fill();     // cilindro
+    g.fillRect(cx - 4, 20, 8, 10); g.fillRect(cx - 12, 16, 22, 5);                                  // válvula e gatilho
+    g.lineWidth = 3; g.beginPath(); g.moveTo(cx + 9, 18); g.quadraticCurveTo(cx + 24, 22, cx + 20, 46); g.stroke(); // mangueira
+    text(g, 'EXTINTOR', cx, 89, 10, '#f7f1e6');
+  });
   // Extintor de parede com placa. face = x da face da parede, dir = lado da sala (±1)
   const extintor = (xf, z, dir) => {
+    const xc = xf + dir * 0.09;
     add(box(0.01, 0.5, 0.2, black, xf + dir * 0.005, 0.62, z));
-    add(cyl(0.075, 0.075, 0.46, redExt, xf + dir * 0.09, 0.55, z, 14));
-    add(cyl(0.03, 0.04, 0.08, black, xf + dir * 0.09, 0.82, z, 10));
+    add(cyl(0.075, 0.075, 0.46, redExt, xc, 0.55, z, 14));
+    add(cyl(0.076, 0.076, 0.05, black, xc, 0.36, z, 14));                                     // etiqueta/cinta
+    add(cyl(0.03, 0.04, 0.08, black, xc, 0.82, z, 10));
     add(box(0.12, 0.02, 0.03, black, xf + dir * 0.1, 0.87, z));
-    add(box(0.006, 0.26, 0.2, redExt, xf + dir * 0.004, 1.35, z, nc));
+    add(cyl(0.016, 0.016, 0.01, white, xc + dir * 0.03, 0.82, z + 0.03, 10)).rotation.z = HPI; // manômetro
+    add(cyl(0.01, 0.01, 0.34, black, xc + dir * 0.03, 0.66, z - 0.085, 6));                   // mangueira
+    add(cyl(0.018, 0.012, 0.07, black, xc + dir * 0.03, 0.46, z - 0.085, 8));                  // difusor
+    add(box(0.006, 0.26, 0.2, extSign, xf + dir * 0.004, 1.42, z, nc));
   };
   // Placa de porta (texto ou pictograma) colada numa parede ao longo de Z (face em xf) ou de X (face em zf)
   const plaque = (axis, c, t, y, w, h, mat) => add(axis === 'z' ? box(0.01, h, w, mat, c, y, t, nc) : box(w, h, 0.01, mat, t, y, c, nc));
   const doorSign = (label) => texMat(2.2, (g, W, Hh) => {
     g.fillStyle = '#141416'; g.fillRect(0, 0, W, Hh);
     g.fillStyle = '#c98a3c'; g.fillRect(12, 70, 40, 4);
-    text(g, label, 12, 42, 26, '#f3efe6', 'bold', 'left');
-  });
+    text(g, label, 12, 42, 24, '#f3efe6', 'bold', 'left');
+    ctx.logo.draw(g, W - 40, 26, 30, { layout: 'mark', color: '#8d8f95' });
+  }, 0, 512);
+  // Placa de SAÍDA (sempre acesa: bloco autônomo). arrow: -1 esquerda, 0 nenhuma, 1 direita
+  const exitMat = (arrow) => texMat(2.6, (g, W, Hh) => {
+    g.fillStyle = '#0f7a3a'; g.fillRect(0, 0, W, Hh);
+    g.fillStyle = '#f2fff4';
+    const mx = arrow < 0 ? W - 48 : 28;                                                          // bonequinho correndo (no sentido da seta)
+    g.save(); if (arrow < 0) { g.translate(2 * mx + 8, 0); g.scale(-1, 1); }
+    g.beginPath(); g.arc(mx + 10, 24, 7, 0, PI * 2); g.fill();
+    g.lineWidth = 7; g.lineCap = 'round'; g.strokeStyle = '#f2fff4';
+    g.beginPath(); g.moveTo(mx + 6, 36); g.lineTo(mx - 2, 62); g.moveTo(mx + 6, 36); g.lineTo(mx + 20, 48); g.moveTo(mx - 2, 62); g.lineTo(mx - 12, 84);
+    g.moveTo(mx - 2, 62); g.lineTo(mx + 14, 72); g.lineTo(mx + 16, 86); g.moveTo(mx + 5, 40); g.lineTo(mx - 10, 46); g.stroke();
+    g.restore();
+    text(g, 'SAÍDA', W / 2 + (arrow < 0 ? -12 : 14), 52, 34, '#f2fff4');
+    if (arrow) {
+      const ax = arrow < 0 ? 18 : W - 18, s = arrow;
+      g.beginPath(); g.moveTo(ax + s * 14, 50); g.lineTo(ax - s * 4, 30); g.lineTo(ax - s * 4, 70); g.closePath(); g.fill();
+    }
+  }, 0.9);
+  // axis 'x' = parede ao longo de X (face em zf, sinal virado para dir·z); 'z' = parede ao longo de Z
+  const exitSign = (axis, f, t, y, dir, arrow = 0) => {
+    const m = exitMat(arrow);
+    if (axis === 'x') { add(box(0.36, 0.15, 0.03, lampW, t, y, f + dir * 0.015)); add(box(0.33, 0.125, 0.004, m, t, y, f + dir * 0.032, nc)); }
+    else { add(box(0.03, 0.15, 0.36, lampW, f + dir * 0.015, y, t)); add(box(0.004, 0.125, 0.33, m, f + dir * 0.032, y, t, nc)); }
+  };
+  // Luminária de emergência (2 faróis) na parede; mesmas convenções de exitSign
+  const emerg = (axis, f, t, y, dir) => {
+    const g = G();
+    g.add(box(0.32, 0.075, 0.06, lampW, 0, 0, 0.03));
+    for (const sx of [-0.1, 0.1]) { const h = cyl(0.028, 0.034, 0.05, lampW, sx, -0.02, 0.075, 12); h.rotation.x = HPI + 0.5; g.add(h); }
+    g.add(box(0.03, 0.01, 0.004, ledG, 0, 0.012, 0.062, nc));
+    if (axis === 'x') place(g, t, f, dir > 0 ? 0 : PI, y); else place(g, f, t, dir > 0 ? HPI : -HPI, y);
+  };
+  // Plano do logo (ctx.logo.mesh) virado para +z → posiciona e gira em torno de Y
+  const logoAt = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; return add(m); };
   const picto = (fem) => texMat(0.78, (g, W, Hh) => {
     g.fillStyle = '#141416'; g.fillRect(0, 0, W, Hh);
     g.fillStyle = '#f3efe6'; const cx = W / 2;
@@ -164,18 +231,39 @@ function roomAlaDireita(ctx) {
   // CORREDOR DA ENTRADA LATERAL (x 16,05–17,1 · z 11,0–19,0)
   // Portas em x=17,1: Gilvan z 12,9–13,8 · Adm. z 14,4–15,3; porta PM01 em z=11.
   // =====================================================================
-  add(box(0.8, 0.012, 0.6, graph, 16.58, 0.01, 11.5, nc));                                   // capacho
-  add(box(0.72, 0.004, 0.52, black, 16.58, 0.018, 11.5, nc));
+  // capacho de borracha grafite com a marca (anel + B) em bege, legível de quem chega pela frente
+  add(box(0.8, 0.012, 0.62, matte, 16.58, 0.008, 11.45, nc));
+  { const m = ctx.logo.mesh(0.44, 0, { layout: 'mark', color: '#bdb6a8', roughness: 1, cast: false }); m.rotation.x = -HPI; m.position.set(16.58, 0.0155, 11.45); add(m); }
+  exitSign('x', 11.075, 16.575, 2.38, 1);                                                    // SAÍDA sobre a porta PM01
+  emerg('z', 17.025, 16.25, 2.45, -1);
   extintor(17.025, 12.1, -1);
-  plaque('z', 17.018, 12.62, 1.6, 0.26, 0.12, doorSign('SALA GILVAN'));
-  plaque('z', 17.018, 14.17, 1.6, 0.26, 0.12, doorSign('ADMINISTRATIVO'));
-  // quadros na parede do templo (entre os pilares de z 12,4 e 16,9)
-  const art = [[terra, amber], [woodL, terra]];
-  [[13.9, 0], [15.6, 1]].forEach(([z, k]) => {
-    add(box(0.03, 0.62, 0.82, black, 16.14, 1.6, z));
-    add(box(0.006, 0.54, 0.74, white, 16.157, 1.6, z, nc));
-    add(box(0.008, 0.3, 0.3, art[k][0], 16.162, 1.66, z - 0.14, nc));
-    add(box(0.008, 0.18, 0.18, art[k][1], 16.164, 1.5, z + 0.16, nc));
+  plaque('z', 17.018, 12.62, 1.6, 0.3, 0.13, doorSign('SALA GILVAN'));
+  plaque('z', 17.018, 14.17, 1.6, 0.3, 0.13, doorSign('ADMINISTRATIVO'));
+  // cartazes emoldurados na parede do templo (entre os pilares de z 12,4 e 18,3): série e Base Jovem
+  const poster1 = texMat(0.72, (g, W, Hh) => {
+    const gr = g.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, '#1b1b1f'); gr.addColorStop(1, '#3a2a1f');
+    g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
+    ctx.logo.draw(g, W / 2 - 9, 8, 18, { layout: 'mark', color: '#f4f5f7' });
+    g.fillStyle = '#c98a3c'; g.fillRect(W / 2 - 10, 33, 20, 1.2);
+    text(g, 'SÉRIE', W / 2, 42, 6, '#cfcfd4');
+    text(g, 'RAÍZES', W / 2, 55, 15, '#f4f5f7', '900');
+    g.strokeStyle = '#c98a3c'; g.lineWidth = 1.2;                                                 // raízes estilizadas
+    for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(W / 2, 64); g.quadraticCurveTo(W / 2 + i * 4, 72, W / 2 + i * 8, 82 - Math.abs(i)); g.stroke(); }
+    text(g, 'DOMINGOS · 9H E 18H', W / 2, 92, 4.6, '#cfcfd4');
+  }, 0, 512);
+  const poster2 = texMat(0.72, (g, W, Hh) => {
+    g.fillStyle = '#c98a3c'; g.fillRect(0, 0, W, Hh);
+    g.fillStyle = '#141416'; g.fillRect(0, 58, W, Hh - 58);
+    text(g, 'BASE', 6, 22, 17, '#141416', '900', 'left');
+    text(g, 'JOVEM', 6, 40, 17, '#141416', '900', 'left');
+    text(g, 'SEXTAS · 20H', 6, 52, 6, '#141416', 'bold', 'left');
+    ctx.logo.draw(g, W / 2 - 16, 64, 32, { layout: 'wide', color: '#f4f5f7' });
+    text(g, '802 SUL · PALMAS', W / 2, 90, 4.4, '#8d8f95');
+  }, 0, 512);
+  [[13.9, poster1], [15.6, poster2]].forEach(([z, pm]) => {
+    add(box(0.03, 0.9, 0.66, black, 16.14, 1.55, z));
+    add(box(0.006, 0.84, 0.6, white, 16.157, 1.55, z, nc));                                    // passe-partout
+    add(box(0.004, 0.76, 0.54, pm, 16.161, 1.55, z, nc));
   });
 
   // =====================================================================
@@ -231,6 +319,17 @@ function roomAlaDireita(ctx) {
     }
     place(g, 19.73, 20.85, 0);
   }
+  // Painel preto fosco com o logo retroiluminado atrás do banco (parede x=20,1): acende com a circulação
+  add(box(0.03, 1.12, 2.3, matte, 19.998, 1.78, 20.85));
+  add(box(0.012, 0.012, 2.2, ledWc, 19.976, 2.33, 20.85, nc));                                 // fita de LED rasante no topo
+  {
+    const lg = ctx.logo.mesh(1.75, 0, { layout: 'wide', color: '#f4f5f7', emissive: 1, roughness: 0.35, cast: false });
+    logoAt(lg, 19.979, 1.74, 20.85, -HPI); ctx.bindEmissive('circulacao', lg.material, 0.85, { min: 0.12 });
+    const halo = ctx.glowPlane(2.6, 1.4, 'circulacao', { color: 0xfff1dc, base: 0.45, day: 0.2 });
+    logoAt(halo, 19.975, 1.76, 20.85, -HPI);
+  }
+  exitSign('x', 19.075, 17.55, 2.45, 1, -1);                                                  // SAÍDA ← (corredor lateral)
+  emerg('x', 23.225, 16.75, 2.5, -1);
   cica(16.58, 22.72, 0.4);
   // Corredor da mídia: TV com a agenda da semana (parede x=20,1) e quadros (parede x=18,9)
   const agenda = texMat(1.75, (g, W, Hh) => {
@@ -242,10 +341,11 @@ function roomAlaDireita(ctx) {
     rows.forEach(([d, h, t], i) => {
       const y = 42 + i * 15;
       g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(10, y - 6, W - 20, 12);
-      text(g, d, 14, y, 8, '#c98a3c', 'bold', 'left'); text(g, h, 38, y, 8, '#f3efe6', 'bold', 'left'); text(g, t, 70, y, 8, '#cfcfd4', 'normal', 'left');
+      text(g, d, 14, y, 8, '#c98a3c', 'bold', 'left'); text(g, h, 36, y, 7.5, '#f3efe6', 'bold', 'left'); text(g, t, 78, y, 7.5, '#cfcfd4', 'normal', 'left');
     });
-    text(g, 'BASE CHURCH', W - 12, 92, 6, '#8d8f95', 'bold', 'right');
+    ctx.logo.draw(g, W - 40, 84, 28, { layout: 'wide', color: '#8d8f95' });
   }, 0.8, 512);
+  ctx.bindEmissive('circulacao', agenda, 0.8, { min: 0.12 });
   add(box(0.04, 0.6, 1.04, black, 19.99, 1.6, 25.1));
   add(box(0.004, 0.55, 0.98, agenda, 19.968, 1.6, 25.1, nc));
   [[24.3, terra, amber], [26.6, woodL, terra]].forEach(([z, a, b]) => {
@@ -305,6 +405,7 @@ function roomAlaDireita(ctx) {
     g.fillStyle = '#e02424'; g.fillRect(6, 6, 30, 11); text(g, '● AO VIVO', 21, 11.5, 6.5, '#fff');
     g.fillStyle = 'rgba(20,20,24,0.85)'; g.fillRect(10, 74, 110, 14); g.fillStyle = '#c98a3c'; g.fillRect(10, 74, 3, 14);
     text(g, 'Culto de Celebração · Base Church', 17, 81, 6.5, '#fff', 'bold', 'left');
+    ctx.logo.draw(g, W - 20, 5, 13, { layout: 'mark', color: '#ffffff' });                    // "bug" da transmissão
   }, 0.85, 512);
   const waveMat = texMat(1.7778, (g, W, Hh) => {
     g.fillStyle = '#16181c'; g.fillRect(0, 0, W, Hh);
@@ -326,8 +427,11 @@ function roomAlaDireita(ctx) {
     g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
     text(g, 'Grande é o Senhor', W / 2, 40, 13, '#ffffff');
     text(g, 'e mui digno de louvor', W / 2, 58, 13, '#ffffff');
-    text(g, 'BASE CHURCH', W / 2, 88, 5.5, '#c98a3c');
+    ctx.logo.draw(g, W / 2 - 13, 78, 26, { layout: 'wide', color: '#c98a3c' });
   }, 0.85, 512);
+  // telas da mídia acompanham o culto: vídeo/slides com o telão, DAW com o som (apagadas = tela escura)
+  for (const m of [camMat, liveMat, slidesMat]) ctx.bindEmissive('telao', m, 0.85, { min: 0.1 });
+  ctx.bindEmissive('som', waveMat, 0.85, { min: 0.1 });
 
   // ---- bancada longa junto à J12 (x 16,27–16,92 · z 23,45–27,85) ----
   add(box(0.65, 0.04, 4.4, woodL, 16.595, DT - 0.02, 25.65));
@@ -420,9 +524,20 @@ function roomAlaDireita(ctx) {
   for (const [dy, dz] of [[0.15, 0.3], [0.15, -0.3], [-0.15, 0.3], [-0.15, -0.3]]) add(box(0.37, 0.02, 0.02, M.steel, 18.53, TOP + 0.15 + dy, 26.55 + dz));
   { const coil = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 6, 16), black); coil.position.set(18.53, TOP + 0.318, 26.55); coil.rotation.x = HPI; coil.castShadow = true; add(coil); }
   // painéis acústicos na parede x=18,9 (sobre o armário baixo)
-  for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) add(box(0.04, 0.46, 0.6, (r + c) % 3 === 1 ? amber : acoustic, 18.8, 1.72 + r * 0.5, 24.75 + c * 0.65));
+  // e, no centro, painel de feltro preto com a marca em neon branco-frio (acende com a mídia)
+  for (let r = 0; r < 2; r++) for (const c of [0, 3]) add(box(0.04, 0.46, 0.6, (r + c) % 3 === 1 ? amber : acoustic, 18.8, 1.72 + r * 0.5, 24.75 + c * 0.65));
+  add(box(0.04, 0.96, 1.24, matte, 18.8, 1.97, 25.725));
+  {
+    const neon = ctx.logo.mesh(0.7, 0, { layout: 'mark', color: '#ffffff', emissive: 1.3, emissiveColor: 0xd9ccff, roughness: 0.4, cast: false });
+    logoAt(neon, 18.777, 1.97, 25.725, -HPI); ctx.bindEmissive('midia', neon.material, 1.4, { min: 0.1 });
+    const halo = ctx.glowPlane(1.5, 1.2, 'midia', { color: 0x8a70ff, base: 0.55, day: 0.3 });   // brilho roxo (Base Music)
+    logoAt(halo, 18.774, 1.97, 25.725, -HPI);
+  }
   // sinal "NO AR" sobre a porta (lado de dentro)
   const noAr = texMat(3, (g, W, Hh) => { g.fillStyle = '#9e0f0f'; g.fillRect(0, 0, W, Hh); text(g, 'NO AR', W / 2, 54, 62, '#fff1f1'); }, 0.9);
+  ctx.bindEmissive('telao', noAr, 1.1, { min: 0.04 });                                          // acende durante a transmissão
+  add(box(0.012, 0.01, 4.3, ledWm, 16.283, DT + 0.005, 25.65, nc));                              // fita de LED atrás dos monitores (luz de fundo)
+  emerg('x', 27.925, 16.95, 2.5, -1);
   add(box(0.38, 0.14, 0.05, black, 18.35, 2.4, 23.4));
   add(box(0.34, 0.11, 0.004, noAr, 18.35, 2.4, 23.426, nc));
 
@@ -430,6 +545,22 @@ function roomAlaDireita(ctx) {
   // VOLUNTARIADO (x 16,05–20,1 · z 28,0–33,9)
   // Portas: z=28 x 19,0–19,9 · z=33,9 x 16,2–17,0; janela p/ o templo z 29,9–31,9.
   // =====================================================================
+  // Parede de marca atrás do sofá (face z 28,075, x 16,3–18,8 — antes da porta x 19,0): ripado de
+  // madeira clara como o da fachada, com o logo em letras caixa prateadas (brilho leve com a luz da sala)
+  {
+    const x0 = 16.3, x1 = 18.8, zf = 28.075, yh = 2.72;
+    add(box(x1 - x0, yh, 0.012, ripaFd, (x0 + x1) / 2, yh / 2, zf + 0.006));
+    for (let x = x0 + 0.03; x < x1 - 0.02; x += 0.075) add(box(0.042, yh, 0.022, ripa, x, yh / 2, zf + 0.023));
+    add(box(x1 - x0 + 0.02, 0.035, 0.05, matte, (x0 + x1) / 2, yh + 0.0175, zf + 0.025));      // arremate superior
+    add(box(x1 - x0 + 0.02, 0.07, 0.04, matte, (x0 + x1) / 2, 0.035, zf + 0.02));               // rodapé
+    const L = ctx.logo.relief(0.74, { depth: 0.045, layers: 3 });
+    L.position.set(17.55, 1.86, zf + 0.036); add(L);
+    ctx.bindEmissive('voluntariado', L.userData.face, 0.35, { min: 0 });
+  }
+  // tapete grafite com borda terracota sob a mesa
+  add(box(2.3, 0.008, 3.2, rugEdge, 17.55, 0.006, 30.95, nc));
+  add(box(2.14, 0.004, 3.04, rugMat, 17.55, 0.012, 30.95, nc));
+  emerg('z', 20.013, 28.75, 2.5, -1);
   place(F.sofa(2.5, 0.85, fabricG), 17.52, 28.6, 0);
   for (const [x, m, a] of [[16.62, terra, 0.25], [18.42, amber, -0.2]]) { const c = box(0.4, 0.38, 0.12, m, x, 0.66, 28.42); c.rotation.set(-0.25, a, 0); add(c); }
   // mesa 1,3 × 2,5 com 8 cadeiras
@@ -480,7 +611,7 @@ function roomAlaDireita(ctx) {
   for (const [dx, dz, m] of [[-0.04, 0.02, amber], [0.05, -0.03, std({ color: 0x6f9a3a, roughness: 0.6 })], [0.01, 0.06, redExt]]) add(sph(0.04, m, 19.78 + dx, 1.02, 33.55 + dz));
   add(box(2.4, 0.62, 0.34, woodL, 18.8, 1.95, 33.645));                                       // armário aéreo
   for (const x of [18.2, 18.8, 19.4]) add(box(0.008, 0.58, 0.004, black, x, 1.95, 33.473, nc));
-  add(box(2.3, 0.012, 0.02, ledW, 18.8, 1.634, 33.52, nc));                                   // fita LED sob o aéreo
+  add(box(2.3, 0.012, 0.02, ledWv, 18.8, 1.634, 33.52, nc));                                   // fita LED sob o aéreo
   // quadro branco da escala (parede do templo, z 32,05–32,95)
   const escala = texMat(1.14, (g, W, Hh) => {
     g.fillStyle = '#f7f7f4'; g.fillRect(0, 0, W, Hh);
@@ -580,6 +711,13 @@ function roomAlaDireita(ctx) {
   for (const z of [38.85, 39.55, 40.25]) urinal(20.0, z);
   for (const z of [39.2, 39.9]) add(box(0.42, 0.85, 0.02, hpl, 19.79, 1.0, z));              // divisórias dos mictórios
   add(cyl(0.14, 0.12, 0.45, M.steel, 17.45, 0.225, 40.45, 14));                               // lixeira
+  add(box(0.08, 0.2, 0.13, white, 19.973, 1.12, 37.42));                                      // saboneteira de parede
+  add(box(0.004, 0.06, 0.05, graphL, 19.931, 1.07, 37.42, nc));
+  { const g = G();                                                                             // secador de mãos
+    g.add(box(0.28, 0.34, 0.2, M.steel, 0, 0, 0.1)); g.add(box(0.2, 0.02, 0.1, black, 0, -0.17, 0.12));
+    g.add(box(0.03, 0.03, 0.004, ledB, 0.09, 0.12, 0.202, nc));
+    place(g, 20.013, 37.95, -HPI, 1.2); }
+  add(cyl(0.07, 0.07, 0.006, black, 18.6, 0.004, 39.8, 12));                                 // ralo
 
   // =====================================================================
   // HALL DOS BANHEIROS (x 16,05–20,1 · z 40,8–44,3 + faixa x 16,05–17,1 · z 37,0–40,8)
@@ -587,7 +725,7 @@ function roomAlaDireita(ctx) {
   add(box(2.7, 0.04, 0.52, stone, 18.65, 0.86, 43.96));                                       // bancada (granito preto)
   add(box(2.7, 0.16, 0.02, stone, 18.65, 0.76, 43.71));                                       // saia
   add(box(2.7, 0.1, 0.02, stone, 18.65, 0.93, 44.21));                                        // frontão
-  add(box(2.6, 0.012, 0.012, ledW, 18.65, 0.678, 43.73, nc));                                 // LED sob a bancada
+  add(box(2.6, 0.012, 0.012, ledWb, 18.65, 0.678, 43.73, nc));                                 // LED sob a bancada
   for (const x of [17.64, 18.27, 18.9, 19.53]) {                                              // 4 cubas de apoio
     const b = cyl(0.19, 0.14, 0.12, china, x, 0.94, 43.93, 20); b.scale.set(1.15, 1, 0.85); add(b);
     const w = cyl(0.165, 0.165, 0.004, std({ color: 0xdfe3e6, roughness: 0.2 }), x, 1.001, 43.93, 20); w.scale.set(1.15, 1, 0.85); add(w);
@@ -596,7 +734,10 @@ function roomAlaDireita(ctx) {
   }
   add(box(2.66, 0.96, 0.006, black, 18.65, 1.58, 44.221, nc));                                // espelho com moldura
   add(box(2.6, 0.9, 0.01, M.mirror, 18.65, 1.58, 44.212, nc));
-  add(box(2.5, 0.015, 0.015, ledW, 18.65, 2.045, 44.2, nc));
+  add(box(2.5, 0.015, 0.015, ledWb, 18.65, 2.045, 44.2, nc));
+  { const et = ctx.logo.mesh(0.36, 0.36, { layout: 'mark', color: '#eef2f4', opacity: 0.55, roughness: 0.6, cast: false });   // jateado no espelho
+    logoAt(et, 19.72, 1.84, 44.2045, PI); }
+  emerg('x', 40.875, 17.55, 2.5, 1);
   add(box(0.1, 0.34, 0.26, white, 19.96, 1.35, 43.2));                                        // papel-toalha
   add(box(0.004, 0.05, 0.16, graphL, 19.908, 1.2, 43.2, nc));
   add(cyl(0.15, 0.13, 0.5, M.steel, 19.8, 0.25, 43.25, 14));                                  // lixeira
@@ -619,8 +760,16 @@ function roomAlaDireita(ctx) {
     const w = cyl(0.145, 0.145, 0.004, std({ color: 0xdfe3e6, roughness: 0.2 }), 19.73, 1.001, z, 20); w.scale.set(0.85, 1, 1.1); add(w);
     add(cyl(0.013, 0.013, 0.26, black, 19.95, 1.01, z, 8)); add(box(0.13, 0.022, 0.022, black, 19.89, 1.13, z));
   }
-  add(box(0.006, 0.9, 1.42, black, 20.008, 1.58, 46.75, nc));
-  add(box(0.01, 0.84, 1.36, M.mirror, 20.0, 1.58, 46.75, nc));
+  add(box(0.012, 2.2, 1.8, porcW, 20.007, 1.1, 46.8));                                         // porcelanato claro atrás das cubas
+  add(box(0.006, 0.9, 1.42, black, 19.998, 1.58, 46.75, nc));
+  add(box(0.01, 0.84, 1.36, M.mirror, 19.99, 1.58, 46.75, nc));
+  add(box(0.004, 0.012, 1.3, ledWb, 19.986, 2.05, 46.75, nc));                                 // LED sobre o espelho
+  for (const z of [46.75]) { add(cyl(0.035, 0.035, 0.16, black, 19.9, 0.96, z, 12)); add(cyl(0.012, 0.012, 0.05, M.chrome, 19.9, 1.06, z, 6)); } // sabonete líquido
+  { const g = G();                                                                             // vaso com flores na bancada
+    g.add(cyl(0.05, 0.04, 0.14, porcW, 0, 0.07, 0, 12));
+    for (const [dx, dz, dy, m] of [[0, 0, 0.26, amber], [0.04, 0.02, 0.23, white], [-0.03, 0.03, 0.24, terra], [0.01, -0.04, 0.22, white]]) { g.add(cyl(0.004, 0.004, dy, frond, dx * 0.5, 0.14 + dy / 2 - 0.04, dz * 0.5, 5)); g.add(sph(0.028, m, dx, 0.12 + dy, dz)); }
+    place(g, 19.82, 47.38, 0, 0.88); }
+  add(cyl(0.07, 0.07, 0.006, black, 18.6, 0.004, 46.8, 12));                                  // ralo
   add(cyl(0.12, 0.1, 0.4, M.steel, 19.8, 0.2, 45.98, 14));                                    // lixeira
   // antecâmara: placa, espelho de corpo inteiro, banco e cica
   plaque('z', 17.018, 46.1, 1.6, 0.2, 0.26, picto(true));

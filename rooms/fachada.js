@@ -1,5 +1,5 @@
 function roomFachada(ctx) {
-  const { THREE, M, F, box, cyl, sph, place, add, addExt, std, rnd, makeTex, SPEC } = ctx;
+  const { THREE, M, F, box, cyl, sph, place, add, addExt, std, rnd, makeTex, SPEC, logo, bindEmissive, glowPlane } = ctx;
   const G = () => new THREE.Group();
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const j = (k) => (rnd() - 0.5) * 2 * k;                      // jitter determinístico ±k
@@ -8,7 +8,17 @@ function roomFachada(ctx) {
 
   // Paleta local (poucos materiais: tudo é fundido por material depois)
   const P = {
-    ripa: std({ color: 0xc99f80, roughness: 0.72 }), ripaFundo: std({ color: 0x8c6750, roughness: 0.85 }),
+    // ripado bege-rosado claro como na foto (duas tonalidades de ripa, sorteadas, quebram a uniformidade)
+    ripa: std({ color: 0xd6b39b, roughness: 0.72 }), ripa2: std({ color: 0xc29b82, roughness: 0.75 }), ripaFundo: std({ color: 0x9c7a64, roughness: 0.85 }),
+    mono: std({ color: 0x1b1b1e, roughness: 0.7 }), plate: std({ color: 0x121214, roughness: 0.4, metalness: 0.3 }),   // preto liso (totem, placas)
+    alu: std({ color: 0x9a9da2, roughness: 0.35, metalness: 0.7 }),
+    upLens: std({ color: 0xfff4dc, emissive: 0xffd9a8, emissiveIntensity: 0.1, roughness: 0.3 }),                    // embutidos no piso (ligados à 'fachada')
+    lampLens: std({ color: 0xf6f1e4, emissive: 0xffe6b8, emissiveIntensity: 0.55, roughness: 0.4 }),               // postes da rua (iluminação pública)
+    bark: std({ color: 0x5a4a3a, roughness: 1 }),
+    leafT1: std({ color: 0x55713a, roughness: 0.95 }), leafT2: std({ color: 0x415d2c, roughness: 0.95 }), leafT3: std({ color: 0x6f8a45, roughness: 0.95 }),
+    neigh: std({ color: 0x86837c, roughness: 0.92 }), neigh2: std({ color: 0xa9a399, roughness: 0.92 }), neighCap: std({ color: 0xb4afa5, roughness: 0.9 }),
+    neighRoof: std({ color: 0x6d7074, roughness: 0.7, metalness: 0.3 }),
+    muro: std({ color: 0xcdc7bb, roughness: 0.95 }), winN: std({ color: 0x2a3440, roughness: 0.15, metalness: 0.5 }),
     black: M.wallDark || std({ color: 0x2b2b2e, roughness: 0.85 }), cap: M.wallDarkCap || std({ color: 0x232326, roughness: 0.8 }),
     frame: M.frameDark || std({ color: 0x18181a, roughness: 0.45, metalness: 0.3 }),
     vase: std({ color: 0x141416, roughness: 0.32, metalness: 0.15 }),
@@ -71,22 +81,41 @@ function roomFachada(ctx) {
     const x0 = 7.2, x1 = 10.66, h = y1 - y0, ym = (y0 + y1) / 2;
     put(box(x1 - x0, h, 0.05, P.ripaFundo, (x0 + x1) / 2, ym, 49.755));
     const n = Math.floor((x1 - x0 - 0.03) / 0.075);
-    for (let i = 0; i <= n; i++) put(box(0.046, h, 0.04, P.ripa, x0 + 0.035 + i * 0.075, ym, 49.8));
+    for (let i = 0; i <= n; i++) put(box(0.046, h, 0.04, rnd() < 0.3 ? P.ripa2 : P.ripa, x0 + 0.035 + i * 0.075, ym, 49.8));
   };
 
   // =================================================================================================
   // (a) MODO NORMAL — frente térrea, jardins, estacionamento e ruas
   // =================================================================================================
 
-  // ---- Painel ripado (parte baixa, até 3,0 m) ----
-  ripado(add, 0, 3.0);
+  // ---- Painel ripado de 0 a 8,5 m + letreiro BASE CHURCH: SEMPRE visíveis (a identidade do prédio vista da rua) ----
+  const Y0 = 3.0, LX = 8.93;
+  ripado(add, 0, HT);
+  add(box(3.46, HT - Y0, 0.1, P.mono, LX, (HT + Y0) / 2, 49.69));   // contra-placa preta (quem olha do hall vê preto; embutida na parede alta no modo Fachada)
+  add(box(3.54, 0.06, 0.24, P.cap, LX, HT + 0.03, 49.74));                                 // tampa no topo
+  for (const x of [7.185, 10.675]) add(box(0.03, HT, 0.2, P.cap, x, HT / 2, 49.74));       // perfis laterais do painel
+  // letreiro em letras caixa prateadas (logo oficial), afastadas do ripado; a face acende com a luz 'fachada'
+  const LOGO_W = 2.4, LOGO_Y = 4.9;                                                        // BASE ≈ 70 % da largura do painel; y 3,4–6,4 (foto)
+  const sign = logo.relief(LOGO_W, { depth: 0.09, layers: 4, weight: 0.045 });
+  sign.position.set(LX, LOGO_Y, 49.822); add(sign);
+  bindEmissive('fachada', sign.userData.face, 0.9);
+  const halo = glowPlane(3.3, 3.9, 'fachada', { color: 0xffe9cc, base: 0.45, day: 0.1 });   // retroiluminação (halo atrás das letras)
+  halo.position.set(LX, LOGO_Y, 49.826); add(halo);
+  // embutidos de piso no pedrisco lavando o ripado de baixo para cima (faixas de luz verticais à noite)
+  bindEmissive('fachada', P.upLens, 1.6);
+  for (const x of [7.88, 8.63, 9.38, 10.12]) {
+    add(flat(cyl(0.065, 0.065, 0.03, P.grille, x, 0.045, 49.97, 14)));
+    add(flat(cyl(0.048, 0.048, 0.008, P.upLens, x, 0.062, 49.97, 14)));
+    const w = glowPlane(0.7, 3.4, 'fachada', { color: 0xffc98a, base: 0.5, day: 0.05 }); w.position.set(x, 1.45, 49.828); add(w);
+  }
 
   // ---- Porta principal: portal preto em volta do vão + bandeira de vidro escuro sobre as folhas ----
   for (const x of [10.78, 13.22]) add(box(0.2, 3.0, 0.22, P.frame, x, 1.5, 49.83));        // ombreiras do portal (fora do vão 10,9–13,1)
   add(box(2.22, 0.66, 0.02, M.glassDark, 12.0, 2.63, 49.74, { cast: false, receive: false }));   // bandeira
   add(box(2.22, 0.05, 0.05, P.frame, 12.0, 2.3, 49.75, { cast: false }));
   add(box(2.22, 0.05, 0.05, P.frame, 12.0, 2.96, 49.75, { cast: false }));
-  add(box(0.04, 0.66, 0.05, P.frame, 12.0, 2.63, 49.75, { cast: false }));
+  // adesivo branco (logo horizontal) na bandeira de vidro, como o vinil das portas de vidro das igrejas
+  const vin = logo.mesh(1.2, 0, { layout: 'wide', color: '#f1f1ee', opacity: 0.92, cast: false }); vin.position.set(12.0, 2.63, 49.757); add(vin);
 
   // ---- Jardineiras: cerca-viva densa + faixa de pedrisco branco + guia branca ----
   // folhagem miúda da cerca-viva podada (textura de folhas + relevo pela própria textura)
@@ -218,8 +247,97 @@ function roomFachada(ctx) {
   street(-6.0, -1);    // rua dos fundos (pista z −9,5…−2,5)
   // guia rebaixada em frente ao portão dos fundos
   add(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
-  // árvores nas laterais do estacionamento (fora da pista e dos postes)
-  for (const [x, z] of [[-5.2, 55.0], [25.2, 55.0]]) place(F.tree(), x, z, rnd() * Math.PI);
+  // ---- Arborização: copa em cachos (várias esferas pequenas achatadas), tronco com galhos ----
+  const tree = (x, z, s, seed) => {
+    const g = G(), rr = mulberry(seed), H0 = 2.1 * s;
+    g.add(cyl(0.09 * s, 0.15 * s, H0, P.bark, 0, H0 / 2, 0, 8));
+    for (let i = 0; i < 3; i++) {
+      const a = i * 2.1 + rr(), r = 0.55 * s;
+      bar((m) => g.add(m), [0, H0 - 0.15, 0], [Math.cos(a) * r, H0 + 0.55 * s, Math.sin(a) * r], 0.06 * s, P.bark);
+    }
+    const mats = [P.leafT1, P.leafT2, P.leafT3];
+    for (let i = 0; i < 13; i++) {
+      const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * 1.0 * s, y = H0 + (0.45 + rr() * 0.75) * s - d * 0.25;
+      const m = sph((0.38 + rr() * 0.26) * s, mats[i % 3], Math.cos(a) * d, y, Math.sin(a) * d); m.scale.set(1, 0.72, 1); g.add(m);
+    }
+    place(g, x, z, rr() * Math.PI);
+  };
+  for (const [x, z, s] of [[-5.2, 55.0, 1.1], [25.2, 55.0, 1.1]]) tree(x, z, s, 70 + x | 0);          // laterais do estacionamento
+  for (const [x, s] of [[-12, 1.0], [1.5, 0.95], [19.6, 0.95], [32, 1.05]]) tree(x, 61.6, s, 80 + x | 0);   // calçada da frente (sem esconder o letreiro)
+  for (const [x, s] of [[4, 1.0], [16, 1.05]]) tree(x, -10.9, s, 90 + x | 0);                           // calçada dos fundos (lado oposto da rua)
+
+  // ---- Postes de iluminação pública na calçada da frente (braço sobre a rua) ----
+  for (const x of [-7.5, 27.5]) {
+    const z = 61.9;
+    add(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
+    add(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
+    bar(add, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
+    add(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
+    add(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
+  }
+
+  // ---- Vizinhos (volumes simples, sem roubar a cena) e muros de divisa ----
+  const neighbor = (x0, x1, z0, z1, h, face) => {
+    add(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
+    add(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
+    add(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
+    const xf = face < 0 ? x0 - 0.012 : x1 + 0.012;                                          // janelas na face voltada para a igreja
+    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) add(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
+    // frente: vitrine + porta de enrolar
+    add(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
+    add(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
+  };
+  neighbor(-14, -4.2, 4, 46, 4.0, 1);
+  neighbor(24.4, 32, 10, 46, 3.0, -1);
+  for (const x of [-3.35, 23.45]) {
+    add(box(0.15, 2.2, 49.6, P.muro, x, 1.1, 24.8));
+    add(box(0.21, 0.05, 49.64, P.neighCap, x, 2.225, 24.8, { cast: false }));
+  }
+
+  // ---- Totem de entrada (monólito preto com face ripada e o logo em relevo), na calçada à esquerda ----
+  {
+    const g = G(), TWd = 1.3, THt = 4.0, TD = 0.42, B0 = 0.3;
+    g.add(box(1.9, B0, 1.0, P.curbW, 0, B0 / 2, 0));                                       // floreira/base de concreto branco
+    g.add(flat(box(1.8, 0.02, 0.9, P.pebble, 0, B0 + 0.01, 0)));                            // pedrisco
+    g.add(box(TWd, THt, TD, P.mono, 0, B0 + THt / 2, 0));
+    g.add(box(TWd + 0.04, 0.05, TD + 0.04, P.cap, 0, B0 + THt + 0.025, 0));
+    const fw = TWd - 0.2, fh = THt - 0.3, fy = B0 + 0.15 + fh / 2, zf = TD / 2;
+    g.add(box(fw, fh, 0.02, P.ripaFundo, 0, fy, zf + 0.01));
+    for (let x = -fw / 2 + 0.03; x < fw / 2 - 0.02; x += 0.075) g.add(box(0.046, fh, 0.03, rnd() < 0.3 ? P.ripa2 : P.ripa, x, fy, zf + 0.035));
+    const R = logo.relief(0.86, { depth: 0.05, layers: 3, weight: 0.045 }); R.position.set(0, B0 + 2.85, zf + 0.052); g.add(R);
+    bindEmissive('fachada', R.userData.face, 0.9);
+    // placa preta com o endereço
+    g.add(box(1.0, 0.26, 0.02, P.plate, 0, B0 + 1.45, zf + 0.062));
+    const A = 1.0 / 0.2;                                                                     // proporção da placa de texto (1,0 × 0,2 m)
+    const addrTex = makeTex(1024, (c, s) => {
+      c.setTransform(1, 0, 0, A, 0, 0);
+      const hS = s / A; c.fillStyle = '#eeeeea'; c.strokeStyle = '#eeeeea'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.font = `700 ${Math.round(hS * 0.62)}px ${logo.font}`; c.lineWidth = hS * 0.03;
+      c.fillText('802 SUL · PALMAS', s / 2, hS * 0.52, s * 0.94); c.strokeText('802 SUL · PALMAS', s / 2, hS * 0.52, s * 0.94);
+    });
+    addrTex.wrapS = addrTex.wrapT = THREE.ClampToEdgeWrapping;
+    const addr = new THREE.Mesh(new THREE.PlaneGeometry(0.94, 0.188), new THREE.MeshStandardMaterial({ map: addrTex, alphaTest: 0.5, roughness: 0.4,
+      emissive: 0xfff4e6, emissiveMap: addrTex, emissiveIntensity: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    addr.position.set(0, B0 + 1.45, zf + 0.073); addr.castShadow = false; g.add(addr);
+    bindEmissive('fachada', addr.material, 0.8);
+    // verso: marca (anel + B) em branco
+    const back = logo.mesh(0.7, 0, { layout: 'mark', color: '#e9e9e6' }); back.rotation.y = Math.PI; back.position.set(0, B0 + 3.1, -TD / 2 - 0.004); g.add(back);
+    // embutido no pedrisco + faixa de luz lavando a face ripada
+    g.add(flat(box(0.16, 0.03, 0.08, P.grille, 0, B0 + 0.03, zf + 0.2)));
+    g.add(flat(box(0.12, 0.008, 0.05, P.upLens, 0, B0 + 0.047, zf + 0.2)));
+    const w = glowPlane(1.15, 2.8, 'fachada', { color: 0xffc98a, base: 0.5, day: 0.05 }); w.position.set(0, B0 + 1.4, zf + 0.056); g.add(w);
+    place(g, -1.85, 50.32, 0.35);
+  }
+
+  // ---- Placa com a marca no muro dos fundos, ao lado do portão (para quem chega pela rua de trás) ----
+  add(box(0.72, 0.72, 0.02, P.plate, 6.3, 2.0, -0.105, { cast: false }));
+  { const m = logo.mesh(0.6, 0, { layout: 'mark', color: '#e9e9e6' }); m.rotation.y = Math.PI; m.position.set(6.3, 2.0, -0.117); add(m); }
+
+  // ---- Paraciclo (3 arcos de aço) na calçada da direita, fora das vagas PCD ----
+  for (const x of [21.55, 22.05, 22.55]) {
+    for (const z of [49.95, 50.55]) add(cyl(0.022, 0.022, 0.75, P.alu, x, 0.375, z, 8));
+    bar(add, [x, 0.75, 49.95], [x, 0.75, 50.55], 0.044, P.alu);
+  }
 
   // =================================================================================================
   // (b) MODO FACHADA — paredes altas, platibandas, cobertura, beiral com treliça e letreiro
@@ -229,7 +347,7 @@ function roomFachada(ctx) {
   const wZ = (x, z0, z1, y0, y1, mat = P.black) => addExt(box(TW, y1 - y0, z1 - z0, mat, x, (y0 + y1) / 2, (z0 + z1) / 2));
   const capX = (z, x0, x1, y) => addExt(box(x1 - x0 + 0.04, 0.05, TW + 0.06, P.cap, (x0 + x1) / 2, y + 0.025, z, { cast: false }));
   const capZ = (x, z0, z1, y) => addExt(box(TW + 0.06, 0.05, z1 - z0 + 0.04, P.cap, x, y + 0.025, (z0 + z1) / 2, { cast: false }));
-  const e = TW / 2, Y0 = 3.0;
+  const e = TW / 2;
 
   // ---- Cobertura do bloco templo + hall: meia-água caindo para a ala direita (x+), beiral até x 17,45 ----
   const RX0 = 0.1, RX1 = 17.45, RY0 = HT - 0.3, RY1 = HT - 0.95, RZ0 = 12.5, RZ1 = 49.55;
@@ -316,31 +434,8 @@ function roomFachada(ctx) {
   cond(14.9, SLAB, 1.0, 1);
 
   // ---- Fachada: painel ripado (parte alta), portal da porta e letreiro BASE CHURCH ----
-  ripado(addExt, Y0, HT);
   addExt(box(2.64, 0.5, 0.22, P.frame, 12.0, Y0 + 0.25, 49.83));                     // verga preta do portal
-  // Letreiro em letras caixa (prata) afastadas 10 cm do ripado: camadas cinzas atrás dão o relevo
-  const S = 3.6, LX = 8.93, LY = 5.25, px = 1024 / S;                                  // plano de 3,6 m centrado no painel
-  const logoTex = makeTex(1024, (g, s) => {
-    const cX = (x) => (x - (LX - S / 2)) * px, cY = (y) => ((LY + S / 2) - y) * px;
-    const font = '"Arial Black", "Helvetica Neue", Arial, sans-serif';
-    g.fillStyle = '#f5f5f3'; g.strokeStyle = '#f5f5f3'; g.textAlign = 'center';
-    // círculo com o "B" (y 5,32–6,88)
-    g.lineWidth = 0.09 * px; g.beginPath(); g.arc(cX(8.93), cY(6.12), 0.68 * px, 0, Math.PI * 2); g.stroke();
-    g.textBaseline = 'middle'; g.font = `900 ${Math.round(0.9 * px)}px ${font}`; g.fillText('B', cX(8.93), cY(6.1), 0.8 * px);
-    // BASE (y 4,3–5,08) e CHURCH (y 3,55–4,12)
-    g.textBaseline = 'alphabetic';
-    g.font = `900 ${Math.round(1.08 * px)}px ${font}`; g.fillText('BASE', cX(8.93), cY(4.3), 2.35 * px);
-    g.font = `900 ${Math.round(0.78 * px)}px ${font}`; g.fillText('CHURCH', cX(8.93), cY(3.55), 2.35 * px);
-  });
-  logoTex.wrapS = logoTex.wrapT = THREE.ClampToEdgeWrapping;
-  const logoGeo = new THREE.PlaneGeometry(S, S);
-  const logoSide = new THREE.MeshStandardMaterial({ color: 0x4a4d52, map: logoTex, alphaTest: 0.5, roughness: 0.5, metalness: 0.4 });
-  const logoFace = new THREE.MeshStandardMaterial({ color: 0xffffff, map: logoTex, alphaTest: 0.5, roughness: 0.35, metalness: 0.2 });
-  // as camadas cinzas descem um pouco para a direita: de frente aparece a lateral das letras (como na foto)
-  [49.9, 49.91, 49.92, 49.93].forEach((z, i) => {
-    const m = new THREE.Mesh(logoGeo, i < 3 ? logoSide : logoFace), k = 3 - i;
-    m.position.set(LX + 0.011 * k, LY - 0.016 * k, z); m.castShadow = i === 3; m.receiveShadow = false; addExt(m);
-  });
+  // (o painel ripado alto e o letreiro BASE CHURCH ficam no modo normal: ver o início do arquivo)
   // câmera de segurança (canto esquerdo) e sensor branco (canto direito), como na foto
   addExt(box(0.12, 0.1, 0.18, P.grille, 0.9, 6.3, 49.83)); addExt(cyl(0.05, 0.05, 0.16, P.unit, 0.9, 6.24, 49.95, 10)).rotation.x = Math.PI / 2;
   addExt(box(0.28, 0.16, 0.06, P.unit, 15.3, 6.0, 49.78, { cast: false }));

@@ -9,6 +9,42 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.1 — logo, renderização e decoração
+
+**Logo da Base Church (fiel à foto da fachada)**
+- Uma **única função de desenho** do logo oficial (anel espesso com o "B" bold; "BASE" e "CHURCH" com a mesma
+  largura, CHURCH um pouco menor), com as proporções medidas na foto. A fonte é medida e ajustada no canvas,
+  então sai igual no Windows, Android e Linux (sem depender de "Arial Black"). Todos os logos do cartão usam
+  essa função: fachada, totem, telão, LED do palco, recepção, hall, capachos, placas e telas.
+- O **painel ripado bege-rosado de 0 a 8,5 m com o letreiro BASE CHURCH em letras caixa prateadas** agora é
+  visível **sempre** (não só no modo Fachada): o prédio preto é reconhecível da rua e na vista inicial.
+  À noite as letras acendem com a luz `fachada`, com halo de retroiluminação e 4 embutidos lavando o ripado.
+- Logo em **LED acima do telão** (acende com o `palco`), **totem de entrada** de 4 m na calçada com o logo
+  em relevo e "802 SUL · PALMAS", paredão da marca no pátio, letreiros no hall, na recepção, no voluntariado e
+  na plateia, adesivos jateados nas portas de vidro do templo e capachos com o logo.
+
+**Renderização**
+- Tone mapping **Neutral** (exposição 1,0): a "Igreja Preta" fica preta de verdade e o roxo do palco e o
+  telão ficam saturados; preto da fachada com **juntas de painel** (sem textura extra).
+- **Feixes de luz** nos 4 refletores do palco (seguem a cor RGB e o brilho de `palco`), telão com cores fiéis
+  e halo de LED, vidro com reflexo do céu, menos luz "chapada" de dia (mais volume nas sombras).
+- Emissivos da decoração (LEDs, letreiros, telas) **acompanham a entidade** — de dia e com tudo desligado o
+  palco não fica mais "ligado".
+- Rótulos com tamanho fixo na tela, escondidos atrás das paredes e com nível de detalhe (de longe, só os
+  ambientes principais; no celular, só os maiores).
+- Câmera inicial de frente, pelo estacionamento (fachada e logo legíveis, palco e telão visíveis); em
+  retrato os botões quebram em duas linhas.
+- Sombras das luzes desenhadas uma vez e em 256² (160 → 64 MB de GPU); `quality: auto` (padrão) usa o
+  perfil leve em celular/tablet; salvaguarda automática em GPU com poucos uniforms/samplers.
+
+**Decoração**
+- Palco "black box" com cortinas de molton, logo no bumbo e no púlpito; plateia com painéis acústicos pretos,
+  ripado com fita de LED, 504 lugares e **pendentes lineares de LED** em 2 trilhos de teto (corredor central livre).
+- Entorno mais realista: gramado seco, vizinhos, muros de divisa, árvores com copa em cachos, postes de rua,
+  paraciclo e carros com cabine afunilada; ipê-amarelo do pátio refeito com flores caídas.
+- Mais detalhe em todos os ambientes (hall, Sala da Família, WCs, mídia, voluntariado, recepção, pastoral,
+  caixa d'água, cozinha, pátio) — ver `rooms/*.js`.
+
 ## Arquivos
 
 | Arquivo | Para quê |
@@ -69,7 +105,7 @@ labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
-quality: alta         # 'leve' = sombras menores e só 3 luzes com sombra (tablet de parede / notebook fraco)
+quality: auto         # auto (padrão: leve em celular/tablet ou ≤ 4 GB de RAM) · alta · leve (sombras menores, só 3 luzes com sombra)
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
@@ -122,10 +158,11 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
 - **Fachada**: o botão *Fachada* mostra o prédio como ele é por fora — bloco preto de 8,5 m do templo
   e do hall, painel ripado de madeira clara com o logo "B / BASE CHURCH", ala direita de 4,5 m com o
   beiral de treliça e forro amadeirado, condensadoras no telhado, platibandas e coberturas. Desligado,
-  volta a vista de casinha de boneca (paredes de 3 m, sem teto). O refletor do letreiro só aparece
-  nesse modo; os rótulos dos ambientes somem enquanto ele está ligado.
-- **Entorno**: estacionamento frontal em intertravado terracota espinha de peixe, vagas PCD, cerca-viva
-  e cicas na frente, ruas da frente e dos fundos — só contexto.
+  volta a vista de casinha de boneca (paredes de 3 m, sem teto). O **painel ripado com o letreiro BASE
+  CHURCH e o refletor ficam visíveis nos dois modos** (a identidade do prédio vista da rua); os rótulos dos
+  ambientes somem enquanto o modo Fachada está ligado.
+- **Entorno**: estacionamento frontal em intertravado espinha de peixe, vagas PCD, cerca-viva e cicas na
+  frente, totem de entrada com o logo, ruas da frente e dos fundos, vizinhos, árvores e postes — só contexto.
 - **Clima ao vivo (Palmas)**: widget no canto inferior direito com temperatura, condição, sensação
   térmica e vento — dados da [Open-Meteo](https://open-meteo.com/) (gratuita, sem chave), atualizados
   a cada 15 min, nas coordenadas `latitude`/`longitude` (padrão: Palmas-TO). Some quando o painel
@@ -183,7 +220,7 @@ Tudo está em metros no topo de `igreja3d-card.js` (X → direita, Z → frente)
 `rooms/BRIEF.md`:
 
 - `ZONES` — os pisos (ambientes), a textura de cada um e qual entidade o clique alterna.
-- `ITEMS` — luminárias: posição `p`, intensidade `i` (cd), alcance `d` (m), estilo (refletor, pendente
+- `ITEMS` — luminárias: posição `p`, intensidade `i` (cd), alcance `d` (m), estilo (refletor com feixe, pendente linear de LED, pendente
   industrial, poste, arandela) e quais projetam sombra.
 - `PILLARS_L` / `PILLARS_R` — pilares do templo nas paredes x = 0 e x = 16,05.
 - `_buildWalls()` — paredes com portas (`door`), janelas (`window`), vidro (`glass`), porta de vidro de
@@ -203,21 +240,33 @@ na demo, `window.demo.set('palco','on',{rgb_color:[255,0,0]})` e `window.demo.se
 Medido na demo (Chromium, vista padrão 1400×900). A cena roda no dispositivo que abre o dashboard,
 não no HA nem no GitHub.
 
-- ~6.200 malhas (paredes, cadeiras, palco, móveis, fachada) são fundidas por material na
-  inicialização: **5.951 → 215 draw calls** na cena + **229 → 17** no grupo da Fachada. No total, a vista
-  geral desenha **~365 draw calls por quadro** (com pisos, luminárias, rótulos e halos); antes das
-  otimizações eram ~565. Materiais simples praticamente iguais (±16/255 na cor, ±0,2 na rugosidade)
-  são unificados antes da fusão, e as peças de uma mesma luminária/entidade viram uma malha só.
+- ~6.900 malhas (paredes, cadeiras, palco, móveis, fachada) são fundidas por material na
+  inicialização: **6.946 → 272 draw calls** na cena + **171 → 12** no grupo da Fachada. No total, a vista
+  padrão desenha **~420 draw calls por quadro** (com pisos, luminárias, rótulos, halos e feixes); a v1.0
+  desenhava ~372 com bem menos decoração (vista de topo 334 → 414; interior do templo 222 → 237).
+  Materiais simples praticamente iguais (±22/255 na cor, ±0,25 na rugosidade) são unificados antes da
+  fusão; materiais **idênticos** com textura/emissivo/transparência também (ex.: as laterais de todas as
+  letras caixa do logo), os halos da mesma entidade compartilham material e as peças de uma mesma
+  luminária/entidade viram uma malha só.
 - **26 luzes reais** (PointLight: 25 luminárias + a do telão); **8 com sombra** em `quality: alta`,
-  3 em `leve`. As outras 18 luminárias são só "brilho" (emissivo + halo), sem custo de luz.
-- Construção da cena (`_build3D`): **~0,38 s** com os shaders já em cache e ~3–11 s na primeira vez,
-  quase tudo compilação de shader — medido em Chromium com SwiftShader (CPU, sem GPU); numa GPU real é
-  bem menos. No mesmo ambiente o casa-chefe leva ~0,22 s / ~10 s. ~260 mil triângulos.
+  3 em `leve`. As outras 17 luminárias são só "brilho" (emissivo + halo), sem custo de luz.
+  Em GPU com pouca margem (< 512 vetores de uniform no fragment ou < 16 samplers) as luzes fracas
+  das salas viram só brilho (fica com 16 luzes reais, 3 com sombra) e o cartão avisa no console.
+- Sombras das luzes em 256² (192² no leve): **~64 MB** de GPU no total, contra 160 MB antes. Elas são
+  desenhadas **uma vez** (a geometria é estática) e só refeitas quando a porta do hall gira ou o modo
+  Fachada muda; nas transições dia/noite e com o sol andando só a sombra do sol é refeita.
+- Tone mapping Neutral (exposição 1,0): o preto da fachada fica preto e as cores do palco e do telão
+  ficam fiéis. O telão não passa pelo tone mapping e tem um halo de LED em volta; os 4 refletores do
+  palco têm feixe de luz falso (cone aditivo, 4 draw calls) que segue a cor RGB e o brilho da entidade.
+- Construção da cena (`_build3D`): **~0,48 s** com os shaders já em cache (v1.0: ~0,39 s no mesmo teste) e
+  ~8–11 s na primeira vez, quase tudo compilação de shader — medido em Chromium com SwiftShader (CPU, sem GPU);
+  numa GPU real é bem menos. ~307 mil triângulos (v1.0: ~260 mil), 29 programas de shader, no máximo 13 das 16
+  unidades de textura por material (map + bump + ao + ambiente + 9 sombras).
 - Sombras só recalculam quando um estado muda; nada é renderizado parado (só quando a câmera se
   move, um estado muda ou o telão está tocando, a 30 fps).
 - Pixel ratio adaptativo (orçamento de ~2,4 Mpx por quadro; 1,4 Mpx em `leve`).
 - Ligar/desligar luz não recompila shaders (todas as luzes ficam ativas com intensidade zero).
-- No disco o cartão tem ~380 KB (a demo `index.html`, com o cartão embutido, ~390 KB).
+- No disco o cartão tem ~480 KB (a demo `index.html`, com o cartão embutido, ~490 KB).
 
 ## Observações
 
