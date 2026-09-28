@@ -46,7 +46,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.2.2';
+export const VERSION = '1.2.3';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -5713,14 +5713,32 @@ export class Igreja3DCard extends HTMLElement {
   }
 
   // quality: 'alta' | 'leve' | 'auto' (padrão): leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB de RAM
+  static _strongGPU() {
+    if (Igreja3DCard.__gpu !== undefined) return Igreja3DCard.__gpu;
+    let strong = false;
+    try {
+      const cv = document.createElement('canvas');
+      const gl = cv.getContext('webgl2') || cv.getContext('webgl');
+      if (gl) {
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '');
+        strong = /nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|apple m\d|apple gpu/i.test(name) && !/intel|swiftshader|llvmpipe|mali|adreno|powervr/i.test(name);
+        const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+      }
+    } catch (_) { strong = false; }
+    Igreja3DCard.__gpu = strong;
+    return strong;
+  }
   _liteFor(q) {
     if (q === 'leve') return true;
     if (q === 'alta') return false;
     try {
       const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       const small = typeof screen !== 'undefined' && Math.min(screen.width, screen.height) < 900;
-      return (coarse && small) || (navigator.deviceMemory || 8) <= 4;
-    } catch (_) { return false; }
+      if ((coarse && small) || (navigator.deviceMemory || 8) <= 4) return true;
+      // desktop/notebook: 'alta' só com GPU dedicada; integrada (Intel, AMD Vega/APU etc.) ou desconhecida → leve
+      return !Igreja3DCard._strongGPU();
+    } catch (_) { return true; }
   }
 
   // ---- Cena 3D ----
@@ -5833,6 +5851,8 @@ export class Igreja3DCard extends HTMLElement {
     this._raycaster = new THREE.Raycaster();
     this._ndc = new THREE.Vector2();
     this._ro = new ResizeObserver(() => this._resize());
+    // fora da tela (rolado para longe no dashboard) não gasta GPU com a animação ociosa
+    try { this._io = new IntersectionObserver((es) => { this._onScreen = es.some((e) => e.isIntersecting); }); this._io.observe(this); } catch (_) {}
     this._ro.observe(this);
     if (this._dock) this._ro.observe(this._dock);
     if (this._hudTop) this._ro.observe(this._hudTop);
@@ -6950,8 +6970,8 @@ export class Igreja3DCard extends HTMLElement {
   _resize() {
     if (!this._renderer) return;
     const w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight);
-    // Orçamento de ~2,4 Mpx por quadro: em telas Retina grandes baixa o pixel ratio
-    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, this._lite ? 1.25 : 2, Math.sqrt((this._lite ? 1.0e6 : 2.4e6) / (w * h))));
+    // Orçamento de ~1,8 Mpx por quadro (1 Mpx no leve): em telas Retina grandes baixa o pixel ratio
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, this._lite ? 1.25 : 2, Math.sqrt((this._lite ? 1.0e6 : 1.8e6) / (w * h))));
     this._renderer.setPixelRatio(dpr);
     this._renderer.setSize(w, h, false);
     // Com o painel aberto, a cena é enquadrada na área visível acima dele
@@ -7057,9 +7077,13 @@ export class Igreja3DCard extends HTMLElement {
     }
     if (this._needShadow) { this._renderer.shadowMap.needsUpdate = true; this._needShadow = false; dirty = true; }
     if (dirty) this._updateLabels();
-    // Só animação ociosa (telão) rodando: renderiza em um terço dos frames
-    this._tick = (this._tick || 0) + 1;
-    if (dirty || (ambient && this._tick % 3 === 0)) this._renderer.render(this._scene, this._camera);
+    // Só animação ociosa (telão pulsando): no máximo ~8 quadros/s, e nada com a aba ou o cartão fora da tela
+    const now = performance.now();
+    const visible = !(typeof document !== 'undefined' && document.hidden) && this._onScreen !== false;
+    if (dirty || (ambient && visible && now - (this._lastIdle || 0) > 125)) {
+      if (!dirty) this._lastIdle = now;
+      this._renderer.render(this._scene, this._camera);
+    }
   }
 }
 

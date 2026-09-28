@@ -169,7 +169,7 @@ labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
-quality: auto         # auto (padrão: leve em celular/tablet ou ≤ 4 GB de RAM) · alta · leve (9 luzes reais, sem sombra de lâmpadas)
+quality: auto         # auto (padrão: alta só com GPU dedicada; leve em PC com vídeo integrado, celular/tablet ou ≤ 4 GB de RAM) · alta · leve
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
@@ -337,7 +337,8 @@ não no HA nem no GitHub.
   (map + bump + ao + ambiente + 9 sombras).
 - Sombras só recalculam quando um estado muda; nada é renderizado parado (só quando a câmera se
   move, um estado muda ou o telão está tocando, a 30 fps).
-- Pixel ratio adaptativo (orçamento de ~2,4 Mpx por quadro; 1 Mpx em `leve`).
+- Pixel ratio adaptativo (orçamento de ~1,8 Mpx por quadro; 1 Mpx em `leve`).
+- Parado, a cena não é redesenhada; com o telão tocando, a animação roda a no máximo ~8 quadros/s e para quando a aba ou o cartão saem da tela.
 - Ligar/desligar luz não recompila shaders (todas as luzes ficam ativas com intensidade zero).
 - No disco o cartão tem ~485 KB (a demo `index.html`, com o cartão embutido, ~497 KB).
 
