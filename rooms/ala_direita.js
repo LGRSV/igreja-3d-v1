@@ -308,7 +308,6 @@ function roomAlaDireita(ctx) {
   });
   exitSign('x', 19.075, 17.55, 2.45, 1, -1);                                                  // SAÍDA ← (corredor lateral)
   emerg('x', 23.213, 16.75, 2.5, -1);
-  cica(16.62, 22.75, 0.34);
   // Corredor da mídia: TV com a agenda da semana (parede x=20,1) e quadros (parede x=18,9)
   const agenda = texMat(1.75, (g, W, Hh) => {
     const gr = g.createLinearGradient(0, 0, W, Hh); gr.addColorStop(0, '#15151a'); gr.addColorStop(1, '#2a2230');
@@ -791,12 +790,13 @@ function roomAlaDireita(ctx) {
 
   // ---- HALL DOS BANHEIROS (x 16,05–20,1 · z 40,8–44,3 + faixa x 16,05–17,1 · z 37,0–40,8) ----
   wetWall('z', 20.013, -1, 40.875, 44.225, M.marmoreMarrom);                                 // parede do bebedouro
-  wetWall('x', 44.225, -1, 17.1, 20.013, M.marmoreMarrom);                                   // parede da bancada
+  wetWall('x', 44.225, -1, 17.25, 20.013, M.marmoreMarrom);                                  // parede da bancada (porta do WC fem. em x 16,25–17,15)
+  doorPicto('x', 44.225, 16.7, -1, true);
   wetWall('x', 40.875, 1, 17.1, 18.1, M.marmorato);                                          // parede da porta do WC masc.
   wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
   clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
   wetWall('z', 16.125, 1, 37.0, 39.08, M.marmorato);                                         // parede do templo (pilar em z 39,3)
-  wetWall('z', 16.125, 1, 39.52, 43.78, M.marmorato);
+  wetWall('z', 16.125, 1, 39.52, 41.9, M.marmorato);                                          // porta do templo em z 42,0–43,6
   wetWall('z', 17.025, -1, 37.0, 40.8, M.marmorato);                                         // faixa de circulação
   // bancada branca de quartzo com 3 cubas de apoio retangulares e espelhos com LED
   add(box(2.6, 0.04, 0.5, quartz, 18.66, 0.86, 43.96));
@@ -824,12 +824,12 @@ function roomAlaDireita(ctx) {
   add(box(0.08, 0.32, 0.1, black, 19.97, 1.32, 41.2));                                         // porta-copos
   add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
   emerg('x', 40.887, 17.55, 2.5, 1);
-  // entrada (vão x=16,05 · z 44,4–46,0, lado do hall de entrada): faixa azul-escura e placa com pictograma
+  // entrada dos banheiros pelo templo (porta preta x = 16,05 · z 42,0–43,6): faixa azul-escura e placa com pictograma
   {
     const xf = 15.975 - 0.006;
-    add(box(0.012, 0.69, 2.02, navyBand, xf, 2.645, 45.2, nc));                                // verga
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 44.3, nc));                                  // ombreiras
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 46.1, nc));
+    add(box(0.012, 0.69, 2.02, navyBand, xf, 2.645, 42.8, nc));                                // verga
+    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 41.9, nc));                                  // ombreiras
+    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 43.7, nc));
     const pg = texMat(1.1, (g, W, Hh) => {
       g.fillStyle = '#1f5fae'; g.fillRect(0, 0, W, Hh);
       g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(4, 4, W - 8, Hh - 8);
@@ -841,11 +841,11 @@ function roomAlaDireita(ctx) {
       }
       text(g, 'TOILETTE', W / 2, 88, 12, '#ffffff');
     });
-    add(box(0.01, 0.3, 0.33, pg, xf - 0.011, 2.66, 44.75, nc));
+    add(box(0.01, 0.3, 0.33, pg, xf - 0.011, 2.66, 42.35, nc));
   }
 
-  // ---- WC FEMININO (x 17,1–20,1 · z 44,3–49,5) + antecâmara x 16,05–17,1 ----
-  // Porta em x=17,1 (z 45,0–45,8) → área de giro x 17,1–18,0 livre.
+  // ---- WC FEMININO (x 16,05–20,1 · z 44,3–49,5) — sem antecâmara ----
+  // Porta na parede z = 44,3 (x 16,25–17,15), vinda do hall dos banheiros → área de giro x 16,1–17,3 · z 44,3–45,3 livre.
   wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
   cabins(18.05, 20.013, 44.375, 45.85, 2, [true, false]);
   cabins(17.175, 20.013, 49.413, 47.75, 3, [false, false], 0.08);
@@ -860,10 +860,10 @@ function roomAlaDireita(ctx) {
     for (const [dx, dz, dy] of [[0, 0, 0.26], [0.04, 0.02, 0.23], [-0.03, 0.03, 0.24]]) { g.add(cyl(0.004, 0.004, dy, frond, dx * 0.5, 0.14 + dy / 2 - 0.04, dz * 0.5, 5)); g.add(sph(0.028, dy > 0.25 ? redCup : white, dx, 0.12 + dy, dz)); }
     place(g, 19.86, 46.8, 0, 0.88); }
   add(cyl(0.12, 0.1, 0.4, inox, 19.8, 0.2, 45.98, 14));
-  // antecâmara: pictograma sobre a porta, espelho de corpo inteiro, banco e cica
-  doorPicto('z', 17.025, 45.4, -1, true);
-  add(box(0.012, 1.62, 0.62, black, 17.018, 1.2, 46.95));
-  add(box(0.008, 1.54, 0.54, M.mirror, 17.009, 1.2, 46.95, nc));
+  // parede x = 16,05 (lado do WC) em marmorato; espelho de corpo inteiro, banco e cica
+  wetWall('z', 16.125, 1, 44.375, 49.413, M.marmorato);
+  add(box(0.012, 1.62, 0.62, black, 16.132, 1.2, 46.2));
+  add(box(0.008, 1.54, 0.54, M.mirror, 16.141, 1.2, 46.2, nc));
   {
     const g = G();
     for (let i = 0; i < 4; i++) g.add(box(0.075, 0.035, 1.3, woodL, -0.135 + i * 0.09, 0.45, 0));
