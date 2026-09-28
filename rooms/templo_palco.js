@@ -3,7 +3,8 @@ function roomTemploPalco(ctx) {
   // PALCO DO TEMPLO — na PAREDE LATERAL LONGA x = 0 (correção do cliente; plateia olha para −x)
   // Fiel à foto templo_foto.jpg e aos vídeos v6/v8:
   //  · plataforma x 0,15–5,0 · z 19,6–36,6 · topo y 1,0 — piso claro (compensado/madeira clara), testeira preta;
-  //  · escadas pretas com corrimão inox nas duas pontas (à frente da testeira, sobem para −x);
+  //  · escadas pretas com corrimão inox: ponta z baixo à frente da testeira (sobe para −x); ponta z alto na lateral
+  //    do palco, junto à parede (sobe para −z) — pedido do cliente;
   //  · 2 caixinhas pretas no piso à frente; retornos (wedges) no palco;
   //  · bateria Pearl (pele de resposta branca) sobre praticável preto no lado z baixo (direita de quem olha o palco),
   //    teclado em suporte X no lado z alto, violão e baixo em pedestais, pedestais de microfone, pedaleiras, banco alto;
@@ -87,35 +88,40 @@ function roomTemploPalco(ctx) {
   for (let z = Z0 + 2.44; z < Z1 - 0.3; z += 2.44) put(box(0.008, SY - DT - 0.08, 0.012, blkSeam, X1 + 0.004, (SY - DT - 0.08) / 2 + 0.02, z, nc));
   put(box(0.02, 0.05, Z1 - Z0 - 0.02, rubber, X1 - 0.03, 0.025, CZ, nc));    // rodapé recuado
 
-  // ======================= ESCADAS NAS PONTAS (à frente da testeira) + CORRIMÃO INOX =======================
-  // 6 espelhos de 1/6 m, 5 pisos de 0,26 m: do piso (x 6,3) até o tampo (x 5,0). Largura 1,1 m.
+  // ======================= ESCADAS DO PALCO + CORRIMÃO INOX =======================
+  // 6 espelhos de 1/6 m, 5 pisos de 0,26 m (1,3 m de projeção), largura 1,1 m. Montada num grupo com a face do palco
+  // em x local 0 e subindo para −x local: a da ponta z baixo fica à frente da testeira (sobe para −x); a da ponta
+  // z alto (lado esquerdo de quem olha o palco) foi para a lateral do palco, junto à parede (pedido do cliente).
   const NR = 6, RISE = SY / NR, RUN = 0.26, SW = 1.1;
-  const stair = (zc) => {
+  const stair = () => {
+    const g = G();
+    const add = (m) => { g.add(m); return m; };
     for (let k = 1; k < NR; k++) {
-      const h = k * RISE, xa = X1, xb = X1 + (NR - k) * RUN, xc = (xa + xb) / 2;
-      put(box(xb - xa, h, SW, blk, xc, h / 2, zc));
-      put(box(0.03, 0.012, SW, rigGray, xb - 0.015, h - 0.006, zc, nc));             // cantoneira do bocel
+      const h = k * RISE, xb = (NR - k) * RUN;
+      add(box(xb, h, SW, blk, xb / 2, h / 2, 0));
+      add(box(0.03, 0.012, SW, rigGray, xb - 0.015, h - 0.006, 0, nc));             // cantoneira do bocel
     }
     // corrimão inox nos dois lados (2 tubos: mão + intermediário), montantes em baixo, no meio e em cima
-    for (const s of [-1, 1]) {
-      const z = zc + s * (SW / 2 - 0.04);
-      const xb = X1 + (NR - 1) * RUN - 0.1, xt = X1 + 0.07;                            // x 6,3 → 5,07
+    for (const sd of [-1, 1]) {
+      const z = sd * (SW / 2 - 0.04);
+      const xb = (NR - 1) * RUN - 0.1, xt = 0.07;                                    // 1,2 → 0,07 da face do palco
       const yb = RISE, yt = (NR - 1) * RISE;                                          // degrau 1 e degrau 5
-      const xm = (xb + xt) / 2, ym = RISE * Math.floor(NR - (xm - X1) / RUN), yr = yb + (yt - yb) * (xb - xm) / (xb - xt);
-      bar(xb, yb, z, xb, yb + 0.95, z, 0.02, inox, 10);
-      bar(xm, ym, z, xm, yr + 0.95, z, 0.018, inox, 10);
-      bar(xt, yt, z, xt, yt + 0.95, z, 0.02, inox, 10);
-      bar(xb, yb + 0.95, z, xt, yt + 0.95, z, 0.021, inox, 10);                       // mão
-      bar(xb, yb + 0.45, z, xt, yt + 0.45, z, 0.013, inox, 8);                        // intermediário
+      const xm = (xb + xt) / 2, ym = RISE * Math.floor(NR - xm / RUN), yr = yb + (yt - yb) * (xb - xm) / (xb - xt);
+      bar(xb, yb, z, xb, yb + 0.95, z, 0.02, inox, 10, g);
+      bar(xm, ym, z, xm, yr + 0.95, z, 0.018, inox, 10, g);
+      bar(xt, yt, z, xt, yt + 0.95, z, 0.02, inox, 10, g);
+      bar(xb, yb + 0.95, z, xt, yt + 0.95, z, 0.021, inox, 10, g);                    // mão
+      bar(xb, yb + 0.45, z, xt, yt + 0.45, z, 0.013, inox, 8, g);                     // intermediário
       // grade de barras verticais finas (como na foto)
       for (let i = 1; i < 7; i++) {
         const t = i / 7, x = xb + (xt - xb) * t, yl = yb + (yt - yb) * t;
-        bar(x, yl + 0.47, z, x, yl + 0.93, z, 0.006, inox, 5);
+        bar(x, yl + 0.47, z, x, yl + 0.93, z, 0.006, inox, 5, g);
       }
     }
+    return g;
   };
-  stair(Z0 + 0.6);           // z 19,65–20,75
-  stair(Z1 - 0.6);           // z 35,45–36,55
+  place(stair(), X1, Z0 + 0.6, 0);           // frente, ponta z baixo: x 5,0–6,3 · z 19,65–20,75
+  place(stair(), X0 + 0.7, Z1, -HP);         // lateral z alto, junto à parede: x 0,3–1,4 · z 36,6–37,9
 
   // ======================= CAIXAS NO PISO À FRENTE (front fill) =======================
   const floorBox = () => {
