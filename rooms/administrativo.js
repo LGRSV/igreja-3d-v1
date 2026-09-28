@@ -18,9 +18,10 @@ function roomAdministrativo(ctx) {
   // LEDs acompanham a luz do ambiente (ctx.bindEmissive).
   // Paleta: preto, madeira clara (ripado), branco e grafite, acentos âmbar/terracota.
   // Livres: giros das portas (recepção, pastoral, banheiro, Gilvan, Adm.), split da
-  // pastoral (14,9; 2,4; 0,2) e as luminárias do cartão (y ≈ 2,7).
-  // Faces internas: x 12,675/12,825 · 16,925/17,075 · 17,175 · 20,013 (muro revestido)
-  // · z 0,087 · 3,025/3,175 · 4,825/4,975 · 5,975 · 9,175/9,325 · 11,075 · 14,125/14,275 · 18,925.
+  // pastoral (14,9; 2,4; 0,125) e as luminárias do cartão (y ≈ 2,7).
+  // Faces internas — bloco dos fundos (paredes finas, 7,5 cm): x 9,4875 · 12,7125/12,7875 · 16,9625/17,0375
+  // · 20,088 (muro revestido, z < 11) · z 0,012 · 3,0625/3,1375 · 4,8625/4,9375 · 5,9375 · 9,2125/9,2875.
+  // Ala direita: x 17,175 · 20,013 · z 11,075 · 14,125/14,275 · 18,925.
   // ---------------------------------------------------------------------------
   const THREE = ctx.THREE, M = ctx.M;
   const box = (...a) => ctx.box(...a), cyl = (...a) => ctx.cyl(...a), sph = (...a) => ctx.sph(...a);
@@ -293,7 +294,7 @@ function roomAdministrativo(ctx) {
     g.add(box(0.02, 0.22, 0.03, M.chrome, 0.19, 0.5, 0.265));
     g.add(cyl(0.035, 0.03, 0.1, ceramic, -0.08, 0.91, -0.05, 12));             // caneca
     g.add(box(0.2, 0.02, 0.14, woodL, 0.08, 0.87, 0.0));                        // porta-copos
-    place(g, 13.13, 0.4);
+    place(g, 13.09, 0.325);
   }
   // ---- aparador para café na parede z=0 (x 13,5–16,0) + itens ----
   {
@@ -302,10 +303,10 @@ function roomAdministrativo(ctx) {
     g.add(cyl(0.09, 0.07, 0.22, ceramic, 0.95, 0.97, -0.05, 14));              // vaso branco
     for (let i = 0; i < 3; i++) { const a = i * 2.1; const st = box(0.012, 0.36, 0.012, frond, 0.95 + Math.cos(a) * 0.03, 1.22, -0.05 + Math.sin(a) * 0.03); st.rotation.set(Math.sin(a) * 0.25, 0, Math.cos(a) * 0.25); g.add(st); }
     g.add(box(0.3, 0.05, 0.22, amber, 0.35, 0.885, 0.0));                       // caixa de biscoitos
-    place(g, 14.75, 0.34, FZ);
+    place(g, 14.75, 0.265, FZ);
     // quadros na parede do café (fora do split x 14,45–15,35)
-    const q1 = frame(0.5, 0.66, terra, sand); place(q1, 13.95, 0.105, FZ, 1.68);
-    const q2 = frame(0.5, 0.66, uphGray, amber); place(q2, 15.9, 0.105, FZ, 1.68);
+    const q1 = frame(0.5, 0.66, terra, sand); place(q1, 13.95, 0.03, FZ, 1.68);
+    const q2 = frame(0.5, 0.66, uphGray, amber); place(q2, 15.9, 0.03, FZ, 1.68);
   }
   // ---- mesa redonda de reunião (centro 14,9; 2,1) com 6 cadeiras ----
   {
@@ -328,7 +329,7 @@ function roomAdministrativo(ctx) {
     for (let i = 0; i < 9; i++) g.add(box(0.05, 1.62, 0.02, slat, -0.44 + i * 0.11, 0, 0.025, nc));
     g.add(box(0.1, 1.15, 0.05, whiteTop, 0, 0.02, 0.06));
     g.add(box(0.62, 0.1, 0.05, whiteTop, 0, 0.22, 0.06));
-    place(g, 12.84, 2.1, FX, 1.55);
+    place(g, 12.8025, 2.1, FX, 1.55);
   }
   // ---- aparador de apoio (z ≈ 4,2), aberto, atrás do sofá ----
   {
@@ -397,7 +398,7 @@ function roomAdministrativo(ctx) {
       else if (t === 1) { books(g, x0 + cw - 0.35, y, 0.0, 0.45, i + 21); const pf = frame(0.22, 0.28, terra, sand); pf.position.set(x0 + 0.35, y + 0.14, -0.06); pf.rotation.x = -0.1; g.add(pf); }
       else { g.add(cyl(0.09, 0.07, 0.26, amber, x0 + 0.4, y + 0.13, 0, 14)); g.add(box(0.28, 0.05, 0.22, book[0], x0 + 1.0, y + 0.025, 0)); g.add(box(0.26, 0.05, 0.2, book[3], x0 + 1.0, y + 0.075, 0)); books(g, x0 + 1.55, y, 0, 0.3, i + 31); }
     });
-    place(g, 19.8, 7.0, FNX);
+    place(g, 19.875, 7.0, FNX);
   }
   // quadro com o LOGO sobre o estar, na parede x=12,75: tela preta, moldura de madeira clara
   // (filete) e o logo oficial em champanhe, com uma arandela de LED acima
@@ -405,19 +406,19 @@ function roomAdministrativo(ctx) {
     const g = G();
     g.add(box(0.74, 0.96, 0.035, woodL, 0, 0, 0, nc));
     g.add(box(0.7, 0.92, 0.04, blackM, 0, 0, 0.004, nc));
-    place(g, 12.845, 6.4, FX, 1.62);
+    place(g, 12.8075, 6.4, FX, 1.62);
     const lg = ctx.logo.mesh(0.44, 0, { layout: 'full', color: '#dcc49a', roughness: 0.35, metalness: 0.5 });
-    lg.rotation.y = FX; lg.position.set(12.871, 1.63, 6.4); put(lg);
+    lg.rotation.y = FX; lg.position.set(12.8335, 1.63, 6.4); put(lg);
     // arandela linear (preta) com fita de LED voltada para o quadro
-    put(box(0.07, 0.035, 0.6, metalBk, 12.87, 2.2, 6.4));
-    put(box(0.02, 0.006, 0.54, ledPast, 12.89, 2.18, 6.4, nc));
+    put(box(0.07, 0.035, 0.6, metalBk, 12.8325, 2.2, 6.4));
+    put(box(0.02, 0.006, 0.54, ledPast, 12.8525, 2.18, 6.4, nc));
   }
   // persiana rolô de linho na parede de vidro (x 14,2–16,6), meio abaixada
   {
-    put(box(2.56, 0.1, 0.09, blackM, 15.4, 2.33, 9.12));                          // caixa (bandô)
-    put(box(2.46, 0.52, 0.008, linenLt, 15.4, 2.02, 9.1, nc));                    // tecido
-    put(box(2.46, 0.03, 0.02, metalBk, 15.4, 1.75, 9.1, nc));                     // barra de peso
-    put(cyl(0.004, 0.004, 0.7, metalBk, 16.52, 1.9, 9.08, 4));                    // corrente
+    put(box(2.56, 0.1, 0.09, blackM, 15.4, 2.33, 9.1575));                          // caixa (bandô)
+    put(box(2.46, 0.52, 0.008, linenLt, 15.4, 2.02, 9.1375, nc));                    // tecido
+    put(box(2.46, 0.03, 0.02, metalBk, 15.4, 1.75, 9.1375, nc));                     // barra de peso
+    put(cyl(0.004, 0.004, 0.7, metalBk, 16.52, 1.9, 9.1175, 4));                    // corrente
   }
   // violão no suporte (canto entre o aparador e a porta do banheiro) — ministério Base Music
   {
@@ -445,7 +446,7 @@ function roomAdministrativo(ctx) {
   // BANHEIRO PASTORAL (x 17,0–20,1 · z 3,1–4,9) — porta em x=17 (z 3,4–4,2)
   // =====================================================================
   {
-    put(box(1.85, 1.2, 0.012, tileW, 18.12, 0.6, 4.818, nc));                   // revestimento atrás da pia/vaso
+    put(box(1.85, 1.2, 0.012, tileW, 18.12, 0.6, 4.8555, nc));                   // revestimento atrás da pia/vaso
     // bancada suspensa preta com cuba branca, espelho redondo
     const g = G();
     g.add(box(0.6, 0.36, 0.44, blackM, 0, 0.66, 0));
@@ -455,40 +456,40 @@ function roomAdministrativo(ctx) {
     g.add(box(0.02, 0.02, 0.12, metalBk, 0, 1.07, -0.11));
     const mir = cyl(0.26, 0.26, 0.02, M.mirror, 0, 1.55, -0.21, 28); mir.rotation.x = PI / 2; g.add(mir);
     const rim = cyl(0.275, 0.275, 0.015, metalBk, 0, 1.55, -0.222, 28); rim.rotation.x = PI / 2; g.add(rim);
-    place(g, 17.52, 4.58, FNZ);
+    place(g, 17.52, 4.6175, FNZ);
     // vaso sanitário contra a parede z=4,9
-    place(ctx.F.toilet(), 18.38, 4.5, FNZ);
-    put(box(0.04, 0.12, 0.1, metalBk, 18.78, 0.7, 4.77));                        // papeleira
-    put(cyl(0.055, 0.055, 0.1, paper, 18.78, 0.66, 4.72, 12)).rotation.z = PI / 2;
+    place(ctx.F.toilet(), 18.38, 4.5375, FNZ);
+    put(box(0.04, 0.12, 0.1, metalBk, 18.78, 0.7, 4.8075));                        // papeleira
+    put(cyl(0.055, 0.055, 0.1, paper, 18.78, 0.66, 4.7575, 12)).rotation.z = PI / 2;
     // box de vidro com perfil preto (x 19,1–20,0)
     put(box(0.9, 0.05, 1.5, whiteTop, 19.55, 0.025, 4.0));
     put(box(0.012, 1.95, 0.75, M.glass, 19.08, 1.03, 3.6, { cast: false, receive: false }));
     put(box(0.012, 1.95, 0.72, M.glass, 19.1, 1.03, 4.4, { cast: false, receive: false }));
     put(box(0.03, 0.03, 1.5, metalBk, 19.09, 2.02, 4.0));
     put(box(0.03, 1.98, 0.03, metalBk, 19.09, 1.0, 3.24));
-    put(cyl(0.012, 0.012, 1.0, metalBk, 19.94, 1.55, 4.3, 8));
-    put(box(0.3, 0.02, 0.03, metalBk, 19.82, 2.05, 4.3));
-    put(cyl(0.1, 0.1, 0.015, metalBk, 19.68, 2.03, 4.3, 16));
+    put(cyl(0.012, 0.012, 1.0, metalBk, 20.015, 1.55, 4.3, 8));
+    put(box(0.3, 0.02, 0.03, metalBk, 19.895, 2.05, 4.3));
+    put(cyl(0.1, 0.1, 0.015, metalBk, 19.755, 2.03, 4.3, 16));
     // toalha na parede z=3,1
-    put(box(0.5, 0.02, 0.02, metalBk, 18.3, 1.35, 3.2));
-    put(box(0.42, 0.55, 0.04, sand, 18.3, 1.08, 3.215));
+    put(box(0.5, 0.02, 0.02, metalBk, 18.3, 1.35, 3.1625));
+    put(box(0.42, 0.55, 0.04, sand, 18.3, 1.08, 3.1775));
     // espelho com LED atrás (halo que acende com a luz da pastoral), saboneteira e plantinha
-    const halo = cyl(0.3, 0.3, 0.008, ledPast, 17.52, 1.55, 4.806, 32); halo.rotation.x = PI / 2; halo.castShadow = false; put(halo);
-    put(cyl(0.035, 0.035, 0.14, blackM, 17.33, 0.94, 4.7, 12));                   // saboneteira líquida
-    put(cyl(0.01, 0.01, 0.04, blackM, 17.33, 1.03, 4.7, 6));
-    put(cyl(0.05, 0.04, 0.08, ceramic, 17.73, 0.91, 4.72, 12));                   // vasinho
-    put(sph(0.055, frond2, 17.73, 0.99, 4.72));
+    const halo = cyl(0.3, 0.3, 0.008, ledPast, 17.52, 1.55, 4.8435, 32); halo.rotation.x = PI / 2; halo.castShadow = false; put(halo);
+    put(cyl(0.035, 0.035, 0.14, blackM, 17.33, 0.94, 4.7375, 12));                   // saboneteira líquida
+    put(cyl(0.01, 0.01, 0.04, blackM, 17.33, 1.03, 4.7375, 6));
+    put(cyl(0.05, 0.04, 0.08, ceramic, 17.73, 0.91, 4.7575, 12));                   // vasinho
+    put(sph(0.055, frond2, 17.73, 0.99, 4.7575));
     // toalheiro de argola ao lado da bancada, com toalha de rosto
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.008, 6, 20), metalBk);
-    ring.position.set(17.97, 1.12, 4.8); put(ring);
-    put(box(0.2, 0.3, 0.025, linenLt, 17.97, 0.98, 4.795));
+    ring.position.set(17.97, 1.12, 4.8375); put(ring);
+    put(box(0.2, 0.3, 0.025, linenLt, 17.97, 0.98, 4.8325));
     // lixeira com pedal (inox) ao lado do vaso
-    put(cyl(0.1, 0.09, 0.3, steelBr, 18.78, 0.15, 4.62, 16));
-    put(cyl(0.102, 0.102, 0.02, metalBk, 18.78, 0.31, 4.62, 16));
+    put(cyl(0.1, 0.09, 0.3, steelBr, 18.78, 0.15, 4.6575, 16));
+    put(cyl(0.102, 0.102, 0.02, metalBk, 18.78, 0.31, 4.6575, 16));
     // box: ralo linear, prateleira com frascos e tapete de banho
     put(box(0.6, 0.004, 0.06, steelBr, 19.55, 0.052, 4.72, nc));
-    put(box(0.12, 0.02, 0.36, steelBr, 19.945, 1.09, 3.56));                     // prateleira de canto
-    for (let i = 0; i < 3; i++) put(cyl(0.025, 0.025, 0.16 - i * 0.02, [amber, ceramic, terra][i], 19.945, 1.1 + (0.16 - i * 0.02) / 2, 3.46 + i * 0.1, 10));
+    put(box(0.12, 0.02, 0.36, steelBr, 20.02, 1.09, 3.56));                     // prateleira de canto
+    for (let i = 0; i < 3; i++) put(cyl(0.025, 0.025, 0.16 - i * 0.02, [amber, ceramic, terra][i], 20.02, 1.1 + (0.16 - i * 0.02) / 2, 3.46 + i * 0.1, 10));
     put(box(0.3, 0.012, 0.5, sand, 18.86, 0.012, 3.85, nc));
   }
 
@@ -515,23 +516,23 @@ function roomAdministrativo(ctx) {
     }
     // extravasor (ladrão): liga os dois reservatórios e sai pelo muro x = 20,1
     pipe([18.56, 0.98, 1.45], [18.7, 0.98, 1.45], 0.02);
-    pipe([19.86, 0.98, 1.45], [20.0, 0.98, 1.45], 0.02);
-    put(cyl(0.035, 0.035, 0.01, pvc, 20.005, 0.98, 1.45, 12)).rotation.z = PI / 2;   // espelho da saída
+    pipe([19.86, 0.98, 1.45], [20.075, 0.98, 1.45], 0.02);
+    put(cyl(0.035, 0.035, 0.01, pvc, 20.08, 0.98, 1.45, 12)).rotation.z = PI / 2;   // espelho da saída
     put(cyl(0.07, 0.07, 0.006, steelBr, 18.6, 0.008, 2.75, 16));                 // ralo
     // mangueira enrolada no suporte (parede z = 3,1) e escada de alumínio encostada no muro z = 0
     {
-      const reel = cyl(0.2, 0.2, 0.1, hoseGr, 17.55, 1.15, 2.95, 20); reel.rotation.x = PI / 2; put(reel);
-      const hub = cyl(0.08, 0.08, 0.12, metalBk, 17.55, 1.15, 2.95, 12); hub.rotation.x = PI / 2; put(hub);
-      put(box(0.04, 0.2, 0.05, metalBk, 17.55, 1.0, 2.99));
-      put(box(0.03, 0.9, 0.03, hoseGr, 17.42, 0.62, 2.9));                     // ponta pendurada
+      const reel = cyl(0.2, 0.2, 0.1, hoseGr, 17.55, 1.15, 2.9875, 20); reel.rotation.x = PI / 2; put(reel);
+      const hub = cyl(0.08, 0.08, 0.12, metalBk, 17.55, 1.15, 2.9875, 12); hub.rotation.x = PI / 2; put(hub);
+      put(box(0.04, 0.2, 0.05, metalBk, 17.55, 1.0, 3.0275));
+      put(box(0.03, 0.9, 0.03, hoseGr, 17.42, 0.62, 2.9375));                     // ponta pendurada
       const lad = G();
       for (const sx of [-1, 1]) lad.add(box(0.05, 2.1, 0.025, steelBr, sx * 0.2, 1.05, 0));
       for (let i = 0; i < 6; i++) lad.add(box(0.4, 0.03, 0.02, steelBr, 0, 0.3 + i * 0.3, 0));
-      lad.rotation.x = -0.1; place(lad, 17.62, 0.35, 0);
+      lad.rotation.x = -0.1; place(lad, 17.62, 0.275, 0);
     }
     pipe([17.6, 1.5, 0.95], [19.8, 1.5, 0.95], 0.025);                          // barrilete de entrada
-    pipe([19.8, 1.5, 0.95], [19.8, 1.5, 0.2], 0.025);
-    pipe([19.8, 1.5, 0.2], [19.8, 2.6, 0.2], 0.025);
+    pipe([19.8, 1.5, 0.95], [19.8, 1.5, 0.125], 0.025);
+    pipe([19.8, 1.5, 0.125], [19.8, 2.6, 0.125], 0.025);
     pipe([17.7, 0.35, 2.45], [19.6, 0.35, 2.45], 0.03, pvcBrown);               // barrilete de saída
     for (const x of [17.98, 19.28]) put(sph(0.035, pvcBrown, x, 0.35, 2.45));
     // motobomba sobre base, recalque subindo pela parede z=3,1
@@ -542,9 +543,9 @@ function roomAdministrativo(ctx) {
     pipe([19.6, 0.35, 2.45], [19.6, 0.35, 2.62], 0.03, pvcBrown);
     pipe([19.68, 0.28, 2.78], [19.68, 2.4, 2.78], 0.025);
     // quadro elétrico na parede x=20,1
-    put(box(0.12, 0.42, 0.32, panelGr, 19.95, 1.6, 2.5));
-    put(box(0.012, 0.08, 0.1, M.red, 19.885, 1.72, 2.5, nc));
-    pipe([19.95, 1.39, 2.5], [19.95, 0.9, 2.5], 0.015, graph);
+    put(box(0.12, 0.42, 0.32, panelGr, 20.025, 1.6, 2.5));
+    put(box(0.012, 0.08, 0.1, M.red, 19.96, 1.72, 2.5, nc));
+    pipe([20.025, 1.39, 2.5], [20.025, 0.9, 2.5], 0.015, graph);
   }
 
   // =====================================================================
@@ -581,20 +582,20 @@ function roomAdministrativo(ctx) {
   // retroiluminadas — o halo e o brilho das letras acompanham a luz 'recepcao'.
   {
     const Z0 = 6.45, Z1 = 8.05, ZC = (Z0 + Z1) / 2, n = 16, pitch = (Z1 - Z0) / n;
-    put(box(0.012, 2.72, Z1 - Z0 + 0.04, blackM, 12.665, 1.42, ZC, nc));          // fundo preto (sombra entre ripas)
-    for (let i = 0; i < n; i++) put(box(0.03, 2.62, pitch * 0.62, ripaB, 12.64, 1.39, Z0 + pitch * (i + 0.5)));
-    put(box(0.05, 0.08, Z1 - Z0 + 0.04, metalBk, 12.65, 0.04, ZC));               // rodapé preto
-    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.63, 2.74, ZC));               // sanca preta
-    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6, 2.697, ZC, nc));          // fita de LED lavando o ripado
+    put(box(0.012, 2.72, Z1 - Z0 + 0.04, blackM, 12.7025, 1.42, ZC, nc));          // fundo preto (sombra entre ripas)
+    for (let i = 0; i < n; i++) put(box(0.03, 2.62, pitch * 0.62, ripaB, 12.6775, 1.39, Z0 + pitch * (i + 0.5)));
+    put(box(0.05, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6875, 0.04, ZC));               // rodapé preto
+    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6675, 2.74, ZC));               // sanca preta
+    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6375, 2.697, ZC, nc));          // fita de LED lavando o ripado
     const L = ctx.logo.relief(0.7, { layout: 'full', depth: 0.045, layers: 4 });
-    L.rotation.y = FNX; L.position.set(12.622, 1.66, ZC); put(L);
+    L.rotation.y = FNX; L.position.set(12.6595, 1.66, ZC); put(L);
     ctx.bindEmissive('recepcao', L.userData.face, 0.45, { min: 0.25 });
     const halo = ctx.glowPlane(1.5, 1.6, 'recepcao', { color: 0xfff1dc, base: 0.32, day: 0.15 });
-    halo.rotation.y = FNX; halo.position.set(12.623, 1.66, ZC); put(halo);
+    halo.rotation.y = FNX; halo.position.set(12.6605, 1.66, ZC); put(halo);
   }
   // 3 poltronas de espera na parede x=9,45, mesinha, planta, bebedouro e quadro
-  for (const z of [6.42, 7.22, 8.02]) place(armchair(caramel, caramel, 0.66, 0.7, metalBk), 9.95, z, FX);
-  place(plant(0.5, 0.4, 7, 0.16, true), 9.85, 8.82);
+  for (const z of [6.42, 7.22, 8.02]) place(armchair(caramel, caramel, 0.66, 0.7, metalBk), 9.9125, z, FX);
+  place(plant(0.5, 0.4, 7, 0.16, true), 9.8125, 8.82);
   {
     const g = G();                                                               // bebedouro com galão
     g.add(box(0.3, 0.95, 0.32, whiteTop, 0, 0.475, 0));
@@ -603,9 +604,9 @@ function roomAdministrativo(ctx) {
     g.add(cyl(0.05, 0.08, 0.06, waterJug, 0, 1.44, 0, 12));
     g.add(box(0.18, 0.1, 0.03, graph, 0, 0.72, 0.17));
     for (const sx of [-1, 1]) g.add(box(0.02, 0.04, 0.03, sx < 0 ? M.blue : M.red, sx * 0.05, 0.8, 0.175));
-    place(g, 12.46, 6.2, FNZ);
+    place(g, 12.4975, 6.1625, FNZ);
   }
-  place(frame(0.8, 0.56, terra, amber), 10.55, 9.16, FNZ, 1.65);
+  place(frame(0.8, 0.56, terra, amber), 10.55, 9.1975, FNZ, 1.65);
 
   // ---- placas de porta (acrílico preto, marca + nome) na face externa da parede z = 9,25 ----
   // Uma textura só (2 linhas) → 1 material → 1 draw call; cada placa usa a sua faixa de UV.
@@ -631,8 +632,8 @@ function roomAdministrativo(ctx) {
       const geo = new THREE.PlaneGeometry(PW, PH), uv = geo.attributes.uv;
       const v1 = 1 - (i * rowH) / 512, v0 = 1 - ((i + 1) * rowH) / 512;
       for (let k = 0; k < uv.count; k++) uv.setY(k, v0 + uv.getY(k) * (v1 - v0));
-      const m = new THREE.Mesh(geo, mat); m.position.set(x, 1.6, 9.338); m.castShadow = false; put(m);
-      put(box(PW + 0.01, PH + 0.01, 0.01, metalBk, x, 1.6, 9.331, nc));
+      const m = new THREE.Mesh(geo, mat); m.position.set(x, 1.6, 9.3005); m.castShadow = false; put(m);
+      put(box(PW + 0.01, PH + 0.01, 0.01, metalBk, x, 1.6, 9.2935, nc));
     };
     plate(0, 11.52);                                                             // porta da recepção (x 11,8–12,6)
     plate(1, 14.0);                                                              // porta da pastoral (x 12,9–13,8)

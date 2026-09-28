@@ -400,14 +400,18 @@ function roomFachada(ctx) {
   wing.position.set((xw + 20.1 - e) / 2, WING_TOP - 0.04, (49.5 - e + 11.0 + e) / 2); wing.castShadow = true; wing.receiveShadow = true; addExt(wing);
 
   // ---- Bloco dos fundos (almoxarifado, cozinha, recepção, pastoral, caixa d'água) até 3,6 m ----
-  wX(0, 4.9 - e, 20.1 + e, Y0, HF); capX(0, 4.9 - e, 20.1 + e, HF);
-  wZ(20.1, -e, 9.25 + e, Y0, HF); capZ(20.1, -e, 9.25 + e, HF);
-  wX(9.25, 9.45 - e, 20.1 + e, Y0, HF); capX(9.25, 9.45 - e, 20.1 + e, HF);
-  wZ(9.45, 5.9 - e, 9.25 + e, Y0, HF); capZ(9.45, 5.9 - e, 9.25 + e, HF);
-  wX(5.9, 9.45 - e, 12.75 + e, Y0, HF); capX(5.9, 9.45 - e, 12.75 + e, HF);
-  wZ(12.75, 3.9 - e, 5.9 + e, Y0, HF); capZ(12.75, 3.9 - e, 5.9 + e, HF);
-  wX(3.9, 4.9 - e, 12.75 + e, Y0, HF); capX(3.9, 4.9 - e, 12.75 + e, HF);
-  wZ(4.9, -e, 3.9 + e, Y0, HF); capZ(4.9, -e, 3.9 + e, HF);
+  // paredes finas (ctx.TF): largura TF + 4 cm; nas de divisa (z 0, x 20,1) o eixo recua TF/2 e a face externa fica no lugar
+  const tf = ctx.TF + 0.04, ef = tf / 2, sf = ctx.TF / 2;
+  const fX = (z, x0, x1) => { addExt(box(x1 - x0, HF - Y0, tf, P.black, (x0 + x1) / 2, (Y0 + HF) / 2, z)); addExt(box(x1 - x0 + 0.04, 0.05, tf + 0.06, P.cap, (x0 + x1) / 2, HF + 0.025, z, { cast: false })); };
+  const fZ = (x, z0, z1) => { addExt(box(tf, HF - Y0, z1 - z0, P.black, x, (Y0 + HF) / 2, (z0 + z1) / 2)); addExt(box(tf + 0.06, 0.05, z1 - z0 + 0.04, P.cap, x, HF + 0.025, (z0 + z1) / 2, { cast: false })); };
+  fX(-sf, 4.9 - ef, 20.1 + e);
+  fZ(20.1 + sf, -e, 9.25 + ef);
+  fX(9.25, 9.45 - ef, 20.1 + sf);
+  fZ(9.45, 5.9 - ef, 9.25 + ef);
+  fX(5.9, 9.45 - ef, 12.75 + ef);
+  fZ(12.75, 3.9 - ef, 5.9 + ef);
+  fX(3.9, 4.9 - ef, 12.75 + ef);
+  fZ(4.9, -e, 3.9 + ef);
   const SLAB = HF - 0.3;                                                               // laje impermeabilizada
   for (const [x0, z0, x1, z1] of [[4.9, 0, 12.75, 3.9], [9.45, 5.9, 12.75, 9.25], [12.75, 0, 20.1, 9.25]]) {
     addExt(box(x1 - x0 - 0.02, 0.12, z1 - z0 - 0.02, P.slab, (x0 + x1) / 2, SLAB - 0.06, (z0 + z1) / 2));
