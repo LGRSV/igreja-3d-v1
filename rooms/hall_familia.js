@@ -217,90 +217,7 @@ function roomHallFamilia(ctx) {
   // HALL — parede do letreiro (face do hall da parede z = 44,0)
   // =====================================================================
   const WZ = 44.075;   // face da parede templo↔hall do lado do hall
-  // Painel ripado x 5,75–10,15 (entre os pilares de x 5,4 e 10,5), fundo preto
-  put(box(4.4, 2.75, 0.02, felt, 7.95, 1.4, WZ + 0.01, nc));
-  {
-    const L = [];
-    for (let x = 5.79; x < 10.12; x += 0.075) L.push([0.04, 2.7, 0.028, x, 1.4, WZ + 0.034]);
-    put(mergeBoxes(L, slat, false));
-  }
-  // Letreiro em letras-caixa prateadas sobre o ripado claro — o mesmo logo da fachada (ctx.logo),
-  // com halo de retroiluminação e brilho ligados à luz do hall
-  const PZ = WZ + 0.048;                                   // face das ripas
-  {
-    const halo = ctx.glowPlane(3.6, 1.7, 'hall', { color: 0xffe0b0, base: 0.32, day: 0.2 });
-    halo.position.set(7.95, 2.15, PZ + 0.004); ctx.add(halo);
-    const LG = ctx.logo.relief(2.15, { layout: 'wide', depth: 0.05, layers: 4 });
-    LG.position.set(7.95, 2.17, PZ + 0.002); ctx.add(LG);
-    ctx.bindEmissive('hall', LG.userData.face, 0.45, { min: 0.05 });
-    // faixa preta com a frase de boas-vindas, abaixo do logo (acende com o hall)
-    put(box(1.96, 0.25, 0.012, felt, 7.95, 1.47, PZ + 0.006, { cast: false }));
-    put(box(1.96, 0.012, 0.016, amber, 7.95, 1.339, PZ + 0.008, nc));
-    const welcome = canvasMat(1.88 / 0.22, (g, W, Hh) => {
-      g.clearRect(0, 0, W, Hh);
-      g.textBaseline = 'middle'; g.textAlign = 'left';
-      g.font = `600 ${Hh * 0.62}px ${FONT}`; const t1 = 'Bem-vindo à ', w1 = g.measureText(t1).width;
-      g.font = `800 ${Hh * 0.66}px ${FONT}`; const w2 = g.measureText('Base').width;
-      const x0 = (W - w1 - w2) / 2;
-      g.fillStyle = '#f4efe6'; g.font = `600 ${Hh * 0.62}px ${FONT}`; g.fillText(t1, x0, Hh * 0.54);
-      g.fillStyle = '#f0b36a'; g.font = `800 ${Hh * 0.66}px ${FONT}`; g.fillText('Base', x0 + w1, Hh * 0.54);
-    }, 0.8, true);
-    ctx.bindEmissive('hall', welcome, 0.8, { min: 0.2 });
-    plane(1.88, 0.22, welcome, 7.95, 1.47, PZ + 0.0135);
-  }
-
-  // Balcão de boas-vindas em madeira ripada (x 6,3–9,5 · z 45,0–45,65), frente para +z
-  {
-    const X0 = 6.3, X1 = 9.5, cx = (X0 + X1) / 2, L = X1 - X0, zc = 45.3;
-    put(box(L, 1.0, 0.56, felt, cx, 0.5, zc));
-    const S = [];
-    for (let x = X0 + 0.03; x < X1 - 0.02; x += 0.06) S.push([0.035, 0.94, 0.025, x, 0.5, zc + 0.29]);
-    for (const sx of [X0 - 0.015, X1 + 0.015]) for (let z = zc - 0.25; z < zc + 0.27; z += 0.06) S.push([0.025, 0.94, 0.035, sx, 0.5, z]);
-    put(mergeBoxes(S, slat));
-    put(box(L + 0.1, 0.04, 0.66, quartz, cx, 1.03, zc + 0.02));                  // tampo preto
-    put(box(L - 0.1, 0.03, 0.4, slat, cx, 0.76, zc - 0.44));                     // bancada de trabalho (lado de dentro)
-    put(box(L - 0.1, 0.03, 0.02, ledWarm, cx, 0.03, zc + 0.31, nc));             // LED no rodapé
-    // Medalhão preto com a marca (anel + B) em relevo no centro da frente ripada
-    {
-      const fz = zc + 0.29 + 0.0125, my = 0.56;
-      const disc = cyl(0.25, 0.25, 0.022, felt, cx, my, fz + 0.011, 36); disc.rotation.x = Math.PI / 2; put(disc);
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.008, 6, 40), amber); rim.position.set(cx, my, fz + 0.02); put(rim);
-      const MK = ctx.logo.relief(0.36, { layout: 'mark', depth: 0.02, layers: 3 });
-      MK.position.set(cx, my, fz + 0.022); ctx.add(MK);
-      ctx.bindEmissive('hall', MK.userData.face, 0.3, { min: 0.05 });
-    }
-    // Plaquinha acrílica "Base Kids · check-in" sobre o tampo
-    {
-      const kids = canvasMat(0.3 / 0.14, (g, W, Hh) => {
-        g.fillStyle = '#1a1a1c'; g.fillRect(0, 0, W, Hh);
-        ctx.logo.draw(g, W * 0.05, Hh * 0.14, Hh * 0.72, { layout: 'mark', color: '#f4efe6' });
-        g.fillStyle = '#f4efe6'; g.textAlign = 'left'; g.textBaseline = 'middle';
-        g.font = `800 ${Hh * 0.3}px ${FONT}`; g.fillText('BASE KIDS', W * 0.34, Hh * 0.38);
-        g.fillStyle = '#f0b36a'; g.font = `500 ${Hh * 0.22}px ${FONT}`; g.fillText('check-in aqui', W * 0.34, Hh * 0.7);
-      }, 0.25);
-      put(rot(box(0.32, 0.16, 0.012, black, 7.9, 1.13, zc + 0.24), -0.3));
-      const kp = plane(0.3, 0.14, kids, 7.9, 1.13, zc + 0.24); kp.rotation.x = -0.3; kp.position.z += 0.007; kp.position.y += 0.002;
-    }
-    // Tablets de check-in (Base Kids), porta-folhetos, vaso e sininho
-    for (const x of [7.0, 8.8]) {
-      put(box(0.1, 0.012, 0.1, black, x, 1.056, zc + 0.05));
-      put(rot(box(0.26, 0.19, 0.012, black, x, 1.16, zc + 0.03), -0.35));
-      put(rot(box(0.24, 0.17, 0.004, M.screenOff, x, 1.162, zc + 0.037, nc), -0.35));
-    }
-    put(box(0.3, 0.2, 0.12, black, 7.9, 1.15, zc + 0.12));
-    for (let i = 0; i < 3; i++) put(box(0.09, 0.2, 0.004, i === 1 ? terra : paper, 7.8 + i * 0.1, 1.2, zc + 0.185, nc));
-    put(cyl(0.05, 0.06, 0.2, ceramic, 6.55, 1.15, zc - 0.05, 12));
-    for (let i = 0; i < 3; i++) put(sph(0.07, frond2, 6.55 + (i - 1) * 0.05, 1.3 + (i % 2) * 0.04, zc - 0.05));
-    // Banquetas altas atrás do balcão
-    for (const x of [7.1, 8.7]) {
-      put(cyl(0.18, 0.18, 0.05, caramel, x, 0.74, 44.6, 16));
-      put(cyl(0.022, 0.022, 0.7, black, x, 0.37, 44.6, 8));
-      put(cyl(0.2, 0.22, 0.02, black, x, 0.01, 44.6, 16));
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.01, 6, 20), black); ring.rotation.x = Math.PI / 2; ring.position.set(x, 0.3, 44.6); put(ring);
-    }
-  }
-  // Plantas grandes junto ao pilar esquerdo e perto do café
-  place(bigPlant(1.85, 0.22, 3), 5.9, 44.64);
+  // Planta grande perto do café (o balcão, o painel ripado e o letreiro da parede do templo foram retirados)
   place(bigPlant(1.7, 0.28, 5), 7.3, 49.02);
 
   // Parede de destaque em MARMORATO (vídeos): face do hall da parede x = 4,0 (portas com 0,1 m de folga,
@@ -463,15 +380,6 @@ function roomHallFamilia(ctx) {
     const cap = ctx.logo.mesh(2.04, 0, { layout: 'wide', color: '#d9d4ca', bg: '#1a1a1c', pad: 0.12, roughness: 1 });
     cap.rotation.x = -Math.PI / 2; cap.position.set(12.0, 0.0135, 48.9); cap.receiveShadow = true; ctx.add(cap);
   }
-  // Portas de vidro do templo: faixa jateada de segurança e a marca em adesivo jateado nas duas folhas
-  {
-    const ad = ctx.logo.mesh(0.44, 0.44, { layout: 'mark', opacity: 0.72, cast: false, side: THREE.DoubleSide, roughness: 0.7 });
-    for (const [x, w] of [[11.235, 1.12], [12.485, 1.12]]) {
-      put(box(w, 0.07, 0.026, frost, x, 1.02, 44.0, { cast: false, receive: false }));
-      put(box(w, 0.018, 0.026, frost, x, 0.94, 44.0, { cast: false, receive: false }));
-      const a = new THREE.Mesh(ad.geometry, ad.material); a.position.set(x, 1.45, 44.015); a.castShadow = a.receiveShadow = false; ctx.add(a);
-    }
-  }
   put(box(1.2, 0.26, 0.02, felt, 11.85, 2.62, WZ + 0.012, nc));
   const tpl = canvasMat(1.16 / 0.22, (g, W, Hh) => {
     g.clearRect(0, 0, W, Hh);
@@ -480,28 +388,6 @@ function roomHallFamilia(ctx) {
   }, 0.7, true);
   plane(1.16, 0.22, tpl, 11.85, 2.62, WZ + 0.024);
   ctx.bindEmissive('hall', tpl, 0.7, { min: 0.25 });
-  const wcs = canvasMat(0.9 / 0.2, (g, W, Hh) => {
-    g.fillStyle = '#2458a0'; g.fillRect(0, 0, W, Hh);
-    g.strokeStyle = '#ffffff'; g.lineWidth = Hh * 0.04; g.strokeRect(Hh * 0.06, Hh * 0.06, W - Hh * 0.12, Hh * 0.88);
-    g.fillStyle = '#ffffff'; g.textBaseline = 'middle';
-    // pictogramas (masc., fem.) + seta — placa azul como a da entrada dos banheiros (v3)
-    const ic = (cx, fem) => {
-      g.beginPath(); g.arc(cx, Hh * 0.26, Hh * 0.09, 0, Math.PI * 2); g.fill();
-      if (fem) { g.beginPath(); g.moveTo(cx, Hh * 0.38); g.lineTo(cx - Hh * 0.13, Hh * 0.78); g.lineTo(cx + Hh * 0.13, Hh * 0.78); g.closePath(); g.fill(); }
-      else g.fillRect(cx - Hh * 0.08, Hh * 0.38, Hh * 0.16, Hh * 0.44);
-    };
-    ic(W * 0.07, false); ic(W * 0.14, true);
-    g.textAlign = 'left'; g.font = `600 ${Hh * 0.4}px ${FONT}`; g.fillText('Banheiros', W * 0.21, Hh * 0.54);
-    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(W * 0.8, Hh * 0.35); g.lineTo(W * 0.9, Hh * 0.52); g.lineTo(W * 0.8, Hh * 0.69); g.lineTo(W * 0.8, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.58); g.lineTo(W * 0.72, Hh * 0.46); g.lineTo(W * 0.8, Hh * 0.46); g.closePath(); g.fill();
-  }, 0.7);
-  plane(0.9, 0.2, wcs, 15.955, 2.52, 45.2, -Math.PI / 2);
-  ctx.bindEmissive('hall', wcs, 0.7, { min: 0.25 });
-  // Faixa/sanca AZUL-MARINHO emoldurando o acesso aos banheiros (vão x = 16,05, z 44,4–46,0; v3_01)
-  clad('x', 15.975, -1, 44.3, 46.1, 2.3, 2.8, navy);
-  clad('x', 15.975, -1, 44.3, 44.4, 0.09, 2.3, navy);
-  clad('x', 15.975, -1, 46.0, 46.1, 0.09, 2.3, navy);
-  put(box(0.15, 0.012, 1.6, navy, 16.05, 2.293, 45.2, nc));                      // intradorso do vão
-  for (const z of [44.407, 45.993]) put(box(0.15, 2.2, 0.012, navy, 16.05, 1.19, z, nc));
   // Extintor (pó ABC) com placa, entre as portas de vidro do templo e a escada
   {
     const x = 13.38, z = 44.175;
