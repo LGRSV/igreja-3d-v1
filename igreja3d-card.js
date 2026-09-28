@@ -16,8 +16,8 @@ export const VERSION = '1.3.0';
 // quanto em setConfig().
 const DEFAULT_CONFIG = {
   title: 'Base Church', labels: true, mode: 'auto', night_vision: true, panel: true, roof: false,
-  quality: 'auto', entities: {},   // auto | alta | leve
-  entorno: 'auto',                 // ruas, vizinhos, árvores de rua e postes: auto (some no leve) | true | false
+  quality: 'auto', entities: {},   // auto | alta | media | leve
+  entorno: 'auto',                 // ruas, vizinhos, árvores de rua e postes: auto (some só no leve) | true | false
   latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 90,
   weather: true, weather_city: 'Palmas, TO',
 };
@@ -63,6 +63,9 @@ export const DEFAULT_ENTITIES = {
 // ---------------------------------------------------------------------------
 // quality leve: quantas luzes reais cada item mantém (as outras viram só brilho). Total ≈ 8 + telão.
 const LITE_LIGHTS = { palco: 2, plateia: 2, hall: 1, fachada: 1, estacionamento: 2 };
+// quality media (PC com vídeo integrado): um conjunto FIXO de luzes reais (quantidade constante → nenhum shader recompila)
+// redistribuído às luminárias que importam no enquadramento quando a câmera para; as primeiras MID_SHADOWS projetam sombra.
+const MID_LIGHTS = 10, MID_SHADOWS = 2;
 
 export const ITEMS = [
   { key: 'palco', label: 'Palco (RGB)', kind: 'light', icon: 'spot', rgb: true, dim: true, color: 0xb88cff,
@@ -1091,6 +1094,38 @@ function mergeStatic(root, skipKeep = true) {
     root.add(mesh); after += 1;
   }
   return { before, after };
+}
+
+// Remendos de shader do modo media (onBeforeCompile). O laço das luzes pontuais custa por pixel e por luz: o gramado
+// e o entorno (longe das lâmpadas) ficam sem ele. Nos materiais com reflexo do céu fica só o especular do environment
+// map — a luz difusa do céu vem da sonda (LightProbe), que custa quase nada.
+const NO_POINT = THREE.ShaderChunk.lights_fragment_begin.replace(/#if \( NUM_POINT_LIGHTS > 0 \)[\s\S]*?#pragma unroll_loop_end\s*#endif/, '');
+const ENV_SPEC = THREE.ShaderChunk.lights_fragment_maps.replace('iblIrradiance += getIBLIrradiance( geometryNormal );', '');
+function patchNoPoint(m) {
+  m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_begin>', NO_POINT); };
+  m.customProgramCacheKey = () => 'nopoint'; return m;
+}
+function patchEnvSpec(m) {
+  m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_maps>', ENV_SPEC); };
+  m.customProgramCacheKey = () => 'envspec'; return m;
+}
+// Sonda de luz (harmônicos esféricos) com a mesma luz difusa que o environment map do alta dá: o domo do céu (textura
+// em canvas, mapeamento da SphereGeometry, raio 130) visto pelas câmeras do PMREM (far 100) — só aparece nas diagonais
+// (profundidade 130·max|d| < 100); no resto fica a cor de fundo do renderer. De dia soma o disco do sol.
+function skySH(tex, sun) {
+  const W = 32, Hh = 64, g = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  g.canvas.width = W; g.canvas.height = Hh; g.drawImage(tex.image, 0, 0, W, Hh);
+  const px = g.getImageData(0, 0, W, Hh).data, sh = new THREE.SphericalHarmonics3(), basis = new Array(9), col = new THREE.Color(), dir = new THREE.Vector3();
+  const bg = new THREE.Color(0x0a0f1e), add = (c, w) => { THREE.SphericalHarmonics3.getBasisAt(dir, basis); for (let i = 0; i < 9; i++) sh.coefficients[i].x += c.r * basis[i] * w, sh.coefficients[i].y += c.g * basis[i] * w, sh.coefficients[i].z += c.b * basis[i] * w; };
+  const dA = (Math.PI / Hh) * (2 * Math.PI / W);
+  for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+    const th = (y + 0.5) / Hh * Math.PI, ph = (x + 0.5) / W * Math.PI * 2, k = (y * W + x) * 4;
+    dir.set(-Math.cos(ph) * Math.sin(th), Math.cos(th), Math.sin(ph) * Math.sin(th));
+    const seen = 130 * Math.max(Math.abs(dir.x), Math.abs(dir.y), Math.abs(dir.z)) < 100;
+    add(seen ? col.setRGB(px[k] / 255, px[k + 1] / 255, px[k + 2] / 255, THREE.SRGBColorSpace) : bg, Math.sin(th) * dA);
+  }
+  if (sun) { dir.set(-45, 90, 35); const r = dir.length(); dir.normalize(); add(col.setRGB(1, 1, 1), Math.PI * (6 / r) ** 2); }
+  return sh;
 }
 
 // Funde as peças de luminária/objeto ligadas à mesma entidade que usam o mesmo material
@@ -5543,7 +5578,7 @@ export class Igreja3DCard extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._config = Object.assign({}, DEFAULT_CONFIG);
-    this._lite = this._liteFor(this._config.quality);
+    this._q = this._qualityFor(this._config.quality); this._lite = this._q === 'leve';
     this._nightVision = true;
     this._state = {};          // key -> { on, state, attrs }
     this._lastChanged = {};    // key -> ISO da última mudança (do HA)
@@ -5568,7 +5603,7 @@ export class Igreja3DCard extends HTMLElement {
 
   setConfig(config) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config || {});
-    this._lite = this._liteFor(this._config.quality);   // no HA a posição real vem de hass.config
+    if (!this._built) { this._q = this._qualityFor(this._config.quality); this._lite = this._q === 'leve'; }   // montada, a cena fica como está · no HA a posição real vem de hass.config
     this._mode = ['auto', 'day', 'night'].includes(this._config.mode) ? this._config.mode : 'auto';
     this._nightVision = this._config.night_vision !== false;
     if (this._config.height) this.style.setProperty('--igreja3d-height', String(this._config.height));
@@ -5688,7 +5723,8 @@ export class Igreja3DCard extends HTMLElement {
     if (this._renderer) this._renderer.shadowMap.needsUpdate = true;
     if (this._orbit) this._orbit.dirty = true;
   }
-  // quality: 'alta' | 'leve' | 'auto' (padrão): leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB de RAM
+  // quality: 'alta' | 'media' | 'leve' | 'auto' (padrão): leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB de RAM;
+  // no PC, alta com GPU dedicada e media com vídeo integrado (Intel, AMD APU) ou desconhecido
   static _strongGPU() {
     if (Igreja3DCard.__gpu !== undefined) return Igreja3DCard.__gpu;
     let strong = false;
@@ -5705,23 +5741,22 @@ export class Igreja3DCard extends HTMLElement {
     Igreja3DCard.__gpu = strong;
     return strong;
   }
-  _liteFor(q) {
-    if (q === 'leve') return true;
-    if (q === 'alta') return false;
+  _qualityFor(q) {
+    if (['alta', 'media', 'leve'].includes(q)) return q;
     try {
       const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       const small = typeof screen !== 'undefined' && Math.min(screen.width, screen.height) < 900;
-      if ((coarse && small) || (navigator.deviceMemory || 8) <= 4) return true;
-      // desktop/notebook: 'alta' só com GPU dedicada; integrada (Intel, AMD Vega/APU etc.) ou desconhecida → leve
-      return !Igreja3DCard._strongGPU();
-    } catch (_) { return true; }
+      if ((coarse && small) || (navigator.deviceMemory || 8) <= 4) return 'leve';
+      // desktop/notebook: 'alta' só com GPU dedicada; integrada (Intel, AMD Vega/APU etc.) ou desconhecida → media
+      return Igreja3DCard._strongGPU() ? 'alta' : 'media';
+    } catch (_) { return 'leve'; }
   }
 
   // ---- Cena 3D ----
   _build3D(canvas) {
     const M = materials();
-    // MSAA só compensa com DPR baixo; no leve com DPR ≥ 1,5 ele pesa e rende pouco
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !this._lite || (window.devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
+    // MSAA só compensa com DPR baixo; no leve/media com DPR ≥ 1,5 ele pesa e rende pouco
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: this._q === 'alta' || (window.devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
     // Neutral (r162+): preto da "Igreja Preta" fica preto, roxo do palco e telão saturados, branco estoura menos que no ACES
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -5731,7 +5766,7 @@ export class Igreja3DCard extends HTMLElement {
     this._tight = caps.maxFragmentUniforms < 512 || caps.maxTextures < 16;
     if (this._tight) console.warn(`[igreja3d-card] GPU com margem pequena (fragment uniforms ${caps.maxFragmentUniforms}, samplers ${caps.maxTextures}): luzes fracas viram só halo e sombras só nas principais`);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = this._lite ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = this._q === 'alta' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;   // cena estática: sombras só recalculam quando algo muda
     this._renderer = renderer;
 
@@ -5760,7 +5795,7 @@ export class Igreja3DCard extends HTMLElement {
     this._sunCol = new THREE.Color(0xfff0d2); this._moonCol = new THREE.Color(0x8fa6d8);
     this._sun.position.copy(C).addScaledVector(this._sunPos, this._sunDist); this._sun.target.position.copy(C);
     this._sun.castShadow = true;
-    this._sun.shadow.mapSize.set(this._lite ? 1024 : 2048, this._lite ? 1024 : 2048);
+    this._sun.shadow.mapSize.set(this._lite ? 1024 : 2048, this._lite ? 1024 : 2048);   // desenhada só quando o sol anda
     // cobre x −4…24 · z −4…62 (meia-diagonal ≈ 36 m) em qualquer direção do sol
     const sc = this._sun.shadow.camera; sc.left = -38; sc.right = 38; sc.top = 38; sc.bottom = -38; sc.near = 1; sc.far = 125;
     this._sun.shadow.bias = -0.0006; this._sun.shadow.normalBias = 0.04;
@@ -5768,10 +5803,14 @@ export class Igreja3DCard extends HTMLElement {
 
     // Terreno (grama) — grande, sem recortes
     const GS = 800;   // passa do domo do céu: o horizonte some na neblina
-    const gmat = M.ground.clone(); gmat.color.setHex(0xd8d6c8); gmat.map = textures().grassDry.clone(); gmat.map.repeat.set(GS / 2.2, GS / 2.2);
+    const gmap = textures().grassDry.clone(); gmap.repeat.set(GS / 2.2, GS / 2.2);
+    // media: Lambert sem relevo e sem o laço das lâmpadas (o gramado de 800 m pesava ~30 % do quadro); recebe a sombra do sol
+    const gmat = this._q === 'media' ? patchNoPoint(new THREE.MeshLambertMaterial({ color: 0xd8d6c8, map: gmap })) : M.ground.clone();
+    if (this._q !== 'media') { gmat.color.setHex(0xd8d6c8); gmat.map = gmap; }
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(GS, GS), gmat);
     ground.rotation.x = -Math.PI / 2; ground.position.set(LOT.cx, -0.03, LOT.cz); ground.receiveShadow = true;   // 3 cm abaixo dos pisos (y 0,004): sem z-fighting grama × piso em vista rasante
-    ground.userData.noMerge = true; scene.add(ground); this._ground = ground;
+    // desenhado depois dos opacos: o teste de profundidade descarta o gramado sob os pisos (antes ele era sombreado e coberto)
+    ground.renderOrder = 1; ground.userData.noMerge = true; scene.add(ground); this._ground = ground;
 
     this._clickables = []; this._labels = []; this._zoneMeshes = {};
     // Pisos (zonas): um plano por retângulo; textura alinhada ao mundo (sem emenda entre retângulos)
@@ -5828,6 +5867,7 @@ export class Igreja3DCard extends HTMLElement {
     const stats = mergeStatic(scene, true);
     const extStats = mergeStatic(this._ext, true);
     mergeStatic(this._out, true);
+    if (this._q === 'media') this._midMaterials(scene);
     this._setEntorno(this._config.entorno === 'auto' || this._config.entorno == null ? !this._lite : !!this._config.entorno);
     console.info(`[igreja3d-card] malhas estáticas: ${stats.before} → ${stats.after} draw calls · fachada: ${extStats.before} → ${extStats.after} · luzes reais: ${this._nLights} (${this._nShadows} com sombra)`);
 
@@ -5841,6 +5881,41 @@ export class Igreja3DCard extends HTMLElement {
     if (this._hudTop) this._ro.observe(this._hudTop);
     this._resize();
     renderer.shadowMap.needsUpdate = true;
+    this._precompile();
+  }
+  // Compila os shaders antes do primeiro quadro — em paralelo quando o navegador deixa (KHR_parallel_shader_compile),
+  // sem travar a página na carga — com a fachada e o entorno visíveis, para os botões não engasgarem depois.
+  // Enquanto isso _frame não desenha.
+  _precompile() {
+    const r = this._renderer, hide = [this._ext, this._out].filter((g) => g && !g.visible);
+    this._busy = true;
+    let p;
+    try {
+      hide.forEach((g) => { g.visible = true; });
+      if (r.extensions.has('KHR_parallel_shader_compile')) p = r.compileAsync(this._scene, this._camera);
+      else { r.compile(this._scene, this._camera); p = Promise.resolve(); }
+    } catch (e) { p = Promise.resolve(); }
+    hide.forEach((g) => { g.visible = false; });
+    p.catch(() => {}).then(() => { this._busy = false; if (this._orbit) this._orbit.dirty = true; });
+  }
+
+  // media: o entorno perde o laço das lâmpadas (cópias dos materiais: alguns são os mesmos da igreja) e o environment
+  // map fica só nos materiais brilhantes — vidro, metal, porcelanato polido —, só com o reflexo (a sonda faz a luz difusa)
+  _midMaterials(scene) {
+    const cp = new Map(), out = new Set();
+    this._out.traverse((o) => {
+      out.add(o);
+      if (!o.isMesh || Array.isArray(o.material) || !(o.material.isMeshStandardMaterial || o.material.isMeshLambertMaterial)) return;
+      if (!cp.has(o.material)) cp.set(o.material, patchNoPoint(o.material.clone()));
+      o.material = cp.get(o.material);
+    });
+    const env = new Set();
+    scene.traverse((o) => {
+      if (!o.isMesh || out.has(o)) return;
+      for (const m of [].concat(o.material)) if (m.isMeshStandardMaterial && !m.envMap && (m.metalness >= 0.5 || m.roughness <= 0.3 || (m.transparent && m.opacity < 0.5))) env.add(m);
+    });
+    for (const m of env) patchEnvSpec(m);
+    this._envMats = [...env];
   }
 
   // Luminárias + luzes de cada item (PointLight só onde não é `glowOnly`)
@@ -5853,6 +5928,7 @@ export class Igreja3DCard extends HTMLElement {
     const linRails = {};
     const up = new THREE.Vector3(0, 1, 0);
     const MOVE_DIR = new THREE.Vector3(1, -1.25, 0).normalize();   // moving heads da parede do palco: para +x e para baixo
+    const mid = this._q === 'media';
     // material do feixe: aditivo, mais forte no eixo (N·V) e sumindo para baixo (uv.y); uma instância por refletor
     const beamMat = () => new THREE.ShaderMaterial({
       uniforms: { uC: { value: new THREE.Color() }, uI: { value: 0 } },
@@ -5866,7 +5942,8 @@ export class Igreja3DCard extends HTMLElement {
       // quality leve (tablet/celular): poucas luzes reais — cada item principal fica com LITE_LIGHTS[key] delas,
       // mais fortes e com alcance maior para compensar; as demais viram só halo + emissivo (visual quase igual)
       const realIdx = it.fixtures.map((f, k) => (f.glowOnly || (this._tight && f.i <= 22)) ? -1 : k).filter((k) => k >= 0);
-      const liteMax = this._lite ? (LITE_LIGHTS[it.key] || 0) : realIdx.length;
+      // media: nenhuma luz fixa — as luminárias reais viram candidatas (rt.cands) do conjunto fixo (_assignPool)
+      const liteMax = this._lite ? (LITE_LIGHTS[it.key] || 0) : mid ? 0 : realIdx.length;
       const step = liteMax > 0 ? realIdx.length / liteMax : Infinity;
       const keep = new Set(liteMax >= realIdx.length ? realIdx : Array.from({ length: liteMax }, (_, n) => realIdx[Math.floor(n * step + step / 2 - 0.5)]));
       const boost = keep.size ? realIdx.length / keep.size : 1;
@@ -5875,11 +5952,13 @@ export class Igreja3DCard extends HTMLElement {
         const holder = f.ext ? this._ext : scene;
         // GPU apertada (uniforms/samplers no limite): as luzes fracas das salas viram só halo + emissivo
         const glowOnly = !keep.has(fk);
+        const lp = new THREE.Vector3(px, f.pole ? py - 0.2 : f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);
+        // moving head: a luz sai 1,2 m à frente da lente (ilumina o palco, não a parede atrás da treliça)
+        if (f.moving) lp.addScaledVector(MOVE_DIR, 1.2);
+        if (mid && realIdx.includes(fk)) (rt.cands = rt.cands || []).push({ p: lp, i: f.i, d: f.d, shadow: !!f.shadow && (!this._tight || !!f.liteShadow) });
         if (!glowOnly) {
           const L = new THREE.PointLight(rt.color, 0, this._lite ? f.d * Math.min(1.35, Math.sqrt(boost)) : f.d, 2);
-          L.position.set(px, f.pole ? py - 0.2 : f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);
-          // moving head: a luz sai 1,2 m à frente da lente (ilumina o palco, não a parede atrás da treliça)
-          if (f.moving) L.position.addScaledVector(MOVE_DIR, 1.2);
+          L.position.copy(lp);
           if (f.shadow && !this._lite && (!this._tight || f.liteShadow)) {
             // 256 (leve: 192): com o PCF de 9 amostras fica igual a 512 e ocupa 1/4 da memória (4 MB por luz em vez de 16)
             const ms = this._lite ? 192 : 256;
@@ -5986,6 +6065,19 @@ export class Igreja3DCard extends HTMLElement {
       const z0 = Math.min(...allZ) - 1.2, z1 = Math.max(...allZ) + 1.2;
       for (const x of Object.keys(linRails)) scene.add(box(0.06, 0.06, z1 - z0, railMat, +x, 6.43, (z0 + z1) / 2, { cast: false }));
     }
+    // media: o conjunto fixo de luzes (_assignPool distribui); as MID_SHADOWS primeiras com sombra 256², redesenhada só quando mudam de lugar
+    if (mid) {
+      this._pool = [];
+      for (let n = 0; n < MID_LIGHTS; n++) {
+        const L = new THREE.PointLight(0xffffff, 0, 10, 2); L.position.set(LOT.cx, -30, LOT.cz);
+        if (n < (this._tight ? 1 : MID_SHADOWS)) {
+          L.castShadow = true; L.shadow.mapSize.set(256, 256); L.shadow.radius = 2;
+          L.shadow.bias = -0.004; L.shadow.normalBias = 0.03; L.shadow.camera.near = 0.15; L.shadow.autoUpdate = false;
+          this._nShadows++;
+        }
+        scene.add(L); this._pool.push(L); this._nLights++;
+      }
+    }
   }
 
   // Domo de céu (dia/noite com crossfade), estrelas e mapa de ambiente para reflexos
@@ -6008,7 +6100,12 @@ export class Igreja3DCard extends HTMLElement {
     this._stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 1.1, transparent: true, opacity: 0, fog: false, depthWrite: false }));
     scene.add(this._stars);
     // Ambiente (PMREM) a partir do próprio céu: reflexos em vidros/metais e luz difusa.
-    // No leve fica sem: o reflexo custa ~⅓ de cada quadro em GPU integrada
+    // No leve fica sem: o reflexo custa ~⅓ de cada quadro em GPU integrada. No media só os materiais brilhantes
+    // refletem (_useEnvMats) e a luz difusa do céu vem de uma sonda SH do mesmo domo (quase de graça)
+    if (this._q === 'media') {
+      this._shDay = skySH(T.skyDay, true); this._shNight = skySH(T.skyNight, false);
+      this._probe = new THREE.LightProbe(this._shNight.clone(), 0.35); scene.add(this._probe);
+    }
     if (!this._lite) try {
       const pm = new THREE.PMREMGenerator(renderer);
       const envScene = new THREE.Scene();
@@ -6019,7 +6116,7 @@ export class Igreja3DCard extends HTMLElement {
       dome.material.map = T.skyNight; sun.visible = false;
       this._envNight = pm.fromScene(envScene, 0.04).texture;
       pm.dispose();
-      scene.environment = this._envNight; scene.environmentIntensity = 0.35;
+      if (!this._probe) { scene.environment = this._envNight; scene.environmentIntensity = 0.35; }
     } catch (e) { console.warn('[igreja3d-card] sem environment map', e); }
   }
 
@@ -6444,7 +6541,85 @@ export class Igreja3DCard extends HTMLElement {
       if (key && k !== key) continue;
       for (const { L } of rt.lights || []) if (L.castShadow) L.shadow.needsUpdate = true;
     }
+    if (this._pool && !key) for (const L of this._pool) L.userData.cand = null;   // media: vaga sem luminária → redesenha ao voltar
     this._needShadow = true;
+  }
+
+  // media em PC lento demais: o conjunto fixo cai para 6 luzes (as com sombra ficam) — recompila uma vez, em paralelo
+  _shrinkPool() {
+    const drop = this._pool.filter((L) => !L.castShadow).slice(0, this._pool.length - 6);
+    for (const L of drop) this._scene.remove(L);
+    this._pool = this._pool.filter((L) => !drop.includes(L)); this._nLights -= drop.length;
+    this._poolSig = ''; this._precompile();
+    console.info(`[igreja3d-card] PC lento: ${this._pool.length} luzes reais`);
+  }
+
+  // media: redistribui o conjunto fixo de luzes (_pool) às luminárias acesas que importam no enquadramento (chamado
+  // com a câmera parada). Cada item aceso e visível ganha 1 luz (os que pesam mais primeiro: intensidade ÷ distância²
+  // à câmera); as que sobram vão a quem pesa mais (D'Hondt). Dentro do item as escolhidas se espalham (a mais forte,
+  // depois as mais afastadas das já escolhidas) e somam a intensidade das vizinhas sem luz, como no leve. As vagas com
+  // sombra vão às luminárias marcadas `shadow`. De longe fica parecido com o leve; perto de um cômodo, igual ao alta.
+  _assignPool() {
+    const pool = this._pool, cam = this._camera, cp = cam.position, sph = new THREE.Sphere(), groups = [];
+    cam.updateMatrixWorld();
+    const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    for (const rt of this._items.values()) {
+      if (!rt.cands) continue;
+      rt.lights = [];
+      if (Math.max(rt.target * (rt.brightScale || 1), rt.level) < 0.01) continue;
+      const vis = rt.cands.filter((c) => fr.intersectsSphere(sph.set(c.p, c.d * 0.7)));
+      for (const c of vis) c.w = c.i / Math.max(16, c.p.distanceToSquared(cp));
+      if (vis.length) groups.push({ rt, vis, n: 0, w: vis.reduce((a, c) => a + c.w, 0) });
+    }
+    groups.sort((a, b) => b.w - a.w);
+    let free = pool.length;
+    for (const g of groups) if (free > 0) { g.n = 1; free--; }
+    for (; free > 0; free--) {
+      let best = null;
+      for (const g of groups) if (g.n < g.vis.length && (!best || g.w / (g.n + 1) > best.w / (best.n + 1))) best = g;
+      if (!best) break;
+      best.n++;
+    }
+    const picks = [];
+    for (const g of groups) {
+      if (!g.n) continue;
+      const rest = g.vis.slice().sort((a, b) => b.w - a.w), pick = [rest.shift()];
+      while (pick.length < g.n) {
+        let bi = 0, bv = -1;
+        rest.forEach((c, k) => { const v = c.w * Math.min(...pick.map((q) => q.p.distanceTo(c.p))); if (v > bv) { bv = v; bi = k; } });
+        pick.push(rest.splice(bi, 1)[0]);
+      }
+      // quem ficou sem luz soma a intensidade na escolhida mais próxima, se estiver ao alcance dela
+      const sum = new Map(pick.map((q) => [q, q.i]));
+      for (const c of g.rt.cands) {
+        if (sum.has(c)) continue;
+        let near = pick[0]; for (const q of pick) if (q.p.distanceTo(c.p) < near.p.distanceTo(c.p)) near = q;
+        if (near.p.distanceTo(c.p) < near.d * 0.8) sum.set(near, sum.get(near) + c.i);
+      }
+      for (const q of pick) picks.push({ c: q, rt: g.rt, i: sum.get(q) });
+    }
+    // vagas com sombra: primeiro às marcadas mais relevantes; a luminária que já estava numa vaga fica nela
+    // (a sombra não precisa ser redesenhada); vaga com sombra usada por outra vira luz comum (sombra 0)
+    picks.sort((a, b) => (b.c.shadow - a.c.shadow) || (b.c.w - a.c.w));
+    const nS = pool.filter((L) => L.castShadow).length;
+    picks.forEach((pk, k) => { pk.S = pk.c.shadow && k < nS; });
+    const free2 = new Set(pool), take = (pk, same) => {
+      for (const want of pk.S ? [true] : same ? [false] : [false, true]) for (const L of free2) if (L.castShadow === want && (!same || L.userData.cand === pk.c)) { free2.delete(L); return L; }
+      return null;
+    };
+    for (const pk of picks) pk.L = take(pk, true);
+    for (const pk of picks) if (!pk.L) pk.L = take(pk, false);
+    for (const L of free2) { L.intensity = 0; L.userData.cand = null; }
+    for (const { L, c, rt, i, S } of picks) {
+      if (!L) continue;
+      L.position.copy(c.p); L.distance = c.d * Math.min(1.35, Math.sqrt(i / c.i));
+      rt.lights.push({ L, i });
+      if (L.castShadow) {
+        L.shadow.intensity = S ? 1 : 0;
+        if (S && L.userData.cand !== c) { L.shadow.needsUpdate = true; this._needShadow = true; }
+      }
+      L.userData.cand = S || !L.castShadow ? c : null;
+    }
   }
 
   // Sombra suave junto às paredes (AO falsa): textura branca com bordas escurecidas.
@@ -7101,8 +7276,9 @@ export class Igreja3DCard extends HTMLElement {
   _resize() {
     if (!this._renderer) return;
     const w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight);
-    // Orçamento de ~1,8 Mpx por quadro (1 Mpx no leve): em telas Retina grandes baixa o pixel ratio
-    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, this._lite ? 1.25 : 2, Math.sqrt((this._lite ? 1.0e6 : 1.8e6) / (w * h))));
+    // Orçamento de ~1,8 Mpx por quadro (1,4 no media, 1 no leve): em telas Retina grandes baixa o pixel ratio
+    const [cap, px] = this._q === 'alta' ? [2, 1.8e6] : this._q === 'media' ? [1.5, 1.4e6] : [1.25, 1.0e6];
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(px / (w * h))));
     this._dprFull = dpr; this._lowRes = false;
     this._renderer.setPixelRatio(dpr);
     this._renderer.setSize(w, h, false);
@@ -7147,6 +7323,7 @@ export class Igreja3DCard extends HTMLElement {
   }
 
   _frame() {
+    if (this._busy) return;   // compilando shaders (_precompile)
     const dt = Math.min(this._clock.getDelta(), 0.1);
     const t = this._clock.elapsedTime;
     let dirty = this._orbit.update(dt);
@@ -7192,15 +7369,24 @@ export class Igreja3DCard extends HTMLElement {
     this._hemi.color.lerp(new THREE.Color(0xffb27a), dusk * 0.5 * (1 - nl));
     this._scene.fog.color.setHex(0xd6e4f2).lerp(new THREE.Color(0xf0a070), dusk * 0.6).lerp(new THREE.Color(0x0a0f1e), nl);
     if (this._groundFlat) this._groundFlat.color.setHex(0x8a8c74).lerp(new THREE.Color(0x151a24), L(nl, nl * 0.75, nv));
+    const envI = L(0.9, L(0.35, 0.7, nv), nl);   // PMREM mais forte: reflexo em vidro/metal
+    if (this._probe) { this._probe.sh.copy(this._shDay).lerp(this._shNight, nl); this._probe.intensity = envI; }   // media: luz difusa do céu
     if (this._envDay) {
       const env = nl > 0.5 ? this._envNight : this._envDay;
-      if (this._scene.environment !== env) this._scene.environment = env;
-      this._scene.environmentIntensity = L(0.9, L(0.35, 0.7, nv), nl);   // PMREM mais forte: reflexo em vidro/metal
+      if (this._envMats) for (const m of this._envMats) { m.envMap = env; m.envMapIntensity = envI; }   // media: só nos brilhantes
+      else { if (this._scene.environment !== env) this._scene.environment = env; this._scene.environmentIntensity = envI; }
     }
     // Luzes (fade) e materiais emissivos
     let ambient = false;   // animação ociosa (telão pulsando)
     // luz de dia: as lâmpadas pesam menos na cena
     const dayScale = L(0.45, 1, nl);
+    // media: com a câmera parada, as luzes reais vão para as luminárias que importam neste enquadramento
+    if (this._pool && !this._orbit.moving) {
+      const c = this._camera.position, o = this._orbit.target;
+      let sig = [c.x, c.y, c.z, o.x, o.y, o.z].map((v) => v.toFixed(1)).join();
+      for (const [key, rt] of this._items) if (rt.cands && Math.max(rt.target * (rt.brightScale || 1), rt.level) >= 0.01) sig += key;
+      if (sig !== this._poolSig) { this._poolSig = sig; this._assignPool(); dirty = true; }
+    }
     for (const it of ITEMS) {
       const rt = this._items.get(it.key); if (!rt) continue;
       const goal = rt.target * (rt.brightScale || 1);
@@ -7216,11 +7402,11 @@ export class Igreja3DCard extends HTMLElement {
       for (const hm of rt.halos || []) { hm.opacity = lv * hm.userData.base * L(hm.userData.day, 1, nl); hm.visible = lv > 0.01; }   // materiais de ctx.glowPlane
       if (it.key === 'telao' && rt.screenMat) {
         // tela acende; tocando, pulsa levemente e ilumina o palco
-        const pulse = rt.playing && !this._reduced && !this._lite ? 0.88 + 0.12 * Math.sin(t * 2.1) : rt.playing ? 1 : 0.7;
+        const pulse = rt.playing && !this._reduced && this._q === 'alta' ? 0.88 + 0.12 * Math.sin(t * 2.1) : rt.playing ? 1 : 0.7;
         rt.screenMat.emissiveIntensity = pulse * lv * 1.0;   // toneMapped: false → cores do canvas saem fiéis
         rt.light.intensity = pulse * lv * 9 * L(0.6, 1, nl);
         if (rt.bloom) { rt.bloom.material.opacity = pulse * lv * 0.35 * L(0.4, 1, nl); rt.bloom.visible = lv > 0.01; }
-        if (lv > 0.01 && rt.playing && !this._reduced && !this._lite) ambient = true;   // no leve o telão fica aceso sem pulsar: parado, não desenha nada
+        if (lv > 0.01 && rt.playing && !this._reduced && this._q === 'alta') ambient = true;   // no leve/media o telão fica aceso sem pulsar: parado, não desenha nada
       }
       if (it.key === 'som' && rt.ledMats) for (const m of rt.ledMats) m.emissiveIntensity = lv * 2.6;
       if (it.kind === 'climate' && rt.ledMats) {
@@ -7239,12 +7425,29 @@ export class Igreja3DCard extends HTMLElement {
     if (dirty) this._updateLabels();
     // Só animação ociosa (telão pulsando): no máximo ~8 quadros/s, e nada com a aba ou o cartão fora da tela
     const now = performance.now();
-    // Leve: girando/aproximando desenha com ~55 % da resolução (fluido em vídeo integrado); parou → um quadro nítido
-    if (this._lite && this._dprFull) {
-      if (this._orbit.moving) { this._lastMove = now; if (!this._lowRes) { this._lowRes = true; this._renderer.setPixelRatio(this._dprFull * 0.55); } }
-      else if (this._lowRes && now - (this._lastMove || 0) > 180) { this._lowRes = false; this._renderer.setPixelRatio(this._dprFull); dirty = true; }
+    // Leve/media: girando/aproximando desenha com resolução reduzida, na escala que o tempo real de quadro permite
+    // (~30 quadros/s; de 35 % até 55 % no leve e 75 % no media); parou → um quadro nítido
+    if (this._q !== 'alta' && this._dprFull) {
+      const ft = now - (this._lastT || now); this._lastT = now;
+      if (!this._moveScale) this._moveScale = this._lite ? 0.55 : 0.6;
+      if (this._orbit.moving) {
+        this._lastMove = now;
+        if (!this._lowRes) { this._lowRes = true; this._ft = 0; this._renderer.setPixelRatio(this._dprFull * this._moveScale); }
+        else if (ft > 0) {
+          this._ft = this._ft ? this._ft * 0.8 + ft * 0.2 : ft;
+          if (now - (this._lastAdj || 0) > 300) {
+            this._lastAdj = now;
+            const sc = clamp(this._moveScale * (this._ft > 40 ? 0.85 : this._ft < 24 ? 1.1 : 1), 0.35, this._lite ? 0.55 : 0.75);
+            if (Math.abs(sc - this._moveScale) > 0.02) { this._moveScale = sc; this._renderer.setPixelRatio(this._dprFull * sc); }
+            // media num PC lento demais (a 35 % e ainda < 15 quadros/s por ~1,5 s): o conjunto de luzes encolhe de vez
+            this._slow = this._pool && sc <= 0.36 && this._ft > 66 ? (this._slow || 0) + 1 : 0;
+            if (this._slow >= 5 && this._pool.length > 6) this._shrinkPool();
+          }
+        }
+      } else if (this._lowRes && now - (this._lastMove || 0) > 180) { this._lowRes = false; this._renderer.setPixelRatio(this._dprFull); dirty = true; }
     }
     const visible = !(typeof document !== 'undefined' && document.hidden) && this._onScreen !== false;
+    if (this._busy) return;   // _shrinkPool acabou de pedir recompilação
     if (dirty || (ambient && visible && now - (this._lastIdle || 0) > 125)) {
       if (!dirty) this._lastIdle = now;
       this._renderer.render(this._scene, this._camera);
