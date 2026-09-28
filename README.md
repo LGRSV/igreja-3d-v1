@@ -189,8 +189,8 @@ labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
-quality: auto         # auto (padrão: alta só com GPU dedicada; leve em PC com vídeo integrado, celular/tablet ou ≤ 4 GB de RAM) · alta · leve
-entorno: auto         # ruas, vizinhos, árvores de rua e postes: auto (some no leve) · true · false
+quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM) · alta · media · leve
+entorno: auto         # ruas, vizinhos, árvores de rua e postes: auto (some só no leve) · true · false
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
@@ -344,6 +344,12 @@ não no HA nem no GitHub.
   luminária/entidade viram uma malha só.
 - **26 luzes reais** (PointLight: 25 luminárias + a do telão); **8 com sombra** em `quality: alta`.
   As outras luminárias são só "brilho" (emissivo + halo), sem custo de luz.
+- **`quality: media`** (v1.3, automático em PC com vídeo integrado — Intel, AMD APU): visual próximo do alta
+  com custo perto do leve. Entorno visível (gramado Lambert sem o laço das lâmpadas); **conjunto fixo de 11 luzes
+  reais (2 com sombra)** redistribuído às luminárias que importam no enquadramento quando a câmera para — de longe
+  parece o leve, perto de um cômodo fica igual ao alta; environment map só nos materiais brilhantes (vidro, metal,
+  porcelanato polido) e sonda SH para a luz difusa do céu; shaders compilados antes do primeiro quadro; resolução
+  dinâmica durante o movimento. Medido no SwiftShader (1400 × 900): quadro ~550 ms (leve ~300–390, alta ~3.200).
 - **`quality: leve`** (automático em celular/tablet, ex. Galaxy Tab S6 Lite): só **9 luzes reais** —
   palco 2, plateia 2, hall 1, fachada 1, estacionamento 2 e o telão (tabela `LITE_LIGHTS` no topo do
   arquivo) — mais fortes e com alcance maior para compensar; as demais viram brilho, **nenhuma lâmpada
