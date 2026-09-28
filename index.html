@@ -46,7 +46,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.2.3';
+export const VERSION = '1.2.4';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -54,6 +54,7 @@ export const VERSION = '1.2.3';
 const DEFAULT_CONFIG = {
   title: 'Base Church', labels: true, mode: 'auto', night_vision: true, panel: true, roof: false,
   quality: 'auto', entities: {},   // auto | alta | leve
+  entorno: 'auto',                 // ruas, vizinhos, árvores de rua e postes: auto (some no leve) | true | false
   latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 90,
   weather: true, weather_city: 'Palmas, TO',
 };
@@ -1234,7 +1235,7 @@ class Orbit {
     const moving = Math.abs(this.goal.theta - s.theta) + Math.abs(this.goal.phi - s.phi) + Math.abs(this.goal.radius - s.radius) + this.target.distanceTo(this.targetGoal) > 1e-4;
     this.camera.position.setFromSpherical(s).add(this.target);
     this.camera.lookAt(this.target);
-    const wasDirty = this.dirty; this.dirty = moving;
+    const wasDirty = this.dirty; this.dirty = moving; this.moving = moving;
     return wasDirty || moving;
   }
 }
@@ -5217,23 +5218,26 @@ function roomFachada(ctx) {
   // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));
   add(flat(box(26.0, 0.02, 0.2, P.curbW, 10.0, 0.01, 60.1)));                       // soleira rebaixada (entrada de carros)
+  // Entorno (ruas, calçadas públicas, árvores de rua, postes e vizinhos): grupo à parte que o cartão esconde
+  // no modo leve / `entorno: false` — pesa na GPU e não faz parte da igreja
+  const out = ctx.addOut || add;
   const street = (zc, dir) => {
     // calçada (2,2 m) + meio-fio + pista de 7 m com faixa central amarela tracejada e bordas brancas
     const zw = zc - dir * 4.7;                                                       // centro da calçada
-    add(flat(box(140, 0.025, 2.2, P.walk, 10, 0.0125, zw)));
+    out(flat(box(140, 0.025, 2.2, P.walk, 10, 0.0125, zw)));
     const zk = zw + dir * 1.18;
-    add(box(140, 0.12, 0.15, P.curb, 10, 0.06, zk, { cast: false }));
-    add(flat(box(140, 0.02, 7.0, P.asphalt, 10, 0.01, zc)));
-    for (const s of [-1, 1]) add(flat(box(140, 0.004, 0.1, P.paint, 10, 0.022, zc + s * 3.25)));
-    for (let x = -34; x <= 54; x += 6) add(flat(box(3.0, 0.004, 0.12, P.yellow, x, 0.022, zc)));
+    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zk, { cast: false }));
+    out(flat(box(140, 0.02, 7.0, P.asphalt, 10, 0.01, zc)));
+    for (const s of [-1, 1]) out(flat(box(140, 0.004, 0.1, P.paint, 10, 0.022, zc + s * 3.25)));
+    for (let x = -34; x <= 54; x += 6) out(flat(box(3.0, 0.004, 0.12, P.yellow, x, 0.022, zc)));
     // calçada do outro lado
-    add(box(140, 0.12, 0.15, P.curb, 10, 0.06, zc + dir * 3.58, { cast: false }));
-    add(flat(box(140, 0.025, 2.4, P.walk, 10, 0.0125, zc + dir * 4.85)));
+    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zc + dir * 3.58, { cast: false }));
+    out(flat(box(140, 0.025, 2.4, P.walk, 10, 0.0125, zc + dir * 4.85)));
   };
   street(66.0, 1);     // rua da frente (pista z 62,5–69,5)
   street(-6.0, -1);    // rua dos fundos (pista z −9,5…−2,5)
   // guia rebaixada em frente ao portão dos fundos
-  add(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
+  out(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
   // ---- Arborização: copa em cachos (várias esferas pequenas achatadas), tronco com galhos ----
   const tree = (x, z, s, seed) => {
     const g = G(), rr = mulberry(seed), H0 = 2.1 * s;
@@ -5247,7 +5251,7 @@ function roomFachada(ctx) {
       const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * 1.0 * s, y = H0 + (0.45 + rr() * 0.75) * s - d * 0.25;
       const m = sph((0.38 + rr() * 0.26) * s, mats[i % 3], Math.cos(a) * d, y, Math.sin(a) * d); m.scale.set(1, 0.72, 1); g.add(m);
     }
-    place(g, x, z, rr() * Math.PI);
+    place(g, x, z, rr() * Math.PI); out(g);
   };
   for (const [x, z, s] of [[-5.2, 55.0, 1.1], [25.2, 55.0, 1.1]]) tree(x, z, s, 70 + x | 0);          // laterais do estacionamento
   for (const [x, s] of [[-12, 1.0], [1.5, 0.95], [19.6, 0.95], [32, 1.05]]) tree(x, 61.6, s, 80 + x | 0);   // calçada da frente (sem esconder o letreiro)
@@ -5256,23 +5260,23 @@ function roomFachada(ctx) {
   // ---- Postes de iluminação pública na calçada da frente (braço sobre a rua) ----
   for (const x of [-7.5, 27.5]) {
     const z = 61.9;
-    add(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
-    add(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
-    bar(add, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
-    add(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
-    add(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
+    out(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
+    out(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
+    bar(out, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
+    out(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
+    out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
   }
 
   // ---- Vizinhos (volumes simples, sem roubar a cena) e muros de divisa ----
   const neighbor = (x0, x1, z0, z1, h, face) => {
-    add(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
-    add(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
-    add(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
+    out(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
+    out(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
+    out(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
     const xf = face < 0 ? x0 - 0.012 : x1 + 0.012;                                          // janelas na face voltada para a igreja
-    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) add(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
+    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) out(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
     // frente: vitrine + porta de enrolar
-    add(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
-    add(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
+    out(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
+    out(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
   };
   neighbor(-14, -4.2, 4, 46, 4.0, 1);
   neighbor(24.4, 32, 10, 46, 3.0, -1);
@@ -5712,6 +5716,16 @@ export class Igreja3DCard extends HTMLElement {
     else this._applyDemoDefaults();
   }
 
+  // Entorno ligado: gramado texturizado + ruas/vizinhos. Desligado: só o lote, sobre um chão de cor chapada (MeshBasic,
+  // quase de graça na GPU) que acompanha dia/noite em _frame
+  _setEntorno(on) {
+    this._entornoOn = on; if (this._out) this._out.visible = on;
+    const g = this._ground; if (!g) return;
+    if (!this._groundStd) { this._groundStd = g.material; this._groundFlat = new THREE.MeshBasicMaterial({ color: 0x6d705e }); }
+    g.material = on ? this._groundStd : this._groundFlat; g.receiveShadow = on;
+    if (this._renderer) this._renderer.shadowMap.needsUpdate = true;
+    if (this._orbit) this._orbit.dirty = true;
+  }
   // quality: 'alta' | 'leve' | 'auto' (padrão): leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB de RAM
   static _strongGPU() {
     if (Igreja3DCard.__gpu !== undefined) return Igreja3DCard.__gpu;
@@ -5795,7 +5809,7 @@ export class Igreja3DCard extends HTMLElement {
     const gmat = M.ground.clone(); gmat.color.setHex(0xd8d6c8); gmat.map = textures().grassDry.clone(); gmat.map.repeat.set(GS / 2.2, GS / 2.2);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(GS, GS), gmat);
     ground.rotation.x = -Math.PI / 2; ground.position.set(LOT.cx, -0.03, LOT.cz); ground.receiveShadow = true;   // 3 cm abaixo dos pisos (y 0,004): sem z-fighting grama × piso em vista rasante
-    ground.userData.noMerge = true; scene.add(ground);
+    ground.userData.noMerge = true; scene.add(ground); this._ground = ground;
 
     this._clickables = []; this._labels = []; this._zoneMeshes = {};
     // Pisos (zonas): um plano por retângulo; textura alinhada ao mundo (sem emenda entre retângulos)
@@ -5838,6 +5852,8 @@ export class Igreja3DCard extends HTMLElement {
     // Grupo externo (modo Fachada): paredes altas, platibandas, telhados e revestimento da
     // fachada — preenchido pela decoração roomFachada via ctx.addExt; só aparece com o botão.
     this._ext = new THREE.Group(); this._ext.name = 'fachada'; this._ext.userData.keep = true; this._ext.visible = false; scene.add(this._ext);
+    // Entorno (ruas, vizinhos, árvores de rua, postes): fora da igreja; no leve some e o gramado vira cor chapada
+    this._out = new THREE.Group(); this._out.name = 'entorno'; this._out.userData.keep = true; scene.add(this._out);
 
     this._nLights = 0; this._nShadows = 0;
     this._buildFurniture(scene, M);
@@ -5846,6 +5862,8 @@ export class Igreja3DCard extends HTMLElement {
 
     const stats = mergeStatic(scene, true);
     const extStats = mergeStatic(this._ext, true);
+    mergeStatic(this._out, true);
+    this._setEntorno(this._config.entorno === 'auto' || this._config.entorno == null ? !this._lite : !!this._config.entorno);
     console.info(`[igreja3d-card] malhas estáticas: ${stats.before} → ${stats.after} draw calls · fachada: ${extStats.before} → ${extStats.after} · luzes reais: ${this._nLights} (${this._nShadows} com sombra)`);
 
     this._raycaster = new THREE.Raycaster();
@@ -6025,8 +6043,9 @@ export class Igreja3DCard extends HTMLElement {
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     this._stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 1.1, transparent: true, opacity: 0, fog: false, depthWrite: false }));
     scene.add(this._stars);
-    // Ambiente (PMREM) a partir do próprio céu: reflexos em vidros/metais e luz difusa
-    try {
+    // Ambiente (PMREM) a partir do próprio céu: reflexos em vidros/metais e luz difusa.
+    // No leve fica sem: o reflexo custa ~⅓ de cada quadro em GPU integrada
+    if (!this._lite) try {
       const pm = new THREE.PMREMGenerator(renderer);
       const envScene = new THREE.Scene();
       const dome = new THREE.Mesh(new THREE.SphereGeometry(130, 32, 16), new THREE.MeshBasicMaterial({ map: T.skyDay, side: THREE.BackSide }));
@@ -6267,7 +6286,7 @@ export class Igreja3DCard extends HTMLElement {
     // Logo oficial compartilhado (mesma função de desenho em todo o cartão) — ver rooms/BRIEF.md
     const logo = { draw: drawLogo, aspect: logoAspect, tex: logoTex, mesh: logoMesh, relief: logoRelief, font: LOGO_FONT };
     const ctx = (seed) => ({ THREE, M, F, box, cyl, sph, std, place, add: (m) => { scene.add(m); return m; }, rnd: mulberry32(seed),
-      ZONES, H, T, LOT, ext, addExt, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures() });
+      ZONES, H, T, LOT, ext, addExt, addOut: (m) => { this._out.add(m); return m; }, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures() });
     const click = (m, key) => { m.userData = { item: key }; scene.add(m); this._clickables.push(m); get(key).fixtures.push(m); return m; };
 
     // ---- Objetos ligados a entidades (as decorações não recriam nem cobrem) ----
@@ -6972,6 +6991,7 @@ export class Igreja3DCard extends HTMLElement {
     const w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight);
     // Orçamento de ~1,8 Mpx por quadro (1 Mpx no leve): em telas Retina grandes baixa o pixel ratio
     const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, this._lite ? 1.25 : 2, Math.sqrt((this._lite ? 1.0e6 : 1.8e6) / (w * h))));
+    this._dprFull = dpr; this._lowRes = false;
     this._renderer.setPixelRatio(dpr);
     this._renderer.setSize(w, h, false);
     // Com o painel aberto, a cena é enquadrada na área visível acima dele
@@ -7038,6 +7058,7 @@ export class Igreja3DCard extends HTMLElement {
     this._skyDay.material.opacity = (1 - nl) * (1 - dusk * 0.85); this._stars.material.opacity = nl * 0.9;
     this._hemi.color.lerp(new THREE.Color(0xffb27a), dusk * 0.5 * (1 - nl));
     this._scene.fog.color.setHex(0xd6e4f2).lerp(new THREE.Color(0xf0a070), dusk * 0.6).lerp(new THREE.Color(0x0a0f1e), nl);
+    if (this._groundFlat) this._groundFlat.color.setHex(0x8a8c74).lerp(new THREE.Color(0x151a24), L(nl, nl * 0.75, nv));
     if (this._envDay) {
       const env = nl > 0.5 ? this._envNight : this._envDay;
       if (this._scene.environment !== env) this._scene.environment = env;
@@ -7062,11 +7083,11 @@ export class Igreja3DCard extends HTMLElement {
       for (const hm of rt.halos || []) { hm.opacity = lv * hm.userData.base * L(hm.userData.day, 1, nl); hm.visible = lv > 0.01; }   // materiais de ctx.glowPlane
       if (it.key === 'telao' && rt.screenMat) {
         // tela acende; tocando, pulsa levemente e ilumina o palco
-        const pulse = rt.playing && !this._reduced ? 0.88 + 0.12 * Math.sin(t * 2.1) : rt.playing ? 1 : 0.7;
+        const pulse = rt.playing && !this._reduced && !this._lite ? 0.88 + 0.12 * Math.sin(t * 2.1) : rt.playing ? 1 : 0.7;
         rt.screenMat.emissiveIntensity = pulse * lv * 1.0;   // toneMapped: false → cores do canvas saem fiéis
         rt.light.intensity = pulse * lv * 9 * L(0.6, 1, nl);
         if (rt.bloom) { rt.bloom.material.opacity = pulse * lv * 0.35 * L(0.4, 1, nl); rt.bloom.visible = lv > 0.01; }
-        if (lv > 0.01 && rt.playing && !this._reduced) ambient = true;
+        if (lv > 0.01 && rt.playing && !this._reduced && !this._lite) ambient = true;   // no leve o telão fica aceso sem pulsar: parado, não desenha nada
       }
       if (it.key === 'som' && rt.ledMats) for (const m of rt.ledMats) m.emissiveIntensity = lv * 2.6;
       if (it.kind === 'climate' && rt.ledMats) {
@@ -7079,6 +7100,11 @@ export class Igreja3DCard extends HTMLElement {
     if (dirty) this._updateLabels();
     // Só animação ociosa (telão pulsando): no máximo ~8 quadros/s, e nada com a aba ou o cartão fora da tela
     const now = performance.now();
+    // Leve: girando/aproximando desenha com ~55 % da resolução (fluido em vídeo integrado); parou → um quadro nítido
+    if (this._lite && this._dprFull) {
+      if (this._orbit.moving) { this._lastMove = now; if (!this._lowRes) { this._lowRes = true; this._renderer.setPixelRatio(this._dprFull * 0.55); } }
+      else if (this._lowRes && now - (this._lastMove || 0) > 180) { this._lowRes = false; this._renderer.setPixelRatio(this._dprFull); dirty = true; }
+    }
     const visible = !(typeof document !== 'undefined' && document.hidden) && this._onScreen !== false;
     if (dirty || (ambient && visible && now - (this._lastIdle || 0) > 125)) {
       if (!dirty) this._lastIdle = now;

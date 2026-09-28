@@ -230,23 +230,26 @@ function roomFachada(ctx) {
   // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));
   add(flat(box(26.0, 0.02, 0.2, P.curbW, 10.0, 0.01, 60.1)));                       // soleira rebaixada (entrada de carros)
+  // Entorno (ruas, calçadas públicas, árvores de rua, postes e vizinhos): grupo à parte que o cartão esconde
+  // no modo leve / `entorno: false` — pesa na GPU e não faz parte da igreja
+  const out = ctx.addOut || add;
   const street = (zc, dir) => {
     // calçada (2,2 m) + meio-fio + pista de 7 m com faixa central amarela tracejada e bordas brancas
     const zw = zc - dir * 4.7;                                                       // centro da calçada
-    add(flat(box(140, 0.025, 2.2, P.walk, 10, 0.0125, zw)));
+    out(flat(box(140, 0.025, 2.2, P.walk, 10, 0.0125, zw)));
     const zk = zw + dir * 1.18;
-    add(box(140, 0.12, 0.15, P.curb, 10, 0.06, zk, { cast: false }));
-    add(flat(box(140, 0.02, 7.0, P.asphalt, 10, 0.01, zc)));
-    for (const s of [-1, 1]) add(flat(box(140, 0.004, 0.1, P.paint, 10, 0.022, zc + s * 3.25)));
-    for (let x = -34; x <= 54; x += 6) add(flat(box(3.0, 0.004, 0.12, P.yellow, x, 0.022, zc)));
+    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zk, { cast: false }));
+    out(flat(box(140, 0.02, 7.0, P.asphalt, 10, 0.01, zc)));
+    for (const s of [-1, 1]) out(flat(box(140, 0.004, 0.1, P.paint, 10, 0.022, zc + s * 3.25)));
+    for (let x = -34; x <= 54; x += 6) out(flat(box(3.0, 0.004, 0.12, P.yellow, x, 0.022, zc)));
     // calçada do outro lado
-    add(box(140, 0.12, 0.15, P.curb, 10, 0.06, zc + dir * 3.58, { cast: false }));
-    add(flat(box(140, 0.025, 2.4, P.walk, 10, 0.0125, zc + dir * 4.85)));
+    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zc + dir * 3.58, { cast: false }));
+    out(flat(box(140, 0.025, 2.4, P.walk, 10, 0.0125, zc + dir * 4.85)));
   };
   street(66.0, 1);     // rua da frente (pista z 62,5–69,5)
   street(-6.0, -1);    // rua dos fundos (pista z −9,5…−2,5)
   // guia rebaixada em frente ao portão dos fundos
-  add(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
+  out(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
   // ---- Arborização: copa em cachos (várias esferas pequenas achatadas), tronco com galhos ----
   const tree = (x, z, s, seed) => {
     const g = G(), rr = mulberry(seed), H0 = 2.1 * s;
@@ -260,7 +263,7 @@ function roomFachada(ctx) {
       const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * 1.0 * s, y = H0 + (0.45 + rr() * 0.75) * s - d * 0.25;
       const m = sph((0.38 + rr() * 0.26) * s, mats[i % 3], Math.cos(a) * d, y, Math.sin(a) * d); m.scale.set(1, 0.72, 1); g.add(m);
     }
-    place(g, x, z, rr() * Math.PI);
+    place(g, x, z, rr() * Math.PI); out(g);
   };
   for (const [x, z, s] of [[-5.2, 55.0, 1.1], [25.2, 55.0, 1.1]]) tree(x, z, s, 70 + x | 0);          // laterais do estacionamento
   for (const [x, s] of [[-12, 1.0], [1.5, 0.95], [19.6, 0.95], [32, 1.05]]) tree(x, 61.6, s, 80 + x | 0);   // calçada da frente (sem esconder o letreiro)
@@ -269,23 +272,23 @@ function roomFachada(ctx) {
   // ---- Postes de iluminação pública na calçada da frente (braço sobre a rua) ----
   for (const x of [-7.5, 27.5]) {
     const z = 61.9;
-    add(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
-    add(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
-    bar(add, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
-    add(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
-    add(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
+    out(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
+    out(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
+    bar(out, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
+    out(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
+    out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
   }
 
   // ---- Vizinhos (volumes simples, sem roubar a cena) e muros de divisa ----
   const neighbor = (x0, x1, z0, z1, h, face) => {
-    add(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
-    add(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
-    add(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
+    out(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
+    out(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
+    out(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
     const xf = face < 0 ? x0 - 0.012 : x1 + 0.012;                                          // janelas na face voltada para a igreja
-    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) add(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
+    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) out(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
     // frente: vitrine + porta de enrolar
-    add(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
-    add(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
+    out(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
+    out(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
   };
   neighbor(-14, -4.2, 4, 46, 4.0, 1);
   neighbor(24.4, 32, 10, 46, 3.0, -1);
