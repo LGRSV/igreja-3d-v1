@@ -170,6 +170,7 @@ height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
 quality: auto         # auto (padrão: alta só com GPU dedicada; leve em PC com vídeo integrado, celular/tablet ou ≤ 4 GB de RAM) · alta · leve
+entorno: auto         # ruas, vizinhos, árvores de rua e postes: auto (some no leve) · true · false
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
@@ -322,6 +323,11 @@ não no HA nem no GitHub.
   projeta sombra** (só o sol, 1024²) e o pixel ratio fica em ≤ 1,25 (orçamento de 1 Mpx). O visual é
   praticamente o mesmo; as salas pequenas ficam um pouco mais escuras à noite. Medido no SwiftShader:
   quadro ~1,7× mais rápido e atualização de sombras de 635 ms → 5 ms.
+  Desde a v1.2.4 o leve também: fica **sem o reflexo do céu** (environment map, ~⅓ do custo de cada quadro),
+  **esconde o entorno** (ruas, vizinhos, árvores de rua e postes; o gramado vira cor chapada — volta com
+  `entorno: true`), **não anima o telão parado** (sem interação a cena não é redesenhada) e, enquanto
+  você gira/aproxima, desenha com 55 % da resolução e faz um quadro nítido ao soltar. Medido no
+  SwiftShader (1400 × 900): quadro 1914 → 390 ms (~5×) e carregamento 10,3 → 4,9 s.
   Em GPU com pouca margem (< 512 vetores de uniform no fragment ou < 16 samplers) as luzes fracas
   das salas viram só brilho (fica com 16 luzes reais, 3 com sombra) e o cartão avisa no console.
 - Sombras das luzes em 256² (no `leve` não há sombra de lâmpadas): **~64 MB** de GPU no total, contra 160 MB antes. Elas são
