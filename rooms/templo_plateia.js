@@ -8,7 +8,7 @@ function roomTemploPlateia(ctx) {
   // · Cadeiras pretas estofadas de encosto alto (estrutura de aço preto), 414 lugares em 4 blocos:
   //   2 centrais retos de 12 × 10 (corredor central de 1,76 m em z ≈ 28,1, alinhado com o centro do palco)
   //   e 2 das pontas levemente angulados (≈ 8,6°) para o centro; corredores laterais que recebem as
-  //   escadas do palco (z ≈ 19,3–20,9 e 35,3–36,9), corredores junto às paredes z = 12,4 / 44 e passagem
+  //   escadas do palco (frente, z ≈ 19,3–20,9; a da ponta z alto fica na lateral do palco), corredores junto às paredes z = 12,4 / 44 e passagem
   //   de ~1,25 m ao longo da parede x = 16,05 (porta preta de correr, visor da mídia), como em v7/v8.
   //   (≈ 500 não cabem com essas passagens: 8,5 m de fundo × 10 fileiras de 0,85 m.)
   // · Cobertura: SEM as tesouras/terças brancas e sem hastes/correntes (pedido do cliente): os high-bays do
