@@ -6,7 +6,7 @@ function roomAlaDireita(ctx) {
   // REFERÊNCIA MÁXIMA = vídeos do cliente: v4 (mídia: placas acústicas grafite,
   // bancada preta no visor, road case turquesa, cadeiras azul/preto e plásticas),
   // v2 (voluntariado: cortina, sofás cinza, letreiro "FAÇAM TUDO…", poltronas
-  // capitonê terracota, parede de marmorato com split, prateleiras, buffet
+  // capitonê terracota, parede de marmorato com split (do cartão), prateleiras, buffet
   // grafite + frigobar; depósito com estantes pretas e caixas organizadoras),
   // v3 (banheiros: porcelanato cinza até 1,3 m e marrom imperador acima, bancada
   // branca com cubas de apoio, espelhos com moldura de LED fria, bebedouro inox,
@@ -336,7 +336,7 @@ function roomAlaDireita(ctx) {
   // MÍDIA (x 16,05–18,9 · z 23,3–28,0) — v4. Piso laminado do cartão.
   // Placas acústicas grafite em todas as paredes; bancada preta longa sob o visor
   // J12 (de frente para o palco); cadeiras de operador azul/preto; cadeiras
-  // plásticas pretas na parede oposta; gabinete com impressora; split e câmera.
+  // plásticas pretas na parede oposta; gabinete com impressora; câmera (o split é do cartão).
   // Porta x 17,9–18,8 (z=23,3) → giro x 17,9–18,8 · z 23,4–24,3 livre.
   // =====================================================================
   const AC = M.acustico, AY0 = 0.08, AY1 = 2.98;
@@ -518,10 +518,7 @@ function roomAlaDireita(ctx) {
   // receptor sem fio preto com LEDs na parede (v4_01)
   add(box(0.04, 0.26, 0.07, black, 18.765, 1.35, 24.5));
   add(box(0.004, 0.18, 0.012, ledR, 18.743, 1.35, 24.5, nc));
-  // split branco no fundo e câmera de segurança no canto
-  add(box(0.85, 0.28, 0.2, white, 17.55, 2.56, 27.785));
-  add(box(0.8, 0.02, 0.004, graph, 17.55, 2.45, 27.683, nc));
-  add(box(0.08, 0.06, 0.004, ledB, 17.2, 2.6, 27.683, nc));
+  // câmera de segurança no canto (o split branco do fundo — x 17,1–18,0, y 2,42–2,70 — é do cartão: `ac_midia`)
   const secCam = (x, y, z, ry) => {
     const g = G();
     g.add(box(0.08, 0.04, 0.03, white, 0, 0, -0.015));
@@ -607,11 +604,8 @@ function roomAlaDireita(ctx) {
   place(armchair(), 17.62, 28.52, 0.04);
   place(armchair(), 18.34, 28.52, -0.04);
   secCam(16.4, 2.88, 28.075, 0.6);
-  // parede x = 20,1 em marmorato (face da sala), com split no alto
+  // parede x = 20,1 em marmorato (face da sala); o split no alto (z 29,05–29,95, y 2,43–2,73) é do cartão: `ac_voluntariado`
   clad('z', 20.013, -1, 28.075, 33.825, 0.075, 2.985, M.marmorato);
-  add(box(0.22, 0.3, 0.9, white, 19.89, 2.58, 29.5));
-  add(box(0.004, 0.02, 0.85, graph, 19.778, 2.46, 29.5, nc));
-  add(box(0.004, 0.05, 0.1, redCup, 19.778, 2.64, 29.15, nc));
   // 2 prateleiras flutuantes cinza com quadros e planta pendente
   for (const y of [1.72, 2.2]) add(box(0.22, 0.04, 1.55, shelfG, 19.9, y, 31.25));
   const art = [std({ color: 0xe8e2d4, roughness: 0.9 }), std({ color: 0xd9cdb4, roughness: 0.9 })];

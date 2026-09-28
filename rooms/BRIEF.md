@@ -109,11 +109,10 @@ olha para **−x** e a sala de mídia (visor J12 na parede x = 16,05, z 23,6–2
   (x ≈ 0,12, virada para +x); acendem levemente com o telão (`ctx.bindEmissive('telao', mat, …)`).
 - **Treliça de luz** (decoração do palco): treliça preta tipo escada em y ≈ 6,3, x ≈ 0,6, de z 20,5 a 35,5, com o **banzo inferior
   em y ≈ 6,30** (o grampo dos moving heads sobe até y 6,30 em x 0,8). Nela ficam as luminárias `palco` do cartão.
-- **Cobertura aparente** (decoração da plateia): tesouras metálicas **brancas** (`M.aluminioBranco`) atravessando o templo em x
-  (0 → 16,05), banzo inferior y ≈ 7,6, superior ≈ 8,6, em z ≈ 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3, apoiadas em
-  pilares/perfis pretos que sobem até ≈ 8,6 nas duas laterais (em x = 0 junto à parede alta; em x = 16,05 acima da parede de 3 m);
-  terças finas; lampadinhas quentes no beiral (opcional). **Os high-bays da `plateia` se prendem no banzo inferior (y 7,6)** das
-  tesouras de z 18,5 / 23,5 / 33,5 / 38,5 — a tesoura de z 28,5 fica sem luminária.
+- **Cobertura aparente** (decoração da plateia): **SEM as tesouras/terças brancas** (v1.3, pedido do cliente: "retire de cima
+  aquelas hastes de metal, deixe a lâmpada suspensa"). Ficam os pilares/perfis pretos que sobem até ≈ 8,6 nas duas laterais nos
+  módulos z ≈ 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3 e as lampadinhas quentes no beiral. **Os high-bays da `plateia` ficam
+  suspensos em y ≈ 7,2, sem haste**, em z 18,5 / 23,5 / 33,5 / 38,5 — a linha de z 28,5 fica sem luminária. Não recoloque tesouras.
 - **Line arrays** (decoração do palco): pendurados por correntes até as tesouras, na frente das telas brancas (x ≈ 1,6,
   z ≈ 21,5 e ≈ 34,7), 2 clusters por lado (um para frente, um angulado).
 - **Plateia** (decoração da plateia): cadeiras pretas estofadas de encosto alto voltadas para −x, de x ≈ 6,3 a ≈ 15,5, em blocos com
@@ -132,10 +131,10 @@ olha para **−x** e a sala de mídia (visor J12 na parede x = 16,05, z 23,6–2
   1,76 m) e 2 blocos das pontas angulados ~8,6° (z 13,72–19,3 e 36,9–42,55), cadeiras em x 5,75–14,72 (1ª fileira central em
   x 6,62). Corredores de ~1,3–1,45 m junto às paredes z = 12,4 / 44 e passagem de ~1,25 m ao longo de x = 16,05. Pilares na
   parede do palco: inteiros fora do palco/telas, em z 23,55 e 32,65 nascem no piso do palco, em z 28,5 e 33,5 só acima de y 6,95.
-  Segunda treliça de luz (preta, 0,3 × 0,3) sobre a plateia em x 5,55, y 6,72–7,0, z 19,9–36,3, pendurada nas tesouras.
-- **A cobertura interna (tesouras, terças, pilares altos, treliça da plateia, lampadinhas) é um grupo `userData.keep` que some no
+  Segunda treliça de luz (preta, 0,3 × 0,3) sobre a plateia em x 5,55, y 6,72–7,0, z 19,9–36,3, suspensa (sem correntes).
+- **A cobertura interna (pilares altos, treliça da plateia, lampadinhas) é um grupo `userData.keep` que some no
   modo Fachada** (`visible` segue `!ctx.ext.visible`): o telhado em meia-água do modo Fachada (face de baixo de y ≈ 8,1 em x = 0
-  a ≈ 7,5 em x = 16) é mais baixo que as tesouras perto de x = 16.
+  a ≈ 7,5 em x = 16) é mais baixo que os pilares perto de x = 16.
 
 ## Objetos do cartão (ligados a entidades — NÃO recrie nem cubra)
 - **Telão LED** (`telao`, media_player): ver acima (8,4 × 3,0, plano em x 0,25, centro y 2,65 · z 28,1). Luz do telão em (2,1; 2,8; 28,1).
@@ -149,11 +148,15 @@ olha para **−x** e a sala de mídia (visor J12 na parede x = 16,05, z 23,6–2
   (15,825; z 15,3), (15,825; z 30,9 — acima da janela), (15,825; z 41,6) na parede x = 16,05; (x 7,95; z 12,625) e (x 7,95; z 43,775)
   nas pontas. Deixe 0,3 m livres em volta.
 - **Ar da sala pastoral** (`ac_pastoral`): split em (14,9, 2,4, 0,2) na parede z=0.
+- **Ar da mídia** (`ac_midia`, v4): split 0,85 × 0,28 × 0,2 em (17,55; 2,56; 27,785) na parede do fundo z = 28 (sobre as placas acústicas).
+- **Ar do voluntariado** (`ac_voluntariado`, v2): split 0,9 × 0,3 × 0,22 em (19,9; 2,58; 29,5) na parede de marmorato x = 20,1.
+- Todo split tem **aleta que abre** e **fluxo de ar** (fitas translúcidas ~1–1,8 m para fora e para baixo, cor pelo modo): deixe livre
+  1,5 m à frente e abaixo de cada aparelho.
 - Luminárias pendentes/refletores de cada item (posições na tabela de ITEMS do cartão). Não coloque nada num raio de 0,4 m delas.
   Refletor do letreiro (**sempre visível**, não é mais `ext`): (8,9; 8,05; 50,35), preso ao topo do painel ripado acima do logo.
-  **Plateia**: 12 **high-bays redondos** (Ø 0,64 m, altura 0,25) com o difusor em y ≈ 7,1, pendurados por haste curta até o banzo
-  inferior das tesouras (y 7,6), em x 7,2 / 10,6 / 14,0 × z 18,5 / 23,5 / 33,5 / 38,5 (reais: (7,2|14,0; 23,5) e (7,2|14,0; 33,5)).
-  **Não há mais pendentes lineares nem trilhos de teto** (y 6,43) — a cobertura/tesouras é da decoração da plateia.
+  **Plateia**: 12 **high-bays redondos** (Ø 0,64 m, altura 0,25) com o difusor em y ≈ 7,1, suspensos (sem haste),
+  em x 7,2 / 10,6 / 14,0 × z 18,5 / 23,5 / 33,5 / 38,5 (reais: (7,2|14,0; 23,5) e (7,2|14,0; 33,5)).
+  **Não há mais pendentes lineares nem trilhos de teto** (y 6,43).
   Arandela do pátio: no muro x = 0 em (0,16; 2,8; 6,2).
 - **Calçada** (`calcada`, piso grafite): faixa da frente fora dos jardins e o trecho x 16–23 (z 49,6–51).
 

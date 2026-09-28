@@ -3,18 +3,18 @@ function roomTemploPlateia(ctx) {
   // TEMPLO — PLATEIA + COBERTURA APARENTE (x 0–16,05 · z 12,4–44,0), fiel às fotos/vídeos v6–v8.
   // CORREÇÃO DO CLIENTE: o palco fica na parede lateral longa x = 0 (x 0,15–5,0 · z 19,6–36,6);
   // a plateia olha para −x e a mídia (visor na parede x = 16,05) fica de frente para o palco.
-  // Visual real: paredes pretas, porcelanato cinza polido (o cartão cria) e tesouras metálicas BRANCAS.
+  // Visual real: paredes pretas e porcelanato cinza polido (o cartão cria). As tesouras metálicas BRANCAS
+  // das fotos foram retiradas a pedido do cliente (a vista de cima fica limpa; as luminárias ficam suspensas).
   // · Cadeiras pretas estofadas de encosto alto (estrutura de aço preto), 414 lugares em 4 blocos:
   //   2 centrais retos de 12 × 10 (corredor central de 1,76 m em z ≈ 28,1, alinhado com o centro do palco)
   //   e 2 das pontas levemente angulados (≈ 8,6°) para o centro; corredores laterais que recebem as
   //   escadas do palco (z ≈ 19,3–20,9 e 35,3–36,9), corredores junto às paredes z = 12,4 / 44 e passagem
   //   de ~1,25 m ao longo da parede x = 16,05 (porta preta de correr, visor da mídia), como em v7/v8.
   //   (≈ 500 não cabem com essas passagens: 8,5 m de fundo × 10 fileiras de 0,85 m.)
-  // · Cobertura: 7 tesouras brancas (banzo inferior y 7,6 — os high-bays do cartão se prendem nele;
-  //   superior 8,6) em z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3, pilares/perfis pretos nas duas
-  //   laterais, vigas, terças e cordão de lampadinhas quentes nos beirais; 2ª treliça de luz (preta)
-  //   sobre a plateia, pendurada nas tesouras. No modo Fachada a cobertura interna some (o telhado em
-  //   meia-água do modo Fachada é mais baixo que as tesouras perto de x = 16).
+  // · Cobertura: SEM as tesouras/terças brancas e sem hastes/correntes (pedido do cliente): os high-bays do
+  //   cartão (y 7,2) e a 2ª treliça de luz (preta) sobre a plateia ficam suspensos no lugar; ficam os
+  //   pilares/perfis pretos nas duas laterais (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
+  //   e o cordão de lampadinhas quentes nos beirais. No modo Fachada a cobertura interna some.
   // · Paredes: perfis pretos, extintores vermelhos com placa, placas de SAÍDA verdes (acesas),
   //   placa vermelha "SAÍDA DE EMERGÊNCIA" sobre a porta preta de correr (cartão) e folhas pretas de
   //   correr (abertas) na saída de vidro da parede z = 12,4.
@@ -28,7 +28,6 @@ function roomTemploPlateia(ctx) {
   const chairFrame = std({ color: 0x121214, roughness: 0.42, metalness: 0.55 });   // aço preto das cadeiras
   const uphol      = std({ color: 0x1f2023, roughness: 0.96 });                     // tecido preto estofado
   const steelBlk   = std({ color: 0x0d0d0f, roughness: 0.38, metalness: 0.55 });   // pilares, vigas, perfis, treliça de luz
-  const white      = M.aluminioBranco;                                              // tesouras e terças brancas
   const redExt     = std({ color: 0xc4201b, roughness: 0.3, metalness: 0.1 });
   const blackPl    = std({ color: 0x1a1a1c, roughness: 0.55 });                     // válvula/mangueira, carcaças
   const doorBlack  = std({ color: 0x19191b, roughness: 0.5, metalness: 0.15 });     // folhas pretas de correr
@@ -183,27 +182,11 @@ function roomTemploPlateia(ctx) {
   let coverOn = true;
   Object.defineProperty(cover, 'visible', { configurable: true, get: () => coverOn && !(ctx.ext && ctx.ext.visible), set: (v) => { coverOn = !!v; } });
   ctx.add(cover);
-  const bWhite = batch(white, true, cover), bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
+  const bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
   const bLens = batch(lensMat, false, cover), bCable = batch(blackPl, false, cover);
 
-  // Tesouras brancas (plano xy em z = zt): banzos paralelos + montantes + diagonais em V
+  // Módulos da estrutura (z): as tesouras brancas saíram; ficam os pilares pretos que marcam os módulos
   const TZ = [13.5, 18.5, 23.5, 28.5, 33.5, 38.5, 43.3];
-  const TX0 = FX0 + 0.16, TX1 = 15.93, YB = 7.64, YT = 8.56, NP = 18, DXP = (TX1 - TX0) / NP;
-  for (const zt of TZ) {
-    bx(bWhite, TX1 - TX0, 0.08, 0.1, (TX0 + TX1) / 2, YB, zt);         // banzo inferior (face de baixo em y 7,60)
-    bx(bWhite, TX1 - TX0, 0.08, 0.1, (TX0 + TX1) / 2, YT, zt);         // banzo superior (topo em y 8,60)
-    for (let i = 0; i <= NP; i++) bx(bWhite, 0.05, YT - YB - 0.08, 0.06, TX0 + i * DXP, (YB + YT) / 2, zt);
-    for (let i = 0; i < NP; i++) {
-      const xa = TX0 + i * DXP, xb = xa + DXP, up = i < NP / 2;
-      bar(bWhite, [xa, up ? YB : YT, zt], [xb, up ? YT : YB, zt], 0.045);
-    }
-    // chapas de apoio sobre os pilares
-    bx(bWhite, 0.2, 0.12, 0.26, TX0 + 0.02, YT - 0.02, zt);
-    bx(bWhite, 0.2, 0.12, 0.26, TX1 - 0.08, YT - 0.02, zt);
-  }
-  // Terças (ao longo de z, sobre os banzos superiores); a de x 1,6 serve de ponto das correntes dos line arrays
-  for (const x of [0.7, 1.6, 2.9, 4.2, 5.5, 6.8, 8.1, 9.4, 10.7, 12.0, 13.3, 14.6, 15.6])
-    bx(bWhite, 0.05, 0.1, FZ1 - FZ0 - 0.02, x, 8.65, (FZ0 + FZ1) / 2);
 
   // Pilares/perfis pretos na parede do palco (x = 0, 8,5 m). Nos trechos do telão e das telas brancas
   // só há tocos acima da viga (y ≥ 6,95); ao lado do telão os perfis nascem no piso do palco (y 1,0).
@@ -223,7 +206,7 @@ function roomTemploPlateia(ctx) {
     for (let z = FZ0 + 0.3; z <= FZ1 - 0.25; z += 0.62) put(bBulb, sphGeo(0.036), mat4(x, y, z));
   }
 
-  // 2ª treliça de luz (preta, box truss 0,3 × 0,3) sobre a plateia, paralela ao palco, pendurada nas tesouras
+  // 2ª treliça de luz (preta, box truss 0,3 × 0,3) sobre a plateia, paralela ao palco, suspensa (sem correntes)
   const LX = 5.55, LY0 = 6.72, LY1 = 7.0, LZ0 = 19.9, LZ1 = 36.3, LH = 0.14;
   for (const dx of [-LH, LH]) for (const y of [LY0, LY1]) bar(bBlk, [LX + dx, y, LZ0], [LX + dx, y, LZ1], 0.024, true);
   const NL = Math.round((LZ1 - LZ0) / 0.5), dzl = (LZ1 - LZ0) / NL;
@@ -235,10 +218,6 @@ function roomTemploPlateia(ctx) {
     bar(bBlk, [f ? LX - LH : LX + LH, LY1, za], [f ? LX + LH : LX - LH, LY1, zb], 0.016);
   }
   for (const z of [LZ0, LZ1]) { bar(bBlk, [LX - LH, LY0, z], [LX + LH, LY0, z], 0.02); bar(bBlk, [LX - LH, LY1, z], [LX + LH, LY1, z], 0.02); bar(bBlk, [LX - LH, LY0, z], [LX - LH, LY1, z], 0.02); bar(bBlk, [LX + LH, LY0, z], [LX + LH, LY1, z], 0.02); }
-  // correntes até o banzo inferior (y 7,6): verticais em 23,5 / 28,5 / 33,5 e cabos inclinados das pontas
-  for (const z of [23.5, 28.5, 33.5]) bar(bCable, [LX, LY1, z], [LX, YB - 0.04, z], 0.008, true);
-  bar(bCable, [LX, LY1, LZ0 + 0.1], [LX, YB - 0.04, 18.5], 0.008, true);
-  bar(bCable, [LX, LY1, LZ1 - 0.1], [LX, YB - 0.04, 38.5], 0.008, true);
   // moving heads e pares pendurados, mirando o palco (−x) e para baixo
   const tilt = 0.75;   // inclinação do eixo do refletor (rad a partir da vertical para −x)
   for (const z of [21.2, 24.4, 27.1, 29.1, 31.8, 35.0]) {

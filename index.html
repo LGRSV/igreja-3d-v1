@@ -77,7 +77,9 @@ export const DEFAULT_ENTITIES = {
   administrativo: 'light.administrativo',
   circulacao:     'light.circulacao',
   midia:          'light.sala_midia',
+  ac_midia:       'climate.ar_midia',
   voluntariado:   'light.voluntariado',
+  ac_voluntariado:'climate.ar_voluntariado',
   cozinha:        'light.cozinha',
   banheiros:      'light.banheiros',
   familia:        'light.sala_familia',
@@ -91,7 +93,7 @@ export const DEFAULT_ENTITIES = {
 // Itens controláveis: luminárias (posição em metros, X→direita, Z→frente)
 // i = intensidade (cd), d = alcance (m), shadow = projeta sombra nas paredes
 // Estilos: (padrão) pendente · spot = refletor de palco (com feixe) · moving = moving head de treliça (feixe para +x/baixo)
-// · highbay = pendente industrial grande (hang = y da estrutura onde se prende: haste curta, sem cabo no ar) · linear = pendente linear de LED 2,4 m (cabos até o trilho do teto, y 6,43) · pole = poste de 5,5 m · sconce = arandela · lamp = abajur.
+// · highbay = pendente industrial grande (susp = redondo menor do templo, suspenso no ar, sem haste — o cliente pediu a cobertura sem as tesouras) · linear = pendente linear de LED 2,4 m (cabos até o trilho do teto, y 6,43) · pole = poste de 5,5 m · sconce = arandela · lamp = abajur.
 // glowOnly = só lâmpada + halo + emissivo (sem PointLight — economiza luzes reais).
 // liteShadow = mantém a sombra em GPU com margem pequena (_tight). Em `quality: leve` nenhuma lâmpada projeta sombra (só o sol).
 // ext = a luminária só aparece no modo Fachada (a luz em si vale sempre).
@@ -110,14 +112,14 @@ export const ITEMS = [
     ] },
   { key: 'plateia', label: 'Plateia', kind: 'light', icon: 'bulb', dim: true, color: 0xffe2bd,
     fixtures: [
-      // high-bays redondos pendurados nas tesouras brancas (banzo inferior y 7,6) sobre a plateia (x 6,3–15,5);
-      // a tesoura de z 28,5 (sobre o corredor central, frente da mídia) fica sem luminária
-      { p: [7.2, 7.2, 23.5], i: 120, d: 20, highbay: true, hang: 7.6, shadow: true, liteShadow: true },
-      { p: [14.0, 7.2, 23.5], i: 120, d: 20, highbay: true, hang: 7.6 },
-      { p: [7.2, 7.2, 33.5], i: 120, d: 20, highbay: true, hang: 7.6 },
-      { p: [14.0, 7.2, 33.5], i: 120, d: 20, highbay: true, hang: 7.6, shadow: true },
+      // high-bays redondos suspensos sobre a plateia (x 6,3–15,5), na altura de antes (y 7,2) — sem as tesouras brancas e
+      // sem hastes (pedido do cliente); a linha de z 28,5 (sobre o corredor central, frente da mídia) fica sem luminária
+      { p: [7.2, 7.2, 23.5], i: 120, d: 20, highbay: true, susp: true, shadow: true, liteShadow: true },
+      { p: [14.0, 7.2, 23.5], i: 120, d: 20, highbay: true, susp: true },
+      { p: [7.2, 7.2, 33.5], i: 120, d: 20, highbay: true, susp: true },
+      { p: [14.0, 7.2, 33.5], i: 120, d: 20, highbay: true, susp: true, shadow: true },
       ...[[10.6, 23.5], [10.6, 33.5], [7.2, 18.5], [10.6, 18.5], [14.0, 18.5], [7.2, 38.5], [10.6, 38.5], [14.0, 38.5]]
-        .map(([x, z]) => ({ p: [x, 7.2, z], highbay: true, hang: 7.6, glowOnly: true })),
+        .map(([x, z]) => ({ p: [x, 7.2, z], highbay: true, susp: true, glowOnly: true })),
     ] },
   { key: 'telao', label: 'Telão LED', kind: 'media', icon: 'tv' },
   { key: 'som', label: 'Som do templo', kind: 'switch', icon: 'speaker' },
@@ -161,8 +163,10 @@ export const ITEMS = [
     ] },
   { key: 'midia', label: 'Sala de mídia', kind: 'light', icon: 'bulb', color: 0xd8e6ff,
     fixtures: [{ p: [17.5, 2.7, 25.6], i: 18, d: 5.5 }] },
+  { key: 'ac_midia', label: 'Ar da mídia', kind: 'climate', icon: 'ac' },
   { key: 'voluntariado', label: 'Voluntariado', kind: 'light', icon: 'bulb', color: 0xffe9cc,
     fixtures: [{ p: [18.1, 2.7, 30.9], i: 26, d: 7, shadow: true }] },
+  { key: 'ac_voluntariado', label: 'Ar do voluntariado', kind: 'climate', icon: 'ac' },
   { key: 'cozinha', label: 'Cozinha / almox.', kind: 'light', icon: 'bulb', color: 0xfff5e4,
     fixtures: [
       { p: [10.7, 2.7, 1.95], i: 22, d: 6 },
@@ -240,11 +244,14 @@ const WEATHER_CODE = {
 };
 
 // Rotinas rápidas: ações compostas disparadas pelo cartão (não precisam existir no HA)
+// ares-condicionados por cômodo (vídeos: templo, mídia, voluntariado; + pastoral)
+const AC_KEYS = ITEMS.filter((i) => i.kind === 'climate').map((i) => i.key);
 const LIGHT_KEYS = ['palco', 'plateia', 'hall', 'fachada', 'estacionamento', 'pastoral', 'recepcao', 'administrativo', 'circulacao', 'midia', 'voluntariado', 'cozinha', 'banheiros', 'familia'];
 const SCENES = [
-  { id: 'culto', icon: 'church', name: 'Culto', desc: 'Palco, plateia, telão, som, ar do templo, hall, fachada e estacionamento',
+  { id: 'culto', icon: 'church', name: 'Culto', desc: 'Palco, plateia, telão, som, ares do templo e da mídia, hall, fachada e estacionamento',
     run: (c) => [c.on('palco'), c.on('plateia'), c.call('media_player', 'turn_on', c.e('telao')), c.on('som'),
-      c.call('climate', 'set_hvac_mode', c.e('ac_templo'), { hvac_mode: 'cool' }), c.on('hall'), c.on('fachada'), c.on('estacionamento')] },
+      c.call('climate', 'set_hvac_mode', c.e('ac_templo'), { hvac_mode: 'cool' }), c.call('climate', 'set_hvac_mode', c.e('ac_midia'), { hvac_mode: 'cool' }),
+      c.on('hall'), c.on('fachada'), c.on('estacionamento')] },
   { id: 'louvor', icon: 'music', name: 'Louvor', desc: 'Plateia a 30%, palco roxo/azul, telão e som',
     run: (c) => [c.call('light', 'turn_on', c.e('plateia'), { brightness_pct: 30 }), c.call('light', 'turn_on', c.e('palco'), { rgb_color: [110, 70, 255], brightness_pct: 100 }),
       c.call('media_player', 'turn_on', c.e('telao')), c.on('som')] },
@@ -256,11 +263,13 @@ const SCENES = [
     run: (c) => ['fachada', 'estacionamento', 'hall', 'banheiros', 'recepcao'].map((k) => c.on(k)) },
   { id: 'expediente', icon: 'briefcase', name: 'Expediente', desc: 'Administrativo, pastoral, recepção, circulação e ar da pastoral',
     run: (c) => ['administrativo', 'pastoral', 'recepcao', 'circulacao'].map((k) => c.on(k)).concat([c.call('climate', 'set_hvac_mode', c.e('ac_pastoral'), { hvac_mode: 'cool' })]) },
-  { id: 'fechar', icon: 'power', name: 'Fechar tudo', desc: 'Todas as luzes, telão, som e ares desligados',
+  { id: 'fechar', icon: 'power', name: 'Fechar tudo', desc: 'Todas as luzes, telão, som e os ares de todos os cômodos desligados',
     run: (c) => LIGHT_KEYS.map((k) => c.off(k)).concat([c.off('som'), c.call('media_player', 'turn_off', c.e('telao')),
-      c.call('climate', 'set_hvac_mode', c.e('ac_templo'), { hvac_mode: 'off' }), c.call('climate', 'set_hvac_mode', c.e('ac_pastoral'), { hvac_mode: 'off' })]) },
+      ...AC_KEYS.map((k) => c.call('climate', 'set_hvac_mode', c.e(k), { hvac_mode: 'off' }))]) },
 ];
 const LED_PRESETS = [['Quente', [255, 180, 110]], ['Branco', [255, 244, 229]], ['Vermelho', [255, 40, 40]], ['Azul', [40, 110, 255]], ['Verde', [40, 200, 90]], ['Roxo', [140, 60, 230]]];
+// cor do fluxo de ar por modo (neutro para seco/ventilar)
+const AIR_COL = { cool: 0x9fdcff, heat_cool: 0xb8e6ff, auto: 0xb8e6ff, heat: 0xffa15c, dry: 0xe8eef4, fan_only: 0xe8eef4 };
 const HVAC_PT = { off: 'Desligado', cool: 'Frio', heat: 'Quente', heat_cool: 'Auto', auto: 'Auto', fan_only: 'Ventilar', dry: 'Seco' };
 const MEDIA_PT = { playing: 'Tocando', paused: 'Pausado', idle: 'Ociosa', off: 'Desligada', standby: 'Standby', on: 'Ligada', unavailable: 'indisponível', unknown: '—' };
 // Elevação/azimute do sol para uma data e um ponto (graus). Azimute: 0 = norte, 90 = leste.
@@ -1158,7 +1167,8 @@ class Orbit {
     this.target = target.clone(); this.targetGoal = target.clone();
     this.sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(target));
     this.goal = this.sph.clone();
-    this.minDist = 3; this.maxDist = 150; this.minPolar = 0.12; this.maxPolar = 1.45;
+    this.minDist = 3; this.maxDist = 150; this.minPolar = 0.02; this.maxPolar = 1.45;   // 0,02: dá para olhar reto de cima (Vista de cima)
+    this.speed = 9; this.userAt = 0;   // speed: suavização (menor = voo mais lento); userAt: último gesto do usuário
     this.pointers = new Map(); this.moved = 0; this.pinch = 0; this.touched = false;
     this.onClick = null; this.onHover = null;
     this._down = (e) => this.down(e); this._move = (e) => this.move(e);
@@ -1191,7 +1201,7 @@ class Orbit {
     const p = this.pointers.get(e.pointerId);
     if (!p) { if (this.onHover) this.onHover(e); return; }
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
-    p.x = e.clientX; p.y = e.clientY; this.touched = true;
+    p.x = e.clientX; p.y = e.clientY; this.touched = true; this.userAt = performance.now(); this.speed = 9;
     this.moved += Math.abs(dx) + Math.abs(dy);
     if (this.pointers.size === 2) {
       const d = this._dist();
@@ -1213,7 +1223,7 @@ class Orbit {
     if (p && this.moved < 6 && p.b === 0 && this.onClick) this.onClick(e);
     this.pinch = 0;
   }
-  wheel(e) { e.preventDefault(); this.touched = true; this.zoomBy(Math.exp(e.deltaY * 0.0012)); this.dirty = true; }
+  wheel(e) { e.preventDefault(); this.touched = true; this.userAt = performance.now(); this.speed = 9; this.zoomBy(Math.exp(e.deltaY * 0.0012)); this.dirty = true; }
   zoomBy(f) { this.goal.radius = clamp(this.goal.radius * f, this.minDist, this.maxDist); }
   pan(dx, dy) {
     const k = this.goal.radius * 0.0016;
@@ -1225,9 +1235,13 @@ class Orbit {
   }
   reset(pos, target) {
     this.goal.setFromVector3(pos.clone().sub(target)); this.targetGoal.copy(target); this.dirty = true;
+    // gira pelo lado mais curto (theta acumula voltas quando o usuário arrasta)
+    const d = this.goal.theta - this.sph.theta; this.goal.theta = this.sph.theta + (((d + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
   }
+  // voo suave até a pose (mais lento que o arrasto; qualquer gesto do usuário volta ao normal)
+  fly(pos, target, speed = 2.6) { this.reset(pos, target); this.speed = speed; }
   update(dt) {
-    const k = 1 - Math.exp(-dt * 9);
+    const k = 1 - Math.exp(-dt * this.speed);
     const s = this.sph;
     s.theta += (this.goal.theta - s.theta) * k;
     s.phi += (this.goal.phi - s.phi) * k;
@@ -1237,6 +1251,7 @@ class Orbit {
     this.camera.position.setFromSpherical(s).add(this.target);
     this.camera.lookAt(this.target);
     const wasDirty = this.dirty; this.dirty = moving; this.moving = moving;
+    if (!moving) this.speed = 9;
     return wasDirty || moving;
   }
 }
@@ -1688,18 +1703,18 @@ function roomTemploPlateia(ctx) {
   // TEMPLO — PLATEIA + COBERTURA APARENTE (x 0–16,05 · z 12,4–44,0), fiel às fotos/vídeos v6–v8.
   // CORREÇÃO DO CLIENTE: o palco fica na parede lateral longa x = 0 (x 0,15–5,0 · z 19,6–36,6);
   // a plateia olha para −x e a mídia (visor na parede x = 16,05) fica de frente para o palco.
-  // Visual real: paredes pretas, porcelanato cinza polido (o cartão cria) e tesouras metálicas BRANCAS.
+  // Visual real: paredes pretas e porcelanato cinza polido (o cartão cria). As tesouras metálicas BRANCAS
+  // das fotos foram retiradas a pedido do cliente (a vista de cima fica limpa; as luminárias ficam suspensas).
   // · Cadeiras pretas estofadas de encosto alto (estrutura de aço preto), 414 lugares em 4 blocos:
   //   2 centrais retos de 12 × 10 (corredor central de 1,76 m em z ≈ 28,1, alinhado com o centro do palco)
   //   e 2 das pontas levemente angulados (≈ 8,6°) para o centro; corredores laterais que recebem as
   //   escadas do palco (z ≈ 19,3–20,9 e 35,3–36,9), corredores junto às paredes z = 12,4 / 44 e passagem
   //   de ~1,25 m ao longo da parede x = 16,05 (porta preta de correr, visor da mídia), como em v7/v8.
   //   (≈ 500 não cabem com essas passagens: 8,5 m de fundo × 10 fileiras de 0,85 m.)
-  // · Cobertura: 7 tesouras brancas (banzo inferior y 7,6 — os high-bays do cartão se prendem nele;
-  //   superior 8,6) em z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3, pilares/perfis pretos nas duas
-  //   laterais, vigas, terças e cordão de lampadinhas quentes nos beirais; 2ª treliça de luz (preta)
-  //   sobre a plateia, pendurada nas tesouras. No modo Fachada a cobertura interna some (o telhado em
-  //   meia-água do modo Fachada é mais baixo que as tesouras perto de x = 16).
+  // · Cobertura: SEM as tesouras/terças brancas e sem hastes/correntes (pedido do cliente): os high-bays do
+  //   cartão (y 7,2) e a 2ª treliça de luz (preta) sobre a plateia ficam suspensos no lugar; ficam os
+  //   pilares/perfis pretos nas duas laterais (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
+  //   e o cordão de lampadinhas quentes nos beirais. No modo Fachada a cobertura interna some.
   // · Paredes: perfis pretos, extintores vermelhos com placa, placas de SAÍDA verdes (acesas),
   //   placa vermelha "SAÍDA DE EMERGÊNCIA" sobre a porta preta de correr (cartão) e folhas pretas de
   //   correr (abertas) na saída de vidro da parede z = 12,4.
@@ -1713,7 +1728,6 @@ function roomTemploPlateia(ctx) {
   const chairFrame = std({ color: 0x121214, roughness: 0.42, metalness: 0.55 });   // aço preto das cadeiras
   const uphol      = std({ color: 0x1f2023, roughness: 0.96 });                     // tecido preto estofado
   const steelBlk   = std({ color: 0x0d0d0f, roughness: 0.38, metalness: 0.55 });   // pilares, vigas, perfis, treliça de luz
-  const white      = M.aluminioBranco;                                              // tesouras e terças brancas
   const redExt     = std({ color: 0xc4201b, roughness: 0.3, metalness: 0.1 });
   const blackPl    = std({ color: 0x1a1a1c, roughness: 0.55 });                     // válvula/mangueira, carcaças
   const doorBlack  = std({ color: 0x19191b, roughness: 0.5, metalness: 0.15 });     // folhas pretas de correr
@@ -1868,27 +1882,11 @@ function roomTemploPlateia(ctx) {
   let coverOn = true;
   Object.defineProperty(cover, 'visible', { configurable: true, get: () => coverOn && !(ctx.ext && ctx.ext.visible), set: (v) => { coverOn = !!v; } });
   ctx.add(cover);
-  const bWhite = batch(white, true, cover), bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
+  const bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
   const bLens = batch(lensMat, false, cover), bCable = batch(blackPl, false, cover);
 
-  // Tesouras brancas (plano xy em z = zt): banzos paralelos + montantes + diagonais em V
+  // Módulos da estrutura (z): as tesouras brancas saíram; ficam os pilares pretos que marcam os módulos
   const TZ = [13.5, 18.5, 23.5, 28.5, 33.5, 38.5, 43.3];
-  const TX0 = FX0 + 0.16, TX1 = 15.93, YB = 7.64, YT = 8.56, NP = 18, DXP = (TX1 - TX0) / NP;
-  for (const zt of TZ) {
-    bx(bWhite, TX1 - TX0, 0.08, 0.1, (TX0 + TX1) / 2, YB, zt);         // banzo inferior (face de baixo em y 7,60)
-    bx(bWhite, TX1 - TX0, 0.08, 0.1, (TX0 + TX1) / 2, YT, zt);         // banzo superior (topo em y 8,60)
-    for (let i = 0; i <= NP; i++) bx(bWhite, 0.05, YT - YB - 0.08, 0.06, TX0 + i * DXP, (YB + YT) / 2, zt);
-    for (let i = 0; i < NP; i++) {
-      const xa = TX0 + i * DXP, xb = xa + DXP, up = i < NP / 2;
-      bar(bWhite, [xa, up ? YB : YT, zt], [xb, up ? YT : YB, zt], 0.045);
-    }
-    // chapas de apoio sobre os pilares
-    bx(bWhite, 0.2, 0.12, 0.26, TX0 + 0.02, YT - 0.02, zt);
-    bx(bWhite, 0.2, 0.12, 0.26, TX1 - 0.08, YT - 0.02, zt);
-  }
-  // Terças (ao longo de z, sobre os banzos superiores); a de x 1,6 serve de ponto das correntes dos line arrays
-  for (const x of [0.7, 1.6, 2.9, 4.2, 5.5, 6.8, 8.1, 9.4, 10.7, 12.0, 13.3, 14.6, 15.6])
-    bx(bWhite, 0.05, 0.1, FZ1 - FZ0 - 0.02, x, 8.65, (FZ0 + FZ1) / 2);
 
   // Pilares/perfis pretos na parede do palco (x = 0, 8,5 m). Nos trechos do telão e das telas brancas
   // só há tocos acima da viga (y ≥ 6,95); ao lado do telão os perfis nascem no piso do palco (y 1,0).
@@ -1908,7 +1906,7 @@ function roomTemploPlateia(ctx) {
     for (let z = FZ0 + 0.3; z <= FZ1 - 0.25; z += 0.62) put(bBulb, sphGeo(0.036), mat4(x, y, z));
   }
 
-  // 2ª treliça de luz (preta, box truss 0,3 × 0,3) sobre a plateia, paralela ao palco, pendurada nas tesouras
+  // 2ª treliça de luz (preta, box truss 0,3 × 0,3) sobre a plateia, paralela ao palco, suspensa (sem correntes)
   const LX = 5.55, LY0 = 6.72, LY1 = 7.0, LZ0 = 19.9, LZ1 = 36.3, LH = 0.14;
   for (const dx of [-LH, LH]) for (const y of [LY0, LY1]) bar(bBlk, [LX + dx, y, LZ0], [LX + dx, y, LZ1], 0.024, true);
   const NL = Math.round((LZ1 - LZ0) / 0.5), dzl = (LZ1 - LZ0) / NL;
@@ -1920,10 +1918,6 @@ function roomTemploPlateia(ctx) {
     bar(bBlk, [f ? LX - LH : LX + LH, LY1, za], [f ? LX + LH : LX - LH, LY1, zb], 0.016);
   }
   for (const z of [LZ0, LZ1]) { bar(bBlk, [LX - LH, LY0, z], [LX + LH, LY0, z], 0.02); bar(bBlk, [LX - LH, LY1, z], [LX + LH, LY1, z], 0.02); bar(bBlk, [LX - LH, LY0, z], [LX - LH, LY1, z], 0.02); bar(bBlk, [LX + LH, LY0, z], [LX + LH, LY1, z], 0.02); }
-  // correntes até o banzo inferior (y 7,6): verticais em 23,5 / 28,5 / 33,5 e cabos inclinados das pontas
-  for (const z of [23.5, 28.5, 33.5]) bar(bCable, [LX, LY1, z], [LX, YB - 0.04, z], 0.008, true);
-  bar(bCable, [LX, LY1, LZ0 + 0.1], [LX, YB - 0.04, 18.5], 0.008, true);
-  bar(bCable, [LX, LY1, LZ1 - 0.1], [LX, YB - 0.04, 38.5], 0.008, true);
   // moving heads e pares pendurados, mirando o palco (−x) e para baixo
   const tilt = 0.75;   // inclinação do eixo do refletor (rad a partir da vertical para −x)
   for (const z of [21.2, 24.4, 27.1, 29.1, 31.8, 35.0]) {
@@ -2798,7 +2792,7 @@ function roomAlaDireita(ctx) {
   // REFERÊNCIA MÁXIMA = vídeos do cliente: v4 (mídia: placas acústicas grafite,
   // bancada preta no visor, road case turquesa, cadeiras azul/preto e plásticas),
   // v2 (voluntariado: cortina, sofás cinza, letreiro "FAÇAM TUDO…", poltronas
-  // capitonê terracota, parede de marmorato com split, prateleiras, buffet
+  // capitonê terracota, parede de marmorato com split (do cartão), prateleiras, buffet
   // grafite + frigobar; depósito com estantes pretas e caixas organizadoras),
   // v3 (banheiros: porcelanato cinza até 1,3 m e marrom imperador acima, bancada
   // branca com cubas de apoio, espelhos com moldura de LED fria, bebedouro inox,
@@ -3128,7 +3122,7 @@ function roomAlaDireita(ctx) {
   // MÍDIA (x 16,05–18,9 · z 23,3–28,0) — v4. Piso laminado do cartão.
   // Placas acústicas grafite em todas as paredes; bancada preta longa sob o visor
   // J12 (de frente para o palco); cadeiras de operador azul/preto; cadeiras
-  // plásticas pretas na parede oposta; gabinete com impressora; split e câmera.
+  // plásticas pretas na parede oposta; gabinete com impressora; câmera (o split é do cartão).
   // Porta x 17,9–18,8 (z=23,3) → giro x 17,9–18,8 · z 23,4–24,3 livre.
   // =====================================================================
   const AC = M.acustico, AY0 = 0.08, AY1 = 2.98;
@@ -3310,10 +3304,7 @@ function roomAlaDireita(ctx) {
   // receptor sem fio preto com LEDs na parede (v4_01)
   add(box(0.04, 0.26, 0.07, black, 18.765, 1.35, 24.5));
   add(box(0.004, 0.18, 0.012, ledR, 18.743, 1.35, 24.5, nc));
-  // split branco no fundo e câmera de segurança no canto
-  add(box(0.85, 0.28, 0.2, white, 17.55, 2.56, 27.785));
-  add(box(0.8, 0.02, 0.004, graph, 17.55, 2.45, 27.683, nc));
-  add(box(0.08, 0.06, 0.004, ledB, 17.2, 2.6, 27.683, nc));
+  // câmera de segurança no canto (o split branco do fundo — x 17,1–18,0, y 2,42–2,70 — é do cartão: `ac_midia`)
   const secCam = (x, y, z, ry) => {
     const g = G();
     g.add(box(0.08, 0.04, 0.03, white, 0, 0, -0.015));
@@ -3399,11 +3390,8 @@ function roomAlaDireita(ctx) {
   place(armchair(), 17.62, 28.52, 0.04);
   place(armchair(), 18.34, 28.52, -0.04);
   secCam(16.4, 2.88, 28.075, 0.6);
-  // parede x = 20,1 em marmorato (face da sala), com split no alto
+  // parede x = 20,1 em marmorato (face da sala); o split no alto (z 29,05–29,95, y 2,43–2,73) é do cartão: `ac_voluntariado`
   clad('z', 20.013, -1, 28.075, 33.825, 0.075, 2.985, M.marmorato);
-  add(box(0.22, 0.3, 0.9, white, 19.89, 2.58, 29.5));
-  add(box(0.004, 0.02, 0.85, graph, 19.778, 2.46, 29.5, nc));
-  add(box(0.004, 0.05, 0.1, redCup, 19.778, 2.64, 29.15, nc));
   // 2 prateleiras flutuantes cinza com quadros e planta pendente
   for (const y of [1.72, 2.2]) add(box(0.22, 0.04, 1.55, shelfG, 19.9, y, 31.25));
   const art = [std({ color: 0xe8e2d4, roughness: 0.9 }), std({ color: 0xd9cdb4, roughness: 0.9 })];
@@ -5685,8 +5673,13 @@ export class Igreja3DCard extends HTMLElement {
     this._labelsBtn.addEventListener('click', () => this._setLabels(!this._labelsOn));
     btns.appendChild(this._labelsBtn);
     const reset = document.createElement('button'); reset.className = 'panel btn'; reset.textContent = 'Recentrar';
-    reset.addEventListener('click', () => this._resetView());
+    reset.addEventListener('click', () => { this._airFocus = null; this._setTopView(false); });
     btns.appendChild(reset);
+    this._topBtn = document.createElement('button'); this._topBtn.className = 'panel btn'; this._topBtn.textContent = 'Vista de cima';
+    this._topBtn.title = 'Planta vista de cima, sem cobertura: confira luzes, ares e automações de todos os cômodos';
+    this._topBtn.setAttribute('aria-pressed', 'false');
+    this._topBtn.addEventListener('click', () => { this._airFocus = null; this._setTopView(!this._topView); });
+    btns.appendChild(this._topBtn);
     this._roofBtn = document.createElement('button'); this._roofBtn.className = 'panel btn'; this._roofBtn.textContent = 'Fachada';
     this._roofBtn.title = 'Mostra a fachada, paredes altas e cobertura';
     this._roofBtn.addEventListener('click', () => this._setRoof(!this._roofOn));
@@ -5967,14 +5960,13 @@ export class Igreja3DCard extends HTMLElement {
           mesh.quaternion.copy(q); mesh.position.set(px, py, pz).addScaledVector(dir, 0.165);
           gs = 1.1; gb = 0.85;
         } else if (f.highbay) {
-          // pendente industrial grande (campânula grafite + difusor); `hang` = y da estrutura (tesoura): haste curta até lá
-          // (presos a uma estrutura — `hang` — são os redondos menores do templo, Ø 0,64 m)
-          const kb = f.hang != null ? 0.7 : 1;
+          // pendente industrial grande (campânula grafite + difusor); `susp` = os redondos menores do templo (Ø 0,64 m),
+          // suspensos sem haste; os outros têm cabo de 1,7 m
+          const kb = f.susp ? 0.7 : 1;
           const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.14 * kb, 0.46 * kb, 0.36 * kb, 24, 1, true), bayMat); sh.position.set(px, py + 0.02 * kb, pz); sh.castShadow = false; sh.userData = { item: it.key };
           holder.add(sh); this._clickables.push(sh);
           holder.add(cyl(0.15 * kb, 0.15 * kb, 0.12 * kb, M.graphite, px, py + 0.25 * kb, pz, 16));
-          const top = f.hang != null ? f.hang : py + 1.7, y0r = py + 0.31 * kb, rodL = Math.max(0.02, top - y0r);
-          holder.add(cyl(0.012, 0.012, rodL, M.dark, px, y0r + rodL / 2, pz, 6));
+          if (!f.susp) { const y0r = py + 0.31 * kb, rodL = 1.7 - 0.31 * kb; holder.add(cyl(0.012, 0.012, rodL, M.dark, px, y0r + rodL / 2, pz, 6)); }
           mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.42 * kb, 0.42 * kb, 0.025, 28), emis()); mesh.position.set(px, py - 0.15 * kb, pz);
           gs = 2.6 * kb; gb = 0.8;
         } else if (f.linear) {
@@ -6329,8 +6321,20 @@ export class Igreja3DCard extends HTMLElement {
       const led = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), lm); led.position.set(4.9, 1.065, z); led.castShadow = false;
       click(led, 'som'); if (!som.ledMats.includes(lm)) som.ledMats.push(lm);
     }
-    // Splits (climate): corpo branco + grelha + LED de modo. axis = direção do comprimento; face = lado da sala.
+    // Splits (climate): corpo branco + grelha + LED de modo + aleta que abre e fluxo de ar. axis = direção do comprimento; face = lado da sala.
     // sz = [comprimento, altura, profundidade] (templo: unidades grandes piso-teto instaladas no alto, como nos vídeos)
+    // Fluxo: fitas translúcidas saindo da aleta (um ShaderMaterial por entidade, todas as unidades numa malha só);
+    // a cor segue o modo e o desenho só anda por alguns segundos depois de ligar (ver _airTick).
+    const airMat = () => new THREE.ShaderMaterial({
+      uniforms: { uC: { value: new THREE.Color(0x9fdcff) }, uI: { value: 0 }, uT: { value: 0 } },
+      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 uC; uniform float uI; uniform float uT; varying vec2 vUv; void main(){ float k = floor(vUv.x); float u = vUv.x - k; float v = vUv.y;'
+        + ' float edge = smoothstep(0.0, 0.22, u) * smoothstep(1.0, 0.78, u); float fade = smoothstep(0.0, 0.06, v) * pow(1.0 - v, 1.5);'
+        + ' float s = 0.5 + 0.5 * sin(v * 21.0 - uT * 4.5 + k * 2.1 + u * 4.0); float fil = 0.72 + 0.28 * sin(u * 37.0 + k * 3.7 + v * 5.0);'
+        + ' float a = k > 2.5 ? smoothstep(0.0, 0.12, v) * (1.0 - v) * (0.6 + 0.4 * s) * 1.1 : fade * (0.3 + 0.7 * s * s) * fil;'   // piso: leque mais cheio
+        + ' gl_FragColor = vec4(uC, uI * edge * a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
+      transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v = new THREE.Vector3(), _one = new THREE.Vector3(1, 1, 1), _up = new THREE.Vector3(0, 1, 0);
     const split = (key, x, y, z, axis, face, sz = [0.9, 0.3, 0.22]) => {
       const rt = get(key); rt.ledMats = rt.ledMats || [];
       const [Ls, Hs, D] = sz;
@@ -6342,6 +6346,40 @@ export class Igreja3DCard extends HTMLElement {
       const led = new THREE.Mesh(axis === 'z' ? new THREE.BoxGeometry(0.012, 0.03, 0.2) : new THREE.BoxGeometry(0.2, 0.03, 0.012), lm);
       if (axis === 'z') led.position.set(x + fo, y + Hs / 2 - 0.09, z + (Ls / 2 - 0.2) * face); else led.position.set(x + Ls / 2 - 0.2, y + Hs / 2 - 0.09, z + fo);
       led.castShadow = false; scene.add(led); if (!rt.ledMats.includes(lm)) rt.ledMats.push(lm);
+      // referencial local da unidade: x ao longo do aparelho, z para fora (lado da sala), y para cima
+      const ry = axis === 'x' ? (face > 0 ? 0 : Math.PI) : (face > 0 ? Math.PI / 2 : -Math.PI / 2);
+      const out = new THREE.Vector3(Math.sin(ry), 0, Math.cos(ry));
+      (rt.airUnits = rt.airUnits || []).push({ p: new THREE.Vector3(x, y, z), out });
+      // aleta: fecha rente ao fundo do aparelho e abre ~50° para fora/baixo com o nível do ar (grupo fora do merge)
+      const unit = new THREE.Group(); unit.position.set(x, y, z); unit.rotation.y = ry; unit.userData.keep = true;
+      const pivot = new THREE.Group(); pivot.position.set(0, -Hs / 2 - 0.008, D / 2 - 0.07); unit.add(pivot);
+      pivot.add(box(Ls - 0.14, 0.012, 0.1, M.white, 0, 0, 0.02, { cast: false }));
+      pivot.visible = false; scene.add(unit); (rt.flaps = rt.flaps || []).push(pivot);
+      // selo do modo (❄ / chama / gota / hélice) acima do aparelho, só na Vista de cima: acha os ares ligados de longe
+      const bm = rt.badgeMat || (rt.badgeMat = new THREE.SpriteMaterial({ map: this._airBadge('cool'), depthTest: false, depthWrite: false, sizeAttenuation: false, transparent: true, fog: false }));
+      const sp = new THREE.Sprite(bm); sp.position.set(x, 3.4, z).addScaledVector(out, 0.9); sp.scale.set(0.042, 0.042, 1); sp.renderOrder = 9; sp.visible = false;
+      scene.add(sp); (rt.badges = rt.badges || []).push(sp);
+      // fitas do fluxo (3 camadas, curvando para baixo como ar frio); uv.x = camada + posição na largura, uv.y = 0 na aleta → 1 na ponta
+      const A = rt.air = rt.air || { pos: [], uv: [], idx: [] }, sc = Ls > 1 ? 1.45 : 1, NV = 14;   // templo: unidades grandes, jato maior
+      _m4.compose(_v.set(x, y, z), _q.setFromAxisAngle(_up, ry), _one);
+      for (let k = 0; k < 3; k++) {
+        const W = Ls - 0.18, len = (1.05 + 0.3 * k) * sc, a0 = 0.55 + 0.2 * k, a1 = 1.2 + 0.12 * k, base = A.pos.length / 3;
+        let py = -Hs / 2 - 0.02 - 0.015 * k, pz = D / 2 - 0.04 + 0.02 * k;
+        for (let j = 0; j <= NV; j++) {
+          const v = j / NV, w = W * (1 + 0.4 * v) / 2;
+          for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, py, pz).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + k, v); }
+          const ang = a0 + (a1 - a0) * v * v, st = len / NV; py -= Math.sin(ang) * st; pz += Math.cos(ang) * st;
+        }
+        for (let j = 0; j < NV; j++) { const i = base + j * 2; A.idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); }
+      }
+      // camada 4: o ar espalhando no piso à frente do aparelho (leque rente ao chão — é o que aparece na Vista de cima)
+      { const R = 1.5 * sc, W0 = Ls * 0.9, W1 = Ls * 1.9, z0 = D / 2 + 0.25, base = A.pos.length / 3;
+        for (let j = 0; j <= 4; j++) {
+          const v = j / 4, w = (W0 + (W1 - W0) * v) / 2;
+          for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, 0.03 - y, z0 + R * v).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + 3, v); }
+        }
+        for (let j = 0; j < 4; j++) { const i = base + j * 2; A.idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); }
+      }
     };
     // templo (nenhum na parede do palco x = 0): 3 na parede x = 16,05 (fora do vidro/visor/porta; o do meio acima da janela
     // z 29,9–31,9) e 1 em cada ponta (z 12,4 e 44,0), no alto (y 2,6, topo 2,73 < 3,0)
@@ -6350,6 +6388,18 @@ export class Igreja3DCard extends HTMLElement {
     split('ac_templo', 7.95, 2.6, 12.4 + acIn, 'x', 1, ACT);
     split('ac_templo', 7.95, 2.6, 44.0 - acIn, 'x', -1, ACT);
     split('ac_pastoral', 14.9, 2.4, 0.125, 'x', 1);   // encostado na parede fina z = 0 (face em 0,012)
+    // ala direita (vídeos v4 e v2): mídia no fundo z = 28 (sobre as placas acústicas) e voluntariado na parede de marmorato x = 20,1
+    split('ac_midia', 17.55, 2.56, 27.785, 'x', -1, [0.85, 0.28, 0.2]);
+    split('ac_voluntariado', 19.9, 2.58, 29.5, 'z', -1);
+    // uma malha de fluxo por entidade (fora do merge; só visível com o ar ligado)
+    for (const key of AC_KEYS) {
+      const rt = this._items.get(key); if (!rt || !rt.air) continue;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(rt.air.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(rt.air.uv, 2)); g.setIndex(rt.air.idx);
+      g.computeBoundingSphere();
+      const m = new THREE.Mesh(g, airMat()); m.userData.noMerge = true; m.renderOrder = 5; m.castShadow = m.receiveShadow = false; m.visible = false; m.frustumCulled = true;
+      scene.add(m); rt.airMesh = m; rt.air = null;
+    }
 
     // Decoração por ambiente (funções room*, no topo do arquivo)
     // @room templo_palco
@@ -6481,10 +6531,16 @@ export class Igreja3DCard extends HTMLElement {
     if (sig === this._lastSig) return;
     this._lastSig = sig;
     const seeded = !!this._activitySeeded;
+    let fly = null;
     for (const it of ITEMS) {
       const s = hass.states[this.entity(it.key)];
       const prev = this._state[it.key];
       const next = s ? { state: s.state, attrs: s.attributes || {} } : { state: 'unavailable', attrs: {} };
+      // ar ligou (off → ligado) depois da carga — pelo cartão, pelo HA ou por automação: fluxo anima e a câmera voa até ele
+      // (na sincronização inicial não; vários ao mesmo tempo: vale o último)
+      if (seeded && it.kind === 'climate' && prev && !prev.on && !prev.unavailable && !['off', 'unavailable', 'unknown'].includes(next.state)) {
+        fly = it.key; const rt = this._items.get(it.key); if (rt) rt.airUntil = performance.now() + 8000;
+      }
       // a temperatura muda o tempo todo: não entra no histórico
       if (seeded && prev && prev.state !== next.state && next.state !== 'unavailable' && it.key !== 'temperatura') this._pushActivity(it.key, next.state, Date.now());
       this._setItemState(it.key, next);
@@ -6512,6 +6568,7 @@ export class Igreja3DCard extends HTMLElement {
     this._timeAt = 0;
     this._applyMode();
     this._refreshSub();
+    if (fly) this._flyToAir(fly);
   }
 
   _setItemState(key, { state, attrs }) {
@@ -6617,9 +6674,10 @@ export class Igreja3DCard extends HTMLElement {
   _updateLabels() {
     if (!this._labels || !this._labelsOn || this._roofOn || !this._camera) return;
     const cam = this._camera, k = 2 * Math.tan(cam.fov * Math.PI / 360) / (this._vh || 600);
-    const far = this._orbit && cam.position.distanceTo(this._orbit.target) > 35;
     // celular (tela estreita): de longe só os maiores (Templo, Hall, Estacionamento, Pastoral, Pátio) — os outros se sobrepõem
     const narrow = (this.clientWidth || 1000) < 560;
+    // na Vista de cima (tela larga) todos os cômodos ficam rotulados: é para conferir as automações de cada um
+    const far = this._orbit && cam.position.distanceTo(this._orbit.target) > 35 && !(this._topView && !narrow);
     // câmera baixa (dentro do prédio / altura de gente): só os rótulos até ~20 m, os do fundo não poluem
     const reach = cam.position.y < 8 ? 20 : 1e9;
     for (const s of this._labels) {
@@ -6627,7 +6685,7 @@ export class Igreja3DCard extends HTMLElement {
       const d = cam.position.distanceTo(s.position);
       const op = clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1);
       s.visible = op > 0.02; s.material.opacity = op;
-      const hpx = L.font * 3;   // texto de 24 px num canvas de 72 px → sprite com 3× a altura da fonte
+      const hpx = L.font * (this._topView ? 2.6 : 3);   // texto de 24 px num canvas de 72 px → sprite com 3× a altura da fonte (menor na Vista de cima)
       s.scale.set(hpx * k * 320 / 72, hpx * k, 1);
     }
   }
@@ -6661,7 +6719,86 @@ export class Igreja3DCard extends HTMLElement {
     this._roofBtn.setAttribute('aria-pressed', this._roofOn ? 'true' : 'false');
     this._needShadow = true; this._orbit.dirty = true;
   }
-  _resetView() { this._home = this._homeFor(this._camera.aspect); this._orbit.reset(this._home.pos, this._home.target); this._orbit.touched = false; }
+  // Vista de cima: câmera quase a prumo (phi 0,035) com o prédio inteiro (x 0–20,1 · z 0–51) enquadrado; o comprimento
+  // do lote fica no lado maior da tela (paisagem: fachada à direita · retrato: fachada embaixo, como numa planta)
+  _topFor(aspect) {
+    const target = new THREE.Vector3(10.05, 0, 25.8), land = aspect >= 1;
+    const tanV = Math.tan(this._camera.fov * Math.PI / 360), hL = 27.5, hS = 11.8;   // meio comprimento (z) e meia largura (x) com folga
+    const d = land ? Math.max(hL / (tanV * aspect), hS / tanV) : Math.max(hS / (tanV * aspect), hL / tanV);
+    const pos = new THREE.Vector3().setFromSphericalCoords(d * 1.08 + 4, 0.035, land ? -Math.PI / 2 : 0).add(target);   // +4 m: paredes e cobertura mais perto da câmera
+    return { pos, target };
+  }
+  _setTopView(on, keepCamera = false) {
+    this._topView = !!on;
+    if (this._topBtn) this._topBtn.setAttribute('aria-pressed', this._topView ? 'true' : 'false');
+    if (this._topView && this._roofOn) this._setRoof(false);   // sem cobertura/fachada: o interior fica à mostra
+    if (!keepCamera) this._resetView(true);
+    if (this._orbit) this._orbit.dirty = true;
+  }
+  _resetView(fly = false) {
+    const a = this._camera.aspect;
+    this._home = this._topView ? this._topFor(a) : this._homeFor(a);
+    if (fly) this._flyCam(this._home.pos, this._home.target, 3.2); else this._orbit.reset(this._home.pos, this._home.target);
+    this._orbit.touched = false;
+  }
+  // voo suave da câmera; com prefers-reduced-motion corta direto para a pose
+  _flyCam(pos, target, speed) {
+    const o = this._orbit; o.fly(pos, target, speed);
+    if (this._reduced) { o.sph.copy(o.goal); o.target.copy(o.targetGoal); o.speed = 9; }
+    o.dirty = true;
+  }
+  // Selo redondo do modo do ar (textura 64 px, uma por modo, em cache): frio ❄ azul, quente chama laranja,
+  // seco gota, ventilar hélice, auto "A"
+  _airBadge(mode) {
+    const m = ['heat', 'dry', 'fan_only', 'heat_cool', 'auto'].includes(mode) ? (mode === 'auto' ? 'heat_cool' : mode) : 'cool';
+    const cache = this._badgeTex || (this._badgeTex = {}); if (cache[m]) return cache[m];
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+    const fill = { cool: '#2f8fd8', heat: '#e2702a', dry: '#6b7a8c', fan_only: '#6b7a8c', heat_cool: '#2f9f8f' }[m];
+    g.beginPath(); g.arc(32, 32, 29, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,.9)'; g.stroke();
+    g.strokeStyle = g.fillStyle = '#fff'; g.lineWidth = 3.2; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (m === 'cool') {
+      for (let i = 0; i < 6; i++) {
+        const a = i * Math.PI / 3, dx = Math.cos(a), dy = Math.sin(a);
+        g.beginPath(); g.moveTo(32, 32); g.lineTo(32 + dx * 18, 32 + dy * 18);
+        for (const s of [-1, 1]) { const b = a + s * 0.7; g.moveTo(32 + dx * 11, 32 + dy * 11); g.lineTo(32 + dx * 11 + Math.cos(b) * 6, 32 + dy * 11 + Math.sin(b) * 6); }
+        g.stroke();
+      }
+    } else if (m === 'heat') {
+      g.beginPath(); g.moveTo(32, 13); g.bezierCurveTo(44, 26, 46, 36, 42, 44); g.bezierCurveTo(38, 52, 26, 52, 22, 44); g.bezierCurveTo(18, 36, 24, 30, 26, 24);
+      g.bezierCurveTo(28, 30, 30, 32, 33, 33); g.bezierCurveTo(34, 26, 34, 20, 32, 13); g.fill();
+    } else if (m === 'dry') {
+      g.beginPath(); g.moveTo(32, 13); g.bezierCurveTo(40, 26, 45, 32, 45, 39); g.arc(32, 39, 13, 0, Math.PI); g.bezierCurveTo(19, 32, 24, 26, 32, 13); g.fill();
+    } else if (m === 'fan_only') {
+      for (let i = 0; i < 3; i++) { const a = i * 2 * Math.PI / 3; g.beginPath(); g.ellipse(32 + Math.cos(a) * 9, 32 + Math.sin(a) * 9, 10, 5, a, 0, Math.PI * 2); g.fill(); }
+      g.beginPath(); g.arc(32, 32, 4, 0, Math.PI * 2); g.fillStyle = fill; g.fill();
+    } else { g.font = 'bold 32px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('A', 32, 34); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; cache[m] = t; return t;
+  }
+  // Voo suave até o(s) split(s) do cômodo — no templo, a parede com os splits —, enquadrando aparelho e fluxo.
+  // A câmera fica acima das paredes de 3 m, de frente para o aparelho e um pouco de lado.
+  _flyToAir(key) {
+    const rt = this._items.get(key); if (!rt || !rt.airUnits || !rt.airUnits.length || !this._orbit) return;
+    // enquadra a parede com mais aparelhos (templo: os 3 da parede x = 16,05; os das pontas ficam no canto do quadro)
+    const walls = new Map();
+    for (const u of rt.airUnits) { const k = u.out.x.toFixed(2) + ',' + u.out.z.toFixed(2); if (!walls.has(k)) walls.set(k, []); walls.get(k).push(u); }
+    const U = [...walls.values()].sort((a, b) => b.length - a.length)[0];
+    const bb = new THREE.Box3(), out = U[0].out.clone();
+    for (const u of U) bb.expandByPoint(u.p);
+    const c = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3());
+    const target = c.clone().addScaledVector(out, U.length > 1 ? 1.4 : 0.7); target.y = Math.max(1.0, c.y - 0.9);
+    const cam = this._camera, tanV = Math.tan(cam.fov * Math.PI / 360), tanH = tanV * cam.aspect;
+    const span = (Math.abs(out.x) > Math.abs(out.z) ? size.z : size.x) + 2.6;
+    const dist = clamp(Math.max(span / 2 / tanH, 1.6 / tanV) * 1.15, U.length > 1 ? 15 : 5.2, 60);
+    // templo (várias unidades na parede): câmera acima das luminárias suspensas (y 7,2) e da treliça da plateia, vendo a parede de frente
+    const el = U.length > 1 ? 0.66 : 0.82, az = U.length > 1 ? 0.18 : 0.28;
+    const dir = out.clone().multiplyScalar(Math.cos(az)).addScaledVector(new THREE.Vector3(-out.z, 0, out.x), Math.sin(az)).multiplyScalar(Math.cos(el));
+    dir.y = Math.sin(el);
+    this._setTopView(false, true);
+    this._flyCam(target.clone().addScaledVector(dir, dist), target);
+    this._orbit.touched = true;   // redimensionar não desfaz o voo; "Recentrar" volta à vista padrão
+    const now = performance.now(); this._airFocus = { key, at: now, until: now + 45000 };
+    rt.airUntil = Math.max(rt.airUntil || 0, now + 8000);
+  }
 
   // ---- Ganchos públicos (depuração / demo) ----
   // setView([x,y,z],[tx,ty,tz]) — posiciona a câmera na hora (e para de recentrar sozinha)
@@ -6723,7 +6860,7 @@ export class Igreja3DCard extends HTMLElement {
   _sceneCtx() {
     return { e: (k) => this.entity(k), on: (k) => this._svc('homeassistant', 'turn_on', this.entity(k)), off: (k) => this._svc('homeassistant', 'turn_off', this.entity(k)), call: (d, sv, e, data) => this._svc(d, sv, e, data) };
   }
-  _dotColor(key) { return { palco: '#c084fc', telao: '#c4b5fd', som: '#4ade80', ac_templo: '#67d3ff', ac_pastoral: '#67d3ff', presenca: '#f472b6', porta: '#fbbf24', temperatura: '#fb923c', midia: '#a5c8ff' }[key] || '#ffc46b'; }
+  _dotColor(key) { return { palco: '#c084fc', telao: '#c4b5fd', som: '#4ade80', ac_templo: '#67d3ff', ac_pastoral: '#67d3ff', ac_midia: '#67d3ff', ac_voluntariado: '#67d3ff', presenca: '#f472b6', porta: '#fbbf24', temperatura: '#fb923c', midia: '#a5c8ff' }[key] || '#ffc46b'; }
   // Temporizador local: desliga a entidade depois de N minutos (enquanto o cartão estiver aberto)
   _setTimer(key, minutes) {
     const cur = this._timers[key]; if (cur) { clearTimeout(cur.handle); delete this._timers[key]; }
@@ -6773,7 +6910,7 @@ export class Igreja3DCard extends HTMLElement {
     const grid = document.createElement('div'); grid.className = 'tiles'; this._panes.ctl.pane.appendChild(grid); this._grid = grid;
     this._detail = document.createElement('div'); this._detail.className = 'detail'; this._detail.hidden = true; grid.appendChild(this._detail);
     const ROOMS = [['Templo', ['palco', 'plateia', 'telao', 'som', 'ac_templo', 'presenca', 'temperatura']], ['Entrada', ['hall', 'fachada', 'estacionamento', 'porta', 'familia', 'banheiros']],
-      ['Administração', ['recepcao', 'pastoral', 'ac_pastoral', 'administrativo', 'circulacao']], ['Apoio', ['midia', 'voluntariado', 'cozinha']]];
+      ['Administração', ['recepcao', 'pastoral', 'ac_pastoral', 'administrativo', 'circulacao']], ['Apoio', ['midia', 'ac_midia', 'voluntariado', 'ac_voluntariado', 'cozinha']]];
     for (const [title, keys] of ROOMS) for (const k of keys) grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), title));
     this._timers = {};
     // Automações: rotinas rápidas do cartão + automações do HA (descobertas sozinhas)
@@ -7025,6 +7162,27 @@ export class Igreja3DCard extends HTMLElement {
   }
   _stop() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; this._clock.stop(); }
 
+  // Fluxo dos ares: a textura só anda (~16 q/s) com o ar ligado E no enquadramento E (nos primeiros 8 s depois de
+  // ligar OU com a câmera focada nele depois do voo); fora disso fica parado e visível — sem ar ligado, 0 redesenhos.
+  // Respeita prefers-reduced-motion, aba oculta e cartão fora da tela.
+  _airTick() {
+    if (this._reduced || (typeof document !== 'undefined' && document.hidden) || this._onScreen === false) return false;
+    const now = performance.now(); if (now - (this._airLast || 0) < 60) return false;
+    const f = this._airFocus, o = this._orbit;
+    if (f && (now > f.until || (o.userAt || 0) > f.at)) this._airFocus = null;   // o usuário girou/aproximou: solta o foco
+    let run = false;
+    for (const key of AC_KEYS) {
+      const rt = this._items.get(key); const m = rt && rt.airMesh; if (!m || !m.visible) continue;
+      if (!(now < (rt.airUntil || 0) || (this._airFocus && this._airFocus.key === key))) continue;
+      if (!this._frustum) { this._frustum = new THREE.Frustum(); this._pv = new THREE.Matrix4(); }
+      this._pv.multiplyMatrices(this._camera.projectionMatrix, this._camera.matrixWorldInverse); this._frustum.setFromProjectionMatrix(this._pv);
+      if (!this._frustum.intersectsSphere(m.geometry.boundingSphere)) continue;
+      m.material.uniforms.uT.value = (now / 1000) % 1000; run = true;
+    }
+    if (run) this._airLast = now;
+    return run;
+  }
+
   _frame() {
     const dt = Math.min(this._clock.getDelta(), 0.1);
     const t = this._clock.elapsedTime;
@@ -7105,9 +7263,15 @@ export class Igreja3DCard extends HTMLElement {
       if (it.kind === 'climate' && rt.ledMats) {
         const c = rt.hvac === 'cool' ? 0x67d3ff : rt.hvac === 'heat' ? 0xff8a5b : 0x8ef0b0;
         for (const m of rt.ledMats) { m.emissive.setHex(c); m.emissiveIntensity = lv * 2.2; }
+        // aleta abre e o fluxo aparece com o nível; cor pelo modo (frio azul-claro, quente laranja, seco/ventilar neutro)
+        for (const fl of rt.flaps || []) { fl.visible = lv > 0.01; fl.rotation.x = lv * 0.9; }
+        for (const b of rt.badges || []) b.visible = !!this._topView && lv > 0.01;
+        if (rt.badgeMat && lv > 0.01) { const tx = this._airBadge(rt.hvac); if (rt.badgeMat.map !== tx) { rt.badgeMat.map = tx; rt.badgeMat.needsUpdate = true; } }
+        if (rt.airMesh) { const u = rt.airMesh.material.uniforms; rt.airMesh.visible = lv > 0.01; u.uI.value = lv * L(0.45, 0.6, nl) * (this._topView ? 1.5 : 1); u.uC.value.setHex(AIR_COL[rt.hvac] || 0xe8eef4); }
       }
       if (it.key === 'porta' && rt.leaves) for (const lf of rt.leaves) { const ry = lf.base - lf.dir * lv * 1.25; if (lf.g.rotation.y !== ry) { lf.g.rotation.y = ry; this._needShadow = true; this._refreshPointShadows('hall'); } }
     }
+    if (this._airTick()) dirty = true;   // fluxo dos ares andando (~16 q/s, só em cena e por pouco tempo)
     if (this._needShadow) { this._renderer.shadowMap.needsUpdate = true; this._needShadow = false; dirty = true; }
     if (dirty) this._updateLabels();
     // Só animação ociosa (telão pulsando): no máximo ~8 quadros/s, e nada com a aba ou o cartão fora da tela
@@ -7153,7 +7317,9 @@ mk('light.recepcao', 'off', { friendly_name: 'Recepção' }, 175);
 mk('light.administrativo', 'off', { friendly_name: 'Administrativo' }, 190);
 mk('light.circulacao', 'on', { friendly_name: 'Circulação' }, 80);
 mk('light.sala_midia', 'on', { friendly_name: 'Sala de mídia' }, 60);
+mk('climate.ar_midia', 'off', { friendly_name: 'Ar da mídia', temperature: 21, current_temperature: 26, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry'] }, 60);
 mk('light.voluntariado', 'off', { friendly_name: 'Voluntariado' }, 50);
+mk('climate.ar_voluntariado', 'off', { friendly_name: 'Ar do voluntariado', temperature: 23, current_temperature: 27.5, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry', 'heat'] }, 50);
 mk('light.cozinha', 'off', { friendly_name: 'Cozinha' }, 120);
 mk('light.banheiros', 'on', { friendly_name: 'Banheiros' }, 75);
 mk('light.sala_familia', 'on', { friendly_name: 'Sala da família' }, 30);

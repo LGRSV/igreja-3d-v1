@@ -9,6 +9,26 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.3 — ar por cômodo, Vista de cima e templo sem tesouras
+
+- **Ar-condicionado em todo cômodo que aparece nos vídeos**: além do templo (5 splits) e da pastoral, agora a
+  **sala de mídia** (`ac_midia`, split no fundo, vídeo v4) e o **voluntariado** (`ac_voluntariado`, split na parede de
+  marmorato, vídeo v2) são entidades `climate` próprias, com bloco no painel, LED de modo e clique.
+- **Animação do ar ao ligar**: a aleta abre e sai um fluxo de ar translúcido da unidade até o piso — azul-claro no
+  frio, laranja no quente, neutro no seco/ventilar. Desligou, some. O fluxo anda (~16 quadros/s) só nos primeiros
+  segundos depois de ligar ou enquanto a câmera está focada no ar, e só com o aparelho na tela; depois fica parado e
+  visível. Com `prefers-reduced-motion` ou a aba oculta ele não anda, e sem ar ligado o cartão não redesenha nada.
+- **A câmera voa até o ar que ligou**, venha o comando do cartão, do Home Assistant ou de uma automação: enquadra o
+  aparelho e o fluxo (no templo, a parede com os 3 splits). Não voa na carga inicial; com vários ao mesmo tempo, vai
+  para o último. Girar/aproximar solta o foco; **Recentrar** volta à vista padrão. Na demo, clicar num ar mostra o voo.
+- **Botão "Vista de cima"**: planta vista de cima (quase a prumo), com o prédio inteiro, sem cobertura/fachada, todos
+  os cômodos rotulados, as luzes acesas e um selo em cada ar ligado (❄ frio, chama quente, gota seco, hélice
+  ventilar) — para conferir automações e animações de uma vez. **Recentrar** volta à vista normal. No celular os
+  botões ficam em 2 linhas.
+- **Templo sem as tesouras brancas**: a pedido do cliente saíram as tesouras/terças brancas da cobertura e as
+  hastes/correntes; os **high-bays redondos, a fileira de lampadinhas e a treliça de luz da plateia ficam suspensos**
+  no mesmo lugar e altura. A treliça preta do palco (sobre o telão) continua igual.
+
 ## Novidades da v1.2 — templo e acabamentos reais (fotos e vídeos do cliente)
 
 A v1.2 refaz o templo e os acabamentos a partir da foto do templo e dos vídeos enviados pela igreja,
@@ -33,7 +53,7 @@ que passaram a ser a referência principal. A planta continua valendo para pared
   - teclado em suporte X, violão e baixo em pedestais;
   - microfones, retornos e pedaleiras.
 - **A cobertura fica aparente**, com tesouras metálicas brancas a cada 5 m, pilares e vigas pretos, terças e um
-  cordão de lampadinhas quentes no beiral. Os **12 high-bays redondos** da `plateia` ficam pendurados nas tesouras.
+  cordão de lampadinhas quentes no beiral. Os **12 high-bays redondos** da `plateia` ficam pendurados nas tesouras (tesouras retiradas na v1.3).
   No modo Fachada a cobertura interna some.
 - **A plateia tem 414 cadeiras pretas estofadas de encosto alto** em 4 blocos. O corredor central fica alinhado
   com o centro do palco, e os blocos das pontas são levemente angulados, como nos vídeos. Os corredores deixam
@@ -68,7 +88,7 @@ que passaram a ser a referência principal. A planta continua valendo para pared
 **Motor**
 - **Materiais com padrão calculado no espaço** (`M.marmorato`, `M.acustico`, `M.porcelanatoCinza`,
   `M.marmoreMarrom`): repetem em metros em qualquer peça, sem textura nem sampler a mais.
-- **Novos estilos de luminária:** `moving` (moving head de treliça) e `hang` (high-bay preso a uma estrutura).
+- **Novos estilos de luminária:** `moving` (moving head de treliça) e `hang` (high-bay preso a uma estrutura; na v1.3 virou `susp`, suspenso sem haste).
 - **Novas opções de parede:** revestimento por lado (`clad`) e porta preta de correr (`style: 'black'`).
 - **Correção de desempenho:** o cache de materiais (`ctx.std`) serializava a imagem inteira de uma textura a
   cada chamada, o que custava cerca de 2,5 s por construção da cena. Agora usa o uuid da textura.
@@ -183,7 +203,7 @@ entities:
   plateia:        light.templo_plateia         # luminárias da plateia (brilho)
   telao:          media_player.telao_led       # telão LED: acende e mostra o título tocando
   som:            switch.som_templo            # LEDs verdes nas quinas do palco
-  ac_templo:      climate.ar_templo            # 5 splits do templo (LED azul = frio)
+  ac_templo:      climate.ar_templo            # 5 splits do templo (LED azul = frio; aleta + fluxo de ar)
   presenca:       binary_sensor.presenca_templo  # só leitura
   temperatura:    sensor.temperatura_templo      # só leitura
   # ---- Entrada / frente ----
@@ -200,7 +220,9 @@ entities:
   administrativo: light.administrativo         # Administrativo + Sala Gilvan
   circulacao:     light.circulacao             # corredores da ala direita
   midia:          light.sala_midia
+  ac_midia:       climate.ar_midia             # split da sala de mídia (vídeo v4)
   voluntariado:   light.voluntariado
+  ac_voluntariado: climate.ar_voluntariado     # split do voluntariado (vídeo v2)
   cozinha:        light.cozinha                # cozinha + almoxarifado
   sun:            sun.sun                      # dia/noite automático
 ```
@@ -213,6 +235,11 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
   entidade (resposta otimista, o HA confirma em seguida). A luz do palco segue a cor real
   (`rgb_color`) e o brilho; a plateia segue o brilho.
 - **Telão, ares e sensores**: clique abre o *more-info* da entidade (o painel padrão do HA).
+- **Ares (`climate`)**: um por cômodo que tem ar nos vídeos — templo (5 splits), mídia, voluntariado — e a pastoral.
+  Ligado, a aleta abre e sai o fluxo de ar (cor pelo modo); o LED mostra o modo. Quando um ar liga (pelo cartão, pelo
+  HA ou por automação, fora da carga inicial) a **câmera voa até ele**; *Recentrar* volta.
+- **Vista de cima**: o botão mostra a planta de cima, sem cobertura, com todos os cômodos rotulados e um selo em cada
+  ar ligado (❄ frio · chama quente · gota seco · hélice ventilar · A auto). *Recentrar* volta à vista normal.
 - **Porta principal**: as duas folhas de vidro abrem para fora quando `binary_sensor.porta_principal` fica `on`.
 - **Sombras reais**: as paredes bloqueiam a luz (8 luminárias projetam sombra). As sombras só
   recalculam quando um estado muda, então o custo em repouso é baixo.
@@ -223,8 +250,8 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
 - **Fachada**: o botão *Fachada* mostra o prédio como ele é por fora — bloco preto de 8,5 m do templo
   e do hall, painel ripado de madeira clara com o logo "B / BASE CHURCH", ala direita de 4,5 m com o
   beiral de treliça e forro amadeirado, condensadoras no telhado, platibandas e coberturas. Desligado,
-  volta a vista de casinha de boneca (paredes de 3 m, sem teto — exceto a parede preta de 8,5 m atrás do palco,
-  com a cobertura aparente de tesouras brancas por cima do templo). O **painel ripado com o letreiro BASE
+  volta a vista de casinha de boneca (paredes de 3 m, sem teto — exceto a parede preta de 8,5 m atrás do palco;
+  sobre o templo só as luminárias suspensas, sem as tesouras brancas). O **painel ripado com o letreiro BASE
   CHURCH e o refletor ficam visíveis nos dois modos** (a identidade do prédio vista da rua); os rótulos dos
   ambientes somem enquanto o modo Fachada está ligado.
 - **Entorno**: estacionamento frontal em intertravado espinha de peixe, vagas PCD, cerca-viva e cicas na
@@ -257,13 +284,13 @@ igreja na área que sobra acima dela.
 
 | Rotina | O que chama |
 |---|---|
-| **Culto** | liga palco, plateia, som, hall, fachada e estacionamento; `media_player.turn_on` no telão; `climate.set_hvac_mode: cool` no ar do templo |
+| **Culto** | liga palco, plateia, som, hall, fachada e estacionamento; `media_player.turn_on` no telão; `climate.set_hvac_mode: cool` nos ares do templo e da mídia |
 | **Louvor** | plateia a 30 %, palco roxo/azul (`rgb_color` 110,70,255) a 100 %, telão e som |
 | **Pregação** | plateia a 80 %, palco branco quente (255,196,140) |
 | **Ensaio da banda** | palco, som e telão ligados; plateia apagada |
 | **Abrir a igreja** | fachada, estacionamento, hall, banheiros e recepção |
 | **Expediente** | administrativo, pastoral, recepção, circulação e ar da pastoral em frio |
-| **Fechar tudo** | todas as luzes, som e telão desligados; ares em `off` |
+| **Fechar tudo** | todas as luzes, som e telão desligados; os ares de todos os cômodos (templo, pastoral, mídia, voluntariado) em `off` |
 
 Elas não precisam existir no HA: o cartão chama os serviços direto (`homeassistant.turn_on/turn_off`,
 `light.turn_on`, `media_player.*`, `climate.set_hvac_mode`). Para mudar, edite `SCENES` no cartão.
@@ -275,7 +302,7 @@ Coordenadas em metros (X → direita a partir do muro esquerdo, Z → frente; fa
 | Área | Ambientes | Entidade ao clicar |
 |---|---|---|
 | Fundos (z 0–12,4) | Estacionamento interno e pátio · Almoxarifado · Cozinha · Recepção · Sala Pastoral (+ banheiro) · Caixa d'água · jardins | `estacionamento` · `cozinha` · `recepcao` · `pastoral` |
-| Ala direita (x 16–20) | Corredor da entrada lateral · Sala Gilvan · Administrativo · Circulação · Mídia · Voluntariado · Depósito · Área técnica · WC Masc. · Hall dos banheiros · WC Fem. | `circulacao` · `administrativo` · `midia` · `voluntariado` · `banheiros` |
+| Ala direita (x 16–20) | Corredor da entrada lateral · Sala Gilvan · Administrativo · Circulação · Mídia · Voluntariado · Depósito · Área técnica · WC Masc. · Hall dos banheiros · WC Fem. | `circulacao` · `administrativo` · `midia` (+ `ac_midia`) · `voluntariado` (+ `ac_voluntariado`) · `banheiros` |
 | Templo (z 12,4–44) | Palco na parede lateral x = 0 com telão, telas de projeção, banda, treliça e line arrays · plateia de 414 cadeiras virada para −x · cobertura aparente | `plateia` (piso, high-bays), `palco` (moving heads), `telao`, `som`, `ac_templo` |
 | Entrada (z 44–49,65) | Hall com balcão, café, lounge e escada · Sala da Família · WC · WC PCD | `hall` · `familia` · `banheiros` |
 | Frente (z > 49,7) | Jardins, calçada, estacionamento frontal com vagas PCD | `fachada` · `estacionamento` |
