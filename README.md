@@ -9,6 +9,43 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.4 — Vista de cima navegável, Visão de pessoa e qualidade adaptativa
+
+**Vista de cima navegável (blocos → cômodos → aparelhos).** O botão *Vista de cima* deixou de ser só uma foto da planta:
+- **1º clique** num bloco (Templo · Hall / Família · Ala direita · Bloco dos fundos · Frente) aproxima a câmera, de cima, só nele;
+  **2º clique** num cômodo enquadra só o cômodo; **dentro do cômodo** clicar na luminária, no ar, no telão ou no som liga e desliga
+  (no piso, alterna a luz principal dele). O que está sob o mouse é realçado em âmbar e o nome aparece na trilha.
+- Uma **trilha** mostra onde você está (`Planta › Ala direita › Mídia`) — cada item é clicável — e, no cômodo, uma fileira de
+  **botões dos aparelhos** (luz, ar, telão, som…) com o estado; no celular a fileira rola na horizontal.
+- **‹ Voltar** (ou Esc / Backspace) sobe um nível; na planta inteira, sai da Vista de cima. A câmera voa suave (3 s) e, com
+  `prefers-reduced-motion`, corta direto. Os rótulos mostram só o que está dentro do bloco/cômodo. Redimensionar ou abrir o
+  painel re-enquadra o **mesmo nível**. Ligar um ar na Vista de cima não tira você da planta (o selo do ar já mostra o estado).
+- Ganchos: `setTopNav('ala', 'midia')` (liga a Vista de cima se preciso e navega direto; blocos `templo · hall · ala · fundos · frente`)
+  e `getTopNav()` → `{ level, block, room }`.
+
+**Visão de pessoa (botão *Pessoa*).** Câmera na altura dos olhos (1,6 m; 1,0 m a mais em cima do palco), começando na calçada,
+de frente para a porta principal:
+- **PC:** `W A S D` ou setas andam (A/D e ← → andam de lado), **Shift** corre, `Q`/`E` giram, **arrastar** com o mouse vira a cabeça,
+  **Esc** sai. **Celular/tablet:** **joystick** na tela (canto inferior esquerdo) anda e **arrastar** com outro dedo olha.
+- **Colisão simples** com as paredes do modelo (deslizando ao longo delas): portas, vãos e a porta de vidro passam (a pessoa
+  "abre" a porta, mesmo com o sensor `off`); vidros fixos, paredes e o portão fechado bloqueiam. O mobiliário não bloqueia.
+- Luzes, ares, telão e som continuam clicáveis (toque curto ou clique). O painel se recolhe ao entrar e volta ao sair;
+  *Vista de cima* e *Recentrar* também saem do modo, e o voo automático até o ar que ligou fica de fora enquanto você anda.
+- Ganchos: `setWalk(true|false)`, `setWalkPose(x, z, yaw, pitch)` (yaw 0 olha para −z; + vira à esquerda) e `getWalkPose()`.
+
+**Renderização maximizada em qualquer dispositivo — até numa torradeira.**
+- Novo nível **`quality: min`** (automático em renderizador **por software** — SwiftShader/llvmpipe —, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB de
+  RAM): sem sombras, sem MSAA, pisos lisos (sem relevo nem AO), 5 luzes reais + telão, sem entorno; o resto da cena é o mesmo.
+- **Governador de qualidade** em todos os níveis (`alta · media · leve · min`), pelo **tempo real de quadro**: enquanto você
+  gira/anda a resolução sobe e desce sozinha (com histerese: 2 janelas de 300 ms lentas para baixar, 4 rápidas para subir);
+  ao parar sai **um** quadro nítido — resolução cheia ou até 1,25× quando sobra fôlego (nunca acima de 3× o DPR nem de 4 Mpx) —
+  cujo custo é medido no quadro seguinte (sem desenhar nada só para medir): se passar de 250 ms a próxima parada usa uma
+  resolução menor, para a página não travar. Parado continua **0 redesenhos**.
+- Só no **`auto`**, se nem a resolução mínima aguenta (< 15 quadros/s por ~1,5 s), o governador desce uma escada de sentido
+  único: 1) some o entorno e a sombra do sol diminui; 2) menos luzes reais; 3) resolução parada/mínima menores. Com
+  `quality` manual (`alta|media|leve|min`) nada disso acontece — vale o que você escolheu (só a resolução se adapta).
+  `getQuality()` mostra o estado (`{ tier, rung, moveScale, idleScale, lights, entorno }`).
+
 ## Novidades da v1.3 — ar por cômodo, Vista de cima e templo sem tesouras
 
 - **Ar-condicionado em todo cômodo que aparece nos vídeos**: além do templo (5 splits) e da pastoral, agora a
@@ -139,6 +176,7 @@ que passaram a ser a referência principal. A planta continua valendo para pared
 | `rooms/*.js` + `integrate_rooms.py` | Fonte da decoração de cada área (uma função `room…(ctx)` por arquivo), colada no cartão pelo `integrate_rooms.py`. |
 | `rooms/BRIEF.md` | Especificação da planta: coordenadas, paredes, aberturas, pilares, objetos do cartão e regras da decoração. |
 | `tools/shot.mjs` | Screenshot da demo com Playwright (Chromium/SwiftShader), para conferir o cartão sem GPU. |
+| `tools/lib.mjs` + `nav_test.mjs`, `walk_test.mjs`, `gov_test.mjs`, `integ_test.mjs` | Testes headless da v1.4 (Vista de cima navegável, visão de pessoa, governador, convivência). `THREE_LOCAL=<three.module.min.js> node tools/nav_test.mjs index.html` |
 | `hacs.json` | Permite instalar pelo HACS como repositório personalizado. |
 
 ## Instalação no Home Assistant
@@ -189,7 +227,8 @@ labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
-quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM) · alta · media · leve
+quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM;
+                      #   min em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB) · alta · media · leve · min
 entorno: auto         # ruas, vizinhos, árvores de rua e postes: auto (some só no leve) · true · false
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
@@ -239,7 +278,10 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
   Ligado, a aleta abre e sai o fluxo de ar (cor pelo modo); o LED mostra o modo. Quando um ar liga (pelo cartão, pelo
   HA ou por automação, fora da carga inicial) a **câmera voa até ele**; *Recentrar* volta.
 - **Vista de cima**: o botão mostra a planta de cima, sem cobertura, com todos os cômodos rotulados e um selo em cada
-  ar ligado (❄ frio · chama quente · gota seco · hélice ventilar · A auto). *Recentrar* volta à vista normal.
+  ar ligado (❄ frio · chama quente · gota seco · hélice ventilar · A auto). Dela dá para **descer por níveis** — clique num
+  bloco, depois num cômodo, e ligue/desligue os aparelhos dele; **‹ Voltar** (ou Esc) sobe um nível. *Recentrar* volta à vista normal.
+- **Pessoa**: o botão *Pessoa* põe a câmera na altura dos olhos, dentro do prédio: setas/WASD (ou o joystick na tela) andam,
+  arrastar vira a cabeça, Shift corre, Esc sai. As paredes seguram a pessoa; portas e vãos passam.
 - **Porta principal**: as duas folhas de vidro abrem para fora quando `binary_sensor.porta_principal` fica `on`.
 - **Sombras reais**: as paredes bloqueiam a luz (8 luminárias projetam sombra). As sombras só
   recalculam quando um estado muda, então o custo em repouso é baixo.
@@ -325,7 +367,8 @@ Tudo está em metros no topo de `igreja3d-card.js` (X → direita, Z → frente)
 
 Depois de editar, `python3 build.py` regenera a demo. Para conferir sem GPU:
 `THREE_LOCAL=<three.module.min.js> WAIT=8000 node tools/shot.mjs index.html vista.png 1400 900 'document.querySelector("igreja3d-card").setFachada(true)'`
-(ganchos: `setView([x,y,z],[tx,ty,tz])`, `setFachada(bool)`, `setMode('auto'|'day'|'night')`, `setSimTime(data)`;
+(ganchos: `setView([x,y,z],[tx,ty,tz])`, `setFachada(bool)`, `setMode('auto'|'day'|'night')`, `setSimTime(data)`, `setTopNav(bloco, cômodo)`/`getTopNav()`,
+`setWalk(bool)`/`setWalkPose(x,z,yaw,pitch)`/`getWalkPose()`, `getQuality()`;
 na demo, `window.demo.set('palco','on',{rgb_color:[255,0,0]})` e `window.demo.setAll(true)`).
 
 ## Desempenho
@@ -363,6 +406,19 @@ não no HA nem no GitHub.
   SwiftShader (1400 × 900): quadro 1914 → 390 ms (~5×) e carregamento 10,3 → 4,9 s.
   Em GPU com pouca margem (< 512 vetores de uniform no fragment ou < 16 samplers) as luzes fracas
   das salas viram só brilho (fica com 16 luzes reais, 3 com sombra) e o cartão avisa no console.
+- **`quality: min`** (v1.4, automático em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB): tudo do `leve` e mais
+  **nenhuma sombra** (nem a do sol), sem MSAA, pisos sem relevo/AO e só **5 luzes reais + telão** (`MIN_LIGHTS`). Medido no
+  SwiftShader (1400 × 900, mesma sessão do `leve`): quadro **~0,6× o do `leve`** (171–240 ms contra 295–374 ms; `alta` ~3.200,
+  `media` ~550), mesmas 390 chamadas e 222 mil triângulos, carga com shaders em cache em ~2,7 s (`leve`: 12–15 s, pelos shaders de sombra).
+  Como o SwiftShader é software, o `auto` cai em `min` nele.
+- **Governador de qualidade** (v1.4): a resolução em movimento parte de 100 % (alta), 60 % (media), 55 % (leve) ou 45 % (min)
+  e desce até 50 / 35 / 35 / 30 % conforme o tempo de quadro (no SwiftShader chega ao piso em ≤ 3 s de arrasto); ao soltar sai
+  exatamente **um** quadro nítido. Parado, 0 redesenhos (medido em 8 s: `media` 0 · `min` 0 · `leve` 1 do assentamento da câmera ·
+  `alta` ≤ 8/s só com o telão tocando). A escada de rebaixamento (só no `auto`) foi exercitada forçando `media` + `auto` num arrasto
+  de 30 s: degrau 1 (entorno some) → 2 (11 → 7 luzes reais) → 3 (resolução mínima menor), sem erros e sem travar a página.
+- **Vista de cima e Pessoa** não redesenham parados; andar liga o mesmo caminho de resolução reduzida do governador
+  (a flag de movimento do controle de câmera é espelhada pelo andador). A colisão usa ~90 segmentos de parede
+  (`_walls`, registrados em `_wallSeg`) e custa microssegundos por quadro.
 - Sombras das luzes em 256² (no `leve` não há sombra de lâmpadas): **~64 MB** de GPU no total, contra 160 MB antes. Elas são
   desenhadas **uma vez** (a geometria é estática) e só refeitas quando a porta do hall gira ou o modo
   Fachada muda; nas transições dia/noite e com o sol andando só a sombra do sol é refeita.
@@ -376,7 +432,7 @@ não no HA nem no GitHub.
   (map + bump + ao + ambiente + 9 sombras).
 - Sombras só recalculam quando um estado muda; nada é renderizado parado (só quando a câmera se
   move, um estado muda ou o telão está tocando, a 30 fps).
-- Pixel ratio adaptativo (orçamento de ~1,8 Mpx por quadro; 1 Mpx em `leve`).
+- Pixel ratio adaptativo (orçamento de ~1,8 Mpx por quadro; 2,4 Mpx em `alta` com GPU dedicada; 1 Mpx em `leve`; 0,6 Mpx em `min`).
 - Parado, a cena não é redesenhada; com o telão tocando, a animação roda a no máximo ~8 quadros/s e para quando a aba ou o cartão saem da tela.
 - Ligar/desligar luz não recompila shaders (todas as luzes ficam ativas com intensidade zero).
 - No disco o cartão tem ~485 KB (a demo `index.html`, com o cartão embutido, ~497 KB).
