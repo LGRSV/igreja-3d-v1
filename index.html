@@ -53,7 +53,7 @@ export const VERSION = '1.3.1';
 // quanto em setConfig().
 const DEFAULT_CONFIG = {
   title: 'Base Church', labels: true, mode: 'auto', night_vision: true, panel: true, roof: false,
-  quality: 'auto', entities: {},   // auto | alta | media | leve
+  quality: 'auto', entities: {},   // auto | alta | media | leve | min
   entorno: 'auto',                 // ruas, vizinhos, árvores de rua e postes: auto (some só no leve) | true | false
   latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 90,
   weather: true, weather_city: 'Palmas, TO',
@@ -103,6 +103,18 @@ const LITE_LIGHTS = { palco: 2, plateia: 2, hall: 1, fachada: 1, estacionamento:
 // quality media (PC com vídeo integrado): um conjunto FIXO de luzes reais (quantidade constante → nenhum shader recompila)
 // redistribuído às luminárias que importam no enquadramento quando a câmera para; as primeiras MID_SHADOWS projetam sombra.
 const MID_LIGHTS = 10, MID_SHADOWS = 2;
+// quality min (aparelho muito fraco: sem GPU real, ≤ 2 núcleos ou ≤ 2 GB): 1 luz real por item principal, sem sombras. Total ≈ 5 + telão.
+const MIN_LIGHTS = { palco: 1, plateia: 1, hall: 1, fachada: 1, estacionamento: 1 };
+// Governador de qualidade (ver _govFrame): por nível, a escala de resolução em movimento (move; min–max) e parado (idleMin–idleMax,
+// >1 = supersampling quando sobra fôlego). Trocar luzes/sombras/materiais recompila shaders, então o nível é fixo na construção.
+const GOV = {
+  alta:  { move: 1.0,  min: 0.5,  max: 1.0,  idleMax: 1.25, idleMin: 0.75 },
+  media: { move: 0.6,  min: 0.35, max: 0.75, idleMax: 1.1,  idleMin: 0.7 },
+  leve:  { move: 0.55, min: 0.35, max: 0.55, idleMax: 1.0,  idleMin: 0.6 },
+  min:   { move: 0.45, min: 0.3,  max: 0.5,  idleMax: 1.0,  idleMin: 0.5 },
+};
+// ordem em que o governador tira luzes reais (as menos importantes primeiro) ao descer de nível
+const SHRINK_ORDER = ['circulacao', 'administrativo', 'recepcao', 'cozinha', 'banheiros', 'midia', 'voluntariado', 'pastoral', 'familia', 'estacionamento', 'hall', 'plateia', 'palco'];
 
 export const ITEMS = [
   { key: 'palco', label: 'Palco (RGB)', kind: 'light', icon: 'spot', rgb: true, dim: true, color: 0xb88cff,
@@ -5621,7 +5633,7 @@ export class Igreja3DCard extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._config = Object.assign({}, DEFAULT_CONFIG);
-    this._q = this._qualityFor(this._config.quality); this._lite = this._q === 'leve';
+    this._q = this._qualityFor(this._config.quality); this._lite = this._q === 'leve' || this._q === 'min'; this._min = this._q === 'min';
     this._nightVision = true;
     this._state = {};          // key -> { on, state, attrs }
     this._lastChanged = {};    // key -> ISO da última mudança (do HA)
@@ -5646,7 +5658,7 @@ export class Igreja3DCard extends HTMLElement {
 
   setConfig(config) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config || {});
-    if (!this._built) { this._q = this._qualityFor(this._config.quality); this._lite = this._q === 'leve'; }   // montada, a cena fica como está · no HA a posição real vem de hass.config
+    if (!this._built) { this._q = this._qualityFor(this._config.quality); this._lite = this._q === 'leve' || this._q === 'min'; this._min = this._q === 'min'; }   // montada, a cena fica como está · no HA a posição real vem de hass.config
     this._mode = ['auto', 'day', 'night'].includes(this._config.mode) ? this._config.mode : 'auto';
     this._nightVision = this._config.night_vision !== false;
     if (this._config.height) this.style.setProperty('--igreja3d-height', String(this._config.height));
@@ -5766,11 +5778,11 @@ export class Igreja3DCard extends HTMLElement {
     if (this._renderer) this._renderer.shadowMap.needsUpdate = true;
     if (this._orbit) this._orbit.dirty = true;
   }
-  // quality: 'alta' | 'media' | 'leve' | 'auto' (padrão): leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB de RAM;
-  // no PC, alta com GPU dedicada e media com vídeo integrado (Intel, AMD APU) ou desconhecido
-  static _strongGPU() {
+  // quality: 'alta' | 'media' | 'leve' | 'min' | 'auto' (padrão): min em aparelho muito fraco (renderizador por software, ≤ 2 núcleos ou ≤ 2 GB de RAM);
+  // leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB; no PC, alta com GPU dedicada e media com vídeo integrado (Intel, AMD APU) ou desconhecido
+  static _gpuInfo() {
     if (Igreja3DCard.__gpu !== undefined) return Igreja3DCard.__gpu;
-    let strong = false;
+    let strong = false, soft = false;
     try {
       const cv = document.createElement('canvas');
       const gl = cv.getContext('webgl2') || cv.getContext('webgl');
@@ -5778,15 +5790,17 @@ export class Igreja3DCard extends HTMLElement {
         const ext = gl.getExtension('WEBGL_debug_renderer_info');
         const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '');
         strong = /nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|apple m\d|apple gpu/i.test(name) && !/intel|swiftshader|llvmpipe|mali|adreno|powervr/i.test(name);
+        soft = /swiftshader|llvmpipe|softpipe|mesa offscreen|basic render/i.test(name);   // desenho por software (sem GPU)
         const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
       }
-    } catch (_) { strong = false; }
-    Igreja3DCard.__gpu = strong;
-    return strong;
+    } catch (_) { strong = soft = false; }
+    return (Igreja3DCard.__gpu = { strong, soft });
   }
+  static _strongGPU() { return Igreja3DCard._gpuInfo().strong; }
   _qualityFor(q) {
-    if (['alta', 'media', 'leve'].includes(q)) return q;
+    if (['alta', 'media', 'leve', 'min'].includes(q)) return q;
     try {
+      if (Igreja3DCard._gpuInfo().soft || (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2) return 'min';
       const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       const small = typeof screen !== 'undefined' && Math.min(screen.width, screen.height) < 900;
       if ((coarse && small) || (navigator.deviceMemory || 8) <= 4) return 'leve';
@@ -5799,7 +5813,7 @@ export class Igreja3DCard extends HTMLElement {
   _build3D(canvas) {
     const M = materials();
     // MSAA só compensa com DPR baixo; no leve/media com DPR ≥ 1,5 ele pesa e rende pouco
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: this._q === 'alta' || (window.devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !this._min && (this._q === 'alta' || (window.devicePixelRatio || 1) < 1.5), powerPreference: 'high-performance' });
     // Neutral (r162+): preto da "Igreja Preta" fica preto, roxo do palco e telão saturados, branco estoura menos que no ACES
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -5809,7 +5823,7 @@ export class Igreja3DCard extends HTMLElement {
     this._tight = caps.maxFragmentUniforms < 512 || caps.maxTextures < 16;
     if (this._tight) console.warn(`[igreja3d-card] GPU com margem pequena (fragment uniforms ${caps.maxFragmentUniforms}, samplers ${caps.maxTextures}): luzes fracas viram só halo e sombras só nas principais`);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = this._q === 'alta' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.type = this._q === 'alta' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;   // cena estática: sombras só recalculam quando algo muda
     this._renderer = renderer;
 
@@ -5837,7 +5851,7 @@ export class Igreja3DCard extends HTMLElement {
     this._moonPos = C.clone().addScaledVector(new THREE.Vector3(11, 20, -9).normalize(), this._sunDist);
     this._sunCol = new THREE.Color(0xfff0d2); this._moonCol = new THREE.Color(0x8fa6d8);
     this._sun.position.copy(C).addScaledVector(this._sunPos, this._sunDist); this._sun.target.position.copy(C);
-    this._sun.castShadow = true;
+    this._sun.castShadow = !this._min;   // min: nenhuma sombra (sem amostrador nem PCF nos shaders)
     this._sun.shadow.mapSize.set(this._lite ? 1024 : 2048, this._lite ? 1024 : 2048);   // desenhada só quando o sol anda
     // cobre x −4…24 · z −4…62 (meia-diagonal ≈ 36 m) em qualquer direção do sol
     const sc = this._sun.shadow.camera; sc.left = -38; sc.right = 38; sc.top = 38; sc.bottom = -38; sc.near = 1; sc.far = 125;
@@ -5866,8 +5880,8 @@ export class Igreja3DCard extends HTMLElement {
       for (const [x, zz, w, d, edges = 'nsew'] of z.rects) {
         const map = TX[tk].clone(); map.repeat.set(w / tile, d / tile); map.offset.set(x / tile, -(zz + d) / tile);
         const tint = ['grass', 'concrete'].includes(tk) ? 0xdedede : 0xffffff;
-        const mat = new THREE.MeshStandardMaterial({ color: tint, map, roughness: ROUGH[tk] || 0.9, bumpMap: map, bumpScale: BUMP[tk] != null ? BUMP[tk] : 0.6,
-          aoMap: edges ? this._makeAO(w, d, edges) : null, aoMapIntensity: 1.0, envMapIntensity: ENVI[tk] != null ? ENVI[tk] : 1 });
+        const mat = new THREE.MeshStandardMaterial({ color: tint, map, roughness: ROUGH[tk] || 0.9, bumpMap: this._min ? null : map, bumpScale: BUMP[tk] != null ? BUMP[tk] : 0.6,
+          aoMap: edges && !this._min ? this._makeAO(w, d, edges) : null, aoMapIntensity: 1.0, envMapIntensity: ENVI[tk] != null ? ENVI[tk] : 1 });
         const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
         m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.004, zz + d / 2); m.receiveShadow = true;   // pisos a 4 mm: tapetes (≥ 5 mm) ficam por cima sem z-fighting
         m.userData = { item: z.item || null, zone: id }; scene.add(m); list.push(m);
@@ -5912,7 +5926,7 @@ export class Igreja3DCard extends HTMLElement {
     mergeStatic(this._out, true);
     if (this._q === 'media') this._midMaterials(scene);
     this._setEntorno(this._config.entorno === 'auto' || this._config.entorno == null ? !this._lite : !!this._config.entorno);
-    console.info(`[igreja3d-card] malhas estáticas: ${stats.before} → ${stats.after} draw calls · fachada: ${extStats.before} → ${extStats.after} · luzes reais: ${this._nLights} (${this._nShadows} com sombra)`);
+    console.info(`[igreja3d-card] malhas estáticas: ${stats.before} → ${stats.after} draw calls · fachada: ${extStats.before} → ${extStats.after} · luzes reais: ${this._nLights} (${this._nShadows} com sombra) · qualidade: ${this._q}`);
 
     this._raycaster = new THREE.Raycaster();
     this._ndc = new THREE.Vector2();
@@ -5986,7 +6000,7 @@ export class Igreja3DCard extends HTMLElement {
       // mais fortes e com alcance maior para compensar; as demais viram só halo + emissivo (visual quase igual)
       const realIdx = it.fixtures.map((f, k) => (f.glowOnly || (this._tight && f.i <= 22)) ? -1 : k).filter((k) => k >= 0);
       // media: nenhuma luz fixa — as luminárias reais viram candidatas (rt.cands) do conjunto fixo (_assignPool)
-      const liteMax = this._lite ? (LITE_LIGHTS[it.key] || 0) : mid ? 0 : realIdx.length;
+      const liteMax = this._min ? (MIN_LIGHTS[it.key] || 0) : this._lite ? (LITE_LIGHTS[it.key] || 0) : mid ? 0 : realIdx.length;
       const step = liteMax > 0 ? realIdx.length / liteMax : Infinity;
       const keep = new Set(liteMax >= realIdx.length ? realIdx : Array.from({ length: liteMax }, (_, n) => realIdx[Math.floor(n * step + step / 2 - 0.5)]));
       const boost = keep.size ? realIdx.length / keep.size : 1;
@@ -6588,13 +6602,111 @@ export class Igreja3DCard extends HTMLElement {
     this._needShadow = true;
   }
 
-  // media em PC lento demais: o conjunto fixo cai para 6 luzes (as com sombra ficam) — recompila uma vez, em paralelo
-  _shrinkPool() {
-    const drop = this._pool.filter((L) => !L.castShadow).slice(0, this._pool.length - 6);
-    for (const L of drop) this._scene.remove(L);
-    this._pool = this._pool.filter((L) => !drop.includes(L)); this._nLights -= drop.length;
+  // PC lento demais (governador, só no `auto`): media → o conjunto fixo cai para 6 luzes (as com sombra ficam); os outros níveis
+  // ficam com MIN_LIGHTS[item] luzes por item (as com sombra primeiro), o resto soma a intensidade na vizinha. Recompila uma vez, em paralelo.
+  _shrinkLights() {
+    if (this._pool) {
+      const drop = this._pool.filter((L) => !L.castShadow).slice(0, this._pool.length - 6);
+      for (const L of drop) this._scene.remove(L);
+      this._pool = this._pool.filter((L) => !drop.includes(L)); this._nLights -= drop.length;
+      console.info(`[igreja3d-card] PC lento: ${this._pool.length} luzes reais`);
+    } else {
+      let n = 0;
+      for (const key of SHRINK_ORDER) {
+        const rt = this._items.get(key); if (!rt || !rt.lights || !rt.lights.length) continue;
+        const max = MIN_LIGHTS[key] || 0, all = rt.lights.slice().sort((a, b) => (b.L.castShadow ? 1 : 0) - (a.L.castShadow ? 1 : 0));
+        const kept = all.slice(0, max);
+        for (const d of all.slice(max)) {
+          const near = kept.slice().sort((a, b) => a.L.position.distanceTo(d.L.position) - b.L.position.distanceTo(d.L.position))[0];
+          if (near) { const f = Math.sqrt((near.i + d.i) / near.i); near.i += d.i; near.L.distance *= Math.min(1.35, f); }
+          this._scene.remove(d.L); if (d.L.shadow && d.L.shadow.map) d.L.shadow.map.dispose(); this._nLights--; n++;
+        }
+        rt.lights = kept;
+      }
+      console.info(`[igreja3d-card] PC lento: ${n} luzes reais a menos (${this._nLights} no total)`);
+    }
     this._poolSig = ''; this._precompile();
-    console.info(`[igreja3d-card] PC lento: ${this._pool.length} luzes reais`);
+  }
+  _shrinkPool() { this._shrinkLights(); }
+
+  // ---- Governador de qualidade ----
+  // O nível (alta/media/leve/min) é fixo na construção; em tempo de execução só a resolução se adapta ao TEMPO REAL DE QUADRO:
+  // em movimento a escala cai/sobe com histerese (2 janelas lentas de 300 ms para baixar, 4 rápidas para subir); ao parar vem UM
+  // quadro nítido (resolução cheia ou maior, se sobra fôlego) cujo custo é medido no rAF seguinte — nunca se desenha só para medir.
+  // Só no `auto` (quality manual vale como escolhido) e quando nem a escala mínima aguenta, desce uma escada (entorno, sombras, luzes).
+  _govInit() {
+    const t = GOV[this._q] || GOV.leve;
+    this._gov = { tier: this._q, auto: this._config.quality === 'auto', moveScale: t.move, moveMin: t.min, moveMax: t.max, idleScale: 1, idleMax: t.idleMax, idleMin: t.idleMin,
+      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0 };
+    this._moveScale = t.move;
+  }
+  _govIdleMax() {
+    const g = this._gov, w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight), d = this._dprFull || 1;
+    return Math.max(g.idleMin, Math.min(g.idleMax, 3 / d, Math.sqrt(4e6 / (w * h * d * d))));   // nunca acima de 3× DPR nem de 4 Mpx
+  }
+  _govPR(v) {
+    const r = this._renderer; if (Math.abs(r.getPixelRatio() - v) < 0.01) return false;
+    r.setPixelRatio(v); return true;
+  }
+  _govFrame(now, dirty) {
+    const g = this._gov || (this._govInit(), this._gov), o = this._orbit;
+    const ft = now - (this._lastT || now); this._lastT = now;
+    if (o.moving) {
+      this._lastMove = now; g.sharpPending = false;
+      if (!this._lowRes) { this._lowRes = true; g.ft = 0; this._govPR(this._dprFull * g.moveScale); }
+      else if (ft > 0) {
+        g.ft = g.ft ? g.ft * 0.8 + ft * 0.2 : ft;
+        if (now - g.lastAdj > 300) {
+          g.lastAdj = now;
+          g.slowWin = g.ft > 40 ? g.slowWin + 1 : 0; g.fastWin = g.ft < 22 ? g.fastWin + 1 : 0;
+          if (g.slowWin >= 2) { g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); g.slowWin = 0; }
+          if (g.fastWin >= 4) { g.moveScale = Math.min(g.moveMax, g.moveScale * 1.1); g.fastWin = 0; }
+          this._govPR(this._dprFull * g.moveScale);
+          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s
+          g.slow = g.moveScale <= g.moveMin + 0.01 && g.ft > 66 ? g.slow + 1 : 0;
+          if (g.slow >= 5 && now - g.lastStep > 4000) this._govStepDown(now);
+        }
+      }
+    } else if (this._lowRes && now - (this._lastMove || 0) > 180) {
+      // parou: um quadro nítido, na escala parada (medida abaixo); com `dirty` a cena é redesenhada uma vez
+      this._lowRes = false; this._govPR(Math.min(this._dprFull * Math.min(g.idleScale, this._govIdleMax()), 3));
+      dirty = true; g.sharpAt = now; g.sharpPending = true; g.ft = 0;
+    } else if (g.sharpPending) {
+      // o rAF seguinte ao quadro nítido só chega depois de o navegador apresentá-lo: o intervalo é o custo real (CPU + GPU)
+      g.sharpPending = false;
+      if (!dirty) this._govSharp(now - g.sharpAt);
+    }
+    this._ft = g.ft; this._moveScale = g.moveScale; this._lastAdj = g.lastAdj;   // espelhos (ferramentas de teste)
+    return dirty;
+  }
+  _govSharp(ms) {
+    const g = this._gov;
+    if (ms > 250) {
+      g.sharpFast = 0;
+      if (g.idleScale > g.idleMin + 0.01) g.idleScale = Math.max(g.idleMin, g.idleScale * 0.85);   // o próximo quadro nítido é mais leve: sem travar a página
+      else if (g.auto && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000) this._govStepDown(performance.now());
+    } else if (ms < 30) {
+      g.slowIdle = 0;
+      if (++g.sharpFast >= 3) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.1); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
+    } else { g.sharpFast = 0; g.slowIdle = 0; }
+  }
+  // degraus de sentido único (nunca sobe): 1 entorno e sombra do sol menor · 2 menos luzes reais · 3 resolução parada e mínima menores
+  _govStepDown(now) {
+    const g = this._gov; if (!g.auto || g.rung >= 3) return;
+    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0;
+    const sh = (n) => { const s = this._sun && this._sun.shadow; if (!s || !this._sun.castShadow || s.mapSize.x <= n) return; s.mapSize.set(n, n); if (s.map) { s.map.dispose(); s.map = null; } this._needShadow = true; };
+    if (g.rung === 1) {
+      if (this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null)) this._setEntorno(false);
+      sh(this._lite ? 512 : 1024);
+    } else if (g.rung === 2) this._shrinkLights();
+    else { g.idleMax = Math.min(g.idleMax, 0.85); g.moveMin = Math.max(0.3, g.moveMin - 0.05); sh(512); }
+    console.info(`[igreja3d-card] governador: degrau ${g.rung} — entorno ${this._entornoOn ? 'ligado' : 'desligado'}, ${this._nLights} luzes reais`);
+    if (this._orbit) this._orbit.dirty = true;
+  }
+  // estado do governador (testes/demo)
+  getQuality() {
+    const g = this._gov || {};
+    return { tier: this._q, auto: !!g.auto, rung: g.rung || 0, moveScale: g.moveScale, idleScale: g.idleScale, ftEMA: g.ft, lights: this._nLights, entorno: !!this._entornoOn };
   }
 
   // media: redistribui o conjunto fixo de luzes (_pool) às luminárias acesas que importam no enquadramento (chamado
@@ -7319,11 +7431,13 @@ export class Igreja3DCard extends HTMLElement {
   _resize() {
     if (!this._renderer) return;
     const w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight);
-    // Orçamento de ~1,8 Mpx por quadro (1,4 no media, 1 no leve): em telas Retina grandes baixa o pixel ratio
-    const [cap, px] = this._q === 'alta' ? [2, 1.8e6] : this._q === 'media' ? [1.5, 1.4e6] : [1.25, 1.0e6];
+    // Orçamento de ~1,8 Mpx por quadro (1,4 no media, 1 no leve, 0,6 no min): em telas Retina grandes baixa o pixel ratio
+    const strong = this._q === 'alta' && Igreja3DCard._strongGPU();
+    const [cap, px] = this._q === 'alta' ? (strong ? [2.5, 2.4e6] : [2, 1.8e6]) : this._q === 'media' ? [1.5, 1.4e6] : this._min ? [1, 0.6e6] : [1.25, 1.0e6];
     const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(px / (w * h))));
     this._dprFull = dpr; this._lowRes = false;
-    this._renderer.setPixelRatio(dpr);
+    if (!this._gov) this._govInit();
+    this._renderer.setPixelRatio(Math.min(dpr * Math.min(this._gov.idleScale, this._govIdleMax()), 3));   // mantém a nitidez escolhida pelo governador
     this._renderer.setSize(w, h, false);
     // Com o painel aberto, a cena é enquadrada na área visível acima dele
     const P = this._panelOpen && this._dock && !this._dock.hidden ? Math.min(this._dock.offsetHeight + 12, h * 0.6) : 0;
@@ -7468,29 +7582,10 @@ export class Igreja3DCard extends HTMLElement {
     if (dirty) this._updateLabels();
     // Só animação ociosa (telão pulsando): no máximo ~8 quadros/s, e nada com a aba ou o cartão fora da tela
     const now = performance.now();
-    // Leve/media: girando/aproximando desenha com resolução reduzida, na escala que o tempo real de quadro permite
-    // (~30 quadros/s; de 35 % até 55 % no leve e 75 % no media); parou → um quadro nítido
-    if (this._q !== 'alta' && this._dprFull) {
-      const ft = now - (this._lastT || now); this._lastT = now;
-      if (!this._moveScale) this._moveScale = this._lite ? 0.55 : 0.6;
-      if (this._orbit.moving) {
-        this._lastMove = now;
-        if (!this._lowRes) { this._lowRes = true; this._ft = 0; this._renderer.setPixelRatio(this._dprFull * this._moveScale); }
-        else if (ft > 0) {
-          this._ft = this._ft ? this._ft * 0.8 + ft * 0.2 : ft;
-          if (now - (this._lastAdj || 0) > 300) {
-            this._lastAdj = now;
-            const sc = clamp(this._moveScale * (this._ft > 40 ? 0.85 : this._ft < 24 ? 1.1 : 1), 0.35, this._lite ? 0.55 : 0.75);
-            if (Math.abs(sc - this._moveScale) > 0.02) { this._moveScale = sc; this._renderer.setPixelRatio(this._dprFull * sc); }
-            // media num PC lento demais (a 35 % e ainda < 15 quadros/s por ~1,5 s): o conjunto de luzes encolhe de vez
-            this._slow = this._pool && sc <= 0.36 && this._ft > 66 ? (this._slow || 0) + 1 : 0;
-            if (this._slow >= 5 && this._pool.length > 6) this._shrinkPool();
-          }
-        }
-      } else if (this._lowRes && now - (this._lastMove || 0) > 180) { this._lowRes = false; this._renderer.setPixelRatio(this._dprFull); dirty = true; }
-    }
+    // Todos os níveis: girando/aproximando desenha na resolução que o tempo real de quadro permite; parou → um quadro nítido (governador)
+    dirty = this._govFrame(now, dirty);
     const visible = !(typeof document !== 'undefined' && document.hidden) && this._onScreen !== false;
-    if (this._busy) return;   // _shrinkPool acabou de pedir recompilação
+    if (this._busy) return;   // o governador acabou de pedir recompilação (_shrinkLights)
     if (dirty || (ambient && visible && now - (this._lastIdle || 0) > 125)) {
       if (!dirty) this._lastIdle = now;
       this._renderer.render(this._scene, this._camera);
