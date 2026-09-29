@@ -47,7 +47,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.0';
+export const VERSION = '1.4.1';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -109,10 +109,10 @@ const MIN_LIGHTS = { palco: 1, plateia: 1, hall: 1, fachada: 1, estacionamento: 
 // Governador de qualidade (ver _govFrame): por nível, a escala de resolução em movimento (move; min–max) e parado (idleMin–idleMax,
 // >1 = supersampling quando sobra fôlego). Trocar luzes/sombras/materiais recompila shaders, então o nível é fixo na construção.
 const GOV = {
-  alta:  { move: 1.0,  min: 0.5,  max: 1.0,  idleMax: 1.25, idleMin: 0.75 },
-  media: { move: 0.6,  min: 0.35, max: 0.75, idleMax: 1.1,  idleMin: 0.7 },
-  leve:  { move: 0.55, min: 0.35, max: 0.55, idleMax: 1.0,  idleMin: 0.6 },
-  min:   { move: 0.45, min: 0.3,  max: 0.5,  idleMax: 1.0,  idleMin: 0.5 },
+  alta:  { move: 1.0,  min: 0.5,  max: 1.0,  idleMax: 1.5,  idleMin: 1 },   // parado nunca abaixo da resolução cheia (v1.4.1):
+  media: { move: 0.6,  min: 0.35, max: 0.75, idleMax: 1.25, idleMin: 1 },   // o quadro nítido é um só; a leveza fica no movimento
+  leve:  { move: 0.55, min: 0.35, max: 0.55, idleMax: 1.15, idleMin: 1 },
+  min:   { move: 0.45, min: 0.3,  max: 0.5,  idleMax: 1.0,  idleMin: 1 },
 };
 // ordem em que o governador tira luzes reais (as menos importantes primeiro) ao descer de nível
 const SHRINK_ORDER = ['circulacao', 'administrativo', 'recepcao', 'cozinha', 'banheiros', 'midia', 'voluntariado', 'pastoral', 'familia', 'estacionamento', 'hall', 'plateia', 'palco'];
@@ -6021,8 +6021,8 @@ export class Igreja3DCard extends HTMLElement {
   // ---- Cena 3D ----
   _build3D(canvas) {
     const M = materials();
-    // MSAA só compensa com DPR baixo; no leve/media com DPR ≥ 1,5 ele pesa e rende pouco
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !this._min && (this._q === 'alta' || (window.devicePixelRatio || 1) < 1.5), powerPreference: 'high-performance' });
+    // MSAA (bordas lisas) em toda GPU de verdade; só fica sem no desenho por software e no leve/min em telas com DPR ≥ 2
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft && (this._q === 'alta' || this._q === 'media' || (window.devicePixelRatio || 1) < 2), powerPreference: 'high-performance' });
     // Neutral (r162+): preto da "Igreja Preta" fica preto, roxo do palco e telão saturados, branco estoura menos que no ACES
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -6903,7 +6903,7 @@ export class Igreja3DCard extends HTMLElement {
       if (++g.sharpFast >= 3) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.1); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
     } else { g.sharpFast = 0; g.slowIdle = 0; }
   }
-  // degraus de sentido único (nunca sobe): 1 entorno e sombra do sol menor · 2 menos luzes reais · 3 resolução parada e mínima menores
+  // degraus de sentido único (nunca sobe): 1 entorno e sombra do sol menor · 2 menos luzes reais · 3 sem supersampling parado, mínima menor
   _govStepDown(now) {
     const g = this._gov; if (!g.auto || g.rung >= 3) return;
     g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0;
@@ -6912,7 +6912,7 @@ export class Igreja3DCard extends HTMLElement {
       if (this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null)) this._setEntorno(false);
       sh(this._lite ? 512 : 1024);
     } else if (g.rung === 2) this._shrinkLights();
-    else { g.idleMax = Math.min(g.idleMax, 0.85); g.moveMin = Math.max(0.3, g.moveMin - 0.05); sh(512); }
+    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); sh(512); }
     console.info(`[igreja3d-card] governador: degrau ${g.rung} — entorno ${this._entornoOn ? 'ligado' : 'desligado'}, ${this._nLights} luzes reais`);
     if (this._orbit) this._orbit.dirty = true;
   }
@@ -7897,9 +7897,10 @@ export class Igreja3DCard extends HTMLElement {
   _resize() {
     if (!this._renderer) return;
     const w = Math.max(1, this.clientWidth), h = Math.max(1, this.clientHeight);
-    // Orçamento de ~1,8 Mpx por quadro (1,4 no media, 1 no leve, 0,6 no min): em telas Retina grandes baixa o pixel ratio
+    // Resolução cheia (parado): até o pixel ratio da tela, com teto por nível (alta 2,8 Mpx · media 2,4 · leve 2,0 · min 1,4).
+    // O movimento desenha uma fração disso (governador), então o teto alto só pesa no quadro nítido, que é um só.
     const strong = this._q === 'alta' && Igreja3DCard._strongGPU();
-    const [cap, px] = this._q === 'alta' ? (strong ? [2.5, 2.4e6] : [2, 1.8e6]) : this._q === 'media' ? [1.5, 1.4e6] : this._min ? [1, 0.6e6] : [1.25, 1.0e6];
+    const [cap, px] = this._q === 'alta' ? (strong ? [2.5, 3.5e6] : [2, 2.8e6]) : this._q === 'media' ? [2, 2.4e6] : this._min ? [1.5, 1.4e6] : [2, 2.0e6];
     const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(px / (w * h))));
     this._dprFull = dpr; this._lowRes = false;
     if (!this._gov) this._govInit();
