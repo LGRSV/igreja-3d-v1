@@ -175,7 +175,7 @@ function roomFachada(ctx) {
   };
   [[7.52, 0.62], [8.26, 0.86], [9.0, 0.62], [9.74, 0.86], [10.42, 0.62]].forEach(([x, h], i) => cycas(x, 50.3, h, 40 + i));
 
-  // ---- Estacionamento frontal (piso de espinha de peixe já é a zona do cartão) ----
+  // ---- Estacionamento frontal (piso cinza em espinha de peixe já é a zona do cartão) ----
   // guia de concreto entre a calçada grafite e o intertravado
   add(flat(box(26.0, 0.008, 0.1, P.curbW, 10.0, 0.008, 51.0)));
   // vagas a 90° (2,5 × 4,8 m), de frente para o prédio; passagem livre na frente da porta (x 10,3–15,0)
@@ -223,9 +223,7 @@ function roomFachada(ctx) {
     add(box(0.42, 0.42, 0.02, std({ color: 0x2f76b2, roughness: 0.6 }), xc, 1.72, 50.95));
     add(box(0.16, 0.2, 0.024, P.paint, xc, 1.72, 50.95, { cast: false }));
   }
-  // dois carros estacionados de frente para o prédio (vagas livres ao lado dos postes)
-  place(F.car(), 1.55, 53.75, 0);
-  const car2 = F.car(); car2.traverse((o) => { if (o.material === M.car) o.material = P.carSilver; }); place(car2, -0.95, 53.75, 0);
+  // estacionamento frontal sem carros (vagas livres)
 
   // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));

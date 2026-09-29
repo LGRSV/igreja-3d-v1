@@ -5,36 +5,82 @@
 <style>
   :root {
     --bg: #eef1f6; --fg: #17203a; --muted: #5b6785; --line: #d7dce8; --accent: #b86a12; --accent-soft: #fff1dc;
-    --banner-bg: #fff8ec;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg: #0a0f1e; --fg: #e6edf7; --muted: #9aa6bd; --line: #1f2a44; --accent: #ffc46b; --accent-soft: #1d2438; --banner-bg: #10172a; }
+    :root:not([data-theme="light"]) { --bg: #0a0f1e; --fg: #e6edf7; --muted: #9aa6bd; --line: #1f2a44; --accent: #ffc46b; --accent-soft: #1d2438; }
   }
-  :root[data-theme="dark"] { --bg: #0a0f1e; --fg: #e6edf7; --muted: #9aa6bd; --line: #1f2a44; --accent: #ffc46b; --accent-soft: #1d2438; --banner-bg: #10172a; }
+  :root[data-theme="dark"] { --bg: #0a0f1e; --fg: #e6edf7; --muted: #9aa6bd; --line: #1f2a44; --accent: #ffc46b; --accent-soft: #1d2438; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .app { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
-  .banner { flex: none; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
-    padding: 8px 16px; background: var(--banner-bg); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.35; }
-  .banner b { color: var(--accent); letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
-  .banner span { color: var(--muted); }
-  .toast { position: fixed; left: 50%; top: 56px; transform: translateX(-50%); background: var(--accent-soft); color: var(--fg); border: 1px solid var(--line);
-    padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 5; }
+  .toast { position: fixed; left: 50%; bottom: calc(var(--sky-top, 96px) + 10px); transform: translateX(-50%); background: rgba(10, 15, 30, .88); color: #e6edf7; border: 1px solid rgba(255, 196, 107, .28);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 30; text-align: center; }
   .toast.show { opacity: 1; }
   igreja3d-card { flex: 1; min-height: 0; --igreja3d-height: 100%; border-radius: 0; }
-  .timectl { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-  .timectl input { width: 160px; accent-color: var(--accent); }
-  .timectl output { min-width: 44px; font-variant-numeric: tabular-nums; color: var(--fg); font-weight: 600; }
-  .timectl button { font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+
+  /* Faixa de hora do dia (só na demo) — mesmo visual do HUD do cartão */
+  .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
+    width: min(540px, calc(100vw - 32px)); padding: 7px 8px 7px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time track btn"; align-items: center; column-gap: 10px;
+    background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 16px; color: #e6edf7;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
+    font: 13px/1.3 -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif; transition: opacity .2s; }
+  .sky-time { grid-area: time; display: flex; flex-direction: column; min-width: 92px; }
+  .sky output { font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: #f3f6fc; }
+  .sky.sim output { color: var(--amber-soft); }
+  .sky-cap { margin-top: 3px; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; color: #8f9bb3; white-space: nowrap; }
+  .sky-track { grid-area: track; position: relative; height: 48px; min-width: 0; }
+  .sky-bar { position: absolute; left: 14px; right: 14px; top: 7px; height: 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
+  .sky-mark { position: absolute; top: 30px; left: calc(14px + (100% - 28px) * var(--f)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+  .sky-mark i { position: absolute; top: -10px; width: 1px; height: 7px; background: rgba(255, 255, 255, .35); }
+  .sky-mark em { font-style: normal; font-size: 10px; font-weight: 600; color: #8f9bb3; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sky-mark em b { color: var(--amber); font-weight: 700; margin-right: 2px; }
+  .sky input[type=range] { position: absolute; left: 0; top: 0; width: 100%; height: 26px; margin: 0; padding: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none; }
+  .sky input[type=range]::-webkit-slider-runnable-track { height: 26px; background: transparent; border: 0; }
+  .sky input[type=range]::-moz-range-track { height: 26px; background: transparent; border: 0; }
+  .sky input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 26px; background: transparent; border: 0; }
+  .sky input[type=range]::-moz-range-thumb { width: 28px; height: 26px; background: transparent; border: 0; border-radius: 0; }
+  .sky input[type=range]:focus { outline: none; }
+  .sky-thumb { position: absolute; top: 0; left: calc(14px + (100% - 28px) * var(--f, 0)); width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; box-sizing: border-box; pointer-events: none;
+    display: flex; align-items: center; justify-content: center; background: #0a0f1e; border: 2px solid var(--amber); color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(255, 196, 107, .14), 0 2px 8px rgba(0, 0, 0, .5); transition: box-shadow .15s, border-color .3s, color .3s; }
+  .sky-thumb svg { width: 15px; height: 15px; display: block; }
+  .sky-thumb .moon { display: none; } .sky-thumb.night { border-color: #9db6ee; color: #b9ccf5; box-shadow: 0 0 0 3px rgba(157, 182, 238, .14), 0 2px 8px rgba(0, 0, 0, .5); }
+  .sky-thumb.night .sun { display: none; } .sky-thumb.night .moon { display: block; }
+  .sky input[type=range]:focus-visible ~ .sky-thumb { box-shadow: 0 0 0 2px #0a0f1e, 0 0 0 4px var(--amber); }
+  .sky-live { grid-area: btn; appearance: none; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .01em; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+    color: #d5dcea; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); white-space: nowrap; }
+  .sky-live:hover { background: rgba(255, 255, 255, .12); }
+  .sky-live:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .sky-live .dot { width: 8px; height: 8px; border-radius: 50%; background: #6b768f; flex: none; }
+  .sky-live.on { color: #ffd48a; background: rgba(255, 196, 107, .16); border-color: rgba(255, 196, 107, .4); cursor: default; }
+  .sky-live.on .dot { background: #4be38b; animation: skypulse 1.8s ease-out infinite; }
+  .sky-live:not(.on) .dot { background: transparent; border: 2px solid var(--amber); box-sizing: border-box; }
+  @keyframes skypulse { 0% { box-shadow: 0 0 0 0 rgba(75, 227, 139, .6); } 70%, 100% { box-shadow: 0 0 0 7px rgba(75, 227, 139, 0); } }
+  @media (prefers-reduced-motion: reduce) { .sky-live.on .dot { animation: none; } }
+  @media (max-width: 560px) {
+    .sky { width: calc(100vw - 32px); padding: 8px 10px 6px 12px; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "time btn" "track track"; row-gap: 2px; }
+    .sky-time { flex-direction: row; align-items: baseline; gap: 10px; }
+    .sky-cap { margin-top: 0; }
+    .sky output { font-size: 22px; }
+    .sky-live { padding: 6px 11px; }
+  }
 </style>
 <div class="app">
-  <div class="banner" role="status">
-    <div><b>Demo</b> &nbsp;<span>Estados simulados (noite de culto) — clique num ambiente ou num bloco para alternar. No Home Assistant o cartão lê e comanda as entidades reais.</span></div>
-    <label class="timectl"><span>Hora do dia</span><input id="hora" type="range" min="0" max="1439" step="5" aria-label="Hora simulada"><output id="horaOut">agora</output><button id="horaAgora" type="button">agora</button></label>
-  </div>
   <igreja3d-card id="card"></igreja3d-card>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="sky" id="sky" role="group" aria-label="Hora do dia simulada">
+  <div class="sky-time"><output id="horaOut" for="hora" aria-live="off">--:--</output><span class="sky-cap" id="skyCap">agora</span></div>
+  <div class="sky-track" id="skyTrack">
+    <div class="sky-bar" id="skyBar" aria-hidden="true"></div>
+    <span class="sky-mark" id="markRise" aria-hidden="true"><i></i><em><b>&#9650;</b><span></span></em></span>
+    <span class="sky-mark" id="markSet" aria-hidden="true"><i></i><em><b>&#9660;</b><span></span></em></span>
+    <input id="hora" type="range" min="0" max="1439" step="5" aria-label="Hora do dia (arraste para simular)">
+    <span class="sky-thumb" id="skyThumb" aria-hidden="true"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg><svg class="moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a.6.6 0 0 0-.8-.7A9.6 9.6 0 1 0 21.1 15.4a.6.6 0 0 0-.7-.8z"/></svg></span>
+  </div>
+  <button class="sky-live on" id="horaAgora" type="button" aria-pressed="true"><span class="dot" aria-hidden="true"></span><span id="skyLiveTxt">Ao vivo</span></button>
+</div>
 <script type="module">
 /*
  * Igreja 3D — cartão Lovelace para Home Assistant (+ demo standalone)
@@ -47,7 +93,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.1';
+export const VERSION = '1.4.3';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -561,21 +607,21 @@ function textures() {
   });
   TEX.paversGray = pav(0xa3a19b, '#77756f', 23);
   TEX.paversDark = pav(0x5d5f63, '#3e4043', 24);
-  // Intertravado terracota em espinha de peixe (estacionamento frontal, como na foto).
+  // Intertravado cinza (bloquete de concreto) em espinha de peixe — estacionamento frontal (só ele usa esta textura).
   // Padrão 90°: período de 4×4 módulos (tijolo = 2×1 módulo); o canvas tem 4 períodos.
   TEX.herring = makeTex(512, (g, s) => {
-    g.fillStyle = '#8a6a58'; g.fillRect(0, 0, s, s);
+    g.fillStyle = '#6c6b68'; g.fillRect(0, 0, s, s);
     const rnd = mulberry32(25), u = s / 16, gap = 1.6;
     const brick = (cx, cy, w, h) => {
       const v = 0.84 + rnd() * 0.26, t = rnd();
-      const base = t < 0.18 ? 0xb58a72 : t < 0.36 ? 0xa77e66 : 0xc39a80;   // salmão/bege como na foto (calibrado p/ Neutral)
+      const base = t < 0.18 ? 0x93918c : t < 0.36 ? 0x9f9d97 : 0xaeaca6;   // cinza de concreto (tom próximo do paversGray)
       g.fillStyle = shade(base, v); g.fillRect(cx * u + gap, cy * u + gap, w * u - 2 * gap, h * u - 2 * gap);
     };
     for (let sft = -24; sft <= 24; sft += 4) for (let t = -20; t <= 20; t++) {
       brick(t + sft, t, 2, 1);          // tijolo deitado
       brick(t + sft, t + 1, 1, 2);      // tijolo em pé
     }
-    grain(g, s, 26, 9000, 0.08, [80, 50, 35]);
+    grain(g, s, 26, 9000, 0.08, [60, 60, 58]);
   });
   TEX.glow = makeTex(128, (g, s) => {
     const r = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
@@ -1920,7 +1966,7 @@ function roomTemploPlateia(ctx) {
   //   (≈ 500 não cabem com essas passagens: 8,5 m de fundo × 10 fileiras de 0,85 m.)
   // · Cobertura: SEM as tesouras/terças brancas e sem hastes/correntes (pedido do cliente): os high-bays do
   //   cartão (y 7,2) e a 2ª treliça de luz (preta) sobre a plateia ficam suspensos no lugar; ficam os
-  //   pilares/perfis pretos nas duas laterais (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
+  //   pilares/perfis pretos na parede do palco (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
   //   e o cordão de lampadinhas quentes nos beirais. No modo Fachada a cobertura interna some.
   // · Paredes: perfis pretos, extintores vermelhos com placa, placas de SAÍDA verdes (acesas),
   //   placa vermelha "SAÍDA DE EMERGÊNCIA" sobre a porta preta de correr (cartão) e folhas pretas de
@@ -2092,8 +2138,7 @@ function roomTemploPlateia(ctx) {
   const bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
   const bLens = batch(lensMat, false, cover), bCable = batch(blackPl, false, cover);
 
-  // Módulos da estrutura (z): as tesouras brancas saíram; ficam os pilares pretos que marcam os módulos
-  const TZ = [13.5, 18.5, 23.5, 28.5, 33.5, 38.5, 43.3];
+  // Estrutura: as tesouras brancas e os pilares/vigas da lateral x = 16,05 saíram; ficam os perfis da parede do palco
 
   // Pilares/perfis pretos na parede do palco (x = 0, 8,5 m). Nos trechos do telão e das telas brancas
   // só há tocos acima da viga (y ≥ 6,95); ao lado do telão os perfis nascem no piso do palco (y 1,0).
@@ -2102,10 +2147,8 @@ function roomTemploPlateia(ctx) {
     [33.5, 6.95, 8.6], [38.5, 0, 8.6], [43.3, 0, 8.6]]) bx(bBlk, 0.16, y1 - y0, 0.24, FX0 + 0.08, (y0 + y1) / 2, z);
   bx(bBlk, 0.12, 0.15, FZ1 - FZ0 - 0.02, FX0 + 0.06, 6.875, (FZ0 + FZ1) / 2);   // viga horizontal preta (~7 m)
   bx(bBlk, 0.2, 0.12, FZ1 - FZ0, 0.1, 8.56, (FZ0 + FZ1) / 2);                    // frechal no topo da parede alta
-  // Pilares pretos na lateral x = 16,05, subindo acima da parede de 3 m até as tesouras, + 2 vigas
-  for (const z of TZ) bx(bBlk, 0.2, 5.6, 0.24, 16.05, 5.8, z);
-  bx(bBlk, 0.16, 0.15, FZ1 - FZ0, 16.05, 6.0, (FZ0 + FZ1) / 2);
-  bx(bBlk, 0.2, 0.12, FZ1 - FZ0, 16.05, 8.56, (FZ0 + FZ1) / 2);
+  // Lateral x = 16,05: os pilares pretos acima da parede de 3 m e as 2 vigas saíram (pedido do cliente); o cordão de
+  // lampadinhas desse lado fica suspenso no mesmo lugar
 
   // Cordão de lampadinhas quentes nos dois beirais (v6/v8)
   for (const [x, y] of [[0.26, 8.3], [15.86, 8.3]]) {
@@ -5360,7 +5403,7 @@ function roomFachada(ctx) {
   };
   [[7.52, 0.62], [8.26, 0.86], [9.0, 0.62], [9.74, 0.86], [10.42, 0.62]].forEach(([x, h], i) => cycas(x, 50.3, h, 40 + i));
 
-  // ---- Estacionamento frontal (piso de espinha de peixe já é a zona do cartão) ----
+  // ---- Estacionamento frontal (piso cinza em espinha de peixe já é a zona do cartão) ----
   // guia de concreto entre a calçada grafite e o intertravado
   add(flat(box(26.0, 0.008, 0.1, P.curbW, 10.0, 0.008, 51.0)));
   // vagas a 90° (2,5 × 4,8 m), de frente para o prédio; passagem livre na frente da porta (x 10,3–15,0)
@@ -5408,9 +5451,7 @@ function roomFachada(ctx) {
     add(box(0.42, 0.42, 0.02, std({ color: 0x2f76b2, roughness: 0.6 }), xc, 1.72, 50.95));
     add(box(0.16, 0.2, 0.024, P.paint, xc, 1.72, 50.95, { cast: false }));
   }
-  // dois carros estacionados de frente para o prédio (vagas livres ao lado dos postes)
-  place(F.car(), 1.55, 53.75, 0);
-  const car2 = F.car(); car2.traverse((o) => { if (o.material === M.car) o.material = P.carSilver; }); place(car2, -0.95, 53.75, 0);
+  // estacionamento frontal sem carros (vagas livres)
 
   // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));
@@ -6021,8 +6062,8 @@ export class Igreja3DCard extends HTMLElement {
   // ---- Cena 3D ----
   _build3D(canvas) {
     const M = materials();
-    // MSAA (bordas lisas) em toda GPU de verdade; só fica sem no desenho por software e no leve/min em telas com DPR ≥ 2
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft && (this._q === 'alta' || this._q === 'media' || (window.devicePixelRatio || 1) < 2), powerPreference: 'high-performance' });
+    // MSAA (bordas lisas) em toda GPU de verdade — nas móveis (tile-based) quase de graça; só fica sem no desenho por software
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft, powerPreference: 'high-performance' });
     // Neutral (r162+): preto da "Igreja Preta" fica preto, roxo do palco e telão saturados, branco estoura menos que no ACES
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -6032,7 +6073,7 @@ export class Igreja3DCard extends HTMLElement {
     this._tight = caps.maxFragmentUniforms < 512 || caps.maxTextures < 16;
     if (this._tight) console.warn(`[igreja3d-card] GPU com margem pequena (fragment uniforms ${caps.maxFragmentUniforms}, samplers ${caps.maxTextures}): luzes fracas viram só halo e sombras só nas principais`);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = this._q === 'alta' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.type = this._q === 'alta' || this._q === 'media' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;   // cena estática: sombras só recalculam quando algo muda
     this._renderer = renderer;
 
@@ -6850,7 +6891,8 @@ export class Igreja3DCard extends HTMLElement {
   _govInit() {
     const t = GOV[this._q] || GOV.leve;
     this._gov = { tier: this._q, auto: this._config.quality === 'auto', moveScale: t.move, moveMin: t.min, moveMax: t.max, idleScale: 1, idleMax: t.idleMax, idleMin: t.idleMin,
-      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0 };
+      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0,
+      t0: typeof performance !== 'undefined' ? performance.now() : 0 };
     this._moveScale = t.move;
   }
   _govIdleMax() {
@@ -6875,9 +6917,13 @@ export class Igreja3DCard extends HTMLElement {
           if (g.slowWin >= 2) { g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); g.slowWin = 0; }
           if (g.fastWin >= 4) { g.moveScale = Math.min(g.moveMax, g.moveScale * 1.1); g.fastWin = 0; }
           this._govPR(this._dprFull * g.moveScale);
-          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s
+          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s — nunca nos 20 s após carregar
+          // (compilação de shaders e texturas subindo dão picos que não dizem nada do aparelho)
           g.slow = g.moveScale <= g.moveMin + 0.01 && g.ft > 66 ? g.slow + 1 : 0;
-          if (g.slow >= 5 && now - g.lastStep > 4000) this._govStepDown(now);
+          if (g.slow >= 5 && now - g.lastStep > 4000 && this._govSettled(now)) this._govStepDown(now);
+          // degrau 1 desfeito: ~6 s de movimento fluido na escala máxima → o entorno volta (a queda foi passageira)
+          g.fastRun = g.rung === 1 && g.ft < 25 && g.moveScale >= g.moveMax - 0.01 ? (g.fastRun || 0) + 1 : 0;
+          if (g.fastRun >= 20) this._govStepUp(now);
         }
       }
     } else if (this._lowRes && now - (this._lastMove || 0) > 180) {
@@ -6897,22 +6943,31 @@ export class Igreja3DCard extends HTMLElement {
     if (ms > 250) {
       g.sharpFast = 0;
       if (g.idleScale > g.idleMin + 0.01) g.idleScale = Math.max(g.idleMin, g.idleScale * 0.85);   // o próximo quadro nítido é mais leve: sem travar a página
-      else if (g.auto && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000) this._govStepDown(performance.now());
+      else if (g.auto && ms > 400 && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000 && this._govSettled(performance.now())) this._govStepDown(performance.now());
     } else if (ms < 30) {
       g.slowIdle = 0;
-      if (++g.sharpFast >= 3) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.1); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
+      if (++g.sharpFast >= 2) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.15); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
     } else { g.sharpFast = 0; g.slowIdle = 0; }
   }
-  // degraus de sentido único (nunca sobe): 1 entorno e sombra do sol menor · 2 menos luzes reais · 3 sem supersampling parado, mínima menor
+  // Degraus (só no auto): 1 entorno (volta sozinho se o PC se mostrar rápido) · 2 menos luzes reais · 3 sem supersampling
+  // parado e escala mínima menor em movimento. A sombra do sol e a resolução cheia parada NUNCA caem (v1.4.3: a sombra
+  // em 512² e a parada abaixo da cheia deixavam a imagem borrada)
+  _govSettled(now) { return !this._busy && now - (this._gov.t0 || 0) > 20000; }
+  _govStepUp(now) {
+    const g = this._gov; if (g.rung !== 1) return;
+    g.rung = 0; g.lastStep = now; g.fastRun = 0;
+    if (g.entornoAuto && !this._entornoOn) this._setEntorno(true);
+    console.info('[igreja3d-card] governador: de volta ao degrau 0 — entorno ligado');
+    if (this._orbit) this._orbit.dirty = true;
+  }
   _govStepDown(now) {
     const g = this._gov; if (!g.auto || g.rung >= 3) return;
-    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0;
-    const sh = (n) => { const s = this._sun && this._sun.shadow; if (!s || !this._sun.castShadow || s.mapSize.x <= n) return; s.mapSize.set(n, n); if (s.map) { s.map.dispose(); s.map = null; } this._needShadow = true; };
+    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0; g.fastRun = 0;
     if (g.rung === 1) {
-      if (this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null)) this._setEntorno(false);
-      sh(this._lite ? 512 : 1024);
+      g.entornoAuto = this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null);
+      if (g.entornoAuto) this._setEntorno(false);
     } else if (g.rung === 2) this._shrinkLights();
-    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); sh(512); }
+    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); }
     console.info(`[igreja3d-card] governador: degrau ${g.rung} — entorno ${this._entornoOn ? 'ligado' : 'desligado'}, ${this._nLights} luzes reais`);
     if (this._orbit) this._orbit.dirty = true;
   }
@@ -8176,14 +8231,75 @@ window.demo = {
   },
 };
 // Controle de hora simulada (só na demo): anda o relógio e o sol
-const hora = document.getElementById('hora'), horaOut = document.getElementById('horaOut');
-const fmtTZ = (dt) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(dt);
-const nowMin = () => { const p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date()); const h = +p.find((x) => x.type === 'hour').value % 24, m = +p.find((x) => x.type === 'minute').value; return h * 60 + m; };
+const TZ = 'America/Sao_Paulo';
+const hora = document.getElementById('hora'), horaOut = document.getElementById('horaOut'), sky = document.getElementById('sky');
+const skyCap = document.getElementById('skyCap'), skyThumb = document.getElementById('skyThumb'), skyBar = document.getElementById('skyBar');
+const btnLive = document.getElementById('horaAgora'), liveTxt = document.getElementById('skyLiveTxt');
+const markRise = document.getElementById('markRise'), markSet = document.getElementById('markSet');
+const pad = (n) => String(n).padStart(2, '0');
+const hhmm = (m) => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+const minOf = (ts) => { const p = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date(ts)); return (+p.find((x) => x.type === 'hour').value % 24) * 60 + +p.find((x) => x.type === 'minute').value; };
+const nowMin = () => minOf(Date.now());
+let live = true, sunMin = { rise: 360, set: 1090 }, sunKey = '';
+// nascer/pôr do sol reais vêm do próprio cartão (calculados pela latitude/longitude); sem eles usa ~06:00–18:10
+function readSun() {
+  const t = card._sunTimes; const r = t && t.rise ? minOf(t.rise) : 360, s = t && t.set ? minOf(t.set) : 1090;
+  const key = r + '-' + s; if (key === sunKey) return; sunKey = key; sunMin = { rise: r, set: s };
+  const f = (m) => m / 1439, cl = (m) => Math.max(0, Math.min(1439, m));
+  const stops = [[0, '#0a1030'], [r - 75, '#141f4a'], [r - 30, '#2f4189'], [r, '#ff9a4d'], [r + 50, '#f4c27a'], [r + 120, '#8cc8f0'], [(r + s) / 2, '#5aa9e6'], [s - 120, '#8cc8f0'],
+    [s - 45, '#f4b56a'], [s, '#ff7f3a'], [s + 35, '#7a3f7d'], [s + 80, '#1c2758'], [1439, '#0a1030']];
+  let last = -1; const parts = [];
+  for (const [m, c] of stops) { const mm = Math.max(cl(m), last); last = mm; parts.push(`${c} ${(f(mm) * 100).toFixed(2)}%`); }
+  skyBar.style.background = `linear-gradient(90deg, ${parts.join(', ')})`;
+  markRise.style.setProperty('--f', f(r)); markSet.style.setProperty('--f', f(s));
+  markRise.querySelector('span').textContent = hhmm(r); markSet.querySelector('span').textContent = hhmm(s);
+}
+function period(m) {
+  const { rise, set } = sunMin;
+  if (m < rise - 45) return 'Madrugada'; if (m < rise + 25) return 'Amanhecer'; if (m < 720) return 'Manhã';
+  if (m < set - 25) return 'Tarde'; if (m < set + 45) return 'Entardecer'; return 'Noite';
+}
+function render() {
+  readSun();
+  const m = +hora.value, isDay = m >= sunMin.rise && m < sunMin.set;
+  horaOut.textContent = hhmm(m);
+  skyCap.textContent = (live ? 'Agora' : 'Simulado') + ' · ' + period(m);
+  skyThumb.style.setProperty('--f', m / 1439); skyThumb.classList.toggle('night', !isDay);
+  sky.classList.toggle('sim', !live);
+  btnLive.classList.toggle('on', live); btnLive.setAttribute('aria-pressed', String(live));
+  liveTxt.textContent = live ? 'Ao vivo' : 'Agora';
+  btnLive.setAttribute('aria-label', live ? 'Hora ao vivo (relógio real)' : 'Voltar para a hora real (agora)');
+  hora.setAttribute('aria-valuetext', hhmm(m) + (live ? ' (agora, ao vivo)' : ' (simulado)') + ', ' + period(m));
+}
 hora.value = nowMin();
 hora.addEventListener('input', () => {
+  live = false;
   const target = +hora.value, cur = nowMin();
-  const dt = new Date(Date.now() + (target - cur) * 60000);
-  card.setSimTime(dt); horaOut.textContent = fmtTZ(dt);
+  card.setSimTime(new Date(Date.now() + (target - cur) * 60000));
+  render(); place();
 });
-document.getElementById('horaAgora').addEventListener('click', () => { card.setSimTime(null); hora.value = nowMin(); horaOut.textContent = 'agora'; });
+btnLive.addEventListener('click', () => { live = true; card.setSimTime(null); hora.value = nowMin(); render(); });
+setInterval(() => { if (live) { hora.value = nowMin(); } render(); }, 15000);
+setTimeout(render, 600); setTimeout(render, 2500);
+render();
+
+// Posiciona a faixa logo acima do que estiver no rodapé do cartão (painel, botão "Painel", clima, joystick),
+// sem cobrir nada do HUD; recalcula quando o layout muda.
+function place() {
+  const root = card.shadowRoot; if (!root) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  const sw = sky.getBoundingClientRect(); const left = sw.left, right = sw.right;
+  let top = H - 10;
+  for (const sel of ['.dock', '.reopen', '.weather', '.joy', '.walkhint']) {
+    const el = root.querySelector(sel); if (!el || el.hidden) continue;
+    const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) continue;
+    const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2 || r.bottom < H * 0.4) continue;
+    if (r.right > left - 6 && r.left < right + 6) top = Math.min(top, r.top);
+  }
+  const b = Math.max(10, Math.round(H - top + 8));
+  sky.style.bottom = b + 'px';
+  document.documentElement.style.setProperty('--sky-top', (b + sw.height) + 'px');
+}
+setInterval(place, 400); addEventListener('resize', place); setTimeout(place, 300);
+place();
 </script>

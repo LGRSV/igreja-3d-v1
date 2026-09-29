@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.1';
+export const VERSION = '1.4.3';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -523,21 +523,21 @@ function textures() {
   });
   TEX.paversGray = pav(0xa3a19b, '#77756f', 23);
   TEX.paversDark = pav(0x5d5f63, '#3e4043', 24);
-  // Intertravado terracota em espinha de peixe (estacionamento frontal, como na foto).
+  // Intertravado cinza (bloquete de concreto) em espinha de peixe — estacionamento frontal (só ele usa esta textura).
   // Padrão 90°: período de 4×4 módulos (tijolo = 2×1 módulo); o canvas tem 4 períodos.
   TEX.herring = makeTex(512, (g, s) => {
-    g.fillStyle = '#8a6a58'; g.fillRect(0, 0, s, s);
+    g.fillStyle = '#6c6b68'; g.fillRect(0, 0, s, s);
     const rnd = mulberry32(25), u = s / 16, gap = 1.6;
     const brick = (cx, cy, w, h) => {
       const v = 0.84 + rnd() * 0.26, t = rnd();
-      const base = t < 0.18 ? 0xb58a72 : t < 0.36 ? 0xa77e66 : 0xc39a80;   // salmão/bege como na foto (calibrado p/ Neutral)
+      const base = t < 0.18 ? 0x93918c : t < 0.36 ? 0x9f9d97 : 0xaeaca6;   // cinza de concreto (tom próximo do paversGray)
       g.fillStyle = shade(base, v); g.fillRect(cx * u + gap, cy * u + gap, w * u - 2 * gap, h * u - 2 * gap);
     };
     for (let sft = -24; sft <= 24; sft += 4) for (let t = -20; t <= 20; t++) {
       brick(t + sft, t, 2, 1);          // tijolo deitado
       brick(t + sft, t + 1, 1, 2);      // tijolo em pé
     }
-    grain(g, s, 26, 9000, 0.08, [80, 50, 35]);
+    grain(g, s, 26, 9000, 0.08, [60, 60, 58]);
   });
   TEX.glow = makeTex(128, (g, s) => {
     const r = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
@@ -1882,7 +1882,7 @@ function roomTemploPlateia(ctx) {
   //   (≈ 500 não cabem com essas passagens: 8,5 m de fundo × 10 fileiras de 0,85 m.)
   // · Cobertura: SEM as tesouras/terças brancas e sem hastes/correntes (pedido do cliente): os high-bays do
   //   cartão (y 7,2) e a 2ª treliça de luz (preta) sobre a plateia ficam suspensos no lugar; ficam os
-  //   pilares/perfis pretos nas duas laterais (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
+  //   pilares/perfis pretos na parede do palco (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
   //   e o cordão de lampadinhas quentes nos beirais. No modo Fachada a cobertura interna some.
   // · Paredes: perfis pretos, extintores vermelhos com placa, placas de SAÍDA verdes (acesas),
   //   placa vermelha "SAÍDA DE EMERGÊNCIA" sobre a porta preta de correr (cartão) e folhas pretas de
@@ -2054,8 +2054,7 @@ function roomTemploPlateia(ctx) {
   const bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
   const bLens = batch(lensMat, false, cover), bCable = batch(blackPl, false, cover);
 
-  // Módulos da estrutura (z): as tesouras brancas saíram; ficam os pilares pretos que marcam os módulos
-  const TZ = [13.5, 18.5, 23.5, 28.5, 33.5, 38.5, 43.3];
+  // Estrutura: as tesouras brancas e os pilares/vigas da lateral x = 16,05 saíram; ficam os perfis da parede do palco
 
   // Pilares/perfis pretos na parede do palco (x = 0, 8,5 m). Nos trechos do telão e das telas brancas
   // só há tocos acima da viga (y ≥ 6,95); ao lado do telão os perfis nascem no piso do palco (y 1,0).
@@ -2064,10 +2063,8 @@ function roomTemploPlateia(ctx) {
     [33.5, 6.95, 8.6], [38.5, 0, 8.6], [43.3, 0, 8.6]]) bx(bBlk, 0.16, y1 - y0, 0.24, FX0 + 0.08, (y0 + y1) / 2, z);
   bx(bBlk, 0.12, 0.15, FZ1 - FZ0 - 0.02, FX0 + 0.06, 6.875, (FZ0 + FZ1) / 2);   // viga horizontal preta (~7 m)
   bx(bBlk, 0.2, 0.12, FZ1 - FZ0, 0.1, 8.56, (FZ0 + FZ1) / 2);                    // frechal no topo da parede alta
-  // Pilares pretos na lateral x = 16,05, subindo acima da parede de 3 m até as tesouras, + 2 vigas
-  for (const z of TZ) bx(bBlk, 0.2, 5.6, 0.24, 16.05, 5.8, z);
-  bx(bBlk, 0.16, 0.15, FZ1 - FZ0, 16.05, 6.0, (FZ0 + FZ1) / 2);
-  bx(bBlk, 0.2, 0.12, FZ1 - FZ0, 16.05, 8.56, (FZ0 + FZ1) / 2);
+  // Lateral x = 16,05: os pilares pretos acima da parede de 3 m e as 2 vigas saíram (pedido do cliente); o cordão de
+  // lampadinhas desse lado fica suspenso no mesmo lugar
 
   // Cordão de lampadinhas quentes nos dois beirais (v6/v8)
   for (const [x, y] of [[0.26, 8.3], [15.86, 8.3]]) {
@@ -5322,7 +5319,7 @@ function roomFachada(ctx) {
   };
   [[7.52, 0.62], [8.26, 0.86], [9.0, 0.62], [9.74, 0.86], [10.42, 0.62]].forEach(([x, h], i) => cycas(x, 50.3, h, 40 + i));
 
-  // ---- Estacionamento frontal (piso de espinha de peixe já é a zona do cartão) ----
+  // ---- Estacionamento frontal (piso cinza em espinha de peixe já é a zona do cartão) ----
   // guia de concreto entre a calçada grafite e o intertravado
   add(flat(box(26.0, 0.008, 0.1, P.curbW, 10.0, 0.008, 51.0)));
   // vagas a 90° (2,5 × 4,8 m), de frente para o prédio; passagem livre na frente da porta (x 10,3–15,0)
@@ -5370,9 +5367,7 @@ function roomFachada(ctx) {
     add(box(0.42, 0.42, 0.02, std({ color: 0x2f76b2, roughness: 0.6 }), xc, 1.72, 50.95));
     add(box(0.16, 0.2, 0.024, P.paint, xc, 1.72, 50.95, { cast: false }));
   }
-  // dois carros estacionados de frente para o prédio (vagas livres ao lado dos postes)
-  place(F.car(), 1.55, 53.75, 0);
-  const car2 = F.car(); car2.traverse((o) => { if (o.material === M.car) o.material = P.carSilver; }); place(car2, -0.95, 53.75, 0);
+  // estacionamento frontal sem carros (vagas livres)
 
   // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));
@@ -5983,8 +5978,8 @@ export class Igreja3DCard extends HTMLElement {
   // ---- Cena 3D ----
   _build3D(canvas) {
     const M = materials();
-    // MSAA (bordas lisas) em toda GPU de verdade; só fica sem no desenho por software e no leve/min em telas com DPR ≥ 2
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft && (this._q === 'alta' || this._q === 'media' || (window.devicePixelRatio || 1) < 2), powerPreference: 'high-performance' });
+    // MSAA (bordas lisas) em toda GPU de verdade — nas móveis (tile-based) quase de graça; só fica sem no desenho por software
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft, powerPreference: 'high-performance' });
     // Neutral (r162+): preto da "Igreja Preta" fica preto, roxo do palco e telão saturados, branco estoura menos que no ACES
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -5994,7 +5989,7 @@ export class Igreja3DCard extends HTMLElement {
     this._tight = caps.maxFragmentUniforms < 512 || caps.maxTextures < 16;
     if (this._tight) console.warn(`[igreja3d-card] GPU com margem pequena (fragment uniforms ${caps.maxFragmentUniforms}, samplers ${caps.maxTextures}): luzes fracas viram só halo e sombras só nas principais`);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = this._q === 'alta' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.type = this._q === 'alta' || this._q === 'media' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;   // cena estática: sombras só recalculam quando algo muda
     this._renderer = renderer;
 
@@ -6812,7 +6807,8 @@ export class Igreja3DCard extends HTMLElement {
   _govInit() {
     const t = GOV[this._q] || GOV.leve;
     this._gov = { tier: this._q, auto: this._config.quality === 'auto', moveScale: t.move, moveMin: t.min, moveMax: t.max, idleScale: 1, idleMax: t.idleMax, idleMin: t.idleMin,
-      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0 };
+      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0,
+      t0: typeof performance !== 'undefined' ? performance.now() : 0 };
     this._moveScale = t.move;
   }
   _govIdleMax() {
@@ -6837,9 +6833,13 @@ export class Igreja3DCard extends HTMLElement {
           if (g.slowWin >= 2) { g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); g.slowWin = 0; }
           if (g.fastWin >= 4) { g.moveScale = Math.min(g.moveMax, g.moveScale * 1.1); g.fastWin = 0; }
           this._govPR(this._dprFull * g.moveScale);
-          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s
+          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s — nunca nos 20 s após carregar
+          // (compilação de shaders e texturas subindo dão picos que não dizem nada do aparelho)
           g.slow = g.moveScale <= g.moveMin + 0.01 && g.ft > 66 ? g.slow + 1 : 0;
-          if (g.slow >= 5 && now - g.lastStep > 4000) this._govStepDown(now);
+          if (g.slow >= 5 && now - g.lastStep > 4000 && this._govSettled(now)) this._govStepDown(now);
+          // degrau 1 desfeito: ~6 s de movimento fluido na escala máxima → o entorno volta (a queda foi passageira)
+          g.fastRun = g.rung === 1 && g.ft < 25 && g.moveScale >= g.moveMax - 0.01 ? (g.fastRun || 0) + 1 : 0;
+          if (g.fastRun >= 20) this._govStepUp(now);
         }
       }
     } else if (this._lowRes && now - (this._lastMove || 0) > 180) {
@@ -6859,22 +6859,31 @@ export class Igreja3DCard extends HTMLElement {
     if (ms > 250) {
       g.sharpFast = 0;
       if (g.idleScale > g.idleMin + 0.01) g.idleScale = Math.max(g.idleMin, g.idleScale * 0.85);   // o próximo quadro nítido é mais leve: sem travar a página
-      else if (g.auto && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000) this._govStepDown(performance.now());
+      else if (g.auto && ms > 400 && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000 && this._govSettled(performance.now())) this._govStepDown(performance.now());
     } else if (ms < 30) {
       g.slowIdle = 0;
-      if (++g.sharpFast >= 3) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.1); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
+      if (++g.sharpFast >= 2) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.15); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
     } else { g.sharpFast = 0; g.slowIdle = 0; }
   }
-  // degraus de sentido único (nunca sobe): 1 entorno e sombra do sol menor · 2 menos luzes reais · 3 sem supersampling parado, mínima menor
+  // Degraus (só no auto): 1 entorno (volta sozinho se o PC se mostrar rápido) · 2 menos luzes reais · 3 sem supersampling
+  // parado e escala mínima menor em movimento. A sombra do sol e a resolução cheia parada NUNCA caem (v1.4.3: a sombra
+  // em 512² e a parada abaixo da cheia deixavam a imagem borrada)
+  _govSettled(now) { return !this._busy && now - (this._gov.t0 || 0) > 20000; }
+  _govStepUp(now) {
+    const g = this._gov; if (g.rung !== 1) return;
+    g.rung = 0; g.lastStep = now; g.fastRun = 0;
+    if (g.entornoAuto && !this._entornoOn) this._setEntorno(true);
+    console.info('[igreja3d-card] governador: de volta ao degrau 0 — entorno ligado');
+    if (this._orbit) this._orbit.dirty = true;
+  }
   _govStepDown(now) {
     const g = this._gov; if (!g.auto || g.rung >= 3) return;
-    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0;
-    const sh = (n) => { const s = this._sun && this._sun.shadow; if (!s || !this._sun.castShadow || s.mapSize.x <= n) return; s.mapSize.set(n, n); if (s.map) { s.map.dispose(); s.map = null; } this._needShadow = true; };
+    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0; g.fastRun = 0;
     if (g.rung === 1) {
-      if (this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null)) this._setEntorno(false);
-      sh(this._lite ? 512 : 1024);
+      g.entornoAuto = this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null);
+      if (g.entornoAuto) this._setEntorno(false);
     } else if (g.rung === 2) this._shrinkLights();
-    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); sh(512); }
+    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); }
     console.info(`[igreja3d-card] governador: degrau ${g.rung} — entorno ${this._entornoOn ? 'ligado' : 'desligado'}, ${this._nLights} luzes reais`);
     if (this._orbit) this._orbit.dirty = true;
   }
