@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.2';
+export const VERSION = '1.4.3';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -5978,8 +5978,8 @@ export class Igreja3DCard extends HTMLElement {
   // ---- Cena 3D ----
   _build3D(canvas) {
     const M = materials();
-    // MSAA (bordas lisas) em toda GPU de verdade; só fica sem no desenho por software e no leve/min em telas com DPR ≥ 2
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft && (this._q === 'alta' || this._q === 'media' || (window.devicePixelRatio || 1) < 2), powerPreference: 'high-performance' });
+    // MSAA (bordas lisas) em toda GPU de verdade — nas móveis (tile-based) quase de graça; só fica sem no desenho por software
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !Igreja3DCard._gpuInfo().soft, powerPreference: 'high-performance' });
     // Neutral (r162+): preto da "Igreja Preta" fica preto, roxo do palco e telão saturados, branco estoura menos que no ACES
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -5989,7 +5989,7 @@ export class Igreja3DCard extends HTMLElement {
     this._tight = caps.maxFragmentUniforms < 512 || caps.maxTextures < 16;
     if (this._tight) console.warn(`[igreja3d-card] GPU com margem pequena (fragment uniforms ${caps.maxFragmentUniforms}, samplers ${caps.maxTextures}): luzes fracas viram só halo e sombras só nas principais`);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = this._q === 'alta' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.type = this._q === 'alta' || this._q === 'media' ? THREE.PCFSoftShadowMap : this._min ? THREE.BasicShadowMap : THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;   // cena estática: sombras só recalculam quando algo muda
     this._renderer = renderer;
 
@@ -6807,7 +6807,8 @@ export class Igreja3DCard extends HTMLElement {
   _govInit() {
     const t = GOV[this._q] || GOV.leve;
     this._gov = { tier: this._q, auto: this._config.quality === 'auto', moveScale: t.move, moveMin: t.min, moveMax: t.max, idleScale: 1, idleMax: t.idleMax, idleMin: t.idleMin,
-      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0 };
+      ft: 0, lastAdj: 0, slowWin: 0, fastWin: 0, rung: 0, lastStep: 0, sharpAt: 0, sharpPending: false, sharpFast: 0, slow: 0, slowIdle: 0,
+      t0: typeof performance !== 'undefined' ? performance.now() : 0 };
     this._moveScale = t.move;
   }
   _govIdleMax() {
@@ -6832,9 +6833,13 @@ export class Igreja3DCard extends HTMLElement {
           if (g.slowWin >= 2) { g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); g.slowWin = 0; }
           if (g.fastWin >= 4) { g.moveScale = Math.min(g.moveMax, g.moveScale * 1.1); g.fastWin = 0; }
           this._govPR(this._dprFull * g.moveScale);
-          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s
+          // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s — nunca nos 20 s após carregar
+          // (compilação de shaders e texturas subindo dão picos que não dizem nada do aparelho)
           g.slow = g.moveScale <= g.moveMin + 0.01 && g.ft > 66 ? g.slow + 1 : 0;
-          if (g.slow >= 5 && now - g.lastStep > 4000) this._govStepDown(now);
+          if (g.slow >= 5 && now - g.lastStep > 4000 && this._govSettled(now)) this._govStepDown(now);
+          // degrau 1 desfeito: ~6 s de movimento fluido na escala máxima → o entorno volta (a queda foi passageira)
+          g.fastRun = g.rung === 1 && g.ft < 25 && g.moveScale >= g.moveMax - 0.01 ? (g.fastRun || 0) + 1 : 0;
+          if (g.fastRun >= 20) this._govStepUp(now);
         }
       }
     } else if (this._lowRes && now - (this._lastMove || 0) > 180) {
@@ -6854,22 +6859,31 @@ export class Igreja3DCard extends HTMLElement {
     if (ms > 250) {
       g.sharpFast = 0;
       if (g.idleScale > g.idleMin + 0.01) g.idleScale = Math.max(g.idleMin, g.idleScale * 0.85);   // o próximo quadro nítido é mais leve: sem travar a página
-      else if (g.auto && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000) this._govStepDown(performance.now());
+      else if (g.auto && ms > 400 && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000 && this._govSettled(performance.now())) this._govStepDown(performance.now());
     } else if (ms < 30) {
       g.slowIdle = 0;
-      if (++g.sharpFast >= 3) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.1); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
+      if (++g.sharpFast >= 2) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.15); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
     } else { g.sharpFast = 0; g.slowIdle = 0; }
   }
-  // degraus de sentido único (nunca sobe): 1 entorno e sombra do sol menor · 2 menos luzes reais · 3 sem supersampling parado, mínima menor
+  // Degraus (só no auto): 1 entorno (volta sozinho se o PC se mostrar rápido) · 2 menos luzes reais · 3 sem supersampling
+  // parado e escala mínima menor em movimento. A sombra do sol e a resolução cheia parada NUNCA caem (v1.4.3: a sombra
+  // em 512² e a parada abaixo da cheia deixavam a imagem borrada)
+  _govSettled(now) { return !this._busy && now - (this._gov.t0 || 0) > 20000; }
+  _govStepUp(now) {
+    const g = this._gov; if (g.rung !== 1) return;
+    g.rung = 0; g.lastStep = now; g.fastRun = 0;
+    if (g.entornoAuto && !this._entornoOn) this._setEntorno(true);
+    console.info('[igreja3d-card] governador: de volta ao degrau 0 — entorno ligado');
+    if (this._orbit) this._orbit.dirty = true;
+  }
   _govStepDown(now) {
     const g = this._gov; if (!g.auto || g.rung >= 3) return;
-    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0;
-    const sh = (n) => { const s = this._sun && this._sun.shadow; if (!s || !this._sun.castShadow || s.mapSize.x <= n) return; s.mapSize.set(n, n); if (s.map) { s.map.dispose(); s.map = null; } this._needShadow = true; };
+    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0; g.fastRun = 0;
     if (g.rung === 1) {
-      if (this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null)) this._setEntorno(false);
-      sh(this._lite ? 512 : 1024);
+      g.entornoAuto = this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null);
+      if (g.entornoAuto) this._setEntorno(false);
     } else if (g.rung === 2) this._shrinkLights();
-    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); sh(512); }
+    else { g.idleMax = Math.min(g.idleMax, 1); g.idleScale = Math.min(g.idleScale, 1); g.moveMin = Math.max(0.3, g.moveMin - 0.05); }
     console.info(`[igreja3d-card] governador: degrau ${g.rung} — entorno ${this._entornoOn ? 'ligado' : 'desligado'}, ${this._nLights} luzes reais`);
     if (this._orbit) this._orbit.dirty = true;
   }

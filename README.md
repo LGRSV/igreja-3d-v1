@@ -41,8 +41,10 @@ de frente para a porta principal:
   ao parar sai **um** quadro nítido — sempre na resolução cheia da tela, ou acima dela quando sobra fôlego (nunca acima de 3× o
   DPR nem de 4 Mpx) —, com o custo medido no quadro seguinte; o que se adapta é só o movimento (v1.4.1: antes a parada também
   podia cair abaixo da resolução cheia e a imagem ficava borrada). Parado continua **0 redesenhos**.
-- Só no **`auto`**, se nem a resolução mínima aguenta (< 15 quadros/s por ~1,5 s), o governador desce uma escada de sentido
-  único: 1) some o entorno e a sombra do sol diminui; 2) menos luzes reais; 3) resolução parada/mínima menores. Com
+- Só no **`auto`**, se nem a resolução mínima aguenta (< 15 quadros/s por ~1,5 s; nunca nos 20 s após carregar), o governador
+  desce uma escada: 1) some o entorno — e volta sozinho depois de ~6 s de movimento fluido; 2) menos luzes reais; 3) sem
+  supersampling parado e escala mínima menor em movimento. Desde a v1.4.3 a **sombra do sol e a resolução cheia parada nunca
+  caem** (antes a escada podia deixar a imagem borrada), o MSAA vale em toda GPU de verdade e o `media` voltou à sombra suave. Com
   `quality` manual (`alta|media|leve|min`) nada disso acontece — vale o que você escolheu (só a resolução se adapta).
   `getQuality()` mostra o estado (`{ tier, rung, moveScale, idleScale, lights, entorno }`).
 
