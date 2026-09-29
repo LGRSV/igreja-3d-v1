@@ -1920,7 +1920,7 @@ function roomTemploPlateia(ctx) {
   //   (≈ 500 não cabem com essas passagens: 8,5 m de fundo × 10 fileiras de 0,85 m.)
   // · Cobertura: SEM as tesouras/terças brancas e sem hastes/correntes (pedido do cliente): os high-bays do
   //   cartão (y 7,2) e a 2ª treliça de luz (preta) sobre a plateia ficam suspensos no lugar; ficam os
-  //   pilares/perfis pretos nas duas laterais (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
+  //   pilares/perfis pretos na parede do palco (módulos z 13,5 / 18,5 / 23,5 / 28,5 / 33,5 / 38,5 / 43,3), vigas
   //   e o cordão de lampadinhas quentes nos beirais. No modo Fachada a cobertura interna some.
   // · Paredes: perfis pretos, extintores vermelhos com placa, placas de SAÍDA verdes (acesas),
   //   placa vermelha "SAÍDA DE EMERGÊNCIA" sobre a porta preta de correr (cartão) e folhas pretas de
@@ -2092,8 +2092,7 @@ function roomTemploPlateia(ctx) {
   const bBlk = batch(steelBlk, true, cover), bBulb = batch(bulbMat, false, cover);
   const bLens = batch(lensMat, false, cover), bCable = batch(blackPl, false, cover);
 
-  // Módulos da estrutura (z): as tesouras brancas saíram; ficam os pilares pretos que marcam os módulos
-  const TZ = [13.5, 18.5, 23.5, 28.5, 33.5, 38.5, 43.3];
+  // Estrutura: as tesouras brancas e os pilares/vigas da lateral x = 16,05 saíram; ficam os perfis da parede do palco
 
   // Pilares/perfis pretos na parede do palco (x = 0, 8,5 m). Nos trechos do telão e das telas brancas
   // só há tocos acima da viga (y ≥ 6,95); ao lado do telão os perfis nascem no piso do palco (y 1,0).
@@ -2102,10 +2101,8 @@ function roomTemploPlateia(ctx) {
     [33.5, 6.95, 8.6], [38.5, 0, 8.6], [43.3, 0, 8.6]]) bx(bBlk, 0.16, y1 - y0, 0.24, FX0 + 0.08, (y0 + y1) / 2, z);
   bx(bBlk, 0.12, 0.15, FZ1 - FZ0 - 0.02, FX0 + 0.06, 6.875, (FZ0 + FZ1) / 2);   // viga horizontal preta (~7 m)
   bx(bBlk, 0.2, 0.12, FZ1 - FZ0, 0.1, 8.56, (FZ0 + FZ1) / 2);                    // frechal no topo da parede alta
-  // Pilares pretos na lateral x = 16,05, subindo acima da parede de 3 m até as tesouras, + 2 vigas
-  for (const z of TZ) bx(bBlk, 0.2, 5.6, 0.24, 16.05, 5.8, z);
-  bx(bBlk, 0.16, 0.15, FZ1 - FZ0, 16.05, 6.0, (FZ0 + FZ1) / 2);
-  bx(bBlk, 0.2, 0.12, FZ1 - FZ0, 16.05, 8.56, (FZ0 + FZ1) / 2);
+  // Lateral x = 16,05: os pilares pretos acima da parede de 3 m e as 2 vigas saíram (pedido do cliente); o cordão de
+  // lampadinhas desse lado fica suspenso no mesmo lugar
 
   // Cordão de lampadinhas quentes nos dois beirais (v6/v8)
   for (const [x, y] of [[0.26, 8.3], [15.86, 8.3]]) {
