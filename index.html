@@ -104,7 +104,7 @@ const LITE_LIGHTS = { palco: 2, plateia: 2, hall: 1, fachada: 1, estacionamento:
 // quality media (PC com vídeo integrado): um conjunto FIXO de luzes reais (quantidade constante → nenhum shader recompila)
 // redistribuído às luminárias que importam no enquadramento quando a câmera para; as primeiras MID_SHADOWS projetam sombra.
 const MID_LIGHTS = 10, MID_SHADOWS = 2;
-// quality min (aparelho muito fraco: sem GPU real, ≤ 2 núcleos ou ≤ 2 GB): 1 luz real por item principal, sem sombras. Total ≈ 5 + telão.
+// quality min (aparelho muito fraco: sem GPU real, ≤ 2 GB, ou ≤ 2 núcleos com ≤ 4 GB): 1 luz real por item principal, sem sombras. Total ≈ 5 + telão.
 const MIN_LIGHTS = { palco: 1, plateia: 1, hall: 1, fachada: 1, estacionamento: 1 };
 // Governador de qualidade (ver _govFrame): por nível, a escala de resolução em movimento (move; min–max) e parado (idleMin–idleMax,
 // >1 = supersampling quando sobra fôlego). Trocar luzes/sombras/materiais recompila shaders, então o nível é fixo na construção.
@@ -1365,7 +1365,8 @@ class Walker {
     d.addEventListener('pointerdown', this._pd); d.addEventListener('pointermove', this._pm);
     d.addEventListener('pointerup', this._pu); d.addEventListener('pointercancel', this._pu);
     d.addEventListener('wheel', this._wheel, { passive: false });
-    window.addEventListener('keydown', this._kd, true); window.addEventListener('keyup', this._ku, true);   // captura: os atalhos do HA (E, C, A…) não disparam enquanto anda window.addEventListener('blur', this._blur);
+    window.addEventListener('keydown', this._kd, true); window.addEventListener('keyup', this._ku, true);   // captura: os atalhos do HA (E, C, A…) não disparam enquanto anda
+    window.addEventListener('blur', this._blur);   // trocou de janela com tecla apertada: solta tudo
   }
   disable() {
     if (!this.on) return; this.on = false;
@@ -5986,7 +5987,7 @@ export class Igreja3DCard extends HTMLElement {
     if (this._renderer) this._renderer.shadowMap.needsUpdate = true;
     if (this._orbit) this._orbit.dirty = true;
   }
-  // quality: 'alta' | 'media' | 'leve' | 'min' | 'auto' (padrão): min em aparelho muito fraco (renderizador por software, ≤ 2 núcleos ou ≤ 2 GB de RAM);
+  // quality: 'alta' | 'media' | 'leve' | 'min' | 'auto' (padrão): min em aparelho muito fraco (renderizador por software, ≤ 2 GB de RAM, ou ≤ 2 núcleos com ≤ 4 GB);
   // leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB; no PC, alta com GPU dedicada e media com vídeo integrado (Intel, AMD APU) ou desconhecido
   static _gpuInfo() {
     if (Igreja3DCard.__gpu !== undefined) return Igreja3DCard.__gpu;
@@ -6008,7 +6009,7 @@ export class Igreja3DCard extends HTMLElement {
   _qualityFor(q) {
     if (['alta', 'media', 'leve', 'min'].includes(q)) return q;
     try {
-      if (Igreja3DCard._gpuInfo().soft || (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2) return 'min';
+      if (Igreja3DCard._gpuInfo().soft || (navigator.deviceMemory || 8) <= 2 || ((navigator.hardwareConcurrency || 8) <= 2 && (navigator.deviceMemory || 8) <= 4)) return 'min';   // só núcleos não basta: navegadores com anti-fingerprint dizem 2
       const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       const small = typeof screen !== 'undefined' && Math.min(screen.width, screen.height) < 900;
       if ((coarse && small) || (navigator.deviceMemory || 8) <= 4) return 'leve';
@@ -7278,7 +7279,7 @@ export class Igreja3DCard extends HTMLElement {
       const rooms = b.rooms.map((r) => {
         const rects = r.rects || r.zones.flatMap((z) => ZONES[z].rects.map((q) => q.slice(0, 4)));
         const items = new Set(r.items || []);
-        if (!r.noauto) for (const q of pts) if (q.p.some(([x, z]) => near(rects, x, z, 0.3))) items.add(q.key);
+        if (!r.noauto) for (const q of pts) if (q.p.some(([x, z]) => near(rects, x, z, 0))) items.add(q.key);   // só o que está dentro do cômodo (com folga pegava o ar do vizinho)
         return { id: r.id, label: r.label, rects, zones: r.zones, frame: r.frame, items: [...items].filter((k) => ITEMS.some((i) => i.key === k)) };
       });
       const blk = { id, label: b.label, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))] };

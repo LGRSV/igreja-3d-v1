@@ -34,7 +34,7 @@ de frente para a porta principal:
 - Ganchos: `setWalk(true|false)`, `setWalkPose(x, z, yaw, pitch)` (yaw 0 olha para −z; + vira à esquerda) e `getWalkPose()`.
 
 **Renderização maximizada em qualquer dispositivo — até numa torradeira.**
-- Novo nível **`quality: min`** (automático em renderizador **por software** — SwiftShader/llvmpipe —, ≤ 2 núcleos ou ≤ 2 GB de
+- Novo nível **`quality: min`** (automático em renderizador **por software** — SwiftShader/llvmpipe —, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB de
   RAM): sem sombras, sem MSAA, pisos lisos (sem relevo nem AO), 5 luzes reais + telão, sem entorno; o resto da cena é o mesmo.
 - **Governador de qualidade** em todos os níveis (`alta · media · leve · min`), pelo **tempo real de quadro**: enquanto você
   gira/anda a resolução sobe e desce sozinha (com histerese: 2 janelas de 300 ms lentas para baixar, 4 rápidas para subir);
@@ -228,7 +228,7 @@ height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
 panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
 quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM;
-                      #   min em renderizador por software, ≤ 2 núcleos ou ≤ 2 GB) · alta · media · leve · min
+                      #   min em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB) · alta · media · leve · min
 entorno: auto         # ruas, vizinhos, árvores de rua e postes: auto (some só no leve) · true · false
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
@@ -406,7 +406,7 @@ não no HA nem no GitHub.
   SwiftShader (1400 × 900): quadro 1914 → 390 ms (~5×) e carregamento 10,3 → 4,9 s.
   Em GPU com pouca margem (< 512 vetores de uniform no fragment ou < 16 samplers) as luzes fracas
   das salas viram só brilho (fica com 16 luzes reais, 3 com sombra) e o cartão avisa no console.
-- **`quality: min`** (v1.4, automático em renderizador por software, ≤ 2 núcleos ou ≤ 2 GB): tudo do `leve` e mais
+- **`quality: min`** (v1.4, automático em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB): tudo do `leve` e mais
   **nenhuma sombra** (nem a do sol), sem MSAA, pisos sem relevo/AO e só **5 luzes reais + telão** (`MIN_LIGHTS`). Medido no
   SwiftShader (1400 × 900, mesma sessão do `leve`): quadro **~0,6× o do `leve`** (171–240 ms contra 295–374 ms; `alta` ~3.200,
   `media` ~550), mesmas 390 chamadas e 222 mil triângulos, carga com shaders em cache em ~2,7 s (`leve`: 12–15 s, pelos shaders de sombra).
