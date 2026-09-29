@@ -16,9 +16,6 @@ function roomFachada(ctx) {
     lampLens: std({ color: 0xf6f1e4, emissive: 0xffe6b8, emissiveIntensity: 0.55, roughness: 0.4 }),               // postes da rua (iluminação pública)
     bark: std({ color: 0x5a4a3a, roughness: 1 }),
     leafT1: std({ color: 0x55713a, roughness: 0.95 }), leafT2: std({ color: 0x415d2c, roughness: 0.95 }), leafT3: std({ color: 0x6f8a45, roughness: 0.95 }),
-    neigh: std({ color: 0x86837c, roughness: 0.92 }), neigh2: std({ color: 0xa9a399, roughness: 0.92 }), neighCap: std({ color: 0xb4afa5, roughness: 0.9 }),
-    neighRoof: std({ color: 0x6d7074, roughness: 0.7, metalness: 0.3 }),
-    muro: std({ color: 0xcdc7bb, roughness: 0.95 }), winN: std({ color: 0x2a3440, roughness: 0.15, metalness: 0.5 }),
     black: M.wallDark || std({ color: 0x2b2b2e, roughness: 0.85 }), cap: M.wallDarkCap || std({ color: 0x232326, roughness: 0.8 }),
     frame: M.frameDark || std({ color: 0x18181a, roughness: 0.45, metalness: 0.3 }),
     vase: std({ color: 0x141416, roughness: 0.32, metalness: 0.15 }),
@@ -277,23 +274,7 @@ function roomFachada(ctx) {
     out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
   }
 
-  // ---- Vizinhos (volumes simples, sem roubar a cena) e muros de divisa ----
-  const neighbor = (x0, x1, z0, z1, h, face) => {
-    out(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
-    out(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
-    out(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
-    const xf = face < 0 ? x0 - 0.012 : x1 + 0.012;                                          // janelas na face voltada para a igreja
-    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) out(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
-    // frente: vitrine + porta de enrolar
-    out(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
-    out(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
-  };
-  neighbor(-14, -4.2, 4, 46, 4.0, 1);
-  neighbor(24.4, 32, 10, 46, 3.0, -1);
-  for (const x of [-3.35, 23.45]) {
-    add(box(0.15, 2.2, 49.6, P.muro, x, 1.1, 24.8));
-    add(box(0.21, 0.05, 49.64, P.neighCap, x, 2.225, 24.8, { cast: false }));
-  }
+  // ---- Vizinhos e muros de divisa: retirados a pedido do cliente (v1.4.5) ----
 
   // ---- Totem de entrada (monólito preto com face ripada e o logo em relevo), na calçada à esquerda ----
   {

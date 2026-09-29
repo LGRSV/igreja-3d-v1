@@ -13,14 +13,14 @@
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .app { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
-  .toast { position: fixed; left: 50%; bottom: calc(var(--sky-top, 96px) + 10px); transform: translateX(-50%); background: rgba(10, 15, 30, .88); color: #e6edf7; border: 1px solid rgba(255, 196, 107, .28);
+  .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: rgba(10, 15, 30, .88); color: #e6edf7; border: 1px solid rgba(255, 196, 107, .28);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 30; text-align: center; }
   .toast.show { opacity: 1; }
   igreja3d-card { flex: 1; min-height: 0; --igreja3d-height: 100%; border-radius: 0; }
 
   /* Faixa de hora do dia (só na demo) — mesmo visual do HUD do cartão */
-  .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
+  .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
     width: min(540px, calc(100vw - 32px)); padding: 7px 8px 7px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time track btn"; align-items: center; column-gap: 10px;
     background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 16px; color: #e6edf7;
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
@@ -2009,12 +2009,6 @@ function roomTemploPlateia(ctx) {
     g.beginPath(); g.moveTo(W * 0.86, cy - 9 * k); g.lineTo(W * 0.95, cy); g.lineTo(W * 0.86, cy + 9 * k); g.closePath(); g.fill();
     g.fillRect(W * 0.8, cy - 3 * k, W * 0.07, 6 * k);
   });
-  const texEmerg = signTex(0.62, 0.17, (g, W, H) => {                  // placa vermelha "SAÍDA DE EMERGÊNCIA" (v7)
-    g.fillStyle = '#c21d1d'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `bold ${Math.round(H * 0.34)}px Arial, Helvetica, sans-serif`; g.fillText('SAÍDA DE', W / 2, H * 0.3);
-    g.font = `bold ${Math.round(H * 0.3)}px Arial, Helvetica, sans-serif`; g.fillText('EMERGÊNCIA', W / 2, H * 0.72);
-  });
   const texExt = signTex(0.2, 0.28, (g, W, H) => {                     // placa do extintor (vermelha, pictograma branco)
     g.fillStyle = '#c8201c'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#ffffff'; const k = W / 100;
@@ -2028,7 +2022,7 @@ function roomTemploPlateia(ctx) {
   });
   const signMat = (tex, glow) => new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.5,
     emissive: glow ? 0xffffff : 0x000000, emissiveMap: glow ? tex : null, emissiveIntensity: glow ? 0.55 : 0 });
-  const exitMat = signMat(texExit, true), emergMat = signMat(texEmerg, false), extSignMat = signMat(texExt, false);
+  const exitMat = signMat(texExit, true), extSignMat = signMat(texExt, false);
 
   // ---- fusão local: peças repetidas viram UMA malha por material ----
   const ONE = new THREE.Vector3(1, 1, 1), UP = new THREE.Vector3(0, 1, 0);
@@ -2189,7 +2183,7 @@ function roomTemploPlateia(ctx) {
   // 3) PAREDES — extintores com placa, placas de saída, folhas pretas de correr
   // =====================================================================================
   const bRed = batch(redExt), bPl = batch(blackPl), bDoor = batch(doorBlack), bChrome = batch(chrome, false);
-  const bExit = batch(exitMat, false), bEmerg = batch(emergMat, false), bExtSign = batch(extSignMat, false);
+  const bExit = batch(exitMat, false), bExtSign = batch(extSignMat, false);
   // parede: 'x0' (face x = 0,087, olha +x), 'x1' (face 15,963, olha −x), 'z0' (face 12,487, olha +z), 'z1' (face 43,913, olha −z)
   const WALL = { x0: [1, 0, Math.PI / 2], x1: [-1, 0, -Math.PI / 2], z0: [0, 1, 0], z1: [0, -1, Math.PI] };
   const onWall = (w, t, off) => (w === 'x0' ? [FX0 + off, t] : w === 'x1' ? [FX1 - off, t] : w === 'z0' ? [t, FZ0 + off] : [t, FZ1 - off]);
@@ -2204,7 +2198,7 @@ function roomTemploPlateia(ctx) {
     bar(bPl, [cx + nz * 0.07, 1.37, cz + nx * 0.07], [cx + nz * 0.1 + nx * 0.05, 0.95, cz + nx * 0.1 + nz * 0.05], 0.012, true);   // mangueira
     pl(bExtSign, 0.2, 0.28, sx, 1.85, sz, ry);                          // placa acima (v6_12, v7_01)
   };
-  // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, porta 34,2–35,1 + trilho até 36,0)
+  // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, sem portas desde a v1.4.5)
   extintor('x1', 17.3); extintor('x1', 29.3); extintor('x1', 36.7);
   // parede do hall (z = 44): dos dois lados do acesso de vidro x 10,6–13,1 (pilar em x 10,5)
   extintor('z1', 9.8); extintor('z1', 13.75);
@@ -2212,10 +2206,9 @@ function roomTemploPlateia(ctx) {
   extintor('z0', 9.8); extintor('z0', 4.6);
   extintor('x0', 15.0); extintor('x0', 42.0);
 
-  // Placas de SAÍDA verdes (acesas) sobre as saídas; placa vermelha sobre a porta preta de correr (cartão)
+  // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
-  { const [x, z] = onWall('x1', 34.65, 0.006); pl(bEmerg, 0.62, 0.17, x, 2.55, z, WALL.x1[2]); }
 
   // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à
   // esquerda, x 11,6–12,75) + trilho aparente acima do vão (termina antes do pilar de x = 16,05)
@@ -3099,7 +3092,6 @@ function roomAlaDireita(ctx) {
   const frond   = std({ color: 0x2f5a2a, roughness: 0.9 });
   const frond2  = std({ color: 0x3d6e34, roughness: 0.9 });
   const trunk   = std({ color: 0x5b4632, roughness: 1 });
-  const navyBand = std({ color: 0x0e2a4f, roughness: 0.85 });              // faixa azul-escura da entrada dos banheiros
   const ledG    = std({ color: 0x0f2a18, emissive: 0x22c55e, emissiveIntensity: 1.2 });
   const ledR    = std({ color: 0x3a0a0a, emissive: 0xff3030, emissiveIntensity: 1.2 });
   const ledB    = std({ color: 0x0a1a3a, emissive: 0x3aa0ff, emissiveIntensity: 1.2 });
@@ -3826,7 +3818,7 @@ function roomAlaDireita(ctx) {
   wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
   clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
   wetWall('z', 16.125, 1, 37.0, 39.08, M.marmorato);                                         // parede do templo (pilar em z 39,3)
-  wetWall('z', 16.125, 1, 39.52, 41.9, M.marmorato);                                          // porta do templo em z 42,0–43,6
+  wetWall('z', 16.125, 1, 39.52, 44.225, M.marmorato);                                        // parede do templo (sem porta desde a v1.4.5)
   wetWall('z', 17.025, -1, 37.0, 40.8, M.marmorato);                                         // faixa de circulação
   // bancada branca de quartzo com 3 cubas de apoio retangulares e espelhos com LED
   add(box(2.6, 0.04, 0.5, quartz, 18.66, 0.86, 43.96));
@@ -3854,26 +3846,6 @@ function roomAlaDireita(ctx) {
   add(box(0.08, 0.32, 0.1, black, 19.97, 1.32, 41.2));                                         // porta-copos
   add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
   emerg('x', 40.887, 17.55, 2.5, 1);
-  // entrada dos banheiros pelo templo (porta preta x = 16,05 · z 42,0–43,6): faixa azul-escura e placa com pictograma
-  {
-    const xf = 15.975 - 0.006;
-    add(box(0.012, 0.69, 2.02, navyBand, xf, 2.645, 42.8, nc));                                // verga
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 41.9, nc));                                  // ombreiras
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 43.7, nc));
-    const pg = texMat(1.1, (g, W, Hh) => {
-      g.fillStyle = '#1f5fae'; g.fillRect(0, 0, W, Hh);
-      g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(4, 4, W - 8, Hh - 8);
-      g.fillStyle = '#ffffff';
-      for (const [cx, fem] of [[W * 0.32, false], [W * 0.68, true]]) {
-        g.beginPath(); g.arc(cx, 20, 7, 0, PI * 2); g.fill();
-        if (fem) { g.beginPath(); g.moveTo(cx, 29); g.lineTo(cx + 13, 60); g.lineTo(cx - 13, 60); g.closePath(); g.fill(); g.fillRect(cx - 6, 60, 4, 14); g.fillRect(cx + 2, 60, 4, 14); }
-        else { g.fillRect(cx - 9, 29, 18, 28); g.fillRect(cx - 8, 56, 7, 18); g.fillRect(cx + 1, 56, 7, 18); }
-      }
-      text(g, 'TOILETTE', W / 2, 88, 12, '#ffffff');
-    });
-    add(box(0.01, 0.3, 0.33, pg, xf - 0.011, 2.66, 42.35, nc));
-  }
-
   // ---- WC FEMININO (x 16,05–20,1 · z 44,3–49,5) — sem antecâmara ----
   // Porta na parede z = 44,3 (x 16,25–17,15), vinda do hall dos banheiros → área de giro x 16,1–17,3 · z 44,3–45,3 livre.
   wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
@@ -5244,9 +5216,6 @@ function roomFachada(ctx) {
     lampLens: std({ color: 0xf6f1e4, emissive: 0xffe6b8, emissiveIntensity: 0.55, roughness: 0.4 }),               // postes da rua (iluminação pública)
     bark: std({ color: 0x5a4a3a, roughness: 1 }),
     leafT1: std({ color: 0x55713a, roughness: 0.95 }), leafT2: std({ color: 0x415d2c, roughness: 0.95 }), leafT3: std({ color: 0x6f8a45, roughness: 0.95 }),
-    neigh: std({ color: 0x86837c, roughness: 0.92 }), neigh2: std({ color: 0xa9a399, roughness: 0.92 }), neighCap: std({ color: 0xb4afa5, roughness: 0.9 }),
-    neighRoof: std({ color: 0x6d7074, roughness: 0.7, metalness: 0.3 }),
-    muro: std({ color: 0xcdc7bb, roughness: 0.95 }), winN: std({ color: 0x2a3440, roughness: 0.15, metalness: 0.5 }),
     black: M.wallDark || std({ color: 0x2b2b2e, roughness: 0.85 }), cap: M.wallDarkCap || std({ color: 0x232326, roughness: 0.8 }),
     frame: M.frameDark || std({ color: 0x18181a, roughness: 0.45, metalness: 0.3 }),
     vase: std({ color: 0x141416, roughness: 0.32, metalness: 0.15 }),
@@ -5505,23 +5474,7 @@ function roomFachada(ctx) {
     out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
   }
 
-  // ---- Vizinhos (volumes simples, sem roubar a cena) e muros de divisa ----
-  const neighbor = (x0, x1, z0, z1, h, face) => {
-    out(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
-    out(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
-    out(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
-    const xf = face < 0 ? x0 - 0.012 : x1 + 0.012;                                          // janelas na face voltada para a igreja
-    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) out(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
-    // frente: vitrine + porta de enrolar
-    out(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
-    out(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
-  };
-  neighbor(-14, -4.2, 4, 46, 4.0, 1);
-  neighbor(24.4, 32, 10, 46, 3.0, -1);
-  for (const x of [-3.35, 23.45]) {
-    add(box(0.15, 2.2, 49.6, P.muro, x, 1.1, 24.8));
-    add(box(0.21, 0.05, 49.64, P.neighCap, x, 2.225, 24.8, { cast: false }));
-  }
+  // ---- Vizinhos e muros de divisa: retirados a pedido do cliente (v1.4.5) ----
 
   // ---- Totem de entrada (monólito preto com face ripada e o logo em relevo), na calçada à esquerda ----
   {
@@ -6468,8 +6421,9 @@ export class Igreja3DCard extends HTMLElement {
     // Ponta z = 12,4 (parede comum de 3 m, porta de vidro para o backstage) e lateral direita x = 16,05 (mídia de frente para o palco)
     const TB = (side, a, b) => ({ clad: [{ side, mat: M.pretoFosco, a, b }] });
     wallX(12.4, 0, 16.05, [{ a: 12.9, b: 15.1, t: 'glass' }], TB(1, T / 2, 16.05 - T / 2));
-    wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' },
-      { a: 34.2, b: 35.1, t: 'door', style: 'black' }, { a: 42.0, b: 43.6, t: 'door', style: 'black2' }], TB(-1, 12.4 + T / 2, 44.0 - T / 2));
+    // (v1.4.5, pedido do cliente: a porta preta de correr z 34,2–35,1 e a preta dupla z 42,0–43,6 saíram — parede lisa)
+    wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' }],
+      TB(-1, 12.4 + T / 2, 44.0 - T / 2));
     // Mídia, voluntariado, depósito, WCs
     wallX(23.3, 16.05, 18.9, [{ a: 17.9, b: 18.8, t: 'door' }]);
     wallZ(18.9, 23.3, 28.0);
@@ -6478,10 +6432,10 @@ export class Igreja3DCard extends HTMLElement {
     wallZ(17.1, 33.9, 40.8, [{ a: 34.6, b: 35.4, t: 'door' }]);
     wallX(35.9, 17.1, 20.1);
     wallX(37.0, 17.1, 20.1);
-    wallX(40.8, 17.1, 20.1, [{ a: 18.2, b: 19.0, t: 'door' }]);
+    wallX(40.8, 17.1, 20.1, [{ a: 18.2, b: 19.0, t: 'open' }]);   // WC masc.: entrada sem porta (vão aberto)
     wallX(44.3, 16.05, 20.1, [{ a: 16.25, b: 17.15, t: 'door' }]);   // WC fem.: porta pelo hall dos banheiros
-    // Templo ↔ hall (porta preta de 2 folhas)
-    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'black2' }], TB(-1, T / 2, 16.05 - T / 2));
+    // Templo ↔ hall (porta de 2 folhas de vidro, caixilho preto)
+    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'glass2' }], TB(-1, T / 2, 16.05 - T / 2));
     // Sala da família / WCs
     wallZ(1.9, 44.0, 46.3);
     wallZ(4.0, 44.0, 49.65, [{ a: 44.4, b: 45.3, t: 'door' }, { a: 46.6, b: 47.5, t: 'door' }]);
@@ -6551,7 +6505,7 @@ export class Igreja3DCard extends HTMLElement {
         // porta interna (vídeos): folha lisa de cedro com veio, batente + guarnição de madeira nas duas faces, alavanca
         // cromada dos dois lados. style 'black': porta preta de correr (saídas do templo) com trilho aparente e puxador preto.
         seg(op.a, op.b, 2.1, h);
-        const black = op.style === 'black' || op.style === 'black2', df = black ? M.frameDark : (o.doorFrame || M.doorFrame);
+        const glass2 = op.style === 'glass2', black = op.style === 'black' || op.style === 'black2' || glass2, df = black ? M.frameDark : (o.doorFrame || M.doorFrame);
         const w = op.b - op.a, mid = (op.a + op.b) / 2;
         put(0.04, 2.1, t + 0.02, df, op.a + 0.02, 1.05); put(0.04, 2.1, t + 0.02, df, op.b - 0.02, 1.05); put(w, 0.04, t + 0.02, df, mid, 2.08);
         for (const sd of [-1, 1]) {
@@ -6560,8 +6514,9 @@ export class Igreja3DCard extends HTMLElement {
           put(0.07, 2.17, 0.016, df, op.b + 0.025, 1.085, { cast: false }, off);
           put(w + 0.12, 0.07, 0.016, df, mid, 2.135, { cast: false }, off);
         }
-        put(w - 0.08, 2.06, 0.04, black ? M.pretoFosco : M.door, mid, 1.03);
-        if (op.style === 'black2') {
+        if (glass2) put(w - 0.08, 2.06, 0.02, M.glass, mid, 1.03, { cast: false, receive: false });   // folhas de vidro (transparentes)
+        else put(w - 0.08, 2.06, 0.04, black ? M.pretoFosco : M.door, mid, 1.03);
+        if (op.style === 'black2' || glass2) {
           // 2 folhas: junta central + puxadores verticais pretos dos dois lados
           put(0.012, 2.06, 0.05, M.frameDark, mid, 1.03, { cast: false });
           for (const s2 of [-1, 1]) for (const dx of [-0.09, 0.09]) put(0.025, 0.6, 0.025, M.frameDark, mid + dx, 1.05, { cast: false }, s2 * 0.045);
@@ -8379,22 +8334,18 @@ setInterval(() => { if (live) { hora.value = nowMin(); } render(); }, 15000);
 setTimeout(render, 600); setTimeout(render, 2500);
 render();
 
-// Posiciona a faixa logo acima do que estiver no rodapé do cartão (painel, botão "Painel", clima, joystick),
-// sem cobrir nada do HUD; recalcula quando o layout muda.
+// Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas);
+// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima). Recalcula quando o layout muda.
 function place() {
   const root = card.shadowRoot; if (!root) return;
-  const W = window.innerWidth, H = window.innerHeight;
-  const sw = sky.getBoundingClientRect(); const left = sw.left, right = sw.right;
-  let top = H - 10;
-  for (const sel of ['.dock', '.reopen', '.weather', '.joy', '.walkhint']) {
-    const el = root.querySelector(sel); if (!el || el.hidden) continue;
-    const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) continue;
-    const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2 || r.bottom < H * 0.4) continue;
-    if (r.right > left - 6 && r.left < right + 6) top = Math.min(top, r.top);
-  }
-  const b = Math.max(10, Math.round(H - top + 8));
-  sky.style.bottom = b + 'px';
-  document.documentElement.style.setProperty('--sky-top', (b + sw.height) + 'px');
+  const hud = root.querySelector('.hud.top'); if (!hud) return;
+  const W = window.innerWidth, bw = sky.getBoundingClientRect().width;
+  const title = hud.querySelector('.title'), btns = hud.querySelector('.btns');
+  const tr = title && title.getBoundingClientRect(), br = btns && btns.getBoundingClientRect();
+  let top, cx = W / 2;
+  if (tr && br && Math.abs(tr.top - br.top) < 8 && br.left - tr.right >= bw + 24) { top = tr.top; cx = (tr.right + br.left) / 2; }
+  else top = hud.getBoundingClientRect().bottom + 4;
+  sky.style.top = Math.round(top) + 'px'; sky.style.left = Math.round(cx) + 'px';
 }
 setInterval(place, 400); addEventListener('resize', place); setTimeout(place, 300);
 place();

@@ -63,7 +63,6 @@ function roomAlaDireita(ctx) {
   const frond   = std({ color: 0x2f5a2a, roughness: 0.9 });
   const frond2  = std({ color: 0x3d6e34, roughness: 0.9 });
   const trunk   = std({ color: 0x5b4632, roughness: 1 });
-  const navyBand = std({ color: 0x0e2a4f, roughness: 0.85 });              // faixa azul-escura da entrada dos banheiros
   const ledG    = std({ color: 0x0f2a18, emissive: 0x22c55e, emissiveIntensity: 1.2 });
   const ledR    = std({ color: 0x3a0a0a, emissive: 0xff3030, emissiveIntensity: 1.2 });
   const ledB    = std({ color: 0x0a1a3a, emissive: 0x3aa0ff, emissiveIntensity: 1.2 });
@@ -790,7 +789,7 @@ function roomAlaDireita(ctx) {
   wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
   clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
   wetWall('z', 16.125, 1, 37.0, 39.08, M.marmorato);                                         // parede do templo (pilar em z 39,3)
-  wetWall('z', 16.125, 1, 39.52, 41.9, M.marmorato);                                          // porta do templo em z 42,0–43,6
+  wetWall('z', 16.125, 1, 39.52, 44.225, M.marmorato);                                        // parede do templo (sem porta desde a v1.4.5)
   wetWall('z', 17.025, -1, 37.0, 40.8, M.marmorato);                                         // faixa de circulação
   // bancada branca de quartzo com 3 cubas de apoio retangulares e espelhos com LED
   add(box(2.6, 0.04, 0.5, quartz, 18.66, 0.86, 43.96));
@@ -818,26 +817,6 @@ function roomAlaDireita(ctx) {
   add(box(0.08, 0.32, 0.1, black, 19.97, 1.32, 41.2));                                         // porta-copos
   add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
   emerg('x', 40.887, 17.55, 2.5, 1);
-  // entrada dos banheiros pelo templo (porta preta x = 16,05 · z 42,0–43,6): faixa azul-escura e placa com pictograma
-  {
-    const xf = 15.975 - 0.006;
-    add(box(0.012, 0.69, 2.02, navyBand, xf, 2.645, 42.8, nc));                                // verga
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 41.9, nc));                                  // ombreiras
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 43.7, nc));
-    const pg = texMat(1.1, (g, W, Hh) => {
-      g.fillStyle = '#1f5fae'; g.fillRect(0, 0, W, Hh);
-      g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(4, 4, W - 8, Hh - 8);
-      g.fillStyle = '#ffffff';
-      for (const [cx, fem] of [[W * 0.32, false], [W * 0.68, true]]) {
-        g.beginPath(); g.arc(cx, 20, 7, 0, PI * 2); g.fill();
-        if (fem) { g.beginPath(); g.moveTo(cx, 29); g.lineTo(cx + 13, 60); g.lineTo(cx - 13, 60); g.closePath(); g.fill(); g.fillRect(cx - 6, 60, 4, 14); g.fillRect(cx + 2, 60, 4, 14); }
-        else { g.fillRect(cx - 9, 29, 18, 28); g.fillRect(cx - 8, 56, 7, 18); g.fillRect(cx + 1, 56, 7, 18); }
-      }
-      text(g, 'TOILETTE', W / 2, 88, 12, '#ffffff');
-    });
-    add(box(0.01, 0.3, 0.33, pg, xf - 0.011, 2.66, 42.35, nc));
-  }
-
   // ---- WC FEMININO (x 16,05–20,1 · z 44,3–49,5) — sem antecâmara ----
   // Porta na parede z = 44,3 (x 16,25–17,15), vinda do hall dos banheiros → área de giro x 16,1–17,3 · z 44,3–45,3 livre.
   wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
