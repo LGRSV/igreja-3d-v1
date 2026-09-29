@@ -35,12 +35,12 @@ de frente para a porta principal:
 
 **Renderização maximizada em qualquer dispositivo — até numa torradeira.**
 - Novo nível **`quality: min`** (automático em renderizador **por software** — SwiftShader/llvmpipe —, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB de
-  RAM): sem sombras, sem MSAA, pisos lisos (sem relevo nem AO), 5 luzes reais + telão, sem entorno; o resto da cena é o mesmo.
+  RAM): sem sombras, pisos lisos (sem relevo nem AO), 5 luzes reais + telão, sem entorno; o resto da cena é o mesmo.
 - **Governador de qualidade** em todos os níveis (`alta · media · leve · min`), pelo **tempo real de quadro**: enquanto você
   gira/anda a resolução sobe e desce sozinha (com histerese: 2 janelas de 300 ms lentas para baixar, 4 rápidas para subir);
-  ao parar sai **um** quadro nítido — resolução cheia ou até 1,25× quando sobra fôlego (nunca acima de 3× o DPR nem de 4 Mpx) —
-  cujo custo é medido no quadro seguinte (sem desenhar nada só para medir): se passar de 250 ms a próxima parada usa uma
-  resolução menor, para a página não travar. Parado continua **0 redesenhos**.
+  ao parar sai **um** quadro nítido — sempre na resolução cheia da tela, ou acima dela quando sobra fôlego (nunca acima de 3× o
+  DPR nem de 4 Mpx) —, com o custo medido no quadro seguinte; o que se adapta é só o movimento (v1.4.1: antes a parada também
+  podia cair abaixo da resolução cheia e a imagem ficava borrada). Parado continua **0 redesenhos**.
 - Só no **`auto`**, se nem a resolução mínima aguenta (< 15 quadros/s por ~1,5 s), o governador desce uma escada de sentido
   único: 1) some o entorno e a sombra do sol diminui; 2) menos luzes reais; 3) resolução parada/mínima menores. Com
   `quality` manual (`alta|media|leve|min`) nada disso acontece — vale o que você escolheu (só a resolução se adapta).
@@ -396,7 +396,7 @@ não no HA nem no GitHub.
 - **`quality: leve`** (automático em celular/tablet, ex. Galaxy Tab S6 Lite): só **9 luzes reais** —
   palco 2, plateia 2, hall 1, fachada 1, estacionamento 2 e o telão (tabela `LITE_LIGHTS` no topo do
   arquivo) — mais fortes e com alcance maior para compensar; as demais viram brilho, **nenhuma lâmpada
-  projeta sombra** (só o sol, 1024²) e o pixel ratio fica em ≤ 1,25 (orçamento de 1 Mpx). O visual é
+  projeta sombra** (só o sol, 1024²); parado a imagem sai na resolução cheia da tela (até 2 Mpx). O visual é
   praticamente o mesmo; as salas pequenas ficam um pouco mais escuras à noite. Medido no SwiftShader:
   quadro ~1,7× mais rápido e atualização de sombras de 635 ms → 5 ms.
   Desde a v1.2.4 o leve também: fica **sem o reflexo do céu** (environment map, ~⅓ do custo de cada quadro),
@@ -407,7 +407,7 @@ não no HA nem no GitHub.
   Em GPU com pouca margem (< 512 vetores de uniform no fragment ou < 16 samplers) as luzes fracas
   das salas viram só brilho (fica com 16 luzes reais, 3 com sombra) e o cartão avisa no console.
 - **`quality: min`** (v1.4, automático em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB): tudo do `leve` e mais
-  **nenhuma sombra** (nem a do sol), sem MSAA, pisos sem relevo/AO e só **5 luzes reais + telão** (`MIN_LIGHTS`). Medido no
+  **nenhuma sombra** (nem a do sol), pisos sem relevo/AO e só **5 luzes reais + telão** (`MIN_LIGHTS`). Medido no
   SwiftShader (1400 × 900, mesma sessão do `leve`): quadro **~0,6× o do `leve`** (171–240 ms contra 295–374 ms; `alta` ~3.200,
   `media` ~550), mesmas 390 chamadas e 222 mil triângulos, carga com shaders em cache em ~2,7 s (`leve`: 12–15 s, pelos shaders de sombra).
   Como o SwiftShader é software, o `auto` cai em `min` nele.
@@ -432,7 +432,8 @@ não no HA nem no GitHub.
   (map + bump + ao + ambiente + 9 sombras).
 - Sombras só recalculam quando um estado muda; nada é renderizado parado (só quando a câmera se
   move, um estado muda ou o telão está tocando, a 30 fps).
-- Pixel ratio adaptativo (orçamento de ~1,8 Mpx por quadro; 2,4 Mpx em `alta` com GPU dedicada; 1 Mpx em `leve`; 0,6 Mpx em `min`).
+- Pixel ratio adaptativo (v1.4.1): parado, a imagem sai sempre na **resolução cheia** da tela (teto de 2,8 Mpx em `alta`, 3,5 com GPU
+  dedicada; 2,4 em `media`; 2,0 em `leve`; 1,4 em `min`), com MSAA em toda GPU de verdade; só o movimento desenha uma fração disso.
 - Parado, a cena não é redesenhada; com o telão tocando, a animação roda a no máximo ~8 quadros/s e para quando a aba ou o cartão saem da tela.
 - Ligar/desligar luz não recompila shaders (todas as luzes ficam ativas com intensidade zero).
 - No disco o cartão tem ~485 KB (a demo `index.html`, com o cartão embutido, ~497 KB).
