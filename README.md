@@ -9,6 +9,26 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.4.3 — cada ar liga na sua vez, com a câmera acompanhando
+
+Voltou (e ficou melhor) a animação dos ares: **cada aparelho tem a sua própria sequência de ligar**, e ela vale em todas as vistas.
+- **Por unidade:** o LED acende, a aleta abre (~0,6 s) e o fluxo de ar **nasce da aleta e cresce** até o comprimento cheio
+  (~1 s); no piso o leque de ar também cresce. Depois o fluxo segue andando. Ao desligar, o fluxo recolhe e a aleta fecha.
+  A cor continua seguindo o modo (azul-claro frio, laranja quente, neutro seco/ventilar).
+- **Templo (5 splits):** as unidades ligam **em sequência**, uma a cada ~2,5 s, ao longo do templo (de z menor para maior).
+  A câmera faz um **tour**: voa até cada split (~2,5 s parada em cada, com o aparelho e o fluxo nascendo) e termina num
+  enquadramento da plateia inteira com os cinco ares ligados. **Arrastar, girar ou aproximar interrompe o tour** — as
+  unidades que faltam continuam ligando, só a câmera para. Os outros ares (1 unidade) mantêm o voo até o aparelho.
+- **Vale sempre** (clique no cartão, painel, Home Assistant ou automação; nunca na sincronização inicial da carga):
+  - *Órbita normal:* o tour/voo acima.
+  - *Vista de cima:* a planta **navega até o cômodo do ar** (no templo, a Plateia) e não sai da Vista de cima; o selo do modo
+    **pulsa** na hora em que cada unidade liga e o leque no piso cresce, mais saturado e pulsando para ler de cima.
+  - *Pessoa:* a pessoa não é teleportada; a sequência toca normalmente (dentro do templo ela vê cada unidade ligando).
+- **Duração e custo:** a animação anda durante a sequência e por pelo menos 8 s depois da última unidade ligar (e enquanto a
+  câmera estiver focada, como antes); depois o fluxo fica visível e parado — **0 redesenhos**. Respeita `prefers-reduced-motion`
+  (sem tour: corte direto; as unidades acendem sem animação), aba oculta e cartão fora da tela. Sem luz nova e sem recompilar
+  shader: o tempo de cada unidade vai num atributo de vértice + um uniform por entidade. Teste: `tools/air_test.mjs`.
+
 ## Novidades da v1.4 — Vista de cima navegável, Visão de pessoa e qualidade adaptativa
 
 **Vista de cima navegável (blocos → cômodos → aparelhos).** O botão *Vista de cima* deixou de ser só uma foto da planta:
@@ -56,8 +76,9 @@ de frente para a porta principal:
   segundos depois de ligar ou enquanto a câmera está focada no ar, e só com o aparelho na tela; depois fica parado e
   visível. Com `prefers-reduced-motion` ou a aba oculta ele não anda, e sem ar ligado o cartão não redesenha nada.
 - **A câmera voa até o ar que ligou**, venha o comando do cartão, do Home Assistant ou de uma automação: enquadra o
-  aparelho e o fluxo (no templo, a parede com os 3 splits). Não voa na carga inicial; com vários ao mesmo tempo, vai
-  para o último. Girar/aproximar solta o foco; **Recentrar** volta à vista padrão. Na demo, clicar num ar mostra o voo.
+  aparelho e o fluxo; no templo faz o **tour pelos 5 splits** (v1.4.3) e fecha na plateia. Não voa na carga inicial; com
+  vários ao mesmo tempo, vale o cômodo com mais unidades. Girar/aproximar interrompe o tour/solta o foco; **Recentrar**
+  volta à vista padrão. Na Vista de cima navega até o cômodo; no modo Pessoa só a animação. Na demo, clicar num ar mostra tudo.
 - **Botão "Vista de cima"**: planta vista de cima (quase a prumo), com o prédio inteiro, sem cobertura/fachada, todos
   os cômodos rotulados, as luzes acesas e um selo em cada ar ligado (❄ frio, chama quente, gota seco, hélice
   ventilar) — para conferir automações e animações de uma vez. **Recentrar** volta à vista normal. No celular os
@@ -276,7 +297,8 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
 - **Telão, ares e sensores**: clique abre o *more-info* da entidade (o painel padrão do HA).
 - **Ares (`climate`)**: um por cômodo que tem ar nos vídeos — templo (5 splits), mídia, voluntariado — e a pastoral.
   Ligado, a aleta abre e sai o fluxo de ar (cor pelo modo); o LED mostra o modo. Quando um ar liga (pelo cartão, pelo
-  HA ou por automação, fora da carga inicial) a **câmera voa até ele**; *Recentrar* volta.
+  HA ou por automação, fora da carga inicial) cada unidade **liga na sua vez** (LED, aleta, fluxo nascendo; no templo uma a cada
+  ~2,5 s) e a **câmera acompanha** (tour no templo, voo nos demais, navegação na Vista de cima); *Recentrar* volta.
 - **Vista de cima**: o botão mostra a planta de cima, sem cobertura, com todos os cômodos rotulados e um selo em cada
   ar ligado (❄ frio · chama quente · gota seco · hélice ventilar · A auto). Dela dá para **descer por níveis** — clique num
   bloco, depois num cômodo, e ligue/desligue os aparelhos dele; **‹ Voltar** (ou Esc) sobe um nível. *Recentrar* volta à vista normal.

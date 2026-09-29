@@ -47,7 +47,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.2';
+export const VERSION = '1.4.3';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -5913,12 +5913,12 @@ export class Igreja3DCard extends HTMLElement {
     this._labelsBtn.addEventListener('click', () => this._setLabels(!this._labelsOn));
     btns.appendChild(this._labelsBtn);
     const reset = document.createElement('button'); reset.className = 'panel btn'; reset.textContent = 'Recentrar';
-    reset.addEventListener('click', () => { this._airFocus = null; this._setTopView(false); });
+    reset.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(false); });
     btns.appendChild(reset);
     this._topBtn = document.createElement('button'); this._topBtn.className = 'panel btn'; this._topBtn.textContent = 'Vista de cima';
     this._topBtn.title = 'Planta vista de cima, sem cobertura: confira luzes, ares e automações de todos os cômodos';
     this._topBtn.setAttribute('aria-pressed', 'false');
-    this._topBtn.addEventListener('click', () => { this._airFocus = null; this._setTopView(!this._topView); });
+    this._topBtn.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(!this._topView); });
     btns.appendChild(this._topBtn);
     this._walkBtn = document.createElement('button'); this._walkBtn.className = 'panel btn'; this._walkBtn.textContent = 'Pessoa';
     this._walkBtn.title = 'Ande pela igreja na altura dos olhos: setas/WASD ou joystick; arraste para olhar';
@@ -6653,14 +6653,20 @@ export class Igreja3DCard extends HTMLElement {
     // sz = [comprimento, altura, profundidade] (templo: unidades grandes piso-teto instaladas no alto, como nos vídeos)
     // Fluxo: fitas translúcidas saindo da aleta (um ShaderMaterial por entidade, todas as unidades numa malha só);
     // a cor segue o modo e o desenho só anda por alguns segundos depois de ligar (ver _airTick).
+    // Cada unidade tem o seu crescimento uG[i] (0 → 1, calculado em _airStep): o fluxo "nasce" da aleta e avança até o comprimento
+    // cheio; o vértice guarda o índice da unidade (aU). Uma malha e um shader por entidade — nada recompila a cada vez.
     const airMat = () => new THREE.ShaderMaterial({
-      uniforms: { uC: { value: new THREE.Color(0x9fdcff) }, uI: { value: 0 }, uT: { value: 0 } },
-      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-      fragmentShader: 'uniform vec3 uC; uniform float uI; uniform float uT; varying vec2 vUv; void main(){ float k = floor(vUv.x); float u = vUv.x - k; float v = vUv.y;'
+      uniforms: { uC: { value: new THREE.Color(0x9fdcff) }, uI: { value: 0 }, uT: { value: 0 }, uTop: { value: 0 }, uG: { value: new Float32Array(8) } },
+      vertexShader: 'attribute float aU; uniform float uG[8]; varying vec2 vUv; varying float vG; void main(){ vUv = uv; vG = uG[int(aU + 0.5)]; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 uC; uniform float uI; uniform float uT; uniform float uTop; varying vec2 vUv; varying float vG; void main(){ float k = floor(vUv.x); float u = vUv.x - k; float v = vUv.y;'
+        + ' bool fl = k > 2.5; float g = fl ? clamp((vG - 0.3) / 0.7, 0.0, 1.0) : vG; float vf = g * 1.3; float reveal = 1.0 - smoothstep(vf - 0.22, vf, v);'
         + ' float edge = smoothstep(0.0, 0.22, u) * smoothstep(1.0, 0.78, u); float fade = smoothstep(0.0, 0.06, v) * pow(1.0 - v, 1.5);'
         + ' float s = 0.5 + 0.5 * sin(v * 21.0 - uT * 4.5 + k * 2.1 + u * 4.0); float fil = 0.72 + 0.28 * sin(u * 37.0 + k * 3.7 + v * 5.0);'
-        + ' float a = k > 2.5 ? smoothstep(0.0, 0.12, v) * (1.0 - v) * (0.6 + 0.4 * s) * 1.1 : fade * (0.3 + 0.7 * s * s) * fil;'   // piso: leque mais cheio
-        + ' gl_FragColor = vec4(uC, uI * edge * a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
+        + ' float a = fl ? smoothstep(0.0, 0.12, v) * (1.0 - v) * (0.6 + 0.4 * s) * 1.1 : fade * (0.3 + 0.7 * s * s) * fil;'   // piso: leque mais cheio
+        + ' vec3 col = uC; if (fl) { a *= 1.0 + uTop * (0.9 + 0.3 * sin(uT * 5.0)); col = mix(uC, pow(uC, vec3(1.8)) * 1.15, uTop * 0.75); }'   // Vista de cima: o leque no piso é o que se enxerga → mais forte, mais saturado e pulsando
+        + ' float front = exp(-pow((v - vf + 0.09) / 0.1, 2.0)) * (1.0 - g);'   // ponta que avança brilha enquanto nasce
+        + ' a = (a * (0.75 + 0.25 * (1.0 - g)) + front * 0.45 * edge) * reveal * smoothstep(0.0, 0.1, g);'
+        + ' gl_FragColor = vec4(col, uI * edge * clamp(a, 0.0, 1.0));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
       transparent: true, depthWrite: false, side: THREE.DoubleSide });
     const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v = new THREE.Vector3(), _one = new THREE.Vector3(1, 1, 1), _up = new THREE.Vector3(0, 1, 0);
     const split = (key, x, y, z, axis, face, sz = [0.9, 0.3, 0.22]) => {
@@ -6669,15 +6675,15 @@ export class Igreja3DCard extends HTMLElement {
       click(axis === 'z' ? box(D, Hs, Ls, M.white, x, y, z) : box(Ls, Hs, D, M.white, x, y, z), key);
       const fo = face * (D / 2 + 0.006);
       scene.add(axis === 'z' ? box(0.012, 0.05, Ls - 0.1, M.steel, x + fo, y - Hs / 2 + 0.04, z, { cast: false }) : box(Ls - 0.1, 0.05, 0.012, M.steel, x, y - Hs / 2 + 0.04, z + fo, { cast: false }));
-      // um material de LED por entidade (todos os splits do templo mudam juntos) → fundem num draw call
-      const lm = rt.ledMats[0] || new THREE.MeshStandardMaterial({ color: 0x0a2a3a, emissive: 0x67d3ff, emissiveIntensity: 0 }); lm.userData.noShare = true;
+      // um material de LED por unidade (cada split acende na sua vez: ver _airStep)
+      const lm = new THREE.MeshStandardMaterial({ color: 0x0a2a3a, emissive: 0x67d3ff, emissiveIntensity: 0 }); lm.userData.noShare = true;
       const led = new THREE.Mesh(axis === 'z' ? new THREE.BoxGeometry(0.012, 0.03, 0.2) : new THREE.BoxGeometry(0.2, 0.03, 0.012), lm);
       if (axis === 'z') led.position.set(x + fo, y + Hs / 2 - 0.09, z + (Ls / 2 - 0.2) * face); else led.position.set(x + Ls / 2 - 0.2, y + Hs / 2 - 0.09, z + fo);
-      led.castShadow = false; scene.add(led); if (!rt.ledMats.includes(lm)) rt.ledMats.push(lm);
+      led.castShadow = false; scene.add(led); rt.ledMats.push(lm);
       // referencial local da unidade: x ao longo do aparelho, z para fora (lado da sala), y para cima
       const ry = axis === 'x' ? (face > 0 ? 0 : Math.PI) : (face > 0 ? Math.PI / 2 : -Math.PI / 2);
       const out = new THREE.Vector3(Math.sin(ry), 0, Math.cos(ry));
-      (rt.airUnits = rt.airUnits || []).push({ p: new THREE.Vector3(x, y, z), out });
+      (rt.airUnits = rt.airUnits || []).push({ p: new THREE.Vector3(x, y, z), out, big: Ls > 1, f: 0, g: 0, led: 0, on: false, ign: 0 });   // f aleta · g fluxo · led: 0..1
       // aleta: fecha rente ao fundo do aparelho e abre ~50° para fora/baixo com o nível do ar (grupo fora do merge)
       const unit = new THREE.Group(); unit.position.set(x, y, z); unit.rotation.y = ry; unit.userData.keep = true;
       const pivot = new THREE.Group(); pivot.position.set(0, -Hs / 2 - 0.008, D / 2 - 0.07); unit.add(pivot);
@@ -6688,14 +6694,14 @@ export class Igreja3DCard extends HTMLElement {
       const sp = new THREE.Sprite(bm); sp.position.set(x, 3.4, z).addScaledVector(out, 0.9); sp.scale.set(0.042, 0.042, 1); sp.renderOrder = 9; sp.visible = false;
       scene.add(sp); (rt.badges = rt.badges || []).push(sp);
       // fitas do fluxo (3 camadas, curvando para baixo como ar frio); uv.x = camada + posição na largura, uv.y = 0 na aleta → 1 na ponta
-      const A = rt.air = rt.air || { pos: [], uv: [], idx: [] }, sc = Ls > 1 ? 1.45 : 1, NV = 14;   // templo: unidades grandes, jato maior
+      const ui = rt.airUnits.length - 1, A = rt.air = rt.air || { pos: [], uv: [], au: [], idx: [] }, sc = Ls > 1 ? 1.45 : 1, NV = 14;   // templo: unidades grandes, jato maior
       _m4.compose(_v.set(x, y, z), _q.setFromAxisAngle(_up, ry), _one);
       for (let k = 0; k < 3; k++) {
         const W = Ls - 0.18, len = (1.05 + 0.3 * k) * sc, a0 = 0.55 + 0.2 * k, a1 = 1.2 + 0.12 * k, base = A.pos.length / 3;
         let py = -Hs / 2 - 0.02 - 0.015 * k, pz = D / 2 - 0.04 + 0.02 * k;
         for (let j = 0; j <= NV; j++) {
           const v = j / NV, w = W * (1 + 0.4 * v) / 2;
-          for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, py, pz).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + k, v); }
+          for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, py, pz).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + k, v); A.au.push(ui); }
           const ang = a0 + (a1 - a0) * v * v, st = len / NV; py -= Math.sin(ang) * st; pz += Math.cos(ang) * st;
         }
         for (let j = 0; j < NV; j++) { const i = base + j * 2; A.idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); }
@@ -6704,7 +6710,7 @@ export class Igreja3DCard extends HTMLElement {
       { const R = 1.5 * sc, W0 = Ls * 0.9, W1 = Ls * 1.9, z0 = D / 2 + 0.25, base = A.pos.length / 3;
         for (let j = 0; j <= 4; j++) {
           const v = j / 4, w = (W0 + (W1 - W0) * v) / 2;
-          for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, 0.03 - y, z0 + R * v).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + 3, v); }
+          for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, 0.03 - y, z0 + R * v).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + 3, v); A.au.push(ui); }
         }
         for (let j = 0; j < 4; j++) { const i = base + j * 2; A.idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); }
       }
@@ -6723,10 +6729,12 @@ export class Igreja3DCard extends HTMLElement {
     for (const key of AC_KEYS) {
       const rt = this._items.get(key); if (!rt || !rt.air) continue;
       const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(rt.air.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(rt.air.uv, 2)); g.setIndex(rt.air.idx);
+      g.setAttribute('position', new THREE.Float32BufferAttribute(rt.air.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(rt.air.uv, 2)); g.setAttribute('aU', new THREE.Float32BufferAttribute(rt.air.au, 1)); g.setIndex(rt.air.idx);
       g.computeBoundingSphere();
       const m = new THREE.Mesh(g, airMat()); m.userData.noMerge = true; m.renderOrder = 5; m.castShadow = m.receiveShadow = false; m.visible = false; m.frustumCulled = true;
       scene.add(m); rt.airMesh = m; rt.air = null;
+      // ordem em que as unidades ligam (e em que a câmera as visita): ao longo do cômodo, de z menor para maior
+      rt.airOrder = rt.airUnits.map((_, i) => i).sort((a, b) => (rt.airUnits[a].p.z - rt.airUnits[b].p.z) || (rt.airUnits[a].p.x - rt.airUnits[b].p.x));
     }
 
     // Decoração por ambiente (funções room*, no topo do arquivo)
@@ -7035,16 +7043,14 @@ export class Igreja3DCard extends HTMLElement {
     if (sig === this._lastSig) return;
     this._lastSig = sig;
     const seeded = !!this._activitySeeded;
-    let fly = null;
+    const turnedOn = [];
     for (const it of ITEMS) {
       const s = hass.states[this.entity(it.key)];
       const prev = this._state[it.key];
       const next = s ? { state: s.state, attrs: s.attributes || {} } : { state: 'unavailable', attrs: {} };
-      // ar ligou (off → ligado) depois da carga — pelo cartão, pelo HA ou por automação: fluxo anima e a câmera voa até ele
-      // (na sincronização inicial não; vários ao mesmo tempo: vale o último)
-      if (seeded && it.kind === 'climate' && prev && !prev.on && !prev.unavailable && !['off', 'unavailable', 'unknown'].includes(next.state)) {
-        fly = it.key; const rt = this._items.get(it.key); if (rt) rt.airUntil = performance.now() + 8000;
-      }
+      // ar ligou (off → ligado) depois da carga — pelo cartão, pelo HA ou por automação: cada unidade liga na sua vez (_airStart)
+      // e a câmera acompanha (na sincronização inicial não; vários ao mesmo tempo: o cômodo com mais unidades)
+      if (seeded && it.kind === 'climate' && prev && !prev.on && !prev.unavailable && !['off', 'unavailable', 'unknown'].includes(next.state)) turnedOn.push(it.key);
       // a temperatura muda o tempo todo: não entra no histórico
       if (seeded && prev && prev.state !== next.state && next.state !== 'unavailable' && it.key !== 'temperatura') this._pushActivity(it.key, next.state, Date.now());
       this._setItemState(it.key, next);
@@ -7072,7 +7078,7 @@ export class Igreja3DCard extends HTMLElement {
     this._timeAt = 0;
     this._applyMode();
     this._refreshSub();
-    if (fly && !this._topView) this._flyToAir(fly);   // na Vista de cima o selo do ar já mostra o estado: a câmera fica na planta
+    if (turnedOn.length) this._airStart(turnedOn);
   }
 
   _setItemState(key, { state, attrs }) {
@@ -7108,7 +7114,7 @@ export class Igreja3DCard extends HTMLElement {
       rt.color.copy(c);
       for (const f of rt.fixtures || []) if (f.material && f.material.emissive) f.material.emissive.copy(c);
     }
-    if (it.kind === 'climate') { rt.hvac = state; rt.on = on; }
+    if (it.kind === 'climate') { rt.hvac = state; rt.on = on; if (!this._activitySeeded) rt.snap = true; }   // na carga inicial as unidades já estão como o HA diz, sem animar
     this._state[key].text = val;
     this._needShadow = true;
   }
@@ -7436,28 +7442,39 @@ export class Igreja3DCard extends HTMLElement {
     } else { g.font = 'bold 32px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('A', 32, 34); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; cache[m] = t; return t;
   }
-  // Voo suave até o(s) split(s) do cômodo — no templo, a parede com os splits —, enquadrando aparelho e fluxo.
-  // A câmera fica acima das paredes de 3 m, de frente para o aparelho e um pouco de lado.
+  // Enquadramento (pos, target) de um ou mais splits: a câmera fica acima das paredes de 3 m, de frente para o aparelho e um pouco de lado.
+  // all = quadro final de vários splits (templo: a plateia inteira com os ares ligados, vista de frente para a parede mais cheia).
+  _airShot(units, all = false) {
+    const walls = new Map();
+    for (const u of units) { const k = u.out.x.toFixed(2) + ',' + u.out.z.toFixed(2); if (!walls.has(k)) walls.set(k, []); walls.get(k).push(u); }
+    const W = [...walls.values()].sort((a, b) => b.length - a.length)[0], out = W[0].out.clone();
+    const big = units[0].big, bb = new THREE.Box3();
+    for (const u of units) bb.expandByPoint(u.p);
+    const c = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3());
+    const cam = this._camera, tanV = Math.tan(cam.fov * Math.PI / 360), tanH = tanV * cam.aspect;
+    let target, dist, el, az;
+    if (all) {
+      target = c.clone().addScaledVector(out, 3.5); target.y = 1.0;
+      const span = (Math.abs(out.x) > Math.abs(out.z) ? size.z : size.x) + 5;
+      dist = clamp(Math.max(span / 2 / tanH, 6 / tanV) * 1.08, 15, 70); el = 1.0; az = 0.1;   // alto o bastante para passar por cima da parede de 8,5 m do templo
+    } else if (big) {
+      target = c.clone().addScaledVector(out, 1.5); target.y = 1.9;
+      dist = clamp(Math.max(5.2 / 2 / tanH, 3.4 / tanV), 9, 20); el = 0.75; az = 0.3;
+    } else {
+      target = c.clone().addScaledVector(out, 0.7); target.y = Math.max(1.0, c.y - 0.9);
+      dist = clamp(Math.max(2.6 / 2 / tanH, 1.6 / tanV) * 1.15, 5.2, 60); el = 0.82; az = 0.28;
+    }
+    const dir = out.clone().multiplyScalar(Math.cos(az)).addScaledVector(new THREE.Vector3(-out.z, 0, out.x), Math.sin(az)).multiplyScalar(Math.cos(el));
+    dir.y = Math.sin(el);
+    return { pos: target.clone().addScaledVector(dir, dist), target };
+  }
+  // Voo suave até o(s) split(s) do cômodo (uma unidade: até ela; várias: enquadramento final); com a câmera focada o fluxo segue andando até o usuário mexer.
   _flyToAir(key) {
     if (this._walkOn) return;   // a pessoa não é teleportada pelo voo do ar
     const rt = this._items.get(key); if (!rt || !rt.airUnits || !rt.airUnits.length || !this._orbit) return;
-    // enquadra a parede com mais aparelhos (templo: os 3 da parede x = 16,05; os das pontas ficam no canto do quadro)
-    const walls = new Map();
-    for (const u of rt.airUnits) { const k = u.out.x.toFixed(2) + ',' + u.out.z.toFixed(2); if (!walls.has(k)) walls.set(k, []); walls.get(k).push(u); }
-    const U = [...walls.values()].sort((a, b) => b.length - a.length)[0];
-    const bb = new THREE.Box3(), out = U[0].out.clone();
-    for (const u of U) bb.expandByPoint(u.p);
-    const c = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3());
-    const target = c.clone().addScaledVector(out, U.length > 1 ? 1.4 : 0.7); target.y = Math.max(1.0, c.y - 0.9);
-    const cam = this._camera, tanV = Math.tan(cam.fov * Math.PI / 360), tanH = tanV * cam.aspect;
-    const span = (Math.abs(out.x) > Math.abs(out.z) ? size.z : size.x) + 2.6;
-    const dist = clamp(Math.max(span / 2 / tanH, 1.6 / tanV) * 1.15, U.length > 1 ? 15 : 5.2, 60);
-    // templo (várias unidades na parede): câmera acima das luminárias suspensas (y 7,2) e da treliça da plateia, vendo a parede de frente
-    const el = U.length > 1 ? 0.66 : 0.82, az = U.length > 1 ? 0.18 : 0.28;
-    const dir = out.clone().multiplyScalar(Math.cos(az)).addScaledVector(new THREE.Vector3(-out.z, 0, out.x), Math.sin(az)).multiplyScalar(Math.cos(el));
-    dir.y = Math.sin(el);
+    const s = this._airShot(rt.airUnits, rt.airUnits.length > 1);
     this._setTopView(false, true);
-    this._flyCam(target.clone().addScaledVector(dir, dist), target);
+    this._flyCam(s.pos, s.target);
     this._orbit.touched = true;   // redimensionar não desfaz o voo; "Recentrar" volta à vista padrão
     const now = performance.now(); this._airFocus = { key, at: now, until: now + 45000 };
     rt.airUntil = Math.max(rt.airUntil || 0, now + 8000);
@@ -7483,7 +7500,7 @@ export class Igreja3DCard extends HTMLElement {
       if (this._topView) this._setTopView(false, true);
       this._walkSaved = { pos: cam.position.clone(), target: o.target.clone(), panel: this._panelOpen, touched: o.touched };
       if (this._panelOpen) this._setPanel(false);   // o painel cobriria o joystick
-      this._airFocus = null;
+      this._airFocus = this._airTour = null;
       o.enabled = false; o.touched = true;
       if (!this._walk) { this._walk = new Walker(this, cam, cv); this._walk.reset(12.0, 52.0); }
       this._walkOn = true; this._walk.enable();
@@ -7923,6 +7940,87 @@ export class Igreja3DCard extends HTMLElement {
   }
   _stop() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; this._clock.stop(); }
 
+  // Sequência de cada unidade de ar: LED acende (~0,25 s) → aleta abre (~0,6 s) → o fluxo nasce da aleta e cresce até o comprimento cheio (~1,1 s).
+  // Ao desligar tudo recolhe junto (fluxo ~0,6 s, aleta ~0,7 s). rt.seq = { t0, off[i] } escalona o início de cada unidade (templo: uma após a outra).
+  // Sem animação (unidades vão direto ao estado): carga inicial, prefers-reduced-motion, aba oculta e cartão fora da tela. Devolve true enquanto algo muda.
+  _airStep(rt, ledColor, now, dt, nl) {
+    const U = rt.airUnits, m = rt.airMesh; if (!U || !U.length || !m) return false;
+    const snap = rt.snap || this._reduced || (typeof document !== 'undefined' && document.hidden) || this._onScreen === false;
+    const on = !!rt.on, seq = rt.seq, top = !!this._topView, G = m.material.uniforms.uG.value, sm = (x) => x * x * (3 - 2 * x);
+    let busy = false, vis = false;
+    for (let i = 0; i < U.length; i++) {
+      const u = U[i]; const want = on && !(seq && now < seq.t0 + seq.off[i]) ? 1 : 0;
+      if (snap) { u.led = u.f = u.g = want; u.on = !!want; u.ign = 0; }
+      else if (want) {
+        if (!u.on) { u.on = true; u.ign = now; }
+        u.led = Math.min(1, u.led + dt / 0.25); u.f = Math.min(1, u.f + dt / 0.6);
+        if (u.f > 0.4) u.g = Math.min(1, u.g + dt / 1.1);
+      } else {
+        u.on = false; u.ign = 0;
+        u.g = Math.max(0, u.g - dt / 0.6); u.f = Math.max(0, u.f - dt / 0.7); u.led = Math.max(0, u.led - dt / 0.5);
+      }
+      if (u.g !== want || u.f !== want || u.led !== want) busy = true;
+      const fl = rt.flaps[i], lm = rt.ledMats[i], b = rt.badges[i];
+      if (fl) { fl.visible = u.f > 0.01; fl.rotation.x = 0.9 * sm(u.f); }
+      if (lm) { lm.emissive.setHex(ledColor); lm.emissiveIntensity = u.led * 2.2; }
+      G[i] = sm(u.g); if (u.g > 0.001) vis = true;
+      if (b) {
+        // selo do modo (Vista de cima): pulsa na hora em que a unidade liga
+        b.visible = top && u.led > 0.01;
+        const age = u.ign ? (now - u.ign) / 1000 : 9, pulse = age < 1.4 ? (1 - age / 1.4) * (0.55 + 0.45 * Math.cos(age * 13)) : 0;
+        const sc = 0.042 * (1 + 1.1 * pulse); if (b.scale.x !== sc) b.scale.set(sc, sc, 1);
+        if (top && pulse > 0) busy = true;
+      }
+    }
+    m.visible = vis;
+    if (rt.badgeMat && rt.on) { const tx = this._airBadge(rt.hvac); if (rt.badgeMat.map !== tx) { rt.badgeMat.map = tx; rt.badgeMat.needsUpdate = true; } }
+    const uf = m.material.uniforms; uf.uI.value = THREE.MathUtils.lerp(0.45, 0.6, nl) * (top ? 1.5 : 1); uf.uTop.value = top ? 1 : 0; uf.uC.value.setHex(AIR_COL[rt.hvac] || 0xe8eef4);
+    rt.snap = false;
+    return busy;
+  }
+
+  // Um ou mais ares acabaram de ligar (depois da carga): escalona as unidades (templo: uma após a outra, ~2,5 s) e leva a câmera junto.
+  // Órbita: voo até o aparelho (templo: tour pelos 5 splits + enquadramento final da plateia); Vista de cima: navega até o cômodo e fica na
+  // planta; Pessoa: só a animação. A animação anda durante a sequência e por 8 s depois da última unidade.
+  _airStart(keys) {
+    const now = performance.now(), lead = this._reduced ? 0 : 600, stag = this._reduced ? 0 : 2500;
+    let hero = null, heroN = 0, total = 0;
+    for (const key of keys) {
+      const rt = this._items.get(key); const n = rt && rt.airUnits ? rt.airUnits.length : 0; if (!n) continue;
+      const off = new Array(n);
+      rt.airOrder.forEach((ui, rank) => { off[ui] = n > 1 ? lead + rank * stag : 0; });
+      rt.seq = { t0: now, off }; if (n === 1) rt.seq.off[0] = this._reduced ? 0 : 400;
+      const end = Math.max(...off) + 2000;
+      rt.airUntil = Math.max(rt.airUntil || 0, now + end + 8000); total = Math.max(total, end);
+      if (n >= heroN) { hero = key; heroN = n; }
+    }
+    if (!hero || this._walkOn) return;   // a pessoa não é teleportada: só vê a animação
+    if (this._topView) { this._airFocus = null; this._airNavTo(hero); return; }
+    const rt = this._items.get(hero), U = rt.airUnits;
+    if (U.length < 2 || this._reduced) { this._flyToAir(hero); return; }
+    // tour: uma parada por unidade (a câmera parte ~0,6 s antes de a unidade ligar) e o quadro final com todas
+    const steps = rt.airOrder.map((ui, rank) => ({ t: rank * stag, ...this._airShot([U[ui]]), speed: 3.2 }));
+    steps.push({ t: U.length * stag, ...this._airShot(U, true), speed: 2.2 });
+    this._setTopView(false, true);
+    this._airTour = { at: now, i: 0, steps };
+    this._airFocus = { key: hero, at: now, until: now + U.length * stag + 45000 };
+    this._orbit.touched = true;
+  }
+  // Vista de cima: leva a planta até o cômodo do ar (no templo, a Plateia)
+  _airNavTo(key) {
+    for (const b of this._blocks || []) for (const r of b.rooms) if (r.items.includes(key)) {
+      const n = this._nav; if (n.level === 2 && n.room === r) return;
+      this._navTo(2, b, r); return;
+    }
+  }
+  // passos do tour da câmera; qualquer gesto do usuário (arrastar, girar, zoom) o interrompe — as unidades restantes continuam ligando
+  _airTourRun(now) {
+    const T = this._airTour, o = this._orbit;
+    if (this._walkOn || this._topView || (o.userAt || 0) > T.at) { this._airTour = null; return; }
+    while (T.i < T.steps.length && now - T.at >= T.steps[T.i].t) { const st = T.steps[T.i++]; this._flyCam(st.pos, st.target, st.speed); o.touched = true; }
+    if (T.i >= T.steps.length) this._airTour = null;
+  }
+
   // Fluxo dos ares: a textura só anda (~16 q/s) com o ar ligado E no enquadramento E (nos primeiros 8 s depois de
   // ligar OU com a câmera focada nele depois do voo); fora disso fica parado e visível — sem ar ligado, 0 redesenhos.
   // Respeita prefers-reduced-motion, aba oculta e cartão fora da tela.
@@ -8000,6 +8098,8 @@ export class Igreja3DCard extends HTMLElement {
     }
     // Luzes (fade) e materiais emissivos
     let ambient = false;   // animação ociosa (telão pulsando)
+    const nowA = performance.now(), dtA = Math.min((nowA - (this._airPrev || nowA)) / 1000, 0.25); this._airPrev = nowA;   // relógio real dos ares (independe do clamp do dt)
+    if (this._airTour) this._airTourRun(nowA);
     // luz de dia: as lâmpadas pesam menos na cena
     const dayScale = L(0.45, 1, nl);
     // media: com a câmera parada, as luzes reais vão para as luminárias que importam neste enquadramento
@@ -8033,12 +8133,8 @@ export class Igreja3DCard extends HTMLElement {
       if (it.key === 'som' && rt.ledMats) for (const m of rt.ledMats) m.emissiveIntensity = lv * 2.6;
       if (it.kind === 'climate' && rt.ledMats) {
         const c = rt.hvac === 'cool' ? 0x67d3ff : rt.hvac === 'heat' ? 0xff8a5b : 0x8ef0b0;
-        for (const m of rt.ledMats) { m.emissive.setHex(c); m.emissiveIntensity = lv * 2.2; }
-        // aleta abre e o fluxo aparece com o nível; cor pelo modo (frio azul-claro, quente laranja, seco/ventilar neutro)
-        for (const fl of rt.flaps || []) { fl.visible = lv > 0.01; fl.rotation.x = lv * 0.9; }
-        for (const b of rt.badges || []) b.visible = !!this._topView && lv > 0.01;
-        if (rt.badgeMat && lv > 0.01) { const tx = this._airBadge(rt.hvac); if (rt.badgeMat.map !== tx) { rt.badgeMat.map = tx; rt.badgeMat.needsUpdate = true; } }
-        if (rt.airMesh) { const u = rt.airMesh.material.uniforms; rt.airMesh.visible = lv > 0.01; u.uI.value = lv * L(0.45, 0.6, nl) * (this._topView ? 1.5 : 1); u.uC.value.setHex(AIR_COL[rt.hvac] || 0xe8eef4); }
+        // cada unidade tem a sua sequência (LED → aleta → fluxo nasce e cresce); cor pelo modo (frio azul-claro, quente laranja, seco/ventilar neutro)
+        if (this._airStep(rt, c, nowA, dtA, nl)) dirty = true;
       }
       if (it.key === 'porta' && rt.leaves) for (const lf of rt.leaves) { const ry = lf.base - lf.dir * lv * 1.25; if (lf.g.rotation.y !== ry) { lf.g.rotation.y = ry; this._needShadow = true; this._refreshPointShadows('hall'); } }
     }
