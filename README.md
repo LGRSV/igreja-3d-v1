@@ -9,7 +9,7 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
-## Novidades da v1.4.3 — cada ar liga na sua vez, com a câmera acompanhando
+## Novidades da v1.4.4 — cada ar liga na sua vez, com a câmera acompanhando
 
 Voltou (e ficou melhor) a animação dos ares: **cada aparelho tem a sua própria sequência de ligar**, e ela vale em todas as vistas.
 - **Por unidade:** o LED acende, a aleta abre (~0,6 s) e o fluxo de ar **nasce da aleta e cresce** até o comprimento cheio
@@ -78,7 +78,7 @@ de frente para a porta principal:
   segundos depois de ligar ou enquanto a câmera está focada no ar, e só com o aparelho na tela; depois fica parado e
   visível. Com `prefers-reduced-motion` ou a aba oculta ele não anda, e sem ar ligado o cartão não redesenha nada.
 - **A câmera voa até o ar que ligou**, venha o comando do cartão, do Home Assistant ou de uma automação: enquadra o
-  aparelho e o fluxo; no templo faz o **tour pelos 5 splits** (v1.4.3) e fecha na plateia. Não voa na carga inicial; com
+  aparelho e o fluxo; no templo faz o **tour pelos 5 splits** (v1.4.4) e fecha na plateia. Não voa na carga inicial; com
   vários ao mesmo tempo, vale o cômodo com mais unidades. Girar/aproximar interrompe o tour/solta o foco; **Recentrar**
   volta à vista padrão. Na Vista de cima navega até o cômodo; no modo Pessoa só a animação. Na demo, clicar num ar mostra tudo.
 - **Botão "Vista de cima"**: planta vista de cima (quase a prumo), com o prédio inteiro, sem cobertura/fachada, todos
