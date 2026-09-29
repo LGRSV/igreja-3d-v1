@@ -47,7 +47,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.1';
+export const VERSION = '1.4.2';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -561,21 +561,21 @@ function textures() {
   });
   TEX.paversGray = pav(0xa3a19b, '#77756f', 23);
   TEX.paversDark = pav(0x5d5f63, '#3e4043', 24);
-  // Intertravado terracota em espinha de peixe (estacionamento frontal, como na foto).
+  // Intertravado cinza (bloquete de concreto) em espinha de peixe — estacionamento frontal (só ele usa esta textura).
   // Padrão 90°: período de 4×4 módulos (tijolo = 2×1 módulo); o canvas tem 4 períodos.
   TEX.herring = makeTex(512, (g, s) => {
-    g.fillStyle = '#8a6a58'; g.fillRect(0, 0, s, s);
+    g.fillStyle = '#6c6b68'; g.fillRect(0, 0, s, s);
     const rnd = mulberry32(25), u = s / 16, gap = 1.6;
     const brick = (cx, cy, w, h) => {
       const v = 0.84 + rnd() * 0.26, t = rnd();
-      const base = t < 0.18 ? 0xb58a72 : t < 0.36 ? 0xa77e66 : 0xc39a80;   // salmão/bege como na foto (calibrado p/ Neutral)
+      const base = t < 0.18 ? 0x93918c : t < 0.36 ? 0x9f9d97 : 0xaeaca6;   // cinza de concreto (tom próximo do paversGray)
       g.fillStyle = shade(base, v); g.fillRect(cx * u + gap, cy * u + gap, w * u - 2 * gap, h * u - 2 * gap);
     };
     for (let sft = -24; sft <= 24; sft += 4) for (let t = -20; t <= 20; t++) {
       brick(t + sft, t, 2, 1);          // tijolo deitado
       brick(t + sft, t + 1, 1, 2);      // tijolo em pé
     }
-    grain(g, s, 26, 9000, 0.08, [80, 50, 35]);
+    grain(g, s, 26, 9000, 0.08, [60, 60, 58]);
   });
   TEX.glow = makeTex(128, (g, s) => {
     const r = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
@@ -5360,7 +5360,7 @@ function roomFachada(ctx) {
   };
   [[7.52, 0.62], [8.26, 0.86], [9.0, 0.62], [9.74, 0.86], [10.42, 0.62]].forEach(([x, h], i) => cycas(x, 50.3, h, 40 + i));
 
-  // ---- Estacionamento frontal (piso de espinha de peixe já é a zona do cartão) ----
+  // ---- Estacionamento frontal (piso cinza em espinha de peixe já é a zona do cartão) ----
   // guia de concreto entre a calçada grafite e o intertravado
   add(flat(box(26.0, 0.008, 0.1, P.curbW, 10.0, 0.008, 51.0)));
   // vagas a 90° (2,5 × 4,8 m), de frente para o prédio; passagem livre na frente da porta (x 10,3–15,0)
@@ -5408,9 +5408,7 @@ function roomFachada(ctx) {
     add(box(0.42, 0.42, 0.02, std({ color: 0x2f76b2, roughness: 0.6 }), xc, 1.72, 50.95));
     add(box(0.16, 0.2, 0.024, P.paint, xc, 1.72, 50.95, { cast: false }));
   }
-  // dois carros estacionados de frente para o prédio (vagas livres ao lado dos postes)
-  place(F.car(), 1.55, 53.75, 0);
-  const car2 = F.car(); car2.traverse((o) => { if (o.material === M.car) o.material = P.carSilver; }); place(car2, -0.95, 53.75, 0);
+  // estacionamento frontal sem carros (vagas livres)
 
   // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));

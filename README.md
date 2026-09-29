@@ -296,7 +296,7 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
   sobre o templo só as luminárias suspensas, sem as tesouras brancas). O **painel ripado com o letreiro BASE
   CHURCH e o refletor ficam visíveis nos dois modos** (a identidade do prédio vista da rua); os rótulos dos
   ambientes somem enquanto o modo Fachada está ligado.
-- **Entorno**: estacionamento frontal em intertravado espinha de peixe, vagas PCD, cerca-viva e cicas na
+- **Entorno**: estacionamento frontal em intertravado cinza (espinha de peixe), sem carros, vagas PCD, cerca-viva e cicas na
   frente, totem de entrada com o logo, ruas da frente e dos fundos, vizinhos, árvores e postes — só contexto.
 - **Clima ao vivo (Palmas)**: widget no canto inferior direito com temperatura, condição, sensação
   térmica e vento — dados da [Open-Meteo](https://open-meteo.com/) (gratuita, sem chave), atualizados
