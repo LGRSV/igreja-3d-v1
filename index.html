@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Igreja 3D — Base Church</title>
 <meta name="description" content="Planta 3D interativa da Base Church (Palmas-TO): gire, dê zoom e comande luzes, telão, som e ar por ambiente.">
 <style>
@@ -46,7 +47,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.3.1';
+export const VERSION = '1.4.0';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -370,6 +371,40 @@ const ZONES = {
   estac_frontal: { rects: [[-3, 51.0, 26.0, 9.0, '']], floor: 'herring', tile: 1.6, label: 'Estacionamento', lp: [4.0, 57.5], ly: 1.2, item: 'estacionamento', ls: 1.2, main: true },   // baixo e à esquerda: não cobre o letreiro da fachada
 };
 const LOT = { x0: -3, x1: 23, z0: 0, z1: 60, cx: 10, cz: 30 };   // área modelada (lote + estacionamento frontal)
+
+// Vista de cima navegável: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco; cada cômodo junta zonas de ZONES (ou tem `rects`
+// próprios quando divide uma zona, como palco/plateia) e lista os aparelhos (chaves de ITEMS) — _buildBlocks() ainda acrescenta os
+// que têm luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força o enquadramento do cômodo.
+const BLOCKS = {
+  templo: { label: 'Templo', box: [0, 12.4, 16.05, 44.0], rooms: [
+    { id: 'palco', label: 'Palco', rects: [[0, 19.6, 5.0, 17.0]], zones: ['templo'], items: ['palco', 'telao', 'som'], noauto: true },
+    { id: 'plateia', label: 'Plateia', rects: [[5.0, 12.4, 11.05, 31.6], [0, 12.4, 5.0, 7.2], [0, 36.6, 5.0, 7.4]], zones: ['templo'], items: ['plateia', 'ac_templo', 'presenca', 'temperatura'], noauto: true }] },
+  hall: { label: 'Hall / Família', box: [0, 44.0, 16.05, 49.65], rooms: [
+    { id: 'hall', label: 'Hall de entrada', zones: ['hall'], items: ['hall', 'porta'] },
+    { id: 'familia', label: 'Sala da Família', zones: ['familia'], items: ['familia'] },
+    { id: 'wcs', label: 'WCs', zones: ['wc1', 'wc_pcd'], items: ['banheiros'] }] },
+  ala: { label: 'Ala direita', box: [16.05, 11.0, 20.1, 49.5], rooms: [
+    { id: 'gilvan', label: 'Sala Gilvan', zones: ['gilvan'], items: ['administrativo'] },
+    { id: 'administrativo', label: 'Administrativo', zones: ['administrativo'], items: ['administrativo'] },
+    { id: 'circulacao', label: 'Circulação', zones: ['circulacao', 'corredor', 'circ2'], items: ['circulacao'], frame: [16.05, 19.0, 20.1, 28.0] },
+    { id: 'midia', label: 'Mídia', zones: ['midia'], items: ['midia', 'ac_midia'] },
+    { id: 'voluntariado', label: 'Voluntariado', zones: ['voluntariado'], items: ['voluntariado', 'ac_voluntariado'] },
+    { id: 'deposito', label: 'Depósito', zones: ['deposito'], items: ['banheiros'] },
+    { id: 'tecnica', label: 'Área técnica', zones: ['tecnica'], items: [] },
+    { id: 'wc_masc', label: 'WC Masc.', zones: ['wc_masc'], items: ['banheiros'] },
+    { id: 'hall_banheiros', label: 'Hall dos banheiros', zones: ['hall_banheiros'], items: ['banheiros'] },
+    { id: 'wc_fem', label: 'WC Fem.', zones: ['wc_fem'], items: ['banheiros'] }] },
+  fundos: { label: 'Bloco dos fundos', box: [0, 0, 20.1, 12.4], rooms: [
+    { id: 'patio', label: 'Pátio', zones: ['estac_interno', 'patio', 'jardim_interno'], items: ['estacionamento'] },
+    { id: 'almoxarifado', label: 'Almoxarifado', zones: ['almoxarifado'], items: ['cozinha'] },
+    { id: 'cozinha', label: 'Cozinha', zones: ['cozinha'], items: ['cozinha'] },
+    { id: 'recepcao', label: 'Recepção', zones: ['recepcao'], items: ['recepcao'] },
+    { id: 'pastoral', label: 'Sala Pastoral', zones: ['pastoral', 'wc_pastoral', 'jardim_pastoral'], items: ['pastoral', 'ac_pastoral'] },
+    { id: 'caixa_dagua', label: 'Caixa d’água', zones: ['caixa_dagua'], items: [] }] },
+  frente: { label: 'Frente', box: [-3, 49.65, 23, 60], rooms: [
+    { id: 'estac_frontal', label: 'Estacionamento', zones: ['estac_frontal'], items: ['estacionamento'] },
+    { id: 'fachada', label: 'Fachada', zones: ['jardim_frontal', 'calcada'], items: ['fachada'] }] },
+};
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -1217,7 +1252,7 @@ class Orbit {
     this.minDist = 3; this.maxDist = 150; this.minPolar = 0.02; this.maxPolar = 1.45;   // 0,02: dá para olhar reto de cima (Vista de cima)
     this.speed = 9; this.userAt = 0;   // speed: suavização (menor = voo mais lento); userAt: último gesto do usuário
     this.pointers = new Map(); this.moved = 0; this.pinch = 0; this.touched = false;
-    this.onClick = null; this.onHover = null;
+    this.onClick = null; this.onHover = null; this.enabled = true;   // enabled = false na visão de pessoa (o Walker assume os gestos)
     this._down = (e) => this.down(e); this._move = (e) => this.move(e);
     this._up = (e) => this.up(e); this._wheel = (e) => this.wheel(e);
     dom.addEventListener('pointerdown', this._down);
@@ -1235,6 +1270,7 @@ class Orbit {
     d.removeEventListener('wheel', this._wheel);
   }
   down(e) {
+    if (!this.enabled) return;
     this.dom.setPointerCapture(e.pointerId);
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, b: e.button, shift: e.shiftKey });
     if (this.pointers.size === 2) this.pinch = this._dist();
@@ -1245,6 +1281,7 @@ class Orbit {
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
   move(e) {
+    if (!this.enabled) return;
     const p = this.pointers.get(e.pointerId);
     if (!p) { if (this.onHover) this.onHover(e); return; }
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
@@ -1264,13 +1301,14 @@ class Orbit {
     this.dirty = true;
   }
   up(e) {
+    if (!this.enabled) return;
     const p = this.pointers.get(e.pointerId);
     this.pointers.delete(e.pointerId);
     try { this.dom.releasePointerCapture(e.pointerId); } catch (_) {}
     if (p && this.moved < 6 && p.b === 0 && this.onClick) this.onClick(e);
     this.pinch = 0;
   }
-  wheel(e) { e.preventDefault(); this.touched = true; this.userAt = performance.now(); this.speed = 9; this.zoomBy(Math.exp(e.deltaY * 0.0012)); this.dirty = true; }
+  wheel(e) { e.preventDefault(); if (!this.enabled) return; this.touched = true; this.userAt = performance.now(); this.speed = 9; this.zoomBy(Math.exp(e.deltaY * 0.0012)); this.dirty = true; }
   zoomBy(f) { this.goal.radius = clamp(this.goal.radius * f, this.minDist, this.maxDist); }
   pan(dx, dy) {
     const k = this.goal.radius * 0.0016;
@@ -1299,6 +1337,121 @@ class Orbit {
     this.camera.lookAt(this.target);
     const wasDirty = this.dirty; this.dirty = moving; this.moving = moving;
     if (!moving) this.speed = 9;
+    return wasDirty || moving;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Visão de pessoa: câmera a 1,6 m do piso; setas/WASD ou joystick andam, arrastar vira a cabeça (Q/E também), Shift corre.
+// Colisão simples com as paredes do modelo (card._walkCollide); portas e vãos passam. Espelha o estado nas flags do Orbit
+// (moving/dirty/userAt/touched), que o resto do cartão (governador de qualidade, rótulos, ares) já lê.
+// ---------------------------------------------------------------------------
+class Walker {
+  constructor(card, camera, dom) {
+    this.card = card; this.camera = camera; this.dom = dom;
+    this.pos = new THREE.Vector3(12.0, 1.6, 52.0);   // começa na calçada, de frente para a porta principal do hall
+    this.yaw = 0; this.pitch = 0;                     // frente = (−sin yaw, 0, −cos yaw): yaw 0 olha para −z (para dentro)
+    this.vel = new THREE.Vector3(); this.keys = new Set(); this.joy = { x: 0, y: 0 };
+    this.on = false; this.moving = false; this.dirty = false; this.head = false; this.gesture = false;
+    this.look = null; this.moved = 0; this.lx = 0; this.ly = 0; this.btn = 0; this.used = false;
+    this._pd = (e) => this.down(e); this._pm = (e) => this.move(e); this._pu = (e) => this.up(e);
+    this._kd = (e) => this.key(e, true); this._ku = (e) => this.key(e, false); this._blur = () => this.keys.clear();
+    this._wheel = (e) => e.preventDefault();
+    this._joyReset = () => {}; this._joyBind();
+  }
+  enable() {
+    if (this.on) return; this.on = true; this.dirty = true;
+    const d = this.dom;
+    d.addEventListener('pointerdown', this._pd); d.addEventListener('pointermove', this._pm);
+    d.addEventListener('pointerup', this._pu); d.addEventListener('pointercancel', this._pu);
+    d.addEventListener('wheel', this._wheel, { passive: false });
+    window.addEventListener('keydown', this._kd, true); window.addEventListener('keyup', this._ku, true);   // captura: os atalhos do HA (E, C, A…) não disparam enquanto anda window.addEventListener('blur', this._blur);
+  }
+  disable() {
+    if (!this.on) return; this.on = false;
+    const d = this.dom;
+    d.removeEventListener('pointerdown', this._pd); d.removeEventListener('pointermove', this._pm);
+    d.removeEventListener('pointerup', this._pu); d.removeEventListener('pointercancel', this._pu);
+    d.removeEventListener('wheel', this._wheel);
+    window.removeEventListener('keydown', this._kd, true); window.removeEventListener('keyup', this._ku, true); window.removeEventListener('blur', this._blur);
+    this.keys.clear(); this.look = null; this._joyReset(); this.vel.set(0, 0, 0);
+  }
+  reset(x, z, yaw = 0, pitch = 0) { this.pos.set(x, this.card._walkFloor(x, z) + 1.6, z); this.yaw = yaw; this.pitch = pitch; this.vel.set(0, 0, 0); this.dirty = true; }
+  down(e) {
+    if (this.look != null) return;   // um dedo olha por vez (o outro pode estar no joystick)
+    this.look = e.pointerId; this.moved = 0; this.lx = e.clientX; this.ly = e.clientY; this.btn = e.button;
+    try { this.dom.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+  move(e) {
+    if (e.pointerId !== this.look) { if (this.look == null && e.pointerType === 'mouse') this.card._onHover(e); return; }
+    const dx = e.clientX - this.lx, dy = e.clientY - this.ly; this.lx = e.clientX; this.ly = e.clientY;
+    this.moved += Math.abs(dx) + Math.abs(dy);
+    this.yaw += dx * 0.005; this.pitch = clamp(this.pitch + dy * 0.005, -1.2, 1.2);   // como no Street View: o mundo acompanha o dedo
+    this.head = this.gesture = true;
+  }
+  up(e) {
+    if (e.pointerId !== this.look) return;
+    this.look = null; try { this.dom.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (this.moved < 6 && this.btn === 0 && e.type === 'pointerup') this.card._onClick(e);   // toque curto = clique (luz, ar, telão…)
+  }
+  key(e, down) {
+    const t = e.composedPath ? e.composedPath()[0] : e.target;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '')) return;   // digitando em outro campo da página
+    const c = e.code;
+    if (c === 'Escape') { if (down) { e.stopPropagation(); this.card._setWalk(false); } return; }
+    if (/^(Key[WASDQE]|Arrow(Up|Down|Left|Right)|Shift(Left|Right))$/.test(c)) {
+      if (down) { this.keys.add(c); this.gesture = true; } else this.keys.delete(c);
+      if (!c.startsWith('Shift')) { e.preventDefault(); e.stopPropagation(); }   // a página não rola e os atalhos do HA não disparam
+    }
+  }
+  // joystick na tela: zona morta 0,15; o vetor (x direita, y frente) vai em this.joy
+  _joyBind() {
+    const el = this.card._joy; if (!el) return;
+    const knob = el.firstElementChild; let id = null;
+    const set = (e) => {
+      const r = el.getBoundingClientRect(), R = r.width / 2;
+      let dx = (e.clientX - r.left - R) / R, dy = (e.clientY - r.top - R) / R; const l = Math.hypot(dx, dy);
+      if (l > 1) { dx /= l; dy /= l; }
+      knob.style.transform = `translate(${dx * R * 0.6}px, ${dy * R * 0.6}px)`;
+      const m = Math.hypot(dx, dy), s = m < 0.15 ? 0 : (m - 0.15) / 0.85;   // zona morta; depois cresce até 1
+      this.joy.x = m ? dx / m * s : 0; this.joy.y = m ? -dy / m * s : 0; this.gesture = true;
+    };
+    el.addEventListener('pointerdown', (e) => { if (id != null) return; id = e.pointerId; try { el.setPointerCapture(id); } catch (_) {} e.stopPropagation(); e.preventDefault(); set(e); });
+    el.addEventListener('pointermove', (e) => { if (e.pointerId === id) { e.stopPropagation(); set(e); } });
+    const end = (e) => { if (e.pointerId !== id) return; e.stopPropagation(); id = null; this._joyReset(); };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    this._joyReset = () => { this.joy.x = this.joy.y = 0; knob.style.transform = ''; };
+  }
+  update(dt) {
+    const c = this.card, o = c._orbit, k = this.keys, now = performance.now();
+    const wasDirty = this.dirty || o.dirty; this.dirty = false; o.dirty = false;
+    // entrada: teclado (−1…1) + joystick
+    let iy = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) + this.joy.y;
+    let ix = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + this.joy.x;
+    const turn = (k.has('KeyQ') ? 1 : 0) - (k.has('KeyE') ? 1 : 0);
+    if (turn) { this.yaw += turn * 1.6 * dt; this.head = true; }
+    const l = Math.hypot(ix, iy); if (l > 1) { ix /= l; iy /= l; }
+    const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw), rx = Math.cos(this.yaw), rz = -Math.sin(this.yaw);   // frente e direita no piso
+    const sp = 1.6 * (k.has('ShiftLeft') || k.has('ShiftRight') ? 2 : 1);
+    const gx = (fx * iy + rx * ix) * sp, gz = (fz * iy + rz * ix) * sp;
+    const kv = 1 - Math.exp(-dt * 10);
+    this.vel.x += (gx - this.vel.x) * kv; this.vel.z += (gz - this.vel.z) * kv;
+    if (!gx && !gz && Math.hypot(this.vel.x, this.vel.z) < 0.02) this.vel.set(0, 0, 0);
+    const walking = this.vel.x !== 0 || this.vel.z !== 0;
+    if (walking) { const r = c._walkCollide(this.pos.x, this.pos.z, this.pos.x + this.vel.x * dt, this.pos.z + this.vel.z * dt); this.pos.x = r[0]; this.pos.z = r[1]; }
+    // altura dos olhos: piso (palco a 1 m) + 1,6 m, com subida suave
+    const ty = c._walkFloor(this.pos.x, this.pos.z) + 1.6, dy = ty - this.pos.y; let rising = false;
+    if (Math.abs(dy) > 0.002) { this.pos.y += dy * (1 - Math.exp(-dt * 8)); rising = true; } else this.pos.y = ty;
+    const moving = walking || this.head || rising;
+    // câmera
+    const cp = Math.cos(this.pitch), cam = this.camera;
+    cam.position.copy(this.pos);
+    cam.lookAt(this.pos.x + fx * cp, this.pos.y + Math.sin(this.pitch), this.pos.z + fz * cp);
+    // espelha nas flags do Orbit (governador, rótulos, ares e pool de luzes leem estas)
+    o.moving = moving; o.touched = true;
+    if (this.gesture || moving) o.userAt = now;
+    o.target.set(this.pos.x + fx * 4, this.pos.y, this.pos.z + fz * 4); o.targetGoal.copy(o.target);
+    this.head = this.gesture = false; this.moving = moving;
     return wasDirty || moving;
   }
 }
@@ -5516,6 +5669,41 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
 .hint { color: #8f9bb3; font-size: 11px; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transition: opacity .6s; }
 .hint.hide { opacity: 0; }
 .err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #ffb4b4; background: #0a0f1e; }
+/* Vista de cima navegável: trilha Planta › Bloco › Cômodo + aparelhos do cômodo */
+.navrow { flex: 1 0 100%; display: flex; pointer-events: none; min-width: 0; }
+.navrow[hidden] { display: none; }
+.navrow > * { pointer-events: auto; }
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 8px 4px 4px; max-width: 100%; box-sizing: border-box; }
+.nav .back { padding: 6px 10px; }
+.nav .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1px; font-size: 12px; min-width: 0; }
+.nav .crumbs button { padding: 5px 6px; }
+.nav .crumbs button[aria-current="page"] { color: #ffd48a; cursor: default; background: transparent; }
+.nav .sep { color: #6b768f; }
+.nav .navhint { color: #8f9bb3; font-size: 11px; padding: 0 4px; }
+.nav .chips { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; padding: 2px 4px 4px; }
+.nav .chips[hidden] { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .12); font-size: 12px; white-space: nowrap; }
+.chip .ico { display: flex; color: #8f9bb3; } .chip .ico svg { width: 16px; height: 16px; }
+.chip small { color: #9aa6bd; font-size: 10.5px; font-weight: 500; }
+.chip[aria-pressed="true"] { border-color: rgba(255, 196, 107, .5); }
+.chip[aria-pressed="true"] .ico { color: var(--dot, #ffc46b); filter: drop-shadow(0 0 5px var(--dot, #ffc46b)); }
+@media (max-width: 640px) {
+  .nav { font-size: 11.5px; } .nav .back { padding: 9px 12px; } .nav .crumbs button { padding: 8px 6px; font-size: 11.5px; }
+  .nav .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; } .nav .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; padding: 8px 11px 8px 9px; }
+}
+/* Visão de pessoa: joystick, aviso de comandos */
+.joy { position: absolute; left: 16px; bottom: 16px; width: 116px; height: 116px; border-radius: 50%; z-index: 4; touch-action: none; opacity: .85; cursor: grab;
+  background: radial-gradient(circle, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04)); border: 1px solid rgba(255, 255, 255, .24); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.joy[hidden] { display: none; }
+.joy .knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; pointer-events: none;
+  background: rgba(255, 196, 107, .38); border: 1px solid rgba(255, 212, 138, .8); box-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+.walkhint { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 4; padding: 7px 12px; font-size: 12px; color: #d5dcea; max-width: calc(100% - 32px);
+  text-align: center; pointer-events: none; opacity: 0; transition: opacity .6s; }
+.walkhint.show { opacity: 1; }
+canvas.walk { cursor: crosshair; }
+@media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
 /* Painel inferior (dock) */
 .dock { position: absolute; left: 10px; right: 10px; bottom: 10px; max-height: min(48%, 372px); display: flex; flex-direction: column; overflow: hidden; z-index: 3; }
 .dock[hidden] { display: none; }
@@ -5647,7 +5835,7 @@ export class Igreja3DCard extends HTMLElement {
     this._mode = 'auto';
     this._night = true;
     this._clock = new THREE.Clock(false);
-    this._hoverObj = null;
+    this._hoverObj = null; this._nav = { level: 0, block: null, room: null }; this._hoverZones = null; this._hoverKey = '';
     this._reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
@@ -5733,6 +5921,14 @@ export class Igreja3DCard extends HTMLElement {
     this._topBtn.setAttribute('aria-pressed', 'false');
     this._topBtn.addEventListener('click', () => { this._airFocus = null; this._setTopView(!this._topView); });
     btns.appendChild(this._topBtn);
+    this._walkBtn = document.createElement('button'); this._walkBtn.className = 'panel btn'; this._walkBtn.textContent = 'Pessoa';
+    this._walkBtn.title = 'Ande pela igreja na altura dos olhos: setas/WASD ou joystick; arraste para olhar';
+    this._walkBtn.setAttribute('aria-pressed', 'false');
+    this._walkBtn.addEventListener('click', () => this._setWalk(!this._walkOn));
+    btns.appendChild(this._walkBtn);
+    const joy = document.createElement('div'); joy.className = 'joy'; joy.hidden = true; joy.setAttribute('role', 'application'); joy.setAttribute('aria-label', 'Andar');
+    const knob = document.createElement('div'); knob.className = 'knob'; joy.appendChild(knob); wrap.appendChild(joy); this._joy = joy;
+    this._walkHint = document.createElement('div'); this._walkHint.className = 'panel walkhint'; wrap.appendChild(this._walkHint);
     this._roofBtn = document.createElement('button'); this._roofBtn.className = 'panel btn'; this._roofBtn.textContent = 'Fachada';
     this._roofBtn.title = 'Mostra a fachada, paredes altas e cobertura';
     this._roofBtn.addEventListener('click', () => this._setRoof(!this._roofOn));
@@ -5745,6 +5941,18 @@ export class Igreja3DCard extends HTMLElement {
     this._hint.textContent = 'Arraste para girar · roda/pinça para zoom · clique num ambiente para acender';
     title.appendChild(this._hint);
     setTimeout(() => { if (!this._hint) return; this._hint.classList.add('hide'); setTimeout(() => { this._hint.hidden = true; }, 700); }, 9000);
+
+    // trilha da Vista de cima (Planta › Bloco › Cômodo): filha do HUD de cima, numa linha própria; escondida fora da Vista de cima
+    const navrow = document.createElement('div'); navrow.className = 'navrow'; navrow.hidden = true;
+    const nav = document.createElement('div'); nav.className = 'panel nav';
+    const back = document.createElement('button'); back.className = 'back'; back.textContent = '‹ Voltar'; back.setAttribute('aria-label', 'Voltar um nível');
+    back.addEventListener('click', () => this._navBack());
+    const crumbs = document.createElement('nav'); crumbs.className = 'crumbs'; crumbs.setAttribute('aria-label', 'Trilha da planta');
+    const chips = document.createElement('div'); chips.className = 'chips'; chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Aparelhos do cômodo');
+    nav.append(back, crumbs, chips); navrow.appendChild(nav); top.appendChild(navrow);
+    this._navRow = navrow; this._navCrumbs = crumbs; this._navChipsEl = chips;
+    const navKey = (e) => { if ((e.key === 'Escape' || e.key === 'Backspace') && this._topView) { e.preventDefault(); this._navBack(); } };
+    canvas.addEventListener('keydown', navKey); nav.addEventListener('keydown', navKey);
 
     try {
       this._build3D(canvas);
@@ -5938,13 +6146,14 @@ export class Igreja3DCard extends HTMLElement {
     if (this._hudTop) this._ro.observe(this._hudTop);
     this._resize();
     renderer.shadowMap.needsUpdate = true;
+    this._buildBlocks();
     this._precompile();
   }
   // Compila os shaders antes do primeiro quadro — em paralelo quando o navegador deixa (KHR_parallel_shader_compile),
   // sem travar a página na carga — com a fachada e o entorno visíveis, para os botões não engasgarem depois.
   // Enquanto isso _frame não desenha.
   _precompile() {
-    const r = this._renderer, hide = [this._ext, this._out].filter((g) => g && !g.visible);
+    const r = this._renderer, hide = [this._ext, this._out, this._hl].filter((g) => g && !g.visible);
     this._busy = true;
     let p;
     try {
@@ -6257,6 +6466,7 @@ export class Igreja3DCard extends HTMLElement {
   // Aberturas: door (style 'black' = preta de correr, side = lado do trilho) · window (sill/top opcionais) · glass ·
   //   glassdoor (2 folhas, item) · open · gate
   _wallSeg(scene, M, axis, c, a0, a1, ops, o = {}) {
+    const W = this._walls || (this._walls = []);   // segmentos sólidos ao nível dos pés, para a colisão da visão de pessoa
     const h = o.h || H, t = o.t || T, mat = o.mat || M.wall, capMat = o.cap || M.wallCap, fr = o.frame || M.frameDark, inner = o.inner || 0;
     const e0 = o.ext0 != null ? o.ext0 : !!o.ext, e1 = o.ext1 != null ? o.ext1 : !!o.ext;
     if (e0) a0 -= T / 2;   // até a face externa da parede perpendicular (fica no lugar mesmo nas finas)
@@ -6268,6 +6478,7 @@ export class Igreja3DCard extends HTMLElement {
     };
     const seg = (a, b, y0, y1) => {
       if (b - a <= 0.001 || y1 - y0 <= 0.001) return;
+      if (y0 <= 0.5 && y1 >= 0.9) W.push({ axis, c, a0: a, a1: b, t });   // parede cheia ou sob o peitoril; vergas de porta (y0 2,1) não bloqueiam
       put(b - a, y1 - y0, t, mat, (a + b) / 2, (y0 + y1) / 2);
       // revestimento interno: só entre as faces internas das paredes vizinhas (nas pontas
       // estendidas ele apareceria como um filete branco do lado de fora)
@@ -6280,7 +6491,7 @@ export class Igreja3DCard extends HTMLElement {
       // tampa ligeiramente acima do topo (e com altura diferente por eixo) → sem faces coplanares
       if (Math.abs(y1 - h) < 0.001) put(b - a, 0.03, t + 0.03, capMat, (a + b) / 2, h + (axis === 'x' ? 0.02 : 0.018), { cast: false });
     };
-    const pane = (a, b, y0, y1) => put(b - a, y1 - y0, 0.02, glassMat, (a + b) / 2, (y0 + y1) / 2, { cast: false, receive: false });
+    const pane = (a, b, y0, y1) => { if (y0 <= 0.5) W.push({ axis, c, a0: a, a1: b, t: 0.02 }); return put(b - a, y1 - y0, 0.02, glassMat, (a + b) / 2, (y0 + y1) / 2, { cast: false, receive: false }); };   // vidro fixo do chão bloqueia
     // caixilho: ombreiras + verga (e peitoril se y0 > 0)
     const frame = (a, b, y0, y1, lintel = true) => {
       put(0.06, y1 - y0, t + 0.06, fr, a + 0.03, (y0 + y1) / 2); put(0.06, y1 - y0, t + 0.06, fr, b - 0.03, (y0 + y1) / 2);
@@ -6327,6 +6538,7 @@ export class Igreja3DCard extends HTMLElement {
           }
         }
       } else if (op.t === 'gate') {
+        W.push({ axis, c, a0: op.a, a1: op.b, t });   // portão de correr fechado bloqueia
         // portão de correr: sem verga, réguas horizontais escuras até 2,5 m
         frame(op.a, op.b, 0, 2.6, false);
         for (let y = 0.12; y < 2.5; y += 0.2) put(op.b - op.a - 0.12, 0.13, 0.04, M.frameDark, (op.a + op.b) / 2, y + 0.065, { cast: false });
@@ -6861,7 +7073,7 @@ export class Igreja3DCard extends HTMLElement {
     this._timeAt = 0;
     this._applyMode();
     this._refreshSub();
-    if (fly) this._flyToAir(fly);
+    if (fly && !this._topView) this._flyToAir(fly);   // na Vista de cima o selo do ar já mostra o estado: a câmera fica na planta
   }
 
   _setItemState(key, { state, attrs }) {
@@ -6973,10 +7185,13 @@ export class Igreja3DCard extends HTMLElement {
     const far = this._orbit && cam.position.distanceTo(this._orbit.target) > 35 && !(this._topView && !narrow);
     // câmera baixa (dentro do prédio / altura de gente): só os rótulos até ~20 m, os do fundo não poluem
     const reach = cam.position.y < 8 ? 20 : 1e9;
+    // Vista de cima aproximada num bloco/cômodo: só os rótulos de dentro dele
+    const reg = this._topView && this._nav && this._nav.level >= 1 ? this._navRects() : null;
     for (const s of this._labels) {
       const L = s.userData.label; if (!L) continue;
       const d = cam.position.distanceTo(s.position);
-      const op = clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1);
+      const inReg = !reg || reg.some(([x0, z0, x1, z1]) => s.position.x >= x0 - 1 && s.position.x <= x1 + 1 && s.position.z >= z0 - 1 && s.position.z <= z1 + 1);
+      const op = inReg ? clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1) : 0;
       s.visible = op > 0.02; s.material.opacity = op;
       const hpx = L.font * (this._topView ? 2.6 : 3);   // texto de 24 px num canvas de 72 px → sprite com 3× a altura da fonte (menor na Vista de cima)
       s.scale.set(hpx * k * 320 / 72, hpx * k, 1);
@@ -7006,6 +7221,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   _setRoof(on) {
     this._roofOn = !!on;
+    if (this._roofOn && this._topView) this._setTopView(false, true);   // Fachada tira da planta (os rótulos já somem)
     if (this._ext) this._ext.visible = this._roofOn;
     if (this._items) this._refreshPointShadows();   // paredes altas entram/saem: refaz as sombras das luzes uma vez
     if (this._labelsBtn) this._setLabels(!!this._labelsOn);
@@ -7022,15 +7238,20 @@ export class Igreja3DCard extends HTMLElement {
     return { pos, target };
   }
   _setTopView(on, keepCamera = false) {
-    this._topView = !!on;
+    if (this._walkOn && this._setWalk) this._setWalk(false);   // sai da visão de pessoa
+    this._topView = !!on; this._nav = { level: 0, block: null, room: null }; this._clearHover();
+    if (this._navRow) this._renderNav();
     if (this._topBtn) this._topBtn.setAttribute('aria-pressed', this._topView ? 'true' : 'false');
     if (this._topView && this._roofOn) this._setRoof(false);   // sem cobertura/fachada: o interior fica à mostra
     if (!keepCamera) this._resetView(true);
     if (this._orbit) this._orbit.dirty = true;
   }
   _resetView(fly = false) {
-    const a = this._camera.aspect;
-    this._home = this._topView ? this._topFor(a) : this._homeFor(a);
+    const a = this._camera.aspect, n = this._nav;
+    // Vista de cima: enquadra o nível atual da navegação (planta inteira · bloco · cômodo)
+    this._home = !this._topView ? this._homeFor(a)
+      : n.level === 2 && n.room ? this._frameRect(...(n.room.frame || this._rectsBox(n.room.rects)), 1.0)
+      : n.level === 1 && n.block ? this._frameRect(...n.block.box, 2.0) : this._topFor(a);
     if (fly) this._flyCam(this._home.pos, this._home.target, 3.2); else this._orbit.reset(this._home.pos, this._home.target);
     this._orbit.touched = false;
   }
@@ -7039,6 +7260,155 @@ export class Igreja3DCard extends HTMLElement {
     const o = this._orbit; o.fly(pos, target, speed);
     if (this._reduced) { o.sph.copy(o.goal); o.target.copy(o.targetGoal); o.speed = 9; }
     o.dirty = true;
+  }
+
+  // ---- Vista de cima navegável: Planta → bloco → cômodo → aparelho ----
+  // BLOCKS resolvido com ZONES (retângulos) e os aparelhos de cada cômodo (chaves de ITEMS, mais o que tem luminária/ar dentro dele).
+  _buildBlocks() {
+    this._hlGeo = new THREE.PlaneGeometry(1, 1);
+    this._hlMat = new THREE.MeshBasicMaterial({ color: 0xffc46b, transparent: true, opacity: 0.34, depthTest: false, depthWrite: false, toneMapped: false });
+    this._hl = new THREE.Group(); this._hl.visible = false; this._hl.userData.keep = true; this._scene.add(this._hl);
+    this._hlShow([[0, 0, 1, 1]]); this._hl.visible = false;   // uma peça pronta (o material entra no _precompile)
+    const near = (rs, x, z, m) => rs.some(([rx, rz, w, d]) => x >= rx - m && x <= rx + w + m && z >= rz - m && z <= rz + d + m);
+    const pts = ITEMS.map((it) => {
+      const rt = this._items.get(it.key);
+      return { key: it.key, p: (it.fixtures || []).filter((f) => !f.ext).map((f) => [f.p[0], f.p[2]]).concat(((rt && rt.airUnits) || []).map((u) => [u.p.x, u.p.z])) };
+    });
+    this._blocks = Object.entries(BLOCKS).map(([id, b]) => {
+      const rooms = b.rooms.map((r) => {
+        const rects = r.rects || r.zones.flatMap((z) => ZONES[z].rects.map((q) => q.slice(0, 4)));
+        const items = new Set(r.items || []);
+        if (!r.noauto) for (const q of pts) if (q.p.some(([x, z]) => near(rects, x, z, 0.3))) items.add(q.key);
+        return { id: r.id, label: r.label, rects, zones: r.zones, frame: r.frame, items: [...items].filter((k) => ITEMS.some((i) => i.key === k)) };
+      });
+      const blk = { id, label: b.label, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))] };
+      for (const r of rooms) r.block = blk;
+      return blk;
+    });
+  }
+  _rectsBox(rs) {
+    return [Math.min(...rs.map((r) => r[0])), Math.min(...rs.map((r) => r[1])), Math.max(...rs.map((r) => r[0] + r[2])), Math.max(...rs.map((r) => r[1] + r[3]))];
+  }
+  // retângulos [x0, z0, x1, z1] da região em foco (bloco ou cômodo) — usados no filtro de rótulos
+  _navRects() {
+    const n = this._nav;
+    return n.level === 2 && n.room ? n.room.rects.map((r) => [r[0], r[1], r[0] + r[2], r[1] + r[3]]) : n.level === 1 && n.block ? [n.block.box] : null;
+  }
+  // Enquadramento de cima de um retângulo (mesma orientação da planta: paisagem com a fachada à direita, retrato com a fachada embaixo)
+  _frameRect(x0, z0, x1, z1, margin) {
+    const A = this._camera.aspect, tanV = Math.tan(this._camera.fov * Math.PI / 360), land = A >= 1;
+    const hx = (x1 - x0) / 2 + margin, hz = (z1 - z0) / 2 + margin;
+    const d = land ? Math.max(hz / (tanV * A), hx / tanV) : Math.max(hx / (tanV * A), hz / tanV);
+    const target = new THREE.Vector3((x0 + x1) / 2, 0, (z0 + z1) / 2), o = this._orbit;
+    const dist = clamp(d * 1.08 + 3, o.minDist + 2, o.maxDist);   // +3 m: o topo das paredes (3 m) fica mais perto da câmera
+    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, 0.035, land ? -Math.PI / 2 : 0).add(target), target };
+  }
+  // cômodo (ou, na falta, o bloco) sob o ponto (x, z) do piso; folga de 0,8 m para as paredes
+  _hit(x, z) {
+    let best = null, bd = 0.8;
+    for (const b of this._blocks || []) for (const r of b.rooms) for (const [rx, rz, w, d] of r.rects) {
+      const dist = Math.hypot(Math.max(rx - x, 0, x - rx - w), Math.max(rz - z, 0, z - rz - d));
+      if (dist === 0) return { b, r };
+      if (dist < bd) { bd = dist; best = { b, r }; }
+    }
+    if (best) return best;
+    const b = (this._blocks || []).find((q) => x >= q.box[0] && x <= q.box[2] && z >= q.box[1] && z <= q.box[3]);
+    return b ? { b, r: null } : null;
+  }
+  // ponto do piso (y = 0) sob o mouse/toque
+  _groundPoint(e) {
+    const r = this._canvas.getBoundingClientRect();
+    this._ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    this._raycaster.setFromCamera(this._ndc, this._camera);
+    const ray = this._raycaster.ray; if (ray.direction.y > -1e-4) return null;
+    return ray.origin.clone().addScaledVector(ray.direction, -ray.origin.y / ray.direction.y);
+  }
+  // realce de bloco/cômodo sob o mouse na planta: retângulos âmbar translúcidos desenhados por cima (sem teste de profundidade), reaproveitados
+  _hlShow(rects) {
+    const g = this._hl; if (!g) return;
+    if (rects) {
+      while (g.children.length < rects.length) {
+        const m = new THREE.Mesh(this._hlGeo, this._hlMat); m.rotation.x = -Math.PI / 2; m.position.y = 0.06; m.renderOrder = 40; g.add(m);
+      }
+      g.children.forEach((m, k) => {
+        const r = rects[k]; m.visible = !!r;
+        if (r) { m.scale.set(r[2] - r[0], r[3] - r[1], 1); m.position.x = (r[0] + r[2]) / 2; m.position.z = (r[1] + r[3]) / 2; }
+      });
+    }
+    g.visible = !!rects;
+  }
+  _tintZones(ids, hex) { for (const id of ids || []) for (const m of this._zoneMeshes[id] || []) m.material.emissive.setHex(hex); }
+  _clearHover() {
+    this._hlShow(null); this._hoverKey = '';
+    if (this._hoverObj && this._hoverObj.userData.zone) this._tintZones([this._hoverObj.userData.zone], 0);
+    this._hoverObj = null; if (this._canvas) this._canvas.classList.remove('pick');
+    if (this._orbit) this._orbit.dirty = true;
+  }
+  _navTo(level, block, room) {
+    const blk = typeof block === 'string' ? (this._blocks || []).find((q) => q.id === block) : block;
+    const rm = typeof room === 'string' && blk ? blk.rooms.find((q) => q.id === room) : room;
+    this._nav = { level: blk ? (rm && level === 2 ? 2 : 1) : 0, block: blk || null, room: rm && blk ? rm : null };
+    this._clearHover(); this._resetView(true); this._renderNav(); this._updateLabels(); this._orbit.dirty = true;
+  }
+  // Voltar: cômodo → bloco → planta → sai da Vista de cima
+  _navBack() {
+    if (!this._topView) return;
+    const n = this._nav;
+    if (n.level === 0) this._setTopView(false);
+    else if (n.level === 1) this._navTo(0); else this._navTo(1, n.block);
+  }
+  // liga/desliga o aparelho (mesma lógica dos blocos do painel)
+  _toggleItem(key) {
+    const it = ITEMS.find((i) => i.key === key); if (!it) return;
+    const on = !!(this._state[key] && this._state[key].on);
+    if (it.kind === 'sensor') this.dispatchEvent(new CustomEvent('hass-more-info', { detail: { entityId: this.entity(key) }, bubbles: true, composed: true }));
+    else if (it.kind === 'light' || it.kind === 'switch') this._activate(key);
+    else if (it.kind === 'climate') this._svc('climate', 'set_hvac_mode', this.entity(key), { hvac_mode: on ? 'off' : 'cool' });
+    else if (it.kind === 'media') this._svc('media_player', on ? 'turn_off' : 'turn_on', this.entity(key));
+  }
+  _setNavHint(t) { if (this._navHint) this._navHint.textContent = t || this._navHintDefault || ''; }
+  // trilha + chips dos aparelhos do cômodo; reconstrói só quando o nível muda, senão só atualiza o estado dos chips
+  _renderNav() {
+    const row = this._navRow; if (!row) return;
+    row.hidden = !this._topView;
+    if (!this._topView) { this._navSig = ''; return; }
+    const n = this._nav, sig = [n.level, n.block && n.block.id, n.room && n.room.id].join('|');
+    if (sig !== this._navSig) {
+      this._navSig = sig;
+      const cr = this._navCrumbs; cr.innerHTML = '';
+      const list = [{ t: 'Planta', go: () => this._navTo(0) }];
+      if (n.block) list.push({ t: n.block.label, go: () => this._navTo(1, n.block) });
+      if (n.room) list.push({ t: n.room.label });
+      list.forEach((c, k) => {
+        if (k) { const sp = document.createElement('span'); sp.className = 'sep'; sp.textContent = '›'; sp.setAttribute('aria-hidden', 'true'); cr.appendChild(sp); }
+        const b = document.createElement('button'); b.textContent = c.t;
+        if (k === list.length - 1) b.setAttribute('aria-current', 'page'); else b.addEventListener('click', c.go);
+        cr.appendChild(b);
+      });
+      this._navHintDefault = n.level === 0 ? 'Clique num bloco para aproximar' : n.level === 1 ? 'Clique num cômodo para aproximar' : '';
+      this._navHint = document.createElement('span'); this._navHint.className = 'navhint'; this._navHint.textContent = this._navHintDefault; this._navHint.setAttribute('aria-live', 'polite');
+      const ch = this._navChipsEl; ch.innerHTML = ''; this._navChips = {};
+      if (n.level < 2) { cr.appendChild(this._navHint); ch.hidden = true; }
+      else {
+        ch.hidden = false;
+        const keys = n.room.items;
+        if (!keys.length) { this._navHint.textContent = 'Sem aparelhos neste cômodo'; ch.appendChild(this._navHint); }
+        for (const k of keys) {
+          const it = ITEMS.find((i) => i.key === k);
+          const c = document.createElement('button'); c.className = 'chip'; c.dataset.key = k; c.setAttribute('aria-pressed', 'false');
+          const ico = document.createElement('span'); ico.className = 'ico'; ico.innerHTML = iconSvg(it.icon);
+          const lb = document.createElement('span'); lb.textContent = it.label; const sm = document.createElement('small');
+          c.append(ico, lb, sm); c.style.setProperty('--dot', this._dotColor(k));
+          c.addEventListener('click', () => { this._toggleItem(k); this._flashRow(k); });
+          ch.appendChild(c); this._navChips[k] = { c, sm, it };
+        }
+      }
+    }
+    for (const [k, { c, sm, it }] of Object.entries(this._navChips || {})) {
+      const st = this._state[k], on = !!(st && st.on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false'); sm.textContent = this._stateText(it, st).split(' · ')[0];
+      if (it.rgb && st && st.attrs && st.attrs.rgb_color) c.style.setProperty('--dot', `rgb(${st.attrs.rgb_color.join(',')})`);
+    }
   }
   // Selo redondo do modo do ar (textura 64 px, uma por modo, em cache): frio ❄ azul, quente chama laranja,
   // seco gota, ventilar hélice, auto "A"
@@ -7070,6 +7440,7 @@ export class Igreja3DCard extends HTMLElement {
   // Voo suave até o(s) split(s) do cômodo — no templo, a parede com os splits —, enquadrando aparelho e fluxo.
   // A câmera fica acima das paredes de 3 m, de frente para o aparelho e um pouco de lado.
   _flyToAir(key) {
+    if (this._walkOn) return;   // a pessoa não é teleportada pelo voo do ar
     const rt = this._items.get(key); if (!rt || !rt.airUnits || !rt.airUnits.length || !this._orbit) return;
     // enquadra a parede com mais aparelhos (templo: os 3 da parede x = 16,05; os das pontas ficam no canto do quadro)
     const walls = new Map();
@@ -7093,6 +7464,54 @@ export class Igreja3DCard extends HTMLElement {
     rt.airUntil = Math.max(rt.airUntil || 0, now + 8000);
   }
 
+  // ---- Visão de pessoa (ver classe Walker) ----
+  // altura do piso sob (x, z): só o palco do templo (1,0 m) sobe; o resto é térreo
+  _walkFloor(x, z) { return x >= 0.15 && x <= 5.0 && z >= 19.6 && z <= 36.6 ? 1.0 : 0; }
+  // Colisão simples: cada segmento de parede (registrado em _wallSeg) vira uma caixa engordada pelo raio da pessoa; move por eixo
+  // (X e depois Z), então encostar numa parede desliza ao longo dela. Vãos de porta passam (o segmento não existe ali).
+  _walkCollide(px, pz, nx, nz) {
+    const R = 0.22, W = this._walls || [];
+    if (!this._wbox || this._wbox.length !== W.length) this._wbox = W.map((w) => w.axis === 'z' ? [w.c - w.t / 2 - R, w.a0 - R, w.c + w.t / 2 + R, w.a1 + R] : [w.a0 - R, w.c - w.t / 2 - R, w.a1 + R, w.c + w.t / 2 + R]);
+    const B = this._wbox, e = 1e-3;
+    for (let pass = 0; pass < 2; pass++) for (const [x0, z0, x1, z1] of B) if (pz > z0 && pz < z1 && nx > x0 && nx < x1) { if (px <= x0) nx = x0 - e; else if (px >= x1) nx = x1 + e; }
+    for (let pass = 0; pass < 2; pass++) for (const [x0, z0, x1, z1] of B) if (nx > x0 && nx < x1 && nz > z0 && nz < z1) { if (pz <= z0) nz = z0 - e; else if (pz >= z1) nz = z1 + e; }
+    return [clamp(nx, LOT.x0 + 0.5, LOT.x1 - 0.5), clamp(nz, LOT.z0 + 0.5, LOT.z1 - 0.5)];
+  }
+  _setWalk(on) {
+    on = !!on; if (on === !!this._walkOn || !this._orbit) return;
+    const o = this._orbit, cam = this._camera, cv = this._canvas;
+    if (on) {
+      if (this._topView) this._setTopView(false, true);
+      this._walkSaved = { pos: cam.position.clone(), target: o.target.clone(), panel: this._panelOpen, touched: o.touched };
+      if (this._panelOpen) this._setPanel(false);   // o painel cobriria o joystick
+      this._airFocus = null;
+      o.enabled = false; o.touched = true;
+      if (!this._walk) { this._walk = new Walker(this, cam, cv); this._walk.reset(12.0, 52.0); }
+      this._walkOn = true; this._walk.enable();
+      cam.near = 0.15; cam.fov = this._walkFov(); cam.updateProjectionMatrix();
+      cv.classList.add('walk'); try { cv.focus({ preventScroll: true }); } catch (_) {}
+      this._joy.hidden = false; this._showWalkHint();
+    } else {
+      this._walk.disable(); this._walkOn = false; o.enabled = true;
+      cam.near = 0.3; cam.fov = 42; cam.updateProjectionMatrix();
+      cv.classList.remove('walk'); this._joy.hidden = true; this._walkHint.classList.remove('show');
+      const sv = this._walkSaved;
+      // volta voando da altura dos olhos até onde a câmera estava antes
+      o.sph.setFromVector3(cam.position.clone().sub(o.target)); o.goal.copy(o.sph);
+      this._flyCam(sv.pos, sv.target, 3.2);
+      o.touched = sv.touched; if (sv.panel) this._setPanel(true);
+    }
+    this._walkBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    o.dirty = true;
+  }
+  // campo de visão de quem anda: mais aberto que o da maquete (42°), e ainda mais em telas em pé
+  _walkFov() { return this._camera.aspect < 1 ? 80 : 66; }
+  _showWalkHint() {
+    const h = this._walkHint, coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    h.textContent = coarse ? 'Joystick anda · arraste para olhar' : 'Setas/WASD ou joystick andam · arraste para olhar · Shift corre · Esc sai';
+    h.classList.add('show'); clearTimeout(this._walkHintT); this._walkHintT = setTimeout(() => h.classList.remove('show'), 6000);
+  }
+
   // ---- Ganchos públicos (depuração / demo) ----
   // setView([x,y,z],[tx,ty,tz]) — posiciona a câmera na hora (e para de recentrar sozinha)
   setView(pos, target) {
@@ -7102,6 +7521,19 @@ export class Igreja3DCard extends HTMLElement {
     this._orbit.touched = true; this._orbit.dirty = true;
   }
   setFachada(on) { this._setRoof(!!on); }
+  // setWalk(true|false) entra/sai da visão de pessoa · setWalkPose(x, z, yaw, pitch) posiciona a pessoa na hora (sem colisão; yaw 0 olha para −z,
+  // + vira à esquerda) · getWalkPose() → { x, y, z, yaw, pitch }
+  setWalk(on) { this._setWalk(!!on); }
+  setWalkPose(x, z, yaw = 0, pitch = 0) { this._setWalk(true); this._walk.reset(x, z, yaw, pitch); this._orbit.dirty = true; }
+  getWalkPose() { const w = this._walk; return w ? { x: w.pos.x, y: w.pos.y, z: w.pos.z, yaw: w.yaw, pitch: w.pitch } : null; }
+  // setTopNav('ala', 'midia') — liga a Vista de cima (se preciso) e navega direto para o bloco / cômodo; getTopNav() → { level, block, room }
+  setTopNav(block, room) {
+    if (!this._blocks || !this._orbit) return;
+    if (!this._topView) this._setTopView(true);
+    const b = this._blocks.find((q) => q.id === block);
+    if (b) this._navTo(room ? 2 : 1, b, room); else this._navTo(0);
+  }
+  getTopNav() { const n = this._nav; return { level: this._topView ? n.level : -1, block: n.block && n.block.id, room: n.room && n.room.id }; }
   // setMode('auto'|'day'|'night') — troca o ambiente na hora (sem a transição suave dos botões)
   setMode(mode) { if (['auto', 'day', 'night'].includes(mode)) { this._mode = mode; this._applyMode(); this._nightLevel = undefined; if (this._orbit) this._orbit.dirty = true; } }
 
@@ -7131,9 +7563,46 @@ export class Igreja3DCard extends HTMLElement {
     for (const h of hits) { let vis = true; for (let o = h.object; o; o = o.parent) if (!o.visible) { vis = false; break; } if (vis) return h.object; }
     return null;
   }
-  _onClick(e) { const o = this._pick(e); if (o && o.userData.item) { this._activate(o.userData.item); this._flashRow(o.userData.item); } }
+  _onClick(e) {
+    const o = this._pick(e);
+    if (this._topView) return this._topClick(e, o);
+    if (o && o.userData.item) { this._activate(o.userData.item); this._flashRow(o.userData.item); }
+  }
+  // Vista de cima: planta → 1º clique aproxima o bloco → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
+  _topClick(e, o) {
+    const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
+    const toggle = (k) => { this._toggleItem(k); this._flashRow(k); };
+    if (n.level === 2) {
+      const room = n.room;
+      if (o && !o.userData.zone && o.userData.item && room.items.includes(o.userData.item)) return toggle(o.userData.item);   // luminária, ar, telão…
+      if (h && h.b !== n.block) return this._navTo(1, h.b);
+      if (h && h.r && h.r !== room) return this._navTo(2, n.block, h.r);
+      if (o && o.userData.zone && o.userData.item) {   // piso do próprio cômodo: a luz principal dele (como no clique de sempre)
+        const main = room.items.find((k) => { const it = ITEMS.find((i) => i.key === k); return it && it.kind === 'light'; });
+        toggle(main || o.userData.item);
+      }
+      return;
+    }
+    if (!h) return;
+    if (n.level === 0 || h.b !== n.block) this._navTo(1, h.b);
+    else if (h.r) this._navTo(2, h.b, h.r);
+  }
   _onHover(e) {
     if (e.pointerType && e.pointerType !== 'mouse') return;
+    if (this._topView && this._nav.level < 2) {
+      // planta e bloco: realça o bloco / cômodo sob o mouse
+      const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
+      let rects = null, key = '', name = '';
+      if (h && (n.level === 0 || h.b !== n.block || !h.r)) { rects = [h.b.box]; key = 'b:' + h.b.id; name = h.b.label; }
+      else if (h) { rects = h.r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]); key = 'r:' + h.r.id; name = h.r.label; }
+      this._canvas.classList.toggle('pick', !!rects);
+      if (key !== this._hoverKey) {
+        this._hlShow(rects); this._hoverKey = key; this._setNavHint(name ? `${name} — clique para aproximar` : '');
+        this._orbit.dirty = true;
+      }
+      return;
+    }
+    if (this._hoverKey) { this._hlShow(null); this._hoverKey = ''; }
     const o = this._pick(e);
     this._canvas.classList.toggle('pick', !!o);
     if (o !== this._hoverObj) {
@@ -7279,12 +7748,7 @@ export class Igreja3DCard extends HTMLElement {
       more.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); this._openDetail(it.key); } });
       top.appendChild(more);
     }
-    tile.addEventListener('click', () => {
-      if (it.kind === 'sensor') { this.dispatchEvent(new CustomEvent('hass-more-info', { detail: { entityId: this.entity(it.key) }, bubbles: true, composed: true })); return; }
-      if (it.kind === 'light' || it.kind === 'switch') this._activate(it.key);
-      else if (it.kind === 'climate') this._svc('climate', 'set_hvac_mode', this.entity(it.key), { hvac_mode: this._state[it.key] && this._state[it.key].on ? 'off' : 'cool' });
-      else if (it.kind === 'media') this._svc('media_player', this._state[it.key] && this._state[it.key].on ? 'turn_off' : 'turn_on', this.entity(it.key));
-    });
+    tile.addEventListener('click', () => this._toggleItem(it.key));
     this._tiles[it.key] = t; return tile;
   }
   // Faixa de detalhes (brilho/cor do LED, modo/temperatura do ar, controles da TV)
@@ -7352,6 +7816,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   _renderPanel() {
     if (!this._tiles) return;
+    if (this._navRow) this._renderNav();
     const now = Date.now();
     for (const [k, t] of Object.entries(this._tiles)) {
       const st = this._state[k]; const on = !!(st && st.on);
@@ -7444,7 +7909,7 @@ export class Igreja3DCard extends HTMLElement {
     // no celular o HUD de cima (título + botões em 2 linhas) cobre ~150 px: a cena é enquadrada entre ele e o painel
     const hudH = this._hudTop ? this._hudTop.offsetHeight : 0, U = hudH > 90 ? Math.min(hudH, h * 0.3) : 0;
     const vh = Math.max(120, h - P - U); this._vh = vh;
-    this._camera.aspect = w / vh;
+    this._camera.aspect = w / vh; if (this._walkOn) this._camera.fov = this._walkFov();
     if (P > 0 || U > 0) this._camera.setViewOffset(w, vh, 0, -U, w, h); else this._camera.clearViewOffset();
     this._camera.updateProjectionMatrix();
     if (!this._orbit.touched) this._resetView();
@@ -7483,7 +7948,7 @@ export class Igreja3DCard extends HTMLElement {
     if (this._busy) return;   // compilando shaders (_precompile)
     const dt = Math.min(this._clock.getDelta(), 0.1);
     const t = this._clock.elapsedTime;
-    let dirty = this._orbit.update(dt);
+    let dirty = this._walkOn ? this._walk.update(dt) : this._orbit.update(dt);
     const k = 1 - Math.exp(-dt * 7);
     // Ambiente dia/noite — em "auto" segue a elevação do sol (transição suave no crepúsculo)
     this._updateTime();
