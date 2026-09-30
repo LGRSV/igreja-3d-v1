@@ -9,6 +9,10 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.5.5 — Fachada automática no modo Pessoa
+
+- Ao entrar na visão de **Pessoa** a **Fachada** liga sozinha: paredes altas, forro e telhado aparecem, então por fora se vê a fachada completa e por dentro o teto (some o céu sobre as salas). Ao sair, a Fachada volta a como estava. O botão Fachada continua valendo durante o passeio. Opção `fachada_pessoa: false` desliga esse comportamento.
+
 ## Novidades da v1.5.4 — escada do hall de volta ao lugar original
 
 - A escada do hall voltou a ser a **escada em U no canto** (x 13,62–15,94 · z 44,2–49,55), com o jardim de seixos, a cica e a planta alta sob o lance 2, e o patamar de cima sobre a passagem dos banheiros. A escada reta da fachada saiu; lounge (parede x = 4,0), tríptico, café (fachada x 7,75–9,95), mesa bistrô, tapete redondo e planta grande voltaram aos lugares de antes.
