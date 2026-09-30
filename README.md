@@ -9,6 +9,14 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.5.3 — animações do ar, das lâmpadas e das portas (maçaneta)
+
+- **Maçaneta no modo Pessoa**: nas portas de madeira de giro a alavanca cromada desce (~41°) antes de a folha sair do batente e volta ao soltar; ao fechar, desce de novo perto do batente. Com `prefers-reduced-motion` a porta abre direto.
+- **Portas**: giro em S com leve passada (~4 %) e assentamento; na de 2 folhas a segunda folha sai um pouco depois; as de correr e a principal de vidro freiam no fim.
+- **Ar-condicionado**: ao ligar, o LED pisca 2 vezes, a aleta abre com passada e o fluxo cresce; ligado, a aleta balança de leve, o fluxo tem turbulência e uma névoa de pontos desce; ao desligar, o fluxo recolhe, a aleta fecha e o LED apaga (mantém a cor do modo).
+- **Lâmpadas**: cada tipo com sua partida — tubo/LED linear com partida tremida (~0,6 s), lâmpadas quentes começam alaranjadas com o halo crescendo, palco RGB com transição suave de cor (luz, feixes, poça e emissivo). Nenhuma luz real ou shader novo.
+- Teste novo: `tools/anim_test.mjs`.
+
 ## Novidades da v1.5.2 — painel redesenhado e detalhes de realismo
 
 - **Painel**: vidro escuro com cantos maiores e sombra, centralizado no desktop e com alça no celular; abre deslizando e fecha animado (arrastar a barra das abas para baixo recolhe no toque). Abas em pílula com ícones, contador "N de M luzes acesas", filtros por área (Todos, Templo, Entrada, Administração, Apoio) com cabeçalho "N de M ativos". Cartões com ícone em chip, estado e tempo em linhas separadas, brilho na cor do aparelho quando ligado (palco roxo, luzes âmbar, ar azul, presença rosa) e barra de brilho nas dimerizáveis. O detalhe virou uma folha de controle presa ao pé do painel (interruptor, slider de brilho com %, cores, termostato com modos, desligar em 15/30/60 min; Esc fecha). Rotinas em cartões maiores; automações e atividade com ícones. Botão "Painel ▴" com o número de luzes acesas. Setas ←/→ trocam de aba; sem animação com `prefers-reduced-motion`.
