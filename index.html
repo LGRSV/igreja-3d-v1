@@ -21,7 +21,7 @@
 
   /* Faixa de hora do dia (só na demo) — mesmo visual do HUD do cartão */
   .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
-    width: min(380px, calc(100vw - 24px)); padding: 4px 6px 4px 11px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time track btn"; align-items: center; column-gap: 8px;
+    width: min(380px, calc(100vw - 24px)); padding: 4px 6px 4px 11px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "time track btn hide"; align-items: center; column-gap: 8px;
     background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; color: #e6edf7;
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
     font: 12px/1.25 -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif; transition: opacity .2s; }
@@ -58,6 +58,17 @@
   .sky-live:not(.on) .dot { background: transparent; border: 2px solid var(--amber); box-sizing: border-box; }
   @keyframes skypulse { 0% { box-shadow: 0 0 0 0 rgba(75, 227, 139, .6); } 70%, 100% { box-shadow: 0 0 0 7px rgba(75, 227, 139, 0); } }
   @media (prefers-reduced-motion: reduce) { .sky-live.on .dot { animation: none; } }
+  /* ocultar: a faixa vira só uma pílula com a hora; clicar nela (ou no botão) mostra de novo */
+  .sky-hide { grid-area: hide; appearance: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .06); color: #aab4c8; cursor: pointer; }
+  .sky-hide:hover { background: rgba(255, 255, 255, .14); color: #e6edf7; }
+  .sky-hide:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .sky-hide svg { width: 12px; height: 12px; transition: transform .2s; }
+  .sky.min { width: auto; grid-template-columns: auto auto; grid-template-areas: "time hide"; padding: 3px 4px 3px 10px; cursor: pointer; }
+  .sky.min .sky-track, .sky.min .sky-live, .sky.min .sky-cap { display: none; }
+  .sky.min .sky-time { min-width: 0; }
+  .sky.min output { font-size: 13px; }
+  .sky.min .sky-hide svg { transform: rotate(180deg); }
   @media (max-width: 560px) {
     .sky { width: min(360px, calc(100vw - 24px)); }
     .sky-cap { display: none; }
@@ -77,6 +88,7 @@
     <span class="sky-thumb" id="skyThumb" aria-hidden="true"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg><svg class="moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a.6.6 0 0 0-.8-.7A9.6 9.6 0 1 0 21.1 15.4a.6.6 0 0 0-.7-.8z"/></svg></span>
   </div>
   <button class="sky-live on" id="horaAgora" type="button" aria-pressed="true"><span class="dot" aria-hidden="true"></span><span id="skyLiveTxt">Ao vivo</span></button>
+  <button class="sky-hide" id="skyHide" type="button" aria-expanded="true" aria-label="Ocultar a faixa da hora" title="Ocultar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
 </div>
 <script type="module">
 /*
@@ -8571,6 +8583,19 @@ btnLive.addEventListener('click', () => { live = true; card.setSimTime(null); ho
 setInterval(() => { if (live) { hora.value = nowMin(); } render(); }, 15000);
 setTimeout(render, 600); setTimeout(render, 2500);
 render();
+
+// Ocultar/mostrar a faixa (lembra a escolha neste navegador)
+const btnHide = document.getElementById('skyHide');
+function setMin(on) {
+  sky.classList.toggle('min', on);
+  btnHide.setAttribute('aria-expanded', String(!on));
+  btnHide.setAttribute('aria-label', on ? 'Mostrar a faixa da hora' : 'Ocultar a faixa da hora'); btnHide.title = on ? 'Mostrar' : 'Ocultar';
+  try { localStorage.setItem('igreja3d-sky-min', on ? '1' : '0'); } catch (_) {}
+  if (typeof place === 'function') place();
+}
+btnHide.addEventListener('click', (e) => { e.stopPropagation(); setMin(!sky.classList.contains('min')); });
+sky.addEventListener('click', () => { if (sky.classList.contains('min')) setMin(false); });
+try { if (localStorage.getItem('igreja3d-sky-min') === '1') setMin(true); } catch (_) {}
 
 // Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas);
 // senão logo abaixo do HUD (título, botões e a trilha da Vista de cima). Recalcula quando o layout muda.
