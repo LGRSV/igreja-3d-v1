@@ -1318,6 +1318,18 @@ class Orbit {
 }
 
 const _dm1 = new THREE.Matrix4(), _dm2 = new THREE.Matrix4(), _dm3 = new THREE.Matrix4();   // temporários das portas (_doorApply)
+// Acender/apagar das lâmpadas (sem alocar por quadro): up/dn = velocidade da subida/descida (1/s, exponencial), warm = quanto começa alaranjado
+// (filamento/HID esquentando: cor e halo crescem junto), tube = tremida de partida de tubo fluorescente/LED linear (só onde faz sentido)
+const _WARM = new THREE.Color(1.0, 0.5, 0.18);
+const LAMP_FX = {
+  palco: { up: 11, dn: 7, warm: 0, tube: 0 }, plateia: { up: 5.5, dn: 4.5, warm: 0.35, tube: 0 }, hall: { up: 3.2, dn: 4.5, warm: 0.8, tube: 0 },
+  fachada: { up: 2.4, dn: 3.2, warm: 0.55, tube: 0 }, estacionamento: { up: 1.5, dn: 2.2, warm: 0.7, tube: 0 }, pastoral: { up: 3, dn: 4, warm: 0.9, tube: 0 },
+  recepcao: { up: 3.4, dn: 4.5, warm: 0.6, tube: 0 }, administrativo: { up: 16, dn: 12, warm: 0, tube: 1 }, circulacao: { up: 16, dn: 12, warm: 0, tube: 1 },
+  midia: { up: 16, dn: 12, warm: 0, tube: 1 }, voluntariado: { up: 3.6, dn: 5, warm: 0.6, tube: 0 }, cozinha: { up: 16, dn: 12, warm: 0, tube: 1 },
+  banheiros: { up: 16, dn: 12, warm: 0, tube: 1 }, familia: { up: 2.6, dn: 3.5, warm: 1, tube: 0 },
+};
+const _TUBE = [[0.07, 0.85], [0.13, 0.05], [0.21, 0.7], [0.3, 0.1], [0.38, 0.95], [0.45, 0.25], [0.52, 1], [0.58, 0.6], [0.62, 1]];   // (até quando, brilho)
+const tubeFlick = (a) => { for (const [u, v] of _TUBE) if (a < u) return v; return 1; };
 
 // ---------------------------------------------------------------------------
 // Visão de pessoa: câmera a 1,6 m do piso; setas/WASD ou joystick andam, arrastar vira a cabeça (Q/E também), Shift corre.
@@ -6233,7 +6245,7 @@ export class Igreja3DCard extends HTMLElement {
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
     for (const it of ITEMS) {
       const rt = this._items.get(it.key) || {}; this._items.set(it.key, rt);
-      rt.lights = rt.lights || []; rt.fixtures = rt.fixtures || []; rt.target = 0; rt.level = 0; rt.color = new THREE.Color(it.color || 0xffffff);
+      rt.lights = rt.lights || []; rt.fixtures = rt.fixtures || []; rt.target = 0; rt.level = 0; rt.color = new THREE.Color(it.color || 0xffffff); rt.cbase = rt.color.clone(); rt.cshow = rt.color.clone();
       if (!it.fixtures) continue;
       // quality leve (tablet/celular): poucas luzes reais — cada item principal fica com LITE_LIGHTS[key] delas,
       // mais fortes e com alcance maior para compensar; as demais viram só halo + emissivo (visual quase igual)
@@ -6348,7 +6360,7 @@ export class Igreja3DCard extends HTMLElement {
         // Halo (bloom barato) na luminária
         const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TXg, color: rt.color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
         glow.scale.set(gs, gs, 1); glow.position.copy(mesh.position);
-        holder.add(glow); rt.glows = rt.glows || []; rt.glows.push({ sp: glow, base: gb });
+        holder.add(glow); rt.glows = rt.glows || []; rt.glows.push({ sp: glow, base: gb, gs });
         // Feixe volumétrico falso (cone aditivo) nos refletores do palco: segue a cor e o brilho da entidade
         if ((f.spot && !f.aim) || f.moving) {
           const dir = f.moving ? MOVE_DIR : new THREE.Vector3(0, -0.85, -0.5).normalize(), len = f.moving ? 5.8 : 5.2;
@@ -6410,7 +6422,7 @@ export class Igreja3DCard extends HTMLElement {
     let i = 0;
     if (this._rlF) {
       const { f, key } = this._rlF, rt = this._items.get(key);
-      if (rt) { i = (f.i || 16) * 1.25 * rt.level * dayScale; L.color.copy(rt.color); }
+      if (rt) { i = (f.i || 16) * 1.25 * (rt.lv != null ? rt.lv : rt.level) * dayScale; L.color.copy(rt.cshow || rt.color); }
       if (L.position.x !== f.p[0] || L.position.z !== f.p[2]) { L.position.set(f.p[0], f.p[1] - 0.1, f.p[2]); L.distance = Math.max(f.d || 5, 5.5) * 1.2; i = i || 0; this._rlMoved = true; }
     }
     if (Math.abs(L.intensity - i) < 0.01 && !this._rlMoved) return false;
@@ -6681,7 +6693,7 @@ export class Igreja3DCard extends HTMLElement {
   // ficam idênticas às malhas estáticas de antes). O quadro da folha tem x = ao longo da parede e z = lateral; no eixo z ele é o mundo
   // girado −90°, então o lateral local é −x do mundo. A porta principal (kind 'main') só ganha um "abrir" local nas folhas que já existem.
   _doorNew(d) {
-    d = Object.assign({ leaves: [], q: 0, p: 0, target: 0, side: 1, open: 1.5, slideLen: 0, max: { '-1': 1.55, '1': 1.55 }, awayAt: 0, hold: 0, suppress: false, moving: false, dist: 99, du: 99, n: 0 }, d);
+    d = Object.assign({ leaves: [], q: 0, p: 0, p2: 0, hs: 0, lever: false, target: 0, side: 1, open: 1.5, slideLen: 0, max: { '-1': 1.55, '1': 1.55 }, awayAt: 0, hold: 0, suppress: false, moving: false, dist: 99, du: 99, n: 0 }, d);
     d.mx = d.axis === 'x' ? (d.a + d.b) / 2 : d.c; d.mz = d.axis === 'x' ? d.c : (d.a + d.b) / 2;
     return d;
   }
@@ -6690,11 +6702,11 @@ export class Igreja3DCard extends HTMLElement {
     const w = op.b - op.a, mid = (op.a + op.b) / 2, sd = op.side || -1, hx = op.b - 0.1;
     const d = this._doorNew({ kind: two ? 'double' : black ? 'slide' : 'swing', axis, c, t, a: op.a, b: op.b, sd, latOff: sd * (t / 2 + 0.05) });
     const ln = (n) => (axis === 'x' ? n : -n);
-    const lf = (u, dirU, len) => { const l = { u, dirU, len, parts: [] }; d.leaves.push(l); return l; };
+    const lf = (u, dirU, len) => { const l = { u, dirU, len, parts: [], lag: false }; d.leaves.push(l); return l; };
     // peça: s = tamanho (ao longo da parede, altura, lateral) · (u, y, n) = posição absoluta no mundo da parede
     const part = (l, geo, mat, s, u, y, n, cast, recv) => l.parts.push({ geo, mat, s, pos: [u - l.u, y, ln(n)], cast, recv });
     if (two) {
-      const A = lf(op.a + 0.04, 1, mid - 0.002 - (op.a + 0.04)), B = lf(op.b - 0.04, -1, op.b - 0.04 - (mid + 0.002));
+      const A = lf(op.a + 0.04, 1, mid - 0.002 - (op.a + 0.04)), B = lf(op.b - 0.04, -1, op.b - 0.04 - (mid + 0.002)); B.lag = true;   // a segunda folha atrasa um pouco (as duas nunca se movem em uníssono)
       // folhas pretas (black2) ou de vidro (glass2, transparentes: sem sombra)
       const lm = glass2 ? M.glass : M.pretoFosco, lt = glass2 ? 0.02 : 0.04;
       part(A, 'box', lm, [A.len, 2.06, lt], (op.a + 0.04 + mid - 0.002) / 2, 1.03, 0, !glass2, !glass2);
@@ -6717,7 +6729,9 @@ export class Igreja3DCard extends HTMLElement {
       for (const s2 of [-1, 1]) {
         part(l, 'cyl', M.chrome, null, hx, 1.02, s2 * 0.026, false, false);   // roseta
         part(l, 'box', M.chrome, [0.13, 0.02, 0.022], hx - 0.05, 1.02, s2 * 0.05, false, true);   // alavanca
+        l.parts[l.parts.length - 1].lever = [hx - l.u, 1.02];   // gira em torno da roseta (x local da folha, y) quando a pessoa "aperta" a maçaneta
       }
+      d.lever = true;
     }
     (this._doors || (this._doors = [])).push(d);
   }
@@ -6785,20 +6799,37 @@ export class Igreja3DCard extends HTMLElement {
     for (const d of D) this._doorApply(d);
     for (const im of this._doorMeshes) { im.computeBoundingSphere(); im.boundingSphere.radius += 3; }
   }
-  // posição das peças da porta no estado atual (d.p eased 0…1, d.side, d.open)
+  // posição das peças da porta no estado atual (d.p eased 0…1 — pode passar um pouco de 1 no "assentar" —, d.side, d.open, d.hs = maçaneta apertada 0…1)
   _doorApply(d) {
     if (d.kind === 'main') return;
     const z = d.axis === 'z', base = z ? -Math.PI / 2 : 0, m1 = _dm1, m2 = _dm2, m3 = _dm3;
-    const p = d.p, lat = z ? -d.latOff : d.latOff;
+    const lat = z ? -d.latOff : d.latOff, hang = d.hs * 0.72;   // alavanca desce ~41°
     for (const l of d.leaves) {
+      const p = l.lag ? d.p2 : d.p;
       if (d.kind === 'slide') {
         m1.makeRotationY(base);
         m2.makeTranslation(clamp((p - 0.12) / 0.88, 0, 1) * d.slideLen, 0, clamp(p / 0.25, 0, 1) * lat); m1.multiply(m2);
       } else m1.makeRotationY(base - d.side * l.dirU * p * d.open);
       const e = m1.elements; e[12] += z ? d.c : l.u; e[14] += z ? l.u : d.c;   // pivô no mundo
-      for (const pt of l.parts) { m3.multiplyMatrices(m1, pt.local); pt.mesh.setMatrixAt(pt.idx, m3); }
+      for (const pt of l.parts) {
+        if (pt.lever && hang > 0.001) {
+          // alavanca: gira em torno da roseta (eixo = normal da folha), como se a mão a apertasse
+          const cs = Math.cos(hang), sn = Math.sin(hang), px = pt.lever[0], py = pt.lever[1];
+          m2.makeRotationZ(hang); const f = m2.elements; f[12] = px - cs * px + sn * py; f[13] = py - sn * px - cs * py;
+          m2.multiply(pt.local); m3.multiplyMatrices(m1, m2);
+        } else m3.multiplyMatrices(m1, pt.local);
+        pt.mesh.setMatrixAt(pt.idx, m3);
+      }
     }
     for (const im of d.meshes) im.instanceMatrix.needsUpdate = true;
+  }
+  // curva do movimento (q = tempo normalizado 0…1 → ângulo/deslize 0…1): a folha de giro abre com um "empurrão" que passa um tico
+  // do fim e assenta (mola amortecida, ~5%); fecha em S suave; a de correr e a principal largam rápido e vão freando devagar
+  _doorEase(d, q) {
+    if (q <= 0) return 0;
+    if (d.kind === 'slide' || d.kind === 'main') { if (q >= 1) return 1; const w = 1 - Math.pow(1 - q, 1.7); return w * w * (3 - 2 * w); }
+    if (d.target) { if (q >= 1) return 1; const tau = q * 1.4; return 1 - Math.exp(-4.2 * tau) * (Math.cos(4.6 * tau) + 0.913 * Math.sin(4.6 * tau)); }
+    return q * q * (3 - 2 * q);
   }
 
   // Lado para onde a folha gira (para longe da pessoa, se couber) e quanto abre
@@ -6835,10 +6866,20 @@ export class Igreja3DCard extends HTMLElement {
       } else if (d.target) {
         if (!d.awayAt) d.awayAt = now; else if (now - d.awayAt > 2500) { d.target = 0; d.awayAt = 0; }
       }
-      if (d.q !== d.target) {
-        const dur = d.kind === 'slide' ? 0.95 : 0.75;
-        d.q = this._reduced ? d.target : d.target ? Math.min(1, d.q + dt / dur) : Math.max(0, d.q - dt / (dur * 1.15));
-        d.p = d.q * d.q * (3 - 2 * d.q); d.moving = moving = true;
+      // maçaneta (portas de giro): a "mão" aperta antes de a folha sair do batente e solta logo que ela anda; ao fechar aperta de novo
+      // perto do batente (a lingueta recua) e solta quando a folha encosta
+      const lev = d.lever && !this._reduced, slideLike = d.kind === 'slide' || d.kind === 'main';
+      const wantH = lev ? (d.target ? (d.q < 0.05 ? 1 : 0) : (d.q > 0 && d.q < 0.1 ? 1 : 0)) : 0;
+      if (d.q !== d.target || d.hs !== wantH) {
+        const dur = slideLike ? 1.0 : d.kind === 'double' ? 1.2 : 1.3;
+        if (this._reduced) { d.q = d.target; d.hs = 0; }
+        else {
+          if (!(d.target && lev && d.q < 0.02 && d.hs < 0.97)) d.q = d.target ? Math.min(1, d.q + dt / dur) : Math.max(0, d.q - dt / (dur * 1.05));   // espera a maçaneta descer
+          if (d.hs !== wantH) { const r = dt / (wantH > d.hs ? 0.14 : 0.26); d.hs = wantH > d.hs ? Math.min(wantH, d.hs + r) : Math.max(wantH, d.hs - r); }
+        }
+        d.p = this._doorEase(d, d.q);
+        if (d.kind === 'double') d.p2 = this._doorEase(d, clamp((d.q - 0.06) / 0.94, 0, 1));
+        d.moving = moving = true;
         if (d.kind === 'main') { d.rt.pOpen = d.p; d.rt.pMoving = true; } else this._doorApply(d);
       } else if (d.moving) {
         d.moving = false; moving = true;   // acabou de assentar: um último quadro + sombras refeitas uma vez
@@ -6876,7 +6917,7 @@ export class Igreja3DCard extends HTMLElement {
     let any = false;
     for (const d of this._doors || []) {
       if (d.q === 0 && d.target === 0 && !d.moving) continue;
-      any = true; d.q = d.p = d.target = 0; d.hold = 0; d.awayAt = 0; d.suppress = false; d.moving = false;
+      any = true; d.q = d.p = d.p2 = d.hs = d.target = 0; d.hold = 0; d.awayAt = 0; d.suppress = false; d.moving = false;
       if (d.kind === 'main') { d.rt.pOpen = 0; d.rt.pMoving = false; } else this._doorApply(d);
     }
     if (any) { this._refreshPointShadows(); this._needShadow = true; }
@@ -7008,8 +7049,9 @@ export class Igreja3DCard extends HTMLElement {
       vertexShader: 'attribute float aU; uniform float uG[8]; varying vec2 vUv; varying float vG; void main(){ vUv = uv; vG = uG[int(aU + 0.5)]; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
       fragmentShader: 'uniform vec3 uC; uniform float uI; uniform float uT; uniform float uTop; varying vec2 vUv; varying float vG; void main(){ float k = floor(vUv.x); float u = vUv.x - k; float v = vUv.y;'
         + ' bool fl = k > 2.5; float g = fl ? clamp((vG - 0.3) / 0.7, 0.0, 1.0) : vG; float vf = g * 1.3; float reveal = 1.0 - smoothstep(vf - 0.22, vf, v);'
-        + ' float edge = smoothstep(0.0, 0.22, u) * smoothstep(1.0, 0.78, u); float fade = smoothstep(0.0, 0.06, v) * pow(1.0 - v, 1.5);'
-        + ' float s = 0.5 + 0.5 * sin(v * 21.0 - uT * 4.5 + k * 2.1 + u * 4.0); float fil = 0.72 + 0.28 * sin(u * 37.0 + k * 3.7 + v * 5.0);'
+        + ' float uw = u + 0.05 * sin(v * 9.0 - uT * 2.0 + k * 3.0) * v; float edge = smoothstep(0.0, 0.22, uw) * smoothstep(1.0, 0.78, uw); float fade = smoothstep(0.0, 0.06, v) * pow(1.0 - v, 1.5);'
+        + ' float tb = 0.9 * sin(v * 6.5 + uT * 1.6 + u * 5.0 + k * 1.9) + 0.5 * sin(v * 13.0 - uT * 2.3 + u * 9.0 + k);'   // turbulência: o ar ondula, não é uma fita rígida
+        + ' float s = 0.5 + 0.5 * sin(v * 21.0 - uT * 4.5 + k * 2.1 + u * 4.0 + tb); float fil = 0.72 + 0.28 * sin(u * 37.0 + k * 3.7 + v * 5.0 + tb * 0.7);'
         + ' float a = fl ? smoothstep(0.0, 0.12, v) * (1.0 - v) * (0.6 + 0.4 * s) * 1.1 : fade * (0.3 + 0.7 * s * s) * fil;'   // piso: leque mais cheio
         + ' vec3 col = uC; if (fl) { a *= 1.0 + uTop * (0.9 + 0.3 * sin(uT * 5.0)); col = mix(uC, pow(uC, vec3(1.8)) * 1.15, uTop * 0.75); }'   // Vista de cima: o leque no piso é o que se enxerga → mais forte, mais saturado e pulsando
         + ' float front = exp(-pow((v - vf + 0.09) / 0.1, 2.0)) * (1.0 - g);'   // ponta que avança brilha enquanto nasce
@@ -7042,17 +7084,29 @@ export class Igreja3DCard extends HTMLElement {
       const sp = new THREE.Sprite(bm); sp.position.set(x, 3.4, z).addScaledVector(out, 0.9); sp.scale.set(0.042, 0.042, 1); sp.renderOrder = 9; sp.visible = false;
       scene.add(sp); (rt.badges = rt.badges || []).push(sp);
       // fitas do fluxo (3 camadas, curvando para baixo como ar frio); uv.x = camada + posição na largura, uv.y = 0 na aleta → 1 na ponta
-      const ui = rt.airUnits.length - 1, A = rt.air = rt.air || { pos: [], uv: [], au: [], idx: [] }, sc = Ls > 1 ? 1.45 : 1, NV = 14;   // templo: unidades grandes, jato maior
+      const ui = rt.airUnits.length - 1, A = rt.air = rt.air || { pos: [], uv: [], au: [], idx: [], pa: [], pb: [], pc: [], pm: [] }, sc = Ls > 1 ? 1.45 : 1, NV = 14;   // templo: unidades grandes, jato maior
       _m4.compose(_v.set(x, y, z), _q.setFromAxisAngle(_up, ry), _one);
+      const pr = mulberry32(917 + rt.airUnits.length * 31 + Math.round(x * 7 + z * 3)), NP = this._min ? 8 : Ls > 1 ? 30 : 16;
       for (let k = 0; k < 3; k++) {
         const W = Ls - 0.18, len = (1.05 + 0.3 * k) * sc, a0 = 0.55 + 0.2 * k, a1 = 1.2 + 0.12 * k, base = A.pos.length / 3;
         let py = -Hs / 2 - 0.02 - 0.015 * k, pz = D / 2 - 0.04 + 0.02 * k;
+        const pth = [];
         for (let j = 0; j <= NV; j++) {
           const v = j / NV, w = W * (1 + 0.4 * v) / 2;
           for (const u of [0, 1]) { const p = new THREE.Vector3(u ? w : -w, py, pz).applyMatrix4(_m4); A.pos.push(p.x, p.y, p.z); A.uv.push(u + k, v); A.au.push(ui); }
+          pth.push([py, pz]);
           const ang = a0 + (a1 - a0) * v * v, st = len / NV; py -= Math.sin(ang) * st; pz += Math.cos(ang) * st;
         }
         for (let j = 0; j < NV; j++) { const i = base + j * 2; A.idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); }
+        // partículas de névoa que acompanham esta camada: curva de Bézier (início, meio, fim) da linha central da fita, com abertura lateral
+        for (let n = 0; n < NP / 3; n++) {
+          const xr = (pr() - 0.5) * W * 0.95, e0 = pth[0], em = pth[NV >> 1], e1 = pth[NV];
+          const q0 = new THREE.Vector3(xr, e0[0], e0[1]).applyMatrix4(_m4), qm = new THREE.Vector3(xr * 1.2, em[0], em[1]),
+            q1 = new THREE.Vector3(xr * 1.55, e1[0], e1[1]).applyMatrix4(_m4);
+          qm.set(xr * 1.125, 2 * em[0] - (e0[0] + e1[0]) / 2, 2 * em[1] - (e0[1] + e1[1]) / 2).applyMatrix4(_m4);   // ponto de controle (a curva passa pelo meio)
+          A.pa.push(q0.x, q0.y, q0.z); A.pb.push(qm.x, qm.y, qm.z); A.pc.push(q1.x, q1.y, q1.z);
+          A.pm.push(ui, pr(), 0.7 + pr() * 0.7, (0.05 + pr() * 0.06) * sc);
+        }
       }
       // camada 4: o ar espalhando no piso à frente do aparelho (leque rente ao chão — é o que aparece na Vista de cima)
       { const R = 1.5 * sc, W0 = Ls * 0.9, W1 = Ls * 1.9, z0 = D / 2 + 0.25, base = A.pos.length / 3;
@@ -7080,7 +7134,22 @@ export class Igreja3DCard extends HTMLElement {
       g.setAttribute('position', new THREE.Float32BufferAttribute(rt.air.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(rt.air.uv, 2)); g.setAttribute('aU', new THREE.Float32BufferAttribute(rt.air.au, 1)); g.setIndex(rt.air.idx);
       g.computeBoundingSphere();
       const m = new THREE.Mesh(g, airMat()); m.userData.noMerge = true; m.renderOrder = 5; m.castShadow = m.receiveShadow = false; m.visible = false; m.frustumCulled = true;
-      scene.add(m); rt.airMesh = m; rt.air = null;
+      scene.add(m); rt.airMesh = m;
+      // névoa: pontos macios que descem pela curva de cada fita (uma malha de Points por entidade, mesmo relógio uT e mesmo crescimento uG das fitas)
+      const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(rt.air.pb, 3));
+      pg.setAttribute('aA', new THREE.Float32BufferAttribute(rt.air.pa, 3)); pg.setAttribute('aB', new THREE.Float32BufferAttribute(rt.air.pb, 3));
+      pg.setAttribute('aC', new THREE.Float32BufferAttribute(rt.air.pc, 3)); pg.setAttribute('aM', new THREE.Float32BufferAttribute(rt.air.pm, 4));
+      const pm = new THREE.ShaderMaterial({
+        uniforms: { uC: { value: new THREE.Color(0x9fdcff) }, uI: { value: 0 }, uT: { value: 0 }, uP: { value: 0.3 }, uPS: { value: 400 }, uG: { value: m.material.uniforms.uG.value } },
+        vertexShader: 'attribute vec3 aA; attribute vec3 aB; attribute vec3 aC; attribute vec4 aM; uniform float uG[8]; uniform float uT; uniform float uPS; varying float vA; void main(){'
+          + ' float g = uG[int(aM.x + 0.5)]; float ph = fract(aM.y + uT * aM.z * 0.22); vec3 p = mix(mix(aA, aB, ph), mix(aB, aC, ph), ph);'
+          + ' p += vec3(sin(ph * 9.0 + aM.y * 40.0 + uT * 1.3), sin(ph * 7.0 + aM.y * 23.0 - uT * 0.9) * 0.6, cos(ph * 8.0 + aM.y * 31.0 + uT * 1.1)) * (0.015 + 0.11 * ph);'
+          + ' vA = step(ph, g * 1.02) * smoothstep(0.0, 0.14, ph) * (1.0 - smoothstep(0.5, 1.0, ph)) * smoothstep(0.0, 0.2, g);'
+          + ' gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); gl_PointSize = clamp(aM.w * (0.7 + 1.3 * ph) * uPS / max(gl_Position.w, 0.1), 1.0, 48.0); }',
+        fragmentShader: 'uniform vec3 uC; uniform float uI; uniform float uP; varying float vA; void main(){ float d = length(gl_PointCoord - 0.5);'
+          + ' float a = smoothstep(0.5, 0.0, d); a *= a * vA * uI * uP; gl_FragColor = vec4(mix(uC, vec3(1.0), 0.55), a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
+        transparent: true, depthWrite: false });
+      const pts = new THREE.Points(pg, pm); pts.userData.noMerge = true; pts.renderOrder = 6; pts.visible = false; pts.frustumCulled = false; scene.add(pts); rt.airPts = pts; rt.air = null;
       // ordem em que as unidades ligam (e em que a câmera as visita): ao longo do cômodo, de z menor para maior
       rt.airOrder = rt.airUnits.map((_, i) => i).sort((a, b) => (rt.airUnits[a].p.z - rt.airUnits[b].p.z) || (rt.airUnits[a].p.x - rt.airUnits[b].p.x));
     }
@@ -8668,29 +8737,47 @@ export class Igreja3DCard extends HTMLElement {
   }
   _stop() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; this._clock.stop(); }
 
-  // Sequência de cada unidade de ar: LED acende (~0,25 s) → aleta abre (~0,6 s) → o fluxo nasce da aleta e cresce até o comprimento cheio (~1,1 s).
-  // Ao desligar tudo recolhe junto (fluxo ~0,6 s, aleta ~0,7 s). rt.seq = { t0, off[i] } escalona o início de cada unidade (templo: uma após a outra).
+  // Sequência de cada unidade de ar (estilo split real): o LED pisca duas vezes (o "bip") e fica aceso → ~0,35 s depois a aleta destrava e abre devagar
+  // (mola: passa um tico e assenta) → o fluxo nasce da aleta, cresce até o comprimento cheio (~1,4 s) e a névoa começa a descer. Com o ar rodando a aleta
+  // balança de leve (só enquanto a animação anda). Ao desligar o fluxo recolhe primeiro (~0,7 s), depois a aleta fecha (~0,9 s) e por fim o LED apaga.
+  // rt.seq = { t0, off[i] } escalona o início de cada unidade (templo: uma após a outra).
   // Sem animação (unidades vão direto ao estado): carga inicial, prefers-reduced-motion, aba oculta e cartão fora da tela. Devolve true enquanto algo muda.
-  _airStep(rt, ledColor, now, dt, nl) {
+  _airStep(rt, ledColor, now, dt, nl, key) {
     const U = rt.airUnits, m = rt.airMesh; if (!U || !U.length || !m) return false;
     const snap = rt.snap || this._reduced || (typeof document !== 'undefined' && document.hidden) || this._onScreen === false;
     const on = !!rt.on, seq = rt.seq, top = !!this._topView, G = m.material.uniforms.uG.value, sm = (x) => x * x * (3 - 2 * x);
+    // mola amortecida da aleta abrindo (f: 0…1 → 0…1 com ~7% de passada e assentamento)
+    const spring = (f) => { if (f <= 0) return 0; if (f >= 1) return 1; const tau = f * 1.25; return 1 - Math.exp(-5.2 * tau) * (Math.cos(6.4 * tau) + 0.81 * Math.sin(6.4 * tau)); };
+    const sway = (this._reduced || !(now < (rt.airUntil || 0) || (this._airFocus && this._airFocus.key === key))) ? 0 : (this._airFocus && this._airFocus.key === key ? 1 : Math.min(1, ((rt.airUntil || 0) - now) / 1500));
     let busy = false, vis = false;
     for (let i = 0; i < U.length; i++) {
       const u = U[i]; const want = on && !(seq && now < seq.t0 + seq.off[i]) ? 1 : 0;
       if (snap) { u.led = u.f = u.g = want; u.on = !!want; u.ign = 0; }
       else if (want) {
         if (!u.on) { u.on = true; u.ign = now; }
-        u.led = Math.min(1, u.led + dt / 0.25); u.f = Math.min(1, u.f + dt / 0.6);
-        if (u.f > 0.4) u.g = Math.min(1, u.g + dt / 1.1);
+        const age = (now - u.ign) / 1000;
+        u.led = Math.min(1, u.led + dt / 0.08);
+        if (age > 0.35) u.f = Math.min(1, u.f + dt / 1.0);
+        if (u.f > 0.45) u.g = Math.min(1, u.g + dt / 1.4);
       } else {
         u.on = false; u.ign = 0;
-        u.g = Math.max(0, u.g - dt / 0.6); u.f = Math.max(0, u.f - dt / 0.7); u.led = Math.max(0, u.led - dt / 0.5);
+        u.g = Math.max(0, u.g - dt / 0.7); if (u.g < 0.4) u.f = Math.max(0, u.f - dt / 0.9); if (u.f <= 0) u.led = Math.max(0, u.led - dt / 0.3);
       }
       if (u.g !== want || u.f !== want || u.led !== want) busy = true;
       const fl = rt.flaps[i], lm = rt.ledMats[i], b = rt.badges[i];
-      if (fl) { fl.visible = u.f > 0.01; fl.rotation.x = 0.9 * sm(u.f); }
-      if (lm) { lm.emissive.setHex(ledColor); lm.emissiveIntensity = u.led * 2.2; }
+      if (fl) {
+        fl.visible = u.f > 0.01;
+        const swing = sway > 0 && u.f >= 1 ? 0.045 * sway * Math.sin(now * 0.0016 + i * 1.7) : 0;   // vai-e-vem lento das palhetas
+        fl.rotation.x = 0.9 * (want ? spring(u.f) : sm(u.f)) + swing;
+      }
+      if (lm) {
+        lm.emissive.setHex(ledColor);
+        // bip: pisca duas vezes (LED todo aceso, meio, aceso, meio…) e assenta com um brilho um pouco mais forte que se acalma
+        const age = u.ign ? (now - u.ign) / 1000 : 9;
+        let k = 1; if (age < 0.6) k = Math.floor(age / 0.15) % 2 === 0 ? 1.25 : 0.12; else if (age < 1.1) k = 1 + 0.3 * (1 - (age - 0.6) / 0.5);
+        lm.emissiveIntensity = u.led * 2.2 * (want ? k : 1);
+        if (age < 1.1) busy = true;
+      }
       G[i] = sm(u.g); if (u.g > 0.001) vis = true;
       if (b) {
         // selo do modo (Vista de cima): pulsa na hora em que a unidade liga
@@ -8703,6 +8790,15 @@ export class Igreja3DCard extends HTMLElement {
     m.visible = vis;
     if (rt.badgeMat && rt.on) { const tx = this._airBadge(rt.hvac); if (rt.badgeMat.map !== tx) { rt.badgeMat.map = tx; rt.badgeMat.needsUpdate = true; } }
     const uf = m.material.uniforms; uf.uI.value = THREE.MathUtils.lerp(0.45, 0.6, nl) * (top ? 1.5 : 1); uf.uTop.value = top ? 1 : 0; uf.uC.value.setHex(AIR_COL[rt.hvac] || 0xe8eef4);
+    const pt = rt.airPts;
+    if (pt) {
+      pt.visible = vis; const pu = pt.material.uniforms;
+      pu.uI.value = THREE.MathUtils.lerp(0.55, 0.85, nl) * (top ? 0.6 : 1); pu.uC.value.copy(uf.uC.value);
+      pu.uPS.value = this._renderer.domElement.height * 0.5 * this._camera.projectionMatrix.elements[5];
+      // névoa cheia enquanto a animação anda; no fim da janela (airUntil) esmaece até um resto discreto (o mesmo valor que fica parado)
+      const run = this._airFocus && this._airFocus.key === key ? 1 : clamp(((rt.airUntil || 0) - now) / 1500, 0, 1);
+      pu.uP.value = 0.28 + 0.72 * run;
+    }
     rt.snap = false;
     return busy;
   }
@@ -8718,7 +8814,7 @@ export class Igreja3DCard extends HTMLElement {
       const off = new Array(n);
       rt.airOrder.forEach((ui, rank) => { off[ui] = n > 1 ? lead + rank * stag : 0; });
       rt.seq = { t0: now, off }; if (n === 1) rt.seq.off[0] = this._reduced ? 0 : 400;
-      const end = Math.max(...off) + 2000;
+      const end = Math.max(...off) + 2600;
       rt.airUntil = Math.max(rt.airUntil || 0, now + end + 8000); total = Math.max(total, end);
       if (n >= heroN) { hero = key; heroN = n; }
     }
@@ -8764,7 +8860,7 @@ export class Igreja3DCard extends HTMLElement {
       if (!this._frustum) { this._frustum = new THREE.Frustum(); this._pv = new THREE.Matrix4(); }
       this._pv.multiplyMatrices(this._camera.projectionMatrix, this._camera.matrixWorldInverse); this._frustum.setFromProjectionMatrix(this._pv);
       if (!this._frustum.intersectsSphere(m.geometry.boundingSphere)) continue;
-      m.material.uniforms.uT.value = (now / 1000) % 1000; run = true;
+      m.material.uniforms.uT.value = (now / 1000) % 1000; if (rt.airPts) rt.airPts.material.uniforms.uT.value = m.material.uniforms.uT.value; run = true;
     }
     if (run) this._airLast = now;
     return run;
@@ -8842,14 +8938,35 @@ export class Igreja3DCard extends HTMLElement {
     for (const it of ITEMS) {
       const rt = this._items.get(it.key); if (!rt) continue;
       const goal = rt.target * (rt.brightScale || 1);
-      if (Math.abs(rt.level - goal) > 0.003) { rt.level += (goal - rt.level) * k; dirty = true; }
+      const fx = it.kind === 'light' && !this._reduced ? LAMP_FX[it.key] : null;
+      const kk = fx ? 1 - Math.exp(-dt * (goal > rt.level ? fx.up : fx.dn)) : k;
+      if (Math.abs(rt.level - goal) > 0.003) { rt.level += (goal - rt.level) * kk; dirty = true; }
       else if (rt.level !== goal) { rt.level = goal; dirty = true; }
-      const lv = rt.level;
-      for (const { L: pl, i } of rt.lights || []) { pl.intensity = i * lv * dayScale; pl.color.copy(rt.color); }
+      let lv = rt.level, col = rt.color, hsc = 1;
+      if (fx) {
+        // partida: tubo fluorescente/LED linear treme antes de firmar; lâmpadas quentes começam alaranjadas e o halo cresce até o tamanho cheio;
+        // RGB (palco) faz cross-fade entre as cores em vez de trocar de repente
+        if (goal > 0.003) { if (rt.wasOff !== false) { rt.wasOff = false; rt.onAt = t; } rt.peak = goal; } else if (rt.level < 0.003) rt.wasOff = true;
+        if (fx.tube && goal > 0.003 && rt.onAt !== undefined && t - rt.onAt < 0.62) { lv *= tubeFlick(t - rt.onAt); dirty = true; }
+        const cb = rt.cbase;
+        if (it.rgb) {
+          const dr = Math.abs(cb.r - rt.color.r) + Math.abs(cb.g - rt.color.g) + Math.abs(cb.b - rt.color.b);
+          if (dr > 0.004 && rt.level > 0.02 && this._activitySeeded) { cb.lerp(rt.color, 1 - Math.exp(-dt * 4.5)); dirty = true; } else if (dr > 0) cb.copy(rt.color);
+        }
+        const r = clamp(rt.level / (rt.peak || 1), 0, 1), r2 = r * r * (3 - 2 * r), w = fx.warm * (1 - clamp((r - 0.1) / 0.75, 0, 1));
+        col = rt.cshow; col.copy(it.rgb ? cb : rt.color); if (w > 0.002) col.lerp(_WARM, w);
+        hsc = 0.62 + 0.38 * r2;
+        if (rt.emisMat && (it.rgb || fx.warm)) rt.emisMat.emissive.copy(col);
+      }
+      rt.lv = lv;
+      for (const { L: pl, i } of rt.lights || []) { pl.intensity = i * lv * dayScale; pl.color.copy(col); }
       if (it.kind === 'light') for (const f of rt.fixtures || []) if (f.material && f.material.emissive) f.material.emissiveIntensity = lv * 1.6;
-      for (const { sp, base } of rt.glows || []) { sp.material.opacity = lv * base * L(0.35, 1, nl); sp.material.color.copy(rt.color); sp.visible = lv > 0.01; }   // de dia o halo quase some
-      if (rt.pool) { const pu = rt.pool.material.uniforms; pu.uI.value = lv * this._poolK * L(0.12, 1, nl); pu.uC.value.copy(rt.color); rt.pool.visible = lv > 0.01; }
-      for (const b of rt.beams || []) { b.material.uniforms.uI.value = lv * L(0.18, 0.55, nl); b.material.uniforms.uC.value.copy(rt.color); b.visible = lv > 0.01; }
+      for (const { sp, base, gs } of rt.glows || []) {
+        sp.material.opacity = lv * base * L(0.35, 1, nl); sp.material.color.copy(col); sp.visible = lv > 0.01;   // de dia o halo quase some
+        if (fx) { const sc = gs * hsc; if (sp.scale.x !== sc) sp.scale.set(sc, sc, 1); }
+      }
+      if (rt.pool) { const pu = rt.pool.material.uniforms; pu.uI.value = lv * this._poolK * L(0.12, 1, nl); pu.uC.value.copy(col); rt.pool.visible = lv > 0.01; }
+      for (const b of rt.beams || []) { b.material.uniforms.uI.value = lv * L(0.18, 0.55, nl); b.material.uniforms.uC.value.copy(col); b.visible = lv > 0.01; }
       // emissivos da decoração ligados à entidade (ctx.bindEmissive): acompanham o brilho, com um mínimo aceso
       for (const b of rt.emisBind || []) b.mat.emissiveIntensity = b.max * (b.min + (1 - b.min) * lv);
       for (const hm of rt.halos || []) { hm.opacity = lv * hm.userData.base * L(hm.userData.day, 1, nl); hm.visible = lv > 0.01; }   // materiais de ctx.glowPlane
@@ -8865,7 +8982,7 @@ export class Igreja3DCard extends HTMLElement {
       if (it.kind === 'climate' && rt.ledMats) {
         const c = rt.hvac === 'cool' ? 0x67d3ff : rt.hvac === 'heat' ? 0xff8a5b : 0x8ef0b0;
         // cada unidade tem a sua sequência (LED → aleta → fluxo nasce e cresce); cor pelo modo (frio azul-claro, quente laranja, seco/ventilar neutro)
-        if (this._airStep(rt, c, nowA, dtA, nl)) dirty = true;
+        if (this._airStep(rt, c, nowA, dtA, nl, it.key)) dirty = true;
       }
       if (it.key === 'porta' && rt.leaves) {
         // a entidade abre; a pessoa também pode abrir localmente (rt.pOpen, só visual): vale o maior dos dois
