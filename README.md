@@ -9,6 +9,11 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.5.2 — painel redesenhado e detalhes de realismo
+
+- **Painel**: vidro escuro com cantos maiores e sombra, centralizado no desktop e com alça no celular; abre deslizando e fecha animado (arrastar a barra das abas para baixo recolhe no toque). Abas em pílula com ícones, contador "N de M luzes acesas", filtros por área (Todos, Templo, Entrada, Administração, Apoio) com cabeçalho "N de M ativos". Cartões com ícone em chip, estado e tempo em linhas separadas, brilho na cor do aparelho quando ligado (palco roxo, luzes âmbar, ar azul, presença rosa) e barra de brilho nas dimerizáveis. O detalhe virou uma folha de controle presa ao pé do painel (interruptor, slider de brilho com %, cores, termostato com modos, desligar em 15/30/60 min; Esc fecha). Rotinas em cartões maiores; automações e atividade com ícones. Botão "Painel ▴" com o número de luzes acesas. Setas ←/→ trocam de aba; sem animação com `prefers-reduced-motion`.
+- **Detalhes de realismo**: interruptores e tomadas junto às portas, blocos autônomos de emergência, suportes de controle dos splits, persianas rolô (Gilvan e Adm.), eletrocalha, régua e cabos sob a bancada da mídia, relógio e calendários, lixeiras, totem de álcool em gel, saboneteira e ralos nos WCs, púlpito de acrílico com a marca, Bíblia e garrafa d'água no palco, marcações de fita no piso, quadro de comando e gazofilácio no templo, porta-guarda-chuvas no hall, interfone na fachada (+3 draw calls).
+
 ## Novidades da v1.5.1 — porta dos fundos no canto do vaso; WC Feminino como antes
 
 - A porta de madeira do pátio dos fundos para o corredor lateral da ala direita (PM01) foi para a parede x = 16,05 (z 11,25–12,15), no canto onde ficava o vaso de espada-de-são-jorge; o vaso foi para a frente da parede z = 11, onde era a porta (agora lisa). Capacho e placa de saída do corredor acompanharam a porta.

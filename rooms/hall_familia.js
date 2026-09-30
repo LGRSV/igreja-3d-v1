@@ -830,4 +830,45 @@ function roomHallFamilia(ctx) {
     // símbolo de acessibilidade na parede da bancada
     put(box(0.2, 0.2, 0.006, std({ color: 0x1f5fae, roughness: 0.5 }), 3.35, 1.85, ZF + 0.003, nc));
   }
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores e tomadas junto às portas, blocos autônomos de
+  // emergência sobre as saídas, porta-guarda-chuvas na entrada e ralos dos WCs. Placas 4×2" a ≥ 3 mm
+  // da face da parede (sem z-fighting); nada no giro das portas nem no caminho das pessoas.
+  // =====================================================================
+  {
+    // placa 4×2" na parede — axis 'x': parede paralela a x (face em z = f); axis 'z': face em x = f. dir = lado da sala.
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        put(box(0.075, 0.12, d, whiteF, t, y, c, nc));
+        put(kind === 'sw' ? box(0.03, 0.045, dd, ceramic, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, felt, t, y, cc, nc));
+      } else {
+        put(box(d, 0.12, 0.075, whiteF, c, y, t, nc));
+        put(kind === 'sw' ? box(dd, 0.045, 0.03, ceramic, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, felt, cc, y, t, nc));
+      }
+    };
+    // bloco autônomo de emergência (2 faróis) — mesma convenção de eixos
+    const emergLight = (axis, f, dir, t, y) => {
+      const c = f + dir * 0.045, h = f + dir * 0.105;
+      if (axis === 'x') { put(box(0.3, 0.1, 0.09, whiteF, t, y, c)); for (const k of [-0.09, 0.09]) put(box(0.06, 0.05, 0.03, black, t + k, y - 0.02, h, nc)); }
+      else { put(box(0.09, 0.1, 0.3, whiteF, c, y, t)); for (const k of [-0.09, 0.09]) put(box(0.03, 0.05, 0.06, black, h, y - 0.02, t + k, nc)); }
+    };
+    // ralo quadrado de inox com grelha escura, rente ao porcelanato (y 0,004)
+    const drain = (x, z) => { put(box(0.1, 0.006, 0.1, M.steel, x, 0.008, z, nc)); put(box(0.08, 0.004, 0.08, felt, x, 0.013, z, nc)); };
+
+    // Hall: interruptores ao lado da porta principal (face interna z 49,575), tomadas baixas, blocos autônomos
+    plate('x', 49.575, -1, 10.45, 1.15, 'sw'); plate('x', 49.575, -1, 10.35, 1.15, 'sw');
+    plate('x', 44.075, 1, 9.0, 0.3, 'out'); plate('x', 49.575, -1, 15.8, 0.3, 'out');
+    emergLight('x', 44.075, 1, 11.85, 2.5);                                     // sobre as portas de vidro do templo
+    emergLight('x', 49.575, -1, 9.75, 2.55);                                    // ao lado do portal da entrada (fora da escada)
+    // porta-guarda-chuvas preto entre a escada e o portal (x 10,25–10,45)
+    put(cyl(0.1, 0.09, 0.5, black, 10.35, 0.25, 49.42, 16));
+    put(cyl(0.085, 0.085, 0.01, felt, 10.35, 0.505, 49.42, 16));
+    for (const [dx, dz, ry] of [[-0.03, 0.02, 0.2], [0.035, -0.015, -0.35]]) { const u = cyl(0.014, 0.02, 0.62, caramel, 10.35 + dx, 0.62, 49.42 + dz, 8); u.rotation.z = ry * 0.4; u.rotation.x = ry * 0.3; put(u); }
+    // Sala da Família: interruptor ao lado da porta (face x 3,925) e tomada baixa na parede de marmorato
+    plate('z', 3.925, -1, 47.85, 1.15, 'sw'); plate('z', 0.099, 1, 48.6, 0.3, 'out');
+    // WC / WC PCD: ralos
+    drain(1.35, 45.0); drain(3.4, 45.4);
+  }
 }
