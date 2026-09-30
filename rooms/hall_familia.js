@@ -868,9 +868,6 @@ function roomHallFamilia(ctx) {
     for (const [dx, dz, ry] of [[-0.03, 0.02, 0.2], [0.035, -0.015, -0.35]]) { const u = cyl(0.014, 0.02, 0.62, caramel, 10.35 + dx, 0.62, 49.42 + dz, 8); u.rotation.z = ry * 0.4; u.rotation.x = ry * 0.3; put(u); }
     // Sala da Família: interruptor ao lado da porta (face x 3,925) e tomada baixa na parede de marmorato
     plate('z', 3.925, -1, 47.85, 1.15, 'sw'); plate('z', 0.099, 1, 48.6, 0.3, 'out');
-    // cabideiro de parede (3 ganchos pretos) para as mochilas das crianças, ao lado do interruptor
-    put(box(0.02, 0.06, 0.6, woodLt, 3.915, 1.3, 48.5));
-    for (const z of [48.3, 48.5, 48.7]) { put(box(0.05, 0.02, 0.02, black, 3.88, 1.29, z)); put(box(0.02, 0.05, 0.02, black, 3.865, 1.31, z)); }
     // WC / WC PCD: ralos
     drain(1.35, 45.0); drain(3.4, 45.4);
   }
