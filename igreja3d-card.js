@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.5.4';
+export const VERSION = '1.5.5';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -20,6 +20,7 @@ const DEFAULT_CONFIG = {
   entorno: 'auto',                 // ruas, vizinhos, árvores de rua e postes: auto (some só no leve) | true | false
   latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 90,
   weather: true, weather_city: 'Palmas, TO',
+  fachada_pessoa: true,            // v1.5.5: a visão de Pessoa liga a Fachada sozinha (e volta ao sair)
 };
 
 // ---------------------------------------------------------------------------
@@ -8680,7 +8681,10 @@ export class Igreja3DCard extends HTMLElement {
     const o = this._orbit, cam = this._camera, cv = this._canvas;
     if (on) {
       if (this._topView) this._setTopView(false, true);
-      this._walkSaved = { pos: cam.position.clone(), target: o.target.clone(), panel: this._panelOpen, touched: o.touched };
+      this._walkSaved = { pos: cam.position.clone(), target: o.target.clone(), panel: this._panelOpen, touched: o.touched, roof: !!this._roofOn };
+      // v1.5.5: na visão de Pessoa a Fachada liga sozinha (paredes altas, forro e telhado: por dentro some o céu sobre as salas);
+      // ao sair volta como estava. O botão Fachada continua valendo durante o passeio. `fachada_pessoa: false` desliga isso.
+      if (this._config.fachada_pessoa !== false && !this._roofOn) this._setRoof(true);
       if (this._panelOpen) this._setPanel(false);   // o painel cobriria o joystick
       this._airFocus = this._airTour = null;
       o.enabled = false; o.touched = true;
@@ -8700,6 +8704,7 @@ export class Igreja3DCard extends HTMLElement {
       o.sph.setFromVector3(cam.position.clone().sub(o.target)); o.goal.copy(o.sph);
       this._flyCam(sv.pos, sv.target, 3.2);
       o.touched = sv.touched; if (sv.panel) this._setPanel(true);
+      if (this._config.fachada_pessoa !== false && !!this._roofOn !== sv.roof) this._setRoof(sv.roof);
     }
     this._walkBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     o.dirty = true;
@@ -8708,7 +8713,7 @@ export class Igreja3DCard extends HTMLElement {
   _walkFov() { return this._camera.aspect < 1 ? 80 : 66; }
   _showWalkHint() {
     const h = this._walkHint, coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-    h.textContent = coarse ? 'Toque no piso para ir até lá · joystick anda · arraste para olhar' : 'Clique no piso (ou na escada) para ir até lá · setas/WASD ou joystick andam · arraste para olhar · Shift corre · Enter/F abre a porta · Esc sai';
+    h.textContent = coarse ? 'Toque no piso para ir até lá · joystick anda · arraste para olhar' : 'Clique no piso para ir até lá · setas/WASD ou joystick andam · arraste para olhar · Shift corre · Enter/F abre a porta · Esc sai';
     h.classList.add('show'); clearTimeout(this._walkHintT); this._walkHintT = setTimeout(() => h.classList.remove('show'), 6000);
   }
 
