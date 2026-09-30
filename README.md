@@ -9,6 +9,12 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.4.7 — luz das salas à noite, sem estrelas, faixa da hora no celular
+
+- Luz das salas à noite: cada cômodo aceso ganha uma "poça de luz" suave no piso, recortada nas paredes da sala (não é luz real: não pesa). As lâmpadas que eram só enfeite (WCs, depósito, circulação, almoxarifado, WC da pastoral) viram luz real no `alta` e entram no conjunto fixo de luzes do `media` (a quantidade de luzes não muda). No `leve`/`min` uma única luz acompanha o cômodo onde a pessoa (ou a câmera) está e acende junto com ele.
+- Céu noturno sem estrelas.
+- Demo no celular: a faixa da hora não fica mais no meio da tela — recolhida, vira uma pílula com a hora no canto do cartão do título; aberta, cobre só o cartão do título.
+
 ## Novidades da v1.4.6 — fundo do templo
 
 - As folhas pretas de correr que ficavam estacionadas ao lado da saída de vidro do fundo do templo (parede z = 12,4) saíram, com puxador e trilho: ali agora é parede lisa. A saída de vidro continua.
