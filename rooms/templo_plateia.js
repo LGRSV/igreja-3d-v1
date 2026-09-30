@@ -249,10 +249,11 @@ function roomTemploPlateia(ctx) {
   extintor('z1', 9.8); extintor('z1', 13.75);
   // parede z = 12,4 e parede do palco, fora do palco e das escadas
   extintor('z0', 9.8); extintor('z0', 4.6);
-  extintor('x0', 15.0); extintor('x0', 42.0);
+  extintor('x0', 16.6); extintor('x0', 42.0);   // (o de z 15,0 foi para 16,6: ali entrou a saída preta)
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
+  { const [x, z] = onWall('x0', 14.6, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.x0[2]); }   // saída preta de 2 folhas (z 13,8–15,4)
 
   // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
   // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
