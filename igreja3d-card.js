@@ -5714,7 +5714,7 @@ canvas.walk.pick { cursor: pointer; }
 .fade { position: absolute; inset: 0; background: #06090f; opacity: 0; pointer-events: none; z-index: 5; }
 .nav .enter { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; background: rgba(255, 196, 107, .18); color: #ffd48a; border: 1px solid rgba(255, 196, 107, .4); }
 .nav .enter:hover { background: rgba(255, 196, 107, .28); }
-@media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
+@media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
 /* Painel inferior (dock) */
 .dock { position: absolute; left: 10px; right: 10px; bottom: 10px; max-height: min(48%, 372px); display: flex; flex-direction: column; overflow: hidden; z-index: 3; }
@@ -5901,6 +5901,7 @@ export class Igreja3DCard extends HTMLElement {
     const wrap = document.createElement('div'); wrap.className = 'wrap'; root.appendChild(wrap);
     const canvas = document.createElement('canvas'); canvas.tabIndex = 0; canvas.setAttribute('aria-label', 'Modelo 3D da igreja'); wrap.appendChild(canvas);
     this._canvas = canvas;
+    canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && this._mk) { this._hoverDest = null; this._mkHide(); } });   // sai do quadro: some o anel do destino
 
     const top = document.createElement('div'); top.className = 'hud top'; wrap.appendChild(top); this._hudTop = top;
     const title = document.createElement('div'); title.className = 'panel title';
