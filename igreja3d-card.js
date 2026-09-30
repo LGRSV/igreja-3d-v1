@@ -334,6 +334,14 @@ const ZONES = {
 };
 const LOT = { x0: -3, x1: 23, z0: 0, z1: 60, cx: 10, cz: 30 };   // área modelada (lote + estacionamento frontal)
 
+// Escada reta do hall (v1.4.6) ao longo da parede da fachada (z = 49,65), subindo para −x até o MEZANINO ("salinha", y 3,05) sobre os
+// WCs e a Sala da Família. Única fonte da geometria: a decoração (rooms/hall_familia.js) a desenha e a visão de Pessoa sobe por ela.
+// Degrau i (1…17) tem o topo em y = i·R e ocupa x ∈ [XS + (17 − i)·GO, XS + (18 − i)·GO]; o degrau 18 é o piso do mezanino.
+const STAIR = { XS: 4.1, GO: 0.3, N: 18, Y: 3.05, Z0: 48.05, Z1: 49.563 };
+STAIR.R = STAIR.Y / STAIR.N; STAIR.XE = STAIR.XS + 17 * STAIR.GO;   // XE = borda de baixo do degrau 1 (x = 9,2)
+// piso do mezanino (interior das paredes) e a passagem da escada; MZ_SPOT = ponto de entrada livre da salinha (poltronas e mesinha ficam junto ao guarda-corpo)
+const MEZZ = { x0: 0.087, x1: 4.075, z0: 44.075, z1: 49.563 };
+
 // Vista de cima navegável: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco; cada cômodo junta zonas de ZONES (ou tem `rects`
 // próprios quando divide uma zona, como palco/plateia) e lista os aparelhos (chaves de ITEMS) — _buildBlocks() ainda acrescenta os
 // que têm luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força o enquadramento do cômodo.
@@ -2123,14 +2131,15 @@ function roomTemploPlateia(ctx) {
   };
   // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, sem portas desde a v1.4.5)
   extintor('x1', 17.3); extintor('x1', 29.3); extintor('x1', 36.7);
-  // parede do hall (z = 44): dos dois lados do acesso de vidro x 10,6–13,1 (pilar em x 10,5)
-  extintor('z1', 9.8); extintor('z1', 13.75);
+  // parede do hall (z = 44): à esquerda do acesso de vidro x 10,6–13,1 (pilar em x 10,5) e à direita da porta de saída x 13,4–15,2
+  extintor('z1', 9.8); extintor('z1', 15.55);   // v1.4.6: o de 13,75 deu lugar à nova porta de saída (x 13,4–15,2)
   // parede z = 12,4 e parede do palco, fora do palco e das escadas
   extintor('z0', 9.8); extintor('z0', 4.6);
   extintor('x0', 15.0); extintor('x0', 42.0);
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
+  { const [x, z] = onWall('z1', 14.3, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }   // v1.4.6: SAÍDA acesa sobre a porta preta de 2 folhas, de frente para a saída de vidro do fundo
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
 
   // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à
@@ -2364,8 +2373,8 @@ function roomHallFamilia(ctx) {
   // HALL — parede do letreiro (face do hall da parede z = 44,0)
   // =====================================================================
   const WZ = 44.075;   // face da parede templo↔hall do lado do hall
-  // Planta grande perto do café (o balcão, o painel ripado e o letreiro da parede do templo foram retirados)
-  place(bigPlant(1.7, 0.28, 5), 7.3, 49.02);
+  // Planta grande ao lado do lounge (v1.4.6: o lounge foi para a parede do templo; a escada ocupa o canto da fachada)
+  place(bigPlant(1.7, 0.28, 5), 8.8, 44.65);
 
   // Parede de destaque em MARMORATO (vídeos): face do hall da parede x = 4,0 (portas com 0,1 m de folga,
   // o revestimento continua acima delas) e o trecho da parede z = 44,0 até o pilar de x 5,2
@@ -2387,13 +2396,14 @@ function roomHallFamilia(ctx) {
     put(cyl(0.07, 0.07, 0.016, amber, 4.141, 1.55, 45.95, 20)).rotation.z = Math.PI / 2;
   }
 
-  // Lounge: sofá grafite na parede x = 4,0, mesa de centro, 2 poltronas caramelo e tapete
+  // Lounge (v1.4.6: na parede do templo, x 5,8–8,0 — a escada tomou o canto da fachada): sofá grafite de frente para o hall,
+  // mesa de centro, 2 poltronas caramelo e tapete
   {
     const R = G();
     R.add(box(2.3, 0.008, 2.1, rugEdge, 0, 0.008, 0, nc));
     R.add(box(2.18, 0.01, 1.98, rugHall, 0, 0.012, 0, nc));
-    place(R, 6.0, 48.5);
-    place(sofa3(1.8), 4.6, 48.5, Math.PI / 2);
+    place(R, 6.9, 45.7);
+    place(sofa3(1.8), 6.9, 44.55, 0);
     const T2 = G();
     T2.add(cyl(0.42, 0.42, 0.04, slat, 0, 0.4, 0, 28));
     T2.add(cyl(0.34, 0.34, 0.02, black, 0, 0.12, 0, 24));
@@ -2401,20 +2411,20 @@ function roomHallFamilia(ctx) {
     T2.add(box(0.24, 0.03, 0.18, terra, -0.1, 0.435, 0.05));                    // livros
     T2.add(box(0.2, 0.025, 0.15, paper, -0.1, 0.46, 0.05));
     T2.add(cyl(0.06, 0.05, 0.12, ceramic, 0.14, 0.48, -0.08, 12));
-    place(T2, 5.72, 48.5);
-    place(armchair(caramel, felt), 6.62, 47.98, -Math.PI / 2 - 0.12);
-    place(armchair(caramel, terra), 6.62, 49.02, -Math.PI / 2 + 0.12);
+    place(T2, 6.9, 45.75);
+    place(armchair(caramel, felt), 5.85, 46.55, Math.PI - 0.32);
+    place(armchair(caramel, terra), 7.95, 46.55, Math.PI + 0.32);
   }
 
-  // Tapete redondo grafite com borda âmbar sob o pendente do hall (marca a área de encontro)
+  // Tapete redondo grafite com borda âmbar sob a mesa bistrô (v1.4.6: acompanhou o bistrô para o canto livre à direita)
   {
-    const r1 = cyl(1.12, 1.12, 0.008, rugEdge, 8.35, 0.008, 46.85, 40); r1.castShadow = false; put(r1);
-    const r2 = cyl(1.05, 1.05, 0.01, rugHall, 8.35, 0.012, 46.85, 40); r2.castShadow = false; put(r2);
+    const r1 = cyl(1.12, 1.12, 0.008, rugEdge, 14.7, 0.008, 47.3, 40); r1.castShadow = false; put(r1);
+    const r2 = cyl(1.05, 1.05, 0.01, rugHall, 14.7, 0.012, 47.3, 40); r2.castShadow = false; put(r2);
   }
 
-  // Café / aparador na parede da fachada (x 7,75–9,95 · z 49,05–49,55)
+  // Café / aparador na parede da fachada (v1.4.6: x 13,35–15,55 · z 49,05–49,55, à direita da porta principal)
   {
-    const X0 = 7.75, X1 = 9.95, cx = (X0 + X1) / 2, L = X1 - X0, zc = 49.3, fz = 49.563;
+    const X0 = 13.35, X1 = 15.55, cx = (X0 + X1) / 2, L = X1 - X0, zc = 49.3, fz = 49.563;
     put(box(L, 0.84, 0.46, black, cx, 0.46, zc));
     for (let i = 1; i < 4; i++) put(box(0.008, 0.76, 0.01, felt, X0 + (i * L) / 4, 0.46, zc + 0.232, nc));
     for (let i = 0; i < 4; i++) put(box(0.12, 0.012, 0.012, amber, X0 + ((i + 0.5) * L) / 4, 0.78, zc + 0.24));
@@ -2470,7 +2480,7 @@ function roomHallFamilia(ctx) {
   }
   // Mesa bistrô alta com 2 banquetas
   {
-    const x = 8.75, z = 47.95;
+    const x = 14.7, z = 47.3;
     put(cyl(0.32, 0.32, 0.035, quartz, x, 1.04, z, 24));
     put(cyl(0.03, 0.03, 1.0, black, x, 0.52, z, 8));
     put(cyl(0.22, 0.24, 0.025, black, x, 0.013, z, 18));
@@ -2535,9 +2545,9 @@ function roomHallFamilia(ctx) {
   }, 0.7, true);
   plane(1.16, 0.22, tpl, 11.85, 2.62, WZ + 0.024);
   ctx.bindEmissive('hall', tpl, 0.7, { min: 0.25 });
-  // Extintor (pó ABC) com placa, entre as portas de vidro do templo e a escada
+  // Extintor (pó ABC) com placa, à direita da nova porta de saída do templo (x 13,4–15,2)
   {
-    const x = 13.38, z = 44.175;
+    const x = 15.55, z = 44.175;
     put(box(0.12, 0.06, 0.04, black, x, 1.6, 44.095));                            // suporte
     put(cyl(0.085, 0.085, 0.52, alarm, x, 1.25, z, 16));
     put(sph(0.085, alarm, x, 1.51, z)).scale.y = 0.5;
@@ -2628,10 +2638,10 @@ function roomHallFamilia(ctx) {
         if (r2() > 0.6) { g.save(); g.translate(x - Hh * 0.05, hy); g.rotate(-0.15 - r2() * 0.25); g.fillRect(-Hh * 0.012, -Hh * 0.26, Hh * 0.024, Hh * 0.26); g.beginPath(); g.arc(0, -Hh * 0.27, Hh * 0.02, 0, Math.PI * 2); g.fill(); g.restore(); }
       }
     }, 0.12);
-    [49.11, 48.55, 47.99].forEach((z, i) => {
-      put(box(0.03, 0.72, 0.52, black, 4.103, 1.68, z));
+    [6.35, 6.9, 7.45].forEach((x, i) => {   // v1.4.6: na parede do templo, acima do sofá do lounge
+      put(box(0.52, 0.72, 0.03, black, x, 1.68, 44.103));
       const p = atlasPlane(0.48, 0.68, art, 0, 1, i / 3, (i + 1) / 3);
-      p.position.set(4.12, 1.68, z); p.rotation.y = Math.PI / 2; put(p);
+      p.position.set(x, 1.68, 44.12); put(p);
     });
   }
 
@@ -2646,72 +2656,91 @@ function roomHallFamilia(ctx) {
   }
 
   // =====================================================================
-  // ESCADA EM U (x 13,62–15,94 · z 44,21–49,54) até o mezanino (y 3,0)
+  // ESCADA RETA ao longo da fachada (x 4,1–9,2 · z 48,05–49,56) até o MEZANINO / "salinha" (y 3,05) — v1.4.6
+  // Geometria em ctx.STAIR (a visão de Pessoa sobe por ela): 17 degraus de 0,30 × 0,169 + o piso do mezanino.
+  // Mesma linguagem da escada antiga: lance maciço grafite, degraus de madeira soltos com fita de LED sob o bocel,
+  // painel de vidro inclinado com corrimão preto do lado do hall e corrimão de parede.
   // =====================================================================
+  const SX = ctx.STAIR, MZ = ctx.MEZZ;
+  const mz = (m) => ctx.addMezz(m);                      // peças do mezanino: grupo próprio (some na Vista de cima)
+  const nose = (x) => SX.R * (18 - (x - SX.XS) / SX.GO);   // linha dos bocéis (y) em função de x
   {
-    const R = 3.0 / 18, GO = 0.26;                 // espelho e piso do degrau
-    const A0 = 13.62, A1 = 14.76, B0 = 14.82, B1 = 15.94, ZF = 46.24, ZL = ZF + 8 * GO;   // ZL = 48,32
-    const ZE = 49.54, ZT = 44.21;
-    // Lance 1 (maciço, grafite + piso de madeira), sobe para +z; fita de LED sob cada bocel
-    for (let i = 1; i <= 8; i++) {
-      const z0 = ZF + (i - 1) * GO, top = i * R;
-      put(box(A1 - A0, top - 0.03, GO, mass, (A0 + A1) / 2, (top - 0.03) / 2, z0 + GO / 2));
-      put(box(A1 - A0 + 0.02, 0.03, GO + 0.03, slat, (A0 + A1) / 2, top - 0.015, z0 + GO / 2 - 0.015));
-      put(box(A1 - A0 - 0.1, 0.012, 0.012, ledWarm, (A0 + A1) / 2, top - 0.04, z0 - 0.004, nc));
+    const zc = (SX.Z0 + SX.Z1) / 2, W = SX.Z1 - SX.Z0, N = SX.N - 1, HR = 0.95;
+    for (let i = 1; i <= N; i++) {
+      const x0 = SX.XS + (N - i) * SX.GO, x1 = x0 + SX.GO, top = i * SX.R;
+      put(box(SX.GO, top - 0.03, W, mass, (x0 + x1) / 2, (top - 0.03) / 2, zc));
+      put(box(SX.GO + 0.03, 0.03, W + 0.02, slat, (x0 + x1 + 0.03) / 2, top - 0.015, zc));
+      put(box(0.012, 0.012, W - 0.12, ledWarm, x1 + 0.006, top - 0.05, zc, nc));
     }
-    // Patamar intermediário (y 1,5) junto à fachada: maciço sob o lance 1, laje sob o lance 2
-    put(box(A1 - A0, 1.47, ZE - ZL, mass, (A0 + A1) / 2, 0.735, (ZL + ZE) / 2));
-    put(box(B1 - B0 + 0.06, 0.16, ZE - ZL, mass, (B0 + B1) / 2 - 0.03, 1.39, (ZL + ZE) / 2));
-    put(box(B1 - A0 + 0.02, 0.03, ZE - ZL + 0.02, slat, (A0 + B1) / 2, 1.485, (ZL + ZE) / 2 - 0.01));
-    // Lance 2 (degraus soltos de madeira sobre 2 longarinas pretas), volta para −z
-    for (let j = 1; j <= 8; j++) {
-      const z1 = ZL - (j - 1) * GO, top = 1.5 + j * R;
-      put(box(B1 - B0, 0.05, GO + 0.03, slat, (B0 + B1) / 2, top - 0.025, z1 - GO / 2 + 0.015));
+    const G0 = SX.Z0 + 0.03;                                        // plano do vidro (na borda do lance, lado do hall)
+    // painel de vidro inclinado + corrimão preto, do primeiro bocel ao piso do mezanino
+    put(quad([SX.XE, nose(SX.XE) + 0.03, G0], [SX.XS, SX.Y + 0.03, G0], [SX.XS, SX.Y + HR, G0], [SX.XE, nose(SX.XE) + HR, G0], M.glass));
+    put(bar(SX.XE, nose(SX.XE) + HR + 0.02, G0, SX.XS - 0.02, SX.Y + HR + 0.02, G0, 0.022, black));
+    put(bar(SX.XE, nose(SX.XE) + 0.03, G0, SX.XS, SX.Y + 0.03, G0, 0.014, black));                 // sapata inferior
+    for (const x of [SX.XE - 0.02, SX.XS + 2.5, SX.XS + 0.02]) { const y0 = nose(x); put(box(0.035, HR + 0.03, 0.035, black, x, y0 + (HR + 0.03) / 2, G0)); }
+    // corrimão de parede (z ≈ 49,5) com 3 suportes
+    const ZW = SX.Z1 - 0.06;
+    put(bar(SX.XE - 0.1, nose(SX.XE - 0.1) + 0.9, ZW, SX.XS + 0.1, nose(SX.XS + 0.1) + 0.9, ZW, 0.02, black));
+    for (const t of [0.15, 0.5, 0.85]) { const x = SX.XE - 0.1 - t * (SX.XE - SX.XS - 0.2); put(box(0.02, 0.02, 0.07, black, x, nose(x) + 0.87, SX.Z1 - 0.03)); }
+  }
+
+  // ---- Mezanino: laje sobre WC / WC PCD / Sala da Família (x 0,087–4,075 · z 44,075–49,563), piso em y = 3,05 ----
+  {
+    const YF = SX.Y, x0 = MZ.x0, x1 = MZ.x1, z0 = MZ.z0, z1 = MZ.z1, WT = 5.92;
+    // laje (face de baixo = forro dos cômodos de baixo) e testeira grafite com fita de LED no lado do hall
+    mz(box(4.125, 0.12, 5.75, M.wall, 2.0125, 2.97, 46.825));
+    mz(box(0.05, 0.23, z1 - z0 - (z1 - SX.Z0), mass, 4.1, 2.955, (z0 + SX.Z0) / 2));
+    mz(box(0.012, 0.012, SX.Z0 - z0 - 0.2, ledWarm, 4.1, 2.83, (z0 + SX.Z0) / 2, nc));
+    // piso laminado (mesma textura e escala dos pisos do cartão)
+    {
+      const tile = 2.4, fw = 4.1 - x0, fd = z1 - z0, map = ctx.TEX.laminate.clone();
+      map.repeat.set(fw / tile, fd / tile); map.offset.set(x0 / tile, -z1 / tile);
+      const fm = new THREE.MeshStandardMaterial({ color: 0xffffff, map, roughness: 0.44, bumpMap: map, bumpScale: 0.25, envMapIntensity: 0.8 });
+      const fl = new THREE.Mesh(new THREE.PlaneGeometry(fw, fd), fm);
+      fl.rotation.x = -Math.PI / 2; fl.position.set(x0 + fw / 2, YF, z0 + fd / 2); fl.receiveShadow = true; mz(fl);
     }
-    const ang = Math.atan2(1.5, ZL - ZF), slen = Math.hypot(1.5, ZL - ZF);
-    for (const x of [B0 + 0.03, B1 - 0.02]) {
-      const s = box(0.03, 0.26, slen, black, x, 1.5 + 0.75 - 0.19, (ZF + ZL) / 2); s.rotation.x = ang; put(s);
+    // rodapé de madeira (oeste, norte, sul) — o piso e o rodapé seguem o padrão dos cômodos de laminado
+    mz(box(0.02, 0.07, z1 - z0, M.baseboardWood, x0 + 0.01, YF + 0.035, (z0 + z1) / 2, nc));
+    mz(box(4.0 - x0, 0.07, 0.02, M.baseboardWood, (x0 + 4.0) / 2, YF + 0.035, z0 + 0.01, nc));
+    mz(box(4.0 - x0, 0.07, 0.02, M.baseboardWood, (x0 + 4.0) / 2, YF + 0.035, z1 - 0.01, nc));
+    // paredes acima da laje (o resto do cartão tem paredes de 3 m): preto por fora, greige por dentro, tampa escura
+    const wy0 = 3.03, wh = WT - wy0, wcy = wy0 + wh / 2;
+    mz(box(0.15, wh, 5.8, M.wallDark, 0, wcy, 46.825));                                    // x = 0
+    mz(box(0.012, wh, z1 - z0, M.wall, 0.081, wcy, (z0 + z1) / 2, nc));
+    mz(box(4.0, wh, 0.15, M.wallDark, 2.075, wcy, 44.0));                                   // z = 44,0 (parede do templo)
+    mz(box(4.0 - x0, wh, 0.012, M.wall, (x0 + 4.075) / 2, wcy, z0 + 0.006, nc));
+    const WX0 = 0.7, WX1 = 3.2, WY0 = YF + 0.9, WY1 = WY0 + 1.25;                          // janela da fachada (mesmo vão da Sala da Família)
+    for (const [a, b, ya, yb] of [[0.075, 4.075, wy0, WY0], [0.075, 4.075, WY1, WT], [0.075, WX0, WY0, WY1], [WX1, 4.075, WY0, WY1]]) {
+      mz(box(b - a, yb - ya, 0.15, M.wallDark, (a + b) / 2, (ya + yb) / 2, 49.65));
+      const ia = Math.max(a, x0), ib = Math.min(b, 4.075);
+      if (ib > ia) mz(box(ib - ia, yb - ya, 0.012, M.wall, (ia + ib) / 2, (ya + yb) / 2, 49.569, nc));
     }
-    // Patamar superior / mezanino (y 3,0) sobre a passagem para os banheiros (vão livre ≈ 2,8 m)
-    put(box(B1 - A0, 0.16, ZF - ZT, mass, (A0 + B1) / 2, 2.9, (ZT + ZF) / 2));
-    put(box(B1 - A0 + 0.02, 0.025, ZF - ZT, slat, (A0 + B1) / 2, 2.99, (ZT + ZF) / 2));
-    put(box(0.03, 0.2, ZF - ZT, black, A0 - 0.015, 2.9, (ZT + ZF) / 2));             // testeira preta
-    put(box(B1 - A0, 0.2, 0.03, black, (A0 + B1) / 2, 2.9, ZF + 0.015));
-    put(box(B1 - A0 - 0.2, 0.012, 0.03, ledWarm, (A0 + B1) / 2, 2.81, ZF - 0.02, nc)); // LED sob a testeira
-    // Guarda-corpos de vidro com corrimão preto
-    const nose1 = (z) => R + ((z - ZF) / GO) * R;                 // linha dos bocéis do lance 1
-    const nose2 = (z) => 1.5 + R + ((ZL - z) / GO) * R;           // idem, lance 2
-    const GL = M.glass, HR = 0.95;
-    // lance 1 — lado do hall (x = A0) + patamar intermediário
-    put(quad([A0 - 0.01, 0.03, ZF], [A0 - 0.01, 1.3, ZL], [A0 - 0.01, 1.5 + HR, ZL], [A0 - 0.01, nose1(ZF) + HR, ZF], GL));
-    put(quad([A0 - 0.01, 1.3, ZL], [A0 - 0.01, 1.3, ZE - 0.02], [A0 - 0.01, 1.5 + HR, ZE - 0.02], [A0 - 0.01, 1.5 + HR, ZL], GL));
-    put(bar(A0 - 0.01, nose1(ZF) + HR + 0.02, ZF, A0 - 0.01, 1.5 + HR + 0.02, ZL, 0.022, black));
-    put(bar(A0 - 0.01, 1.5 + HR + 0.02, ZL, A0 - 0.01, 1.5 + HR + 0.02, ZE - 0.02, 0.022, black));
-    // entre os lances (x = 14,79): do lance 1 até 0,95 m acima do lance 2
-    const XM = (A1 + B0) / 2;
-    put(quad([XM, nose1(ZF) - 0.1, ZF], [XM, 1.45, ZL], [XM, nose2(ZL) + HR, ZL], [XM, 3.0 + HR, ZF], GL));
-    put(bar(XM, nose2(ZL) + HR + 0.02, ZL, XM, 3.0 + HR + 0.02, ZF, 0.022, black));
-    // corrimão de parede do lance 2 (x ≈ 15,9) com 3 suportes
-    const XW = B1 - 0.05;
-    put(bar(XW, nose2(ZL) + 0.9, ZL, XW, nose2(ZF) + 0.9, ZF, 0.02, black));
-    for (const t of [0.15, 0.5, 0.85]) { const z = ZL - t * (ZL - ZF); put(box(0.07, 0.02, 0.02, black, B1 - 0.02, nose2(z) + 0.87, z)); }
-    // mezanino: bordas x = A0 e z = ZF (sobre o início do lance 1)
-    put(quad([A0 - 0.01, 2.84, ZT], [A0 - 0.01, 2.84, ZF], [A0 - 0.01, 3.0 + HR, ZF], [A0 - 0.01, 3.0 + HR, ZT], GL));
-    put(quad([A0, 2.84, ZF + 0.035], [XM, 2.84, ZF + 0.035], [XM, 3.0 + HR, ZF + 0.035], [A0, 3.0 + HR, ZF + 0.035], GL));
-    put(bar(A0 - 0.01, 3.0 + HR + 0.02, ZT, A0 - 0.01, 3.0 + HR + 0.02, ZF + 0.035, 0.022, black));
-    put(bar(A0 - 0.01, 3.0 + HR + 0.02, ZF + 0.035, XM, 3.0 + HR + 0.02, ZF + 0.035, 0.022, black));
-    // montantes pretos nas quinas dos vidros
-    for (const [x, y0, z, h] of [[A0 - 0.01, 0, ZF, nose1(ZF) + HR], [A0 - 0.01, 1.3, ZL, HR + 0.2], [A0 - 0.01, 2.84, ZF + 0.035, HR + 0.16], [A0 - 0.01, 2.84, ZT + 0.02, HR + 0.16]])
-      put(box(0.035, h, 0.035, black, x, y0 + h / 2, z));
-    // Jardim de seixos brancos sob o lance 2 e o patamar, com cica e planta alta
-    const PZ0 = 46.34, PZ1 = 49.48, PX0 = B0 + 0.06, PX1 = B1 - 0.02;
-    put(box(PX1 - PX0, 0.1, 0.03, black, (PX0 + PX1) / 2, 0.05, PZ0));
-    put(box(PX1 - PX0, 0.1, 0.03, black, (PX0 + PX1) / 2, 0.05, PZ1));
-    put(box(0.03, 0.1, PZ1 - PZ0, black, PX0, 0.05, (PZ0 + PZ1) / 2));
-    put(box(PX1 - PX0 - 0.03, 0.07, PZ1 - PZ0 - 0.03, pebble, (PX0 + PX1) / 2, 0.035, (PZ0 + PZ1) / 2, nc));
-    for (let i = 0; i < 14; i++) { const s = sph(0.035 + rnd() * 0.03, i % 3 ? pebble : mass, PX0 + 0.08 + rnd() * (PX1 - PX0 - 0.16), 0.07, PZ0 + 0.1 + rnd() * (PZ1 - PZ0 - 0.2)); s.scale.y = 0.55; put(s); }
-    place(cycas(0.45, 0.5, 4), (PX0 + PX1) / 2, 48.85);
-    place(bigPlant(1.75, 0.26, 7), (PX0 + PX1) / 2, 47.05);
+    const fr = M.frameDark;                                                                  // caixilho preto + vidro fumê
+    mz(box(WX1 - WX0, 0.06, 0.2, fr, (WX0 + WX1) / 2, WY0 + 0.03, 49.65)); mz(box(WX1 - WX0, 0.06, 0.2, fr, (WX0 + WX1) / 2, WY1 - 0.03, 49.65));
+    for (const x of [WX0 + 0.03, (WX0 + WX1) / 2, WX1 - 0.03]) mz(box(0.06, WY1 - WY0, 0.2, fr, x, (WY0 + WY1) / 2, 49.65));
+    mz(box(WX1 - WX0 - 0.1, WY1 - WY0 - 0.1, 0.02, M.glassSmoke, (WX0 + WX1) / 2, (WY0 + WY1) / 2, 49.65, { cast: false, receive: false }));
+    for (const [cx, cz, lx, lz] of [[0, 46.825, 0.15, 5.8], [2.075, 44.0, 4.0, 0.15]]) mz(box(cx === 0 ? 0.18 : lx, 0.03, cx === 0 ? lz : 0.18, M.wallDarkCap, cx, WT + 0.015, cz, { cast: false }));
+    mz(box(4.0, 0.03, 0.18, M.wallDarkCap, 2.075, WT + 0.015, 49.65, { cast: false }));
+    // guarda-corpo de vidro do lado do hall (x = 4,06): 2 painéis, corrimão preto e montantes
+    const RX = 4.06, GH = YF + 1.0;
+    for (const [za, zb] of [[z0 + 0.06, 46.1], [46.16, SX.Z0 + 0.03]]) mz(quad([RX, YF + 0.09, za], [RX, YF + 0.09, zb], [RX, GH - 0.03, zb], [RX, GH - 0.03, za], M.glass));
+    mz(bar(RX, GH, z0 + 0.06, RX, GH, SX.Z0 + 0.03, 0.024, black));
+    mz(box(0.05, 0.05, SX.Z0 - z0 - 0.02, black, RX, YF + 0.045, (z0 + SX.Z0) / 2 + 0.03));
+    for (const z of [z0 + 0.06, 46.13, SX.Z0 + 0.03]) mz(box(0.04, 1.0, 0.04, black, RX, YF + 0.5, z));
+
+    // ---- mobília mínima: 2 poltronas, mesinha de canto, tapete, planta e quadros ----
+    const rugM = box(2.3, 0.012, 1.9, rugHall, 2.95, YF + 0.008, 46.35, nc); mz(rugM);
+    mz(box(2.18, 0.006, 1.78, rugEdge, 2.95, YF + 0.014, 46.35, nc));
+    const chair = (x, z, ry, cush) => { const c = armchair(caramel, cush); c.position.set(x, YF, z); c.rotation.y = ry; return mz(c); };
+    chair(3.05, 45.2, 0.4, terra); chair(3.05, 47.5, Math.PI - 0.4, felt);
+    { const T2 = G();                                                                    // mesinha redonda com livros e vaso
+      T2.add(cyl(0.3, 0.3, 0.035, slat, 0, 0.5, 0, 24)); T2.add(cyl(0.03, 0.03, 0.48, black, 0, 0.25, 0, 8)); T2.add(cyl(0.2, 0.22, 0.02, black, 0, 0.01, 0, 20));
+      T2.add(box(0.2, 0.03, 0.15, terra, -0.08, 0.535, 0.05)); T2.add(box(0.17, 0.025, 0.13, paper, -0.08, 0.56, 0.05));
+      T2.add(cyl(0.05, 0.04, 0.1, ceramic, 0.1, 0.57, -0.05, 10));
+      T2.position.set(3.15, YF, 46.35); mz(T2); }
+    { const c = cycas(0.5, 0.55, 5); c.position.set(0.55, YF, 48.95); mz(c); }
+    { const c = bigPlant(1.6, 0.24, 3); c.position.set(0.55, YF, 44.65); mz(c); }
+    [[45.6, 0.5, mustard], [46.3, 0.42, terra]].forEach(([z, s, c]) => { mz(box(0.03, s, s, black, x0 + 0.02, YF + 1.5, z)); mz(box(0.012, s - 0.08, s - 0.08, c, x0 + 0.04, YF + 1.5, z, nc)); });
   }
 
   // =====================================================================
@@ -3735,8 +3764,7 @@ function roomAlaDireita(ctx) {
 
   // ---- HALL DOS BANHEIROS (x 16,05–20,1 · z 40,8–44,3 + faixa x 16,05–17,1 · z 37,0–40,8) ----
   wetWall('z', 20.013, -1, 40.875, 44.225, M.marmoreMarrom);                                 // parede do bebedouro
-  wetWall('x', 44.225, -1, 17.25, 20.013, M.marmoreMarrom);                                  // parede da bancada (porta do WC fem. em x 16,25–17,15)
-  doorPicto('x', 44.225, 16.7, -1, true);
+  wetWall('x', 44.225, -1, 16.125, 20.013, M.marmoreMarrom);                                 // parede da bancada (v1.4.6: sem a porta do WC fem. — ela foi para o hall de entrada)
   wetWall('x', 40.875, 1, 17.1, 18.1, M.marmorato);                                          // parede da porta do WC masc.
   wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
   clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
@@ -3770,8 +3798,10 @@ function roomAlaDireita(ctx) {
   add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
   emerg('x', 40.887, 17.55, 2.5, 1);
   // ---- WC FEMININO (x 16,05–20,1 · z 44,3–49,5) — sem antecâmara ----
-  // Porta na parede z = 44,3 (x 16,25–17,15), vinda do hall dos banheiros → área de giro x 16,1–17,3 · z 44,3–45,3 livre.
+  // v1.4.6: a porta fica na parede x = 16,05 (z 48,35–49,25), vinda do HALL DE ENTRADA, no canto onde ficava o vaso → área de giro
+  // x 16,1–17,1 · z 47,5–49,3 livre (o espelho e o banco subiram para z 45,55 / 46,9). A parede z = 44,3 é lisa; o vaso (cica) foi para lá.
   wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
+  wetWall('x', 44.375, 1, 16.125, 18.05, M.marmorato);                                       // parede onde ficava a porta (agora lisa)
   cabins(18.05, 20.013, 44.375, 45.85, 2, [true, false]);
   cabins(17.175, 20.013, 49.413, 47.75, 3, [false, false], 0.08);
   add(box(0.8, 0.3, 0.04, graph, 17.6, 0.8, 44.395));                                        // fraldário
@@ -3786,16 +3816,19 @@ function roomAlaDireita(ctx) {
     place(g, 19.86, 46.8, 0, 0.88); }
   add(cyl(0.12, 0.1, 0.4, inox, 19.8, 0.2, 45.98, 14));
   // parede x = 16,05 (lado do WC) em marmorato; espelho de corpo inteiro, banco e cica
-  wetWall('z', 16.125, 1, 44.375, 49.413, M.marmorato);
-  add(box(0.012, 1.62, 0.62, black, 16.132, 1.2, 46.2));
-  add(box(0.008, 1.54, 0.54, M.mirror, 16.141, 1.2, 46.2, nc));
+  wetWall('z', 16.125, 1, 44.375, 48.29, M.marmorato);                                         // (vão da porta z 48,35–49,25 + guarnição)
+  wetWall('z', 16.125, 1, 49.31, 49.413, M.marmorato);
+  clad('z', 16.125, 1, 48.29, 49.31, 2.28, YT, M.marmorato);
+  doorPicto('z', 15.975, 48.8, -1, true);                                                    // pictograma MULHER sobre a porta, lado do hall
+  add(box(0.012, 1.62, 0.62, black, 16.132, 1.2, 45.55));
+  add(box(0.008, 1.54, 0.54, M.mirror, 16.141, 1.2, 45.55, nc));
   {
     const g = G();
     for (let i = 0; i < 4; i++) g.add(box(0.075, 0.035, 1.3, woodL, -0.135 + i * 0.09, 0.45, 0));
     for (const sz of [-0.5, 0.5]) { g.add(box(0.38, 0.03, 0.05, black, 0, 0.418, sz)); g.add(box(0.035, 0.42, 0.035, black, -0.16, 0.21, sz)); g.add(box(0.035, 0.42, 0.035, black, 0.16, 0.21, sz)); }
-    place(g, 16.4, 47.75, 0);
+    place(g, 16.4, 46.9, 0);
   }
-  cica(16.6, 49.02, 0.32);
+  cica(16.7, 44.72, 0.32);                                                                   // o vaso trocou de lugar com a porta
 }
 
 function roomAdministrativo(ctx) {
@@ -6042,6 +6075,8 @@ export class Igreja3DCard extends HTMLElement {
     this._ext = new THREE.Group(); this._ext.name = 'fachada'; this._ext.userData.keep = true; this._ext.visible = false; scene.add(this._ext);
     // Entorno (ruas, vizinhos, árvores de rua, postes): fora da igreja; no leve some e o gramado vira cor chapada
     this._out = new THREE.Group(); this._out.name = 'entorno'; this._out.userData.keep = true; scene.add(this._out);
+    // Mezanino (v1.4.6): laje, guarda-corpo, paredes altas e mobília da "salinha" sobre os WCs/Sala da Família; some na Vista de cima
+    this._mezz = new THREE.Group(); this._mezz.name = 'mezanino'; this._mezz.userData.keep = true; scene.add(this._mezz);
 
     this._nLights = 0; this._nShadows = 0;
     this._buildFurniture(scene, M);
@@ -6052,6 +6087,7 @@ export class Igreja3DCard extends HTMLElement {
     const stats = mergeStatic(scene, true);
     const extStats = mergeStatic(this._ext, true);
     mergeStatic(this._out, true);
+    mergeStatic(this._mezz, true);
     if (this._q === 'media') this._midMaterials(scene);
     this._setEntorno(this._config.entorno === 'auto' || this._config.entorno == null ? !this._lite : !!this._config.entorno);
     console.info(`[igreja3d-card] malhas estáticas: ${stats.before} → ${stats.after} draw calls · fachada: ${extStats.before} → ${extStats.after} · luzes reais: ${this._nLights} (${this._nShadows} com sombra) · qualidade: ${this._q}`);
@@ -6347,7 +6383,8 @@ export class Igreja3DCard extends HTMLElement {
     const TB = (side, a, b) => ({ clad: [{ side, mat: M.pretoFosco, a, b }] });
     wallX(12.4, 0, 16.05, [{ a: 12.9, b: 15.1, t: 'glass' }], TB(1, T / 2, 16.05 - T / 2));
     // (v1.4.5, pedido do cliente: a porta preta de correr z 34,2–35,1 e a preta dupla z 42,0–43,6 saíram — parede lisa)
-    wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' }],
+    wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' },
+      { a: 48.35, b: 49.25, t: 'door' }],   // v1.4.6: porta do WC Feminino, vinda do hall de entrada (no canto onde ficava o vaso)
       TB(-1, 12.4 + T / 2, 44.0 - T / 2));
     // Mídia, voluntariado, depósito, WCs
     wallX(23.3, 16.05, 18.9, [{ a: 17.9, b: 18.8, t: 'door' }]);
@@ -6358,9 +6395,9 @@ export class Igreja3DCard extends HTMLElement {
     wallX(35.9, 17.1, 20.1);
     wallX(37.0, 17.1, 20.1);
     wallX(40.8, 17.1, 20.1, [{ a: 18.2, b: 19.0, t: 'open' }]);   // WC masc.: entrada sem porta (vão aberto)
-    wallX(44.3, 16.05, 20.1, [{ a: 16.25, b: 17.15, t: 'door' }]);   // WC fem.: porta pelo hall dos banheiros
+    wallX(44.3, 16.05, 20.1);   // WC fem.: parede lisa (a porta antiga em x 16,25–17,15 foi para a parede do hall, v1.4.6)
     // Templo ↔ hall (porta de 2 folhas de vidro, caixilho preto)
-    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'glass2' }], TB(-1, T / 2, 16.05 - T / 2));
+    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'glass2' }, { a: 13.4, b: 15.2, t: 'door', style: 'black2' }], TB(-1, T / 2, 16.05 - T / 2));   // v1.4.6: saída de 2 folhas de frente para a saída de vidro do fundo
     // Sala da família / WCs
     wallZ(1.9, 44.0, 46.3);
     wallZ(4.0, 44.0, 49.65, [{ a: 44.4, b: 45.3, t: 'door' }, { a: 46.6, b: 47.5, t: 'door' }]);
@@ -6765,7 +6802,8 @@ export class Igreja3DCard extends HTMLElement {
     // Logo oficial compartilhado (mesma função de desenho em todo o cartão) — ver rooms/BRIEF.md
     const logo = { draw: drawLogo, aspect: logoAspect, tex: logoTex, mesh: logoMesh, relief: logoRelief, font: LOGO_FONT };
     const ctx = (seed) => ({ THREE, M, F, box, cyl, sph, std, place, add: (m) => { scene.add(m); return m; }, rnd: mulberry32(seed),
-      ZONES, H, T, TF, LOT, ext, addExt, addOut: (m) => { this._out.add(m); return m; }, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures() });
+      ZONES, H, T, TF, LOT, ext, addExt, addOut: (m) => { this._out.add(m); return m; }, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures(),
+      STAIR, MEZZ, addMezz: (m) => { this._mezz.add(m); return m; } });   // mezanino: grupo próprio (some na Vista de cima, que enxerga os cômodos de baixo)
     const click = (m, key) => { m.userData = { item: key }; scene.add(m); this._clickables.push(m); get(key).fixtures.push(m); return m; };
 
     // ---- Objetos ligados a entidades (as decorações não recriam nem cobrem) ----
