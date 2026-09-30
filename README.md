@@ -9,6 +9,12 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.5.4 — escada do hall de volta ao lugar original
+
+- A escada do hall voltou a ser a **escada em U no canto** (x 13,62–15,94 · z 44,2–49,55), com o jardim de seixos, a cica e a planta alta sob o lance 2, e o patamar de cima sobre a passagem dos banheiros. A escada reta da fachada saiu; lounge (parede x = 4,0), tríptico, café (fachada x 7,75–9,95), mesa bistrô, tapete redondo e planta grande voltaram aos lugares de antes.
+- A **salinha** (mezanino sobre WC / WC PCD / Sala da Família) continua, agora com o guarda-corpo de vidro fechado em toda a borda do lado do hall. Sem escada até ela: no modo Pessoa chega-se pelo "Ir para… › Mezanino", pelo bonequinho ou clicando no piso da salinha (troca de andar com fade); de lá, clicar no piso de baixo desce direto.
+- No modo Pessoa a escada em U é obstáculo; a passagem sob o patamar de cima continua livre.
+
 ## Novidades da v1.5.3 — animações do ar, das lâmpadas e das portas (maçaneta)
 
 - **Maçaneta no modo Pessoa**: nas portas de madeira de giro a alavanca cromada desce (~41°) antes de a folha sair do batente e volta ao soltar; ao fechar, desce de novo perto do batente. Com `prefers-reduced-motion` a porta abre direto.
