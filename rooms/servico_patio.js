@@ -581,4 +581,34 @@ function roomServicoPatio(ctx) {
   }
   moreia(17.45, 9.75);
   spot(15.4, 9.95); spot(18.2, 9.55); spot(19.55, 10.4);
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): tomadas do frontão da cozinha, interruptores junto às portas da
+  // cozinha e do almoxarifado, extintor da cozinha e capacho na porta de vidro do templo (pátio).
+  // Placas a ≥ 3 mm das faces (bloco dos fundos: paredes de 7,5 cm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        add(box(0.075, 0.12, d, P.cabW, t, y, c, nc));
+        add(kind === 'sw' ? box(0.03, 0.045, dd, P.paint, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, P.trim, t, y, cc, nc));
+      } else {
+        add(box(d, 0.12, 0.075, P.cabW, c, y, t, nc));
+        add(kind === 'sw' ? box(dd, 0.045, 0.03, P.paint, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, P.trim, cc, y, t, nc));
+      }
+    };
+    // Cozinha: 2 tomadas no frontão (parede z = 0, face 0,012, abaixo dos aéreos) e interruptor junto à porta (x 11,6–12,5)
+    plate('x', 0.012, 1, 9.4, 1.15, 'out'); plate('x', 0.012, 1, 11.05, 1.15, 'out');
+    plate('x', 3.8625, -1, 11.3, 1.15, 'sw');
+    // extintor de pó (vermelho) em suporte na parede x = 12,75 (face 12,7125), perto da porta
+    const redExt = std({ color: 0xc4201b, roughness: 0.35, metalness: 0.1 });
+    add(box(0.02, 0.14, 0.12, P.trim, 12.7025, 1.28, 3.2));
+    add(cyl(0.08, 0.08, 0.5, redExt, 12.61, 1.05, 3.2, 14)); add(cyl(0.055, 0.055, 0.04, redExt, 12.61, 1.32, 3.2, 10));
+    add(cyl(0.026, 0.026, 0.08, P.trim, 12.61, 1.38, 3.2, 8)); add(box(0.03, 0.02, 0.14, P.trim, 12.61, 1.43, 3.2, nc));
+    // Almoxarifado: interruptor junto à porta (x 7,5–8,4)
+    plate('x', 3.8625, -1, 7.12, 1.15, 'sw');
+    // Pátio: capacho grafite diante da porta de vidro do templo (x 12,9–15,1 · parede z = 12,4), só até x 14,45
+    add(box(1.2, 0.012, 0.6, std({ color: 0x1a1a1c, roughness: 0.92 }), 13.85, 0.01, 11.95, nc));
+  }
 }

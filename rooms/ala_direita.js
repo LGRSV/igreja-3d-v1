@@ -848,4 +848,75 @@ function roomAlaDireita(ctx) {
     place(g, 16.4, 46.9, 0);
   }
   cica(16.7, 44.72, 0.32);                                                                   // o vaso trocou de lugar com a porta
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores/tomadas junto às portas, persianas rolô nas janelas
+  // J13/J05, calha de cabos + régua sob a bancada da mídia, suportes de controle dos splits, relógio do
+  // voluntariado, lixeira da circulação, totem de álcool em gel, saboneteira e ralo do WC masculino.
+  // Placas a ≥ 3 mm das faces (as com placa acústica/marmorato consideram o revestimento de 12 mm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        add(box(0.075, 0.12, d, white, t, y, c, nc));
+        add(kind === 'sw' ? box(0.03, 0.045, dd, china, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, black, t, y, cc, nc));
+      } else {
+        add(box(d, 0.12, 0.075, white, c, y, t, nc));
+        add(kind === 'sw' ? box(dd, 0.045, 0.03, china, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, black, cc, y, t, nc));
+      }
+    };
+    // suporte de parede do controle remoto do split (berço branco + controle)
+    const remote = (axis, f, dir, t, y) => {
+      if (axis === 'x') { add(box(0.06, 0.16, 0.03, white, t, y, f + dir * 0.015, nc)); add(box(0.045, 0.15, 0.014, lampW, t, y + 0.02, f + dir * 0.037, nc)); add(box(0.03, 0.06, 0.004, smoke, t, y + 0.055, f + dir * 0.046, nc)); }
+      else { add(box(0.03, 0.16, 0.06, white, f + dir * 0.015, y, t, nc)); add(box(0.014, 0.15, 0.045, lampW, f + dir * 0.037, y + 0.02, t, nc)); add(box(0.004, 0.06, 0.03, smoke, f + dir * 0.046, y + 0.055, t, nc)); }
+    };
+    // persiana rolô (tubo grafite + tecido meio baixado) — axis 'x': janela na parede paralela a x (face z = f)
+    const blind = (axis, f, dir, a, b, yTop, drop) => {
+      const L = b - a + 0.1, c = (a + b) / 2;
+      if (axis === 'x') { const tb = cyl(0.035, 0.035, L, graph, c, yTop + 0.1, f + dir * 0.06, 12); tb.rotation.z = HPI; add(tb); add(box(L - 0.04, drop, 0.008, curtain, c, yTop + 0.1 - 0.035 - drop / 2, f + dir * 0.04, nc)); }
+      else { const tb = cyl(0.035, 0.035, L, graph, f + dir * 0.06, yTop + 0.1, c, 12); tb.rotation.x = HPI; add(tb); add(box(0.008, drop, L - 0.04, curtain, f + dir * 0.04, yTop + 0.1 - 0.035 - drop / 2, c, nc)); }
+    };
+    const drain = (x, z) => { add(box(0.1, 0.006, 0.1, inox, x, 0.008, z, nc)); add(box(0.08, 0.004, 0.08, black, x, 0.013, z, nc)); };
+    // saboneteira de parede (branca, bico cromado) — face x = f
+    const soap = (f, dir, z, y) => { add(box(0.05, 0.18, 0.1, white, f + dir * 0.025, y, z, nc)); add(box(0.03, 0.02, 0.02, inox, f + dir * 0.055, y - 0.07, z, nc)); };
+
+    // Corredor lateral: interruptor na parede do templo (face 16,125), antes dos cartazes (z 13,9 / 15,6) e fora do trecho z 11–13
+    plate('z', 16.125, 1, 13.3, 1.15, 'sw');
+    // Sala Gilvan: interruptor ao lado da porta (z 12,9–13,8) e persiana na janela J13 (parede z = 11, x 17,9–19,9)
+    plate('z', 17.175, 1, 12.55, 1.15, 'sw');
+    blind('x', 11.075, 1, 17.9, 19.9, 2.15, 0.55);
+    // Administrativo: interruptor ao lado da porta (z 14,4–15,3), persiana no visor J05 (x = 17,1 · z 16,8–18,3), tomada baixa
+    plate('z', 17.175, 1, 15.6, 1.15, 'sw'); plate('z', 17.175, 1, 16.4, 0.3, 'out');
+    blind('z', 17.175, 1, 16.8, 18.3, 2.15, 0.55);
+    // Circulação: lixeira preta com tampa inox no canto junto à parede do templo (fora do aparador z 19,37 e do banco)
+    add(cyl(0.14, 0.13, 0.55, black, 16.4, 0.275, 19.45, 16)); add(cyl(0.145, 0.145, 0.03, inox, 16.4, 0.565, 19.45, 16));
+    plate('x', 19.075, 1, 17.6, 0.3, 'out');
+    // Mídia: interruptor junto à porta (placa acústica na face z 23,375 + 12 mm), calha de cabos e régua sob a bancada,
+    // cabos descendo até a régua, suporte do controle do split (parede z = 28, à direita do aparelho)
+    plate('x', 23.387, 1, 17.5, 1.15, 'sw');
+    add(box(0.1, 0.05, 4.2, black, 16.3, 0.62, 25.6));                                        // calha de cabos (eletrocalha preta)
+    add(box(0.06, 0.04, 0.45, white, 16.34, 0.02, 25.0));                                     // régua de tomadas
+    for (const dz of [-0.14, -0.05, 0.04, 0.13]) add(box(0.02, 0.006, 0.05, black, 16.34, 0.041, 25.0 + dz, nc));
+    for (const z of [24.6, 24.92, 25.08, 26.8]) add(box(0.012, 0.56, 0.012, black, 16.34, 0.32, z, nc));
+    add(box(0.7, 0.012, 0.012, black, 16.65, 0.006, 26.9, nc)); add(box(0.012, 0.012, 0.5, black, 16.99, 0.006, 26.65, nc));   // cabo solto no piso
+    remote('x', 27.913, -1, 18.55, 1.45);
+    // Voluntariado: interruptor junto à porta (x 19,0–19,9 · parede z = 28), controle do split no marmorato (x = 20,1), relógio na parede z = 33,9
+    plate('x', 28.075, 1, 18.65, 1.15, 'sw'); plate('x', 28.075, 1, 17.2, 0.3, 'out');
+    remote('z', 20.001, -1, 30.4, 1.45);
+    { const cx = 17.45, cy0 = 2.1, zf = 33.825;
+      const body = cyl(0.16, 0.16, 0.03, black, cx, cy0, zf - 0.015, 24); body.rotation.x = HPI; add(body);
+      const face = cyl(0.145, 0.145, 0.006, white, cx, cy0, zf - 0.033, 24); face.rotation.x = HPI; face.castShadow = false; add(face);
+      add(box(0.012, 0.1, 0.006, black, cx, cy0 + 0.04, zf - 0.039, nc));
+      const hand = box(0.012, 0.07, 0.006, black, cx - 0.025, cy0 - 0.012, zf - 0.039, nc); hand.rotation.z = 2.1; add(hand); }
+    // Circ. dos banheiros: bloco autônomo na parede do templo
+    emerg('z', 16.125, 35.6, 2.45, 1);
+    // WC masculino: ralo e saboneteira junto à bancada (o WC feminino fica como está)
+    drain(18.6, 39.2); soap(20.013, -1, 38.55, 1.12);
+    // Hall dos banheiros: totem de álcool em gel com pedal, junto à parede z = 40,8 (fora do giro da porta do WC masc.)
+    add(cyl(0.15, 0.15, 0.02, black, 17.55, 0.01, 41.05, 16));
+    add(cyl(0.018, 0.018, 1.0, black, 17.55, 0.52, 41.05, 8));
+    add(box(0.1, 0.22, 0.1, white, 17.55, 1.08, 41.05)); add(box(0.04, 0.03, 0.05, inox, 17.55, 0.95, 41.11, nc));
+    add(box(0.08, 0.02, 0.14, black, 17.55, 0.04, 41.18));
+  }
 }

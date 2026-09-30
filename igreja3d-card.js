@@ -1912,6 +1912,27 @@ function roomTemploPalco(ctx) {
   put(box(0.01, 0.3, 0.2, redSign, 0.093, SY + 0.95, 34.6, nc));
   put(box(0.004, 0.12, 0.05, whiteP, 0.1, SY + 0.97, 34.6, nc));
   put(box(0.004, 0.03, 0.14, whiteP, 0.1, SY + 0.86, 34.6, nc));
+
+  // ======================= DETALHES DE REALISMO (v1.5.1) =======================
+  // Púlpito de acrílico com a marca, Bíblia e garrafa d'água (frente do palco, z 28,1 — fora dos feixes dos moving heads,
+  // z 26,7 ± 1 e 29,5 ± 1), fitas de marcação no piso e a folha do repertório ao pé do microfone vocal.
+  {
+    const acryl = std({ color: 0xe6eef2, roughness: 0.08, transparent: true, opacity: 0.35 });   // (mesmas opções do vidro da ala → mesmo material)
+    const PX = 4.35, PZ = 28.1;
+    put(box(0.4, 0.02, 0.5, acryl, PX, SY + 0.01, PZ, nc));                                  // base
+    put(box(0.02, 1.12, 0.6, acryl, PX + 0.2, SY + 0.58, PZ, nc));                            // painel frontal (voltado para a plateia, +x)
+    put(box(0.36, 1.05, 0.02, acryl, PX, SY + 0.545, PZ, nc));                                // alma central
+    const top = box(0.44, 0.02, 0.6, acryl, PX - 0.02, SY + 1.16, PZ, nc); top.rotation.z = 0.22; put(top);   // tampo inclinado para quem fala
+    const lg = ctx.logo.mesh(0.28, 0, { layout: 'mark', color: '#f4f5f7', roughness: 0.4, cast: false }); lg.rotation.y = HP; lg.position.set(PX + 0.215, SY + 0.66, PZ); put(lg);
+    // Bíblia aberta sobre o tampo (capa preta, miolo claro) e garrafa d'água
+    const bib = G(); bib.add(box(0.26, 0.012, 0.19, blk, 0, 0.006, 0)); bib.add(box(0.245, 0.022, 0.175, whiteP, 0, 0.023, 0)); bib.add(box(0.004, 0.026, 0.19, blk, 0, 0.022, 0));
+    bib.rotation.z = 0.22; bib.position.set(PX - 0.05, SY + 1.176, PZ + 0.02); put(bib);
+    put(cyl(0.03, 0.028, 0.2, acryl, PX + 0.08, SY + 1.29, PZ - 0.22, 10)); put(cyl(0.016, 0.016, 0.02, blk, PX + 0.08, SY + 1.4, PZ - 0.22, 10));
+    // fitas de marcação (X brancos) nas posições dos músicos, rente ao piso do palco
+    for (const [x, z] of [[3.9, 22.4], [3.9, 33.9], [2.1, 27.0]]) for (const a of [0.785, -0.785]) { const t = box(0.24, 0.005, 0.04, whiteP, x, SY + 0.0045, z, nc); t.rotation.y = a; put(t); }
+    // repertório (folha A4) no piso, ao pé do pedestal do vocal (3,55; 28,1)
+    { const s = box(0.21, 0.004, 0.297, whiteP, 3.35, SY + 0.004, 28.5, nc); s.rotation.y = 0.2; put(s); }
+  }
 }
 
 function roomTemploPlateia(ctx) {
@@ -2173,6 +2194,34 @@ function roomTemploPlateia(ctx) {
 
   // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
   // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
+
+  // =====================================================================================
+  // 4) DETALHES DE REALISMO (v1.5.1) — blocos autônomos de emergência nas saídas, suportes dos controles
+  //    dos ares na parede x = 16,05, quadro de comando das luzes e gazofilácio (caixa de ofertas) no fundo, junto ao hall.
+  // =====================================================================================
+  const bWht = batch(std({ color: 0xf1efea, roughness: 0.5 })), bGray = batch(std({ color: 0xb8bcc0, roughness: 0.5, metalness: 0.3 }));
+  const bOak = batch(std({ color: 0xcfa97c, roughness: 0.7 }));
+  const bloco = (w, t, y) => {
+    const [nx, nz, ry] = WALL[w];
+    const [cx, cz] = onWall(w, t, 0.05), [hx, hz] = onWall(w, t, 0.11);
+    bx(bWht, 0.3, 0.1, 0.09, cx, y, cz, 0, ry, 0);
+    for (const k of [-0.09, 0.09]) bx(bPl, 0.06, 0.05, 0.03, hx + nz * k, y - 0.02, hz + nx * k, 0, ry, 0);
+  };
+  bloco('x0', 15.95, 2.45);     // ao lado da saída preta de 2 folhas (z 13,8–15,4)
+  bloco('z1', 13.4, 2.5);       // ao lado das portas de vidro do hall
+  bloco('z0', 12.2, 2.45);      // junto à porta de vidro do pátio (x 12,9–15,1)
+  // suportes de controle remoto dos ares da parede x = 16,05 (ao lado de cada unidade, y 1,45)
+  for (const z of [16.3, 32.35, 42.5]) {
+    const [nx, nz, ry] = WALL.x1;
+    const [ax, az] = onWall('x1', z, 0.015), [bxx, bz] = onWall('x1', z, 0.037), [cx, cz] = onWall('x1', z, 0.046);
+    bx(bWht, 0.06, 0.16, 0.03, ax, 1.45, az, 0, ry, 0); bx(bWht, 0.045, 0.15, 0.014, bxx, 1.47, bz, 0, ry, 0); bx(bPl, 0.03, 0.06, 0.004, cx, 1.525, cz, 0, ry, 0);
+  }
+  // quadro de comando (luzes/som) cinza na parede do hall, entre a placa do extintor (x 13,75) e o canto
+  { const [x, z] = onWall('z1', 14.6, 0.05), [hx, hz] = onWall('z1', 14.75, 0.105);
+    bx(bGray, 0.4, 0.6, 0.1, x, 1.5, z, 0, WALL.z1[2], 0); bx(bPl, 0.03, 0.08, 0.01, hx, 1.5, hz, 0, WALL.z1[2], 0); }
+  // gazofilácio: coluna preta com tampo de madeira clara e fenda, no canto x 15,3 · z 43,55 (fora da passagem de 1,25 m)
+  bx(bPl, 0.35, 1.05, 0.35, 15.3, 0.525, 43.55); bx(bOak, 0.4, 0.05, 0.4, 15.3, 1.075, 43.55); bx(bPl, 0.16, 0.012, 0.03, 15.3, 1.105, 43.55);
+  bx(bWht, 0.16, 0.05, 0.004, 15.3, 0.7, 43.373);
 
   flush();
 }
@@ -3008,6 +3057,47 @@ function roomHallFamilia(ctx) {
     put(box(0.26, 0.3, 0.1, whiteF, 3.35, 1.4, ZF + 0.05));
     // símbolo de acessibilidade na parede da bancada
     put(box(0.2, 0.2, 0.006, std({ color: 0x1f5fae, roughness: 0.5 }), 3.35, 1.85, ZF + 0.003, nc));
+  }
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores e tomadas junto às portas, blocos autônomos de
+  // emergência sobre as saídas, porta-guarda-chuvas na entrada e ralos dos WCs. Placas 4×2" a ≥ 3 mm
+  // da face da parede (sem z-fighting); nada no giro das portas nem no caminho das pessoas.
+  // =====================================================================
+  {
+    // placa 4×2" na parede — axis 'x': parede paralela a x (face em z = f); axis 'z': face em x = f. dir = lado da sala.
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        put(box(0.075, 0.12, d, whiteF, t, y, c, nc));
+        put(kind === 'sw' ? box(0.03, 0.045, dd, ceramic, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, felt, t, y, cc, nc));
+      } else {
+        put(box(d, 0.12, 0.075, whiteF, c, y, t, nc));
+        put(kind === 'sw' ? box(dd, 0.045, 0.03, ceramic, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, felt, cc, y, t, nc));
+      }
+    };
+    // bloco autônomo de emergência (2 faróis) — mesma convenção de eixos
+    const emergLight = (axis, f, dir, t, y) => {
+      const c = f + dir * 0.045, h = f + dir * 0.105;
+      if (axis === 'x') { put(box(0.3, 0.1, 0.09, whiteF, t, y, c)); for (const k of [-0.09, 0.09]) put(box(0.06, 0.05, 0.03, black, t + k, y - 0.02, h, nc)); }
+      else { put(box(0.09, 0.1, 0.3, whiteF, c, y, t)); for (const k of [-0.09, 0.09]) put(box(0.03, 0.05, 0.06, black, h, y - 0.02, t + k, nc)); }
+    };
+    // ralo quadrado de inox com grelha escura, rente ao porcelanato (y 0,004)
+    const drain = (x, z) => { put(box(0.1, 0.006, 0.1, M.steel, x, 0.008, z, nc)); put(box(0.08, 0.004, 0.08, felt, x, 0.013, z, nc)); };
+
+    // Hall: interruptores ao lado da porta principal (face interna z 49,575), tomadas baixas, blocos autônomos
+    plate('x', 49.575, -1, 10.45, 1.15, 'sw'); plate('x', 49.575, -1, 10.35, 1.15, 'sw');
+    plate('x', 44.075, 1, 9.0, 0.3, 'out'); plate('x', 49.575, -1, 15.8, 0.3, 'out');
+    emergLight('x', 44.075, 1, 11.85, 2.5);                                     // sobre as portas de vidro do templo
+    emergLight('x', 49.575, -1, 9.75, 2.55);                                    // ao lado do portal da entrada (fora da escada)
+    // porta-guarda-chuvas preto entre a escada e o portal (x 10,25–10,45)
+    put(cyl(0.1, 0.09, 0.5, black, 10.35, 0.25, 49.42, 16));
+    put(cyl(0.085, 0.085, 0.01, felt, 10.35, 0.505, 49.42, 16));
+    for (const [dx, dz, ry] of [[-0.03, 0.02, 0.2], [0.035, -0.015, -0.35]]) { const u = cyl(0.014, 0.02, 0.62, caramel, 10.35 + dx, 0.62, 49.42 + dz, 8); u.rotation.z = ry * 0.4; u.rotation.x = ry * 0.3; put(u); }
+    // Sala da Família: interruptor ao lado da porta (face x 3,925) e tomada baixa na parede de marmorato
+    plate('z', 3.925, -1, 47.85, 1.15, 'sw'); plate('z', 0.099, 1, 48.6, 0.3, 'out');
+    // WC / WC PCD: ralos
+    drain(1.35, 45.0); drain(3.4, 45.4);
   }
 }
 
@@ -3861,6 +3951,77 @@ function roomAlaDireita(ctx) {
     place(g, 16.4, 46.9, 0);
   }
   cica(16.7, 44.72, 0.32);                                                                   // o vaso trocou de lugar com a porta
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores/tomadas junto às portas, persianas rolô nas janelas
+  // J13/J05, calha de cabos + régua sob a bancada da mídia, suportes de controle dos splits, relógio do
+  // voluntariado, lixeira da circulação, totem de álcool em gel, saboneteira e ralo do WC masculino.
+  // Placas a ≥ 3 mm das faces (as com placa acústica/marmorato consideram o revestimento de 12 mm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        add(box(0.075, 0.12, d, white, t, y, c, nc));
+        add(kind === 'sw' ? box(0.03, 0.045, dd, china, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, black, t, y, cc, nc));
+      } else {
+        add(box(d, 0.12, 0.075, white, c, y, t, nc));
+        add(kind === 'sw' ? box(dd, 0.045, 0.03, china, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, black, cc, y, t, nc));
+      }
+    };
+    // suporte de parede do controle remoto do split (berço branco + controle)
+    const remote = (axis, f, dir, t, y) => {
+      if (axis === 'x') { add(box(0.06, 0.16, 0.03, white, t, y, f + dir * 0.015, nc)); add(box(0.045, 0.15, 0.014, lampW, t, y + 0.02, f + dir * 0.037, nc)); add(box(0.03, 0.06, 0.004, smoke, t, y + 0.055, f + dir * 0.046, nc)); }
+      else { add(box(0.03, 0.16, 0.06, white, f + dir * 0.015, y, t, nc)); add(box(0.014, 0.15, 0.045, lampW, f + dir * 0.037, y + 0.02, t, nc)); add(box(0.004, 0.06, 0.03, smoke, f + dir * 0.046, y + 0.055, t, nc)); }
+    };
+    // persiana rolô (tubo grafite + tecido meio baixado) — axis 'x': janela na parede paralela a x (face z = f)
+    const blind = (axis, f, dir, a, b, yTop, drop) => {
+      const L = b - a + 0.1, c = (a + b) / 2;
+      if (axis === 'x') { const tb = cyl(0.035, 0.035, L, graph, c, yTop + 0.1, f + dir * 0.06, 12); tb.rotation.z = HPI; add(tb); add(box(L - 0.04, drop, 0.008, curtain, c, yTop + 0.1 - 0.035 - drop / 2, f + dir * 0.04, nc)); }
+      else { const tb = cyl(0.035, 0.035, L, graph, f + dir * 0.06, yTop + 0.1, c, 12); tb.rotation.x = HPI; add(tb); add(box(0.008, drop, L - 0.04, curtain, f + dir * 0.04, yTop + 0.1 - 0.035 - drop / 2, c, nc)); }
+    };
+    const drain = (x, z) => { add(box(0.1, 0.006, 0.1, inox, x, 0.008, z, nc)); add(box(0.08, 0.004, 0.08, black, x, 0.013, z, nc)); };
+    // saboneteira de parede (branca, bico cromado) — face x = f
+    const soap = (f, dir, z, y) => { add(box(0.05, 0.18, 0.1, white, f + dir * 0.025, y, z, nc)); add(box(0.03, 0.02, 0.02, inox, f + dir * 0.055, y - 0.07, z, nc)); };
+
+    // Corredor lateral: interruptor na parede do templo (face 16,125), antes dos cartazes (z 13,9 / 15,6) e fora do trecho z 11–13
+    plate('z', 16.125, 1, 13.3, 1.15, 'sw');
+    // Sala Gilvan: interruptor ao lado da porta (z 12,9–13,8) e persiana na janela J13 (parede z = 11, x 17,9–19,9)
+    plate('z', 17.175, 1, 12.55, 1.15, 'sw');
+    blind('x', 11.075, 1, 17.9, 19.9, 2.15, 0.55);
+    // Administrativo: interruptor ao lado da porta (z 14,4–15,3), persiana no visor J05 (x = 17,1 · z 16,8–18,3), tomada baixa
+    plate('z', 17.175, 1, 15.6, 1.15, 'sw'); plate('z', 17.175, 1, 16.4, 0.3, 'out');
+    blind('z', 17.175, 1, 16.8, 18.3, 2.15, 0.55);
+    // Circulação: lixeira preta com tampa inox no canto junto à parede do templo (fora do aparador z 19,37 e do banco)
+    add(cyl(0.14, 0.13, 0.55, black, 16.4, 0.275, 19.45, 16)); add(cyl(0.145, 0.145, 0.03, inox, 16.4, 0.565, 19.45, 16));
+    plate('x', 19.075, 1, 17.6, 0.3, 'out');
+    // Mídia: interruptor junto à porta (placa acústica na face z 23,375 + 12 mm), calha de cabos e régua sob a bancada,
+    // cabos descendo até a régua, suporte do controle do split (parede z = 28, à direita do aparelho)
+    plate('x', 23.387, 1, 17.5, 1.15, 'sw');
+    add(box(0.1, 0.05, 4.2, black, 16.3, 0.62, 25.6));                                        // calha de cabos (eletrocalha preta)
+    add(box(0.06, 0.04, 0.45, white, 16.34, 0.02, 25.0));                                     // régua de tomadas
+    for (const dz of [-0.14, -0.05, 0.04, 0.13]) add(box(0.02, 0.006, 0.05, black, 16.34, 0.041, 25.0 + dz, nc));
+    for (const z of [24.6, 24.92, 25.08, 26.8]) add(box(0.012, 0.56, 0.012, black, 16.34, 0.32, z, nc));
+    add(box(0.7, 0.012, 0.012, black, 16.65, 0.006, 26.9, nc)); add(box(0.012, 0.012, 0.5, black, 16.99, 0.006, 26.65, nc));   // cabo solto no piso
+    remote('x', 27.913, -1, 18.55, 1.45);
+    // Voluntariado: interruptor junto à porta (x 19,0–19,9 · parede z = 28), controle do split no marmorato (x = 20,1), relógio na parede z = 33,9
+    plate('x', 28.075, 1, 18.65, 1.15, 'sw'); plate('x', 28.075, 1, 17.2, 0.3, 'out');
+    remote('z', 20.001, -1, 30.4, 1.45);
+    { const cx = 17.45, cy0 = 2.1, zf = 33.825;
+      const body = cyl(0.16, 0.16, 0.03, black, cx, cy0, zf - 0.015, 24); body.rotation.x = HPI; add(body);
+      const face = cyl(0.145, 0.145, 0.006, white, cx, cy0, zf - 0.033, 24); face.rotation.x = HPI; face.castShadow = false; add(face);
+      add(box(0.012, 0.1, 0.006, black, cx, cy0 + 0.04, zf - 0.039, nc));
+      const hand = box(0.012, 0.07, 0.006, black, cx - 0.025, cy0 - 0.012, zf - 0.039, nc); hand.rotation.z = 2.1; add(hand); }
+    // Circ. dos banheiros: bloco autônomo na parede do templo
+    emerg('z', 16.125, 35.6, 2.45, 1);
+    // WC masculino: ralo e saboneteira junto à bancada (o WC feminino fica como está)
+    drain(18.6, 39.2); soap(20.013, -1, 38.55, 1.12);
+    // Hall dos banheiros: totem de álcool em gel com pedal, junto à parede z = 40,8 (fora do giro da porta do WC masc.)
+    add(cyl(0.15, 0.15, 0.02, black, 17.55, 0.01, 41.05, 16));
+    add(cyl(0.018, 0.018, 1.0, black, 17.55, 0.52, 41.05, 8));
+    add(box(0.1, 0.22, 0.1, white, 17.55, 1.08, 41.05)); add(box(0.04, 0.03, 0.05, inox, 17.55, 0.95, 41.11, nc));
+    add(box(0.08, 0.02, 0.14, black, 17.55, 0.04, 41.18));
+  }
 }
 
 function roomAdministrativo(ctx) {
@@ -4599,6 +4760,46 @@ function roomAdministrativo(ctx) {
     put(box(0.012, 0.1, 0.006, metalBk, 18.9, 2.09, 18.876, nc));
     const hand = box(0.012, 0.07, 0.006, metalBk, 18.925, 2.04, 18.876, nc); hand.rotation.z = -2.0; put(hand);
   }
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores/tomadas junto às portas, tomada da estação de café,
+  // calendários de parede (Gilvan e Adm.), cestos de lixo sob as mesas, ralo do banheiro pastoral.
+  // Placas a ≥ 3 mm das faces internas (bloco dos fundos: paredes de 7,5 cm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        put(box(0.075, 0.12, d, whiteTop, t, y, c, nc));
+        put(kind === 'sw' ? box(0.03, 0.045, dd, ceramic, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, blackM, t, y, cc, nc));
+      } else {
+        put(box(d, 0.12, 0.075, whiteTop, c, y, t, nc));
+        put(kind === 'sw' ? box(dd, 0.045, 0.03, ceramic, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, blackM, cc, y, t, nc));
+      }
+    };
+    // calendário de parede (folha branca, cabeçalho âmbar, grade de dias em grafite) — parede paralela a x, face z = f
+    const calendar = (f, dir, x, y) => {
+      put(box(0.3, 0.42, 0.006, paper, x, y, f + dir * 0.003, nc));
+      put(box(0.3, 0.1, 0.004, amber, x, y + 0.16, f + dir * 0.008, nc));
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++) if ((r * 7 + c) % 3 !== 1) put(box(0.026, 0.026, 0.003, graph, x - 0.12 + c * 0.04, y + 0.05 - r * 0.045, f + dir * 0.0085, nc));
+      put(cyl(0.006, 0.006, 0.02, metalBk, x, y + 0.225, f + dir * 0.01, 8));
+    };
+    const bin = (x, z) => { put(cyl(0.12, 0.1, 0.28, metalBk, x, 0.14, z, 14)); put(box(0.14, 0.02, 0.14, paper, x, 0.27, z, nc)); };
+    const drain = (x, z) => { put(box(0.1, 0.006, 0.1, steelBr, x, 0.008, z, nc)); put(box(0.08, 0.004, 0.08, blackM, x, 0.013, z, nc)); };
+
+    // Sala Pastoral: interruptores ao lado das portas (z = 9,25 · x 12,9–13,8 e x = 12,75 · z 8,2–9,1), tomada sobre a estação de café
+    plate('x', 9.2125, -1, 14.1, 1.15, 'sw'); plate('z', 12.7875, 1, 7.85, 1.15, 'sw');
+    plate('x', 0.012, 1, 15.2, 1.1, 'out'); plate('x', 0.012, 1, 14.2, 1.1, 'out');
+    drain(18.25, 3.95);                                                                        // banheiro pastoral
+    // Recepção: interruptor ao lado da porta (x 11,8–12,6)
+    plate('x', 9.2125, -1, 11.45, 1.15, 'sw');
+    // Sala Gilvan: calendário na parede z = 14,2 (ao lado do quadro) e cesto ao pé da mesa
+    calendar(14.125, -1, 19.5, 1.7);
+    bin(18.05, 13.1);
+    // Administrativo: calendário na parede z = 19 (à direita do relógio) e cesto entre as estações
+    calendar(18.925, -1, 19.5, 1.7);
+    bin(18.05, 16.9);
+  }
 }
 
 function roomServicoPatio(ctx) {
@@ -5184,6 +5385,36 @@ function roomServicoPatio(ctx) {
   }
   moreia(17.45, 9.75);
   spot(15.4, 9.95); spot(18.2, 9.55); spot(19.55, 10.4);
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): tomadas do frontão da cozinha, interruptores junto às portas da
+  // cozinha e do almoxarifado, extintor da cozinha e capacho na porta de vidro do templo (pátio).
+  // Placas a ≥ 3 mm das faces (bloco dos fundos: paredes de 7,5 cm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        add(box(0.075, 0.12, d, P.cabW, t, y, c, nc));
+        add(kind === 'sw' ? box(0.03, 0.045, dd, P.paint, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, P.trim, t, y, cc, nc));
+      } else {
+        add(box(d, 0.12, 0.075, P.cabW, c, y, t, nc));
+        add(kind === 'sw' ? box(dd, 0.045, 0.03, P.paint, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, P.trim, cc, y, t, nc));
+      }
+    };
+    // Cozinha: 2 tomadas no frontão (parede z = 0, face 0,012, abaixo dos aéreos) e interruptor junto à porta (x 11,6–12,5)
+    plate('x', 0.012, 1, 9.4, 1.15, 'out'); plate('x', 0.012, 1, 11.05, 1.15, 'out');
+    plate('x', 3.8625, -1, 11.3, 1.15, 'sw');
+    // extintor de pó (vermelho) em suporte na parede x = 12,75 (face 12,7125), perto da porta
+    const redExt = std({ color: 0xc4201b, roughness: 0.35, metalness: 0.1 });
+    add(box(0.02, 0.14, 0.12, P.trim, 12.7025, 1.28, 3.2));
+    add(cyl(0.08, 0.08, 0.5, redExt, 12.61, 1.05, 3.2, 14)); add(cyl(0.055, 0.055, 0.04, redExt, 12.61, 1.32, 3.2, 10));
+    add(cyl(0.026, 0.026, 0.08, P.trim, 12.61, 1.38, 3.2, 8)); add(box(0.03, 0.02, 0.14, P.trim, 12.61, 1.43, 3.2, nc));
+    // Almoxarifado: interruptor junto à porta (x 7,5–8,4)
+    plate('x', 3.8625, -1, 7.12, 1.15, 'sw');
+    // Pátio: capacho grafite diante da porta de vidro do templo (x 12,9–15,1 · parede z = 12,4), só até x 14,45
+    add(box(1.2, 0.012, 0.6, std({ color: 0x1a1a1c, roughness: 0.92 }), 13.85, 0.01, 11.95, nc));
+  }
 }
 
 function roomFachada(ctx) {
@@ -5613,6 +5844,16 @@ function roomFachada(ctx) {
   // câmera de segurança (canto esquerdo) e sensor branco (canto direito), como na foto
   addExt(box(0.12, 0.1, 0.18, P.grille, 0.9, 6.3, 49.83)); addExt(cyl(0.05, 0.05, 0.16, P.unit, 0.9, 6.24, 49.95, 10)).rotation.x = Math.PI / 2;
   addExt(box(0.28, 0.16, 0.06, P.unit, 15.3, 6.0, 49.78, { cast: false }));
+
+  // ---- Detalhes de realismo (v1.5.1): interfone e placa de número ao lado da porta principal, capacho externo ----
+  {
+    add(box(0.1, 0.2, 0.035, P.alu, 13.55, 1.4, 49.743)); add(box(0.06, 0.06, 0.006, P.plate, 13.55, 1.45, 49.764, { cast: false }));
+    const bt = cyl(0.012, 0.012, 0.006, P.plate, 13.55, 1.34, 49.764, 10); bt.rotation.x = Math.PI / 2; bt.castShadow = false; add(bt);
+    const numTex = ctx.makeTex(256, (g, S) => { g.fillStyle = '#121214'; g.fillRect(0, 0, S, S); g.fillStyle = '#f4f5f7'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `bold ${Math.round(S * 0.42)}px ${ctx.logo.font}`; g.fillText('802', S / 2, S * 0.4); g.font = `bold ${Math.round(S * 0.2)}px ${ctx.logo.font}`; g.fillText('SUL', S / 2, S * 0.75); });
+    add(box(0.26, 0.26, 0.012, std({ map: numTex, color: 0xffffff, roughness: 0.5 }), 13.55, 2.0, 49.731, { cast: false }));
+    add(box(1.8, 0.012, 0.8, std({ color: 0x1a1a1c, roughness: 0.92 }), 12.0, 0.012, 50.15, { cast: false }));
+  }
 }
 // @rooms-end
 

@@ -258,5 +258,33 @@ function roomTemploPlateia(ctx) {
   // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
   // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
 
+  // =====================================================================================
+  // 4) DETALHES DE REALISMO (v1.5.1) — blocos autônomos de emergência nas saídas, suportes dos controles
+  //    dos ares na parede x = 16,05, quadro de comando das luzes e gazofilácio (caixa de ofertas) no fundo, junto ao hall.
+  // =====================================================================================
+  const bWht = batch(std({ color: 0xf1efea, roughness: 0.5 })), bGray = batch(std({ color: 0xb8bcc0, roughness: 0.5, metalness: 0.3 }));
+  const bOak = batch(std({ color: 0xcfa97c, roughness: 0.7 }));
+  const bloco = (w, t, y) => {
+    const [nx, nz, ry] = WALL[w];
+    const [cx, cz] = onWall(w, t, 0.05), [hx, hz] = onWall(w, t, 0.11);
+    bx(bWht, 0.3, 0.1, 0.09, cx, y, cz, 0, ry, 0);
+    for (const k of [-0.09, 0.09]) bx(bPl, 0.06, 0.05, 0.03, hx + nz * k, y - 0.02, hz + nx * k, 0, ry, 0);
+  };
+  bloco('x0', 15.95, 2.45);     // ao lado da saída preta de 2 folhas (z 13,8–15,4)
+  bloco('z1', 13.4, 2.5);       // ao lado das portas de vidro do hall
+  bloco('z0', 12.2, 2.45);      // junto à porta de vidro do pátio (x 12,9–15,1)
+  // suportes de controle remoto dos ares da parede x = 16,05 (ao lado de cada unidade, y 1,45)
+  for (const z of [16.3, 32.35, 42.5]) {
+    const [nx, nz, ry] = WALL.x1;
+    const [ax, az] = onWall('x1', z, 0.015), [bxx, bz] = onWall('x1', z, 0.037), [cx, cz] = onWall('x1', z, 0.046);
+    bx(bWht, 0.06, 0.16, 0.03, ax, 1.45, az, 0, ry, 0); bx(bWht, 0.045, 0.15, 0.014, bxx, 1.47, bz, 0, ry, 0); bx(bPl, 0.03, 0.06, 0.004, cx, 1.525, cz, 0, ry, 0);
+  }
+  // quadro de comando (luzes/som) cinza na parede do hall, entre a placa do extintor (x 13,75) e o canto
+  { const [x, z] = onWall('z1', 14.6, 0.05), [hx, hz] = onWall('z1', 14.75, 0.105);
+    bx(bGray, 0.4, 0.6, 0.1, x, 1.5, z, 0, WALL.z1[2], 0); bx(bPl, 0.03, 0.08, 0.01, hx, 1.5, hz, 0, WALL.z1[2], 0); }
+  // gazofilácio: coluna preta com tampo de madeira clara e fenda, no canto x 15,3 · z 43,55 (fora da passagem de 1,25 m)
+  bx(bPl, 0.35, 1.05, 0.35, 15.3, 0.525, 43.55); bx(bOak, 0.4, 0.05, 0.4, 15.3, 1.075, 43.55); bx(bPl, 0.16, 0.012, 0.03, 15.3, 1.105, 43.55);
+  bx(bWht, 0.16, 0.05, 0.004, 15.3, 0.7, 43.373);
+
   flush();
 }
