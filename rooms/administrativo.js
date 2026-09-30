@@ -734,4 +734,44 @@ function roomAdministrativo(ctx) {
     put(box(0.012, 0.1, 0.006, metalBk, 18.9, 2.09, 18.876, nc));
     const hand = box(0.012, 0.07, 0.006, metalBk, 18.925, 2.04, 18.876, nc); hand.rotation.z = -2.0; put(hand);
   }
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores/tomadas junto às portas, tomada da estação de café,
+  // calendários de parede (Gilvan e Adm.), cestos de lixo sob as mesas, ralo do banheiro pastoral.
+  // Placas a ≥ 3 mm das faces internas (bloco dos fundos: paredes de 7,5 cm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        put(box(0.075, 0.12, d, whiteTop, t, y, c, nc));
+        put(kind === 'sw' ? box(0.03, 0.045, dd, ceramic, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, blackM, t, y, cc, nc));
+      } else {
+        put(box(d, 0.12, 0.075, whiteTop, c, y, t, nc));
+        put(kind === 'sw' ? box(dd, 0.045, 0.03, ceramic, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, blackM, cc, y, t, nc));
+      }
+    };
+    // calendário de parede (folha branca, cabeçalho âmbar, grade de dias em grafite) — parede paralela a x, face z = f
+    const calendar = (f, dir, x, y) => {
+      put(box(0.3, 0.42, 0.006, paper, x, y, f + dir * 0.003, nc));
+      put(box(0.3, 0.1, 0.004, amber, x, y + 0.16, f + dir * 0.008, nc));
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++) if ((r * 7 + c) % 3 !== 1) put(box(0.026, 0.026, 0.003, graph, x - 0.12 + c * 0.04, y + 0.05 - r * 0.045, f + dir * 0.0085, nc));
+      put(cyl(0.006, 0.006, 0.02, metalBk, x, y + 0.225, f + dir * 0.01, 8));
+    };
+    const bin = (x, z) => { put(cyl(0.12, 0.1, 0.28, metalBk, x, 0.14, z, 14)); put(box(0.14, 0.02, 0.14, paper, x, 0.27, z, nc)); };
+    const drain = (x, z) => { put(box(0.1, 0.006, 0.1, steelBr, x, 0.008, z, nc)); put(box(0.08, 0.004, 0.08, blackM, x, 0.013, z, nc)); };
+
+    // Sala Pastoral: interruptores ao lado das portas (z = 9,25 · x 12,9–13,8 e x = 12,75 · z 8,2–9,1), tomada sobre a estação de café
+    plate('x', 9.2125, -1, 14.1, 1.15, 'sw'); plate('z', 12.7875, 1, 7.85, 1.15, 'sw');
+    plate('x', 0.012, 1, 15.2, 1.1, 'out'); plate('x', 0.012, 1, 14.2, 1.1, 'out');
+    drain(18.25, 3.95);                                                                        // banheiro pastoral
+    // Recepção: interruptor ao lado da porta (x 11,8–12,6)
+    plate('x', 9.2125, -1, 11.45, 1.15, 'sw');
+    // Sala Gilvan: calendário na parede z = 14,2 (ao lado do quadro) e cesto ao pé da mesa
+    calendar(14.125, -1, 19.5, 1.7);
+    bin(18.05, 13.1);
+    // Administrativo: calendário na parede z = 19 (à direita do relógio) e cesto entre as estações
+    calendar(18.925, -1, 19.5, 1.7);
+    bin(18.05, 16.9);
+  }
 }

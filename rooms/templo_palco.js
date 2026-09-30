@@ -443,4 +443,25 @@ function roomTemploPalco(ctx) {
   put(box(0.01, 0.3, 0.2, redSign, 0.093, SY + 0.95, 34.6, nc));
   put(box(0.004, 0.12, 0.05, whiteP, 0.1, SY + 0.97, 34.6, nc));
   put(box(0.004, 0.03, 0.14, whiteP, 0.1, SY + 0.86, 34.6, nc));
+
+  // ======================= DETALHES DE REALISMO (v1.5.1) =======================
+  // Púlpito de acrílico com a marca, Bíblia e garrafa d'água (frente do palco, z 28,1 — fora dos feixes dos moving heads,
+  // z 26,7 ± 1 e 29,5 ± 1), fitas de marcação no piso e a folha do repertório ao pé do microfone vocal.
+  {
+    const acryl = std({ color: 0xe6eef2, roughness: 0.08, transparent: true, opacity: 0.35 });   // (mesmas opções do vidro da ala → mesmo material)
+    const PX = 4.35, PZ = 28.1;
+    put(box(0.4, 0.02, 0.5, acryl, PX, SY + 0.01, PZ, nc));                                  // base
+    put(box(0.02, 1.12, 0.6, acryl, PX + 0.2, SY + 0.58, PZ, nc));                            // painel frontal (voltado para a plateia, +x)
+    put(box(0.36, 1.05, 0.02, acryl, PX, SY + 0.545, PZ, nc));                                // alma central
+    const top = box(0.44, 0.02, 0.6, acryl, PX - 0.02, SY + 1.16, PZ, nc); top.rotation.z = 0.22; put(top);   // tampo inclinado para quem fala
+    const lg = ctx.logo.mesh(0.28, 0, { layout: 'mark', color: '#f4f5f7', roughness: 0.4, cast: false }); lg.rotation.y = HP; lg.position.set(PX + 0.215, SY + 0.66, PZ); put(lg);
+    // Bíblia aberta sobre o tampo (capa preta, miolo claro) e garrafa d'água
+    const bib = G(); bib.add(box(0.26, 0.012, 0.19, blk, 0, 0.006, 0)); bib.add(box(0.245, 0.022, 0.175, whiteP, 0, 0.023, 0)); bib.add(box(0.004, 0.026, 0.19, blk, 0, 0.022, 0));
+    bib.rotation.z = 0.22; bib.position.set(PX - 0.05, SY + 1.176, PZ + 0.02); put(bib);
+    put(cyl(0.03, 0.028, 0.2, acryl, PX + 0.08, SY + 1.29, PZ - 0.22, 10)); put(cyl(0.016, 0.016, 0.02, blk, PX + 0.08, SY + 1.4, PZ - 0.22, 10));
+    // fitas de marcação (X brancos) nas posições dos músicos, rente ao piso do palco
+    for (const [x, z] of [[3.9, 22.4], [3.9, 33.9], [2.1, 27.0]]) for (const a of [0.785, -0.785]) { const t = box(0.24, 0.005, 0.04, whiteP, x, SY + 0.0045, z, nc); t.rotation.y = a; put(t); }
+    // repertório (folha A4) no piso, ao pé do pedestal do vocal (3,55; 28,1)
+    { const s = box(0.21, 0.004, 0.297, whiteP, 3.35, SY + 0.004, 28.5, nc); s.rotation.y = 0.2; put(s); }
+  }
 }

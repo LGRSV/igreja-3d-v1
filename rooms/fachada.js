@@ -425,4 +425,14 @@ function roomFachada(ctx) {
   // câmera de segurança (canto esquerdo) e sensor branco (canto direito), como na foto
   addExt(box(0.12, 0.1, 0.18, P.grille, 0.9, 6.3, 49.83)); addExt(cyl(0.05, 0.05, 0.16, P.unit, 0.9, 6.24, 49.95, 10)).rotation.x = Math.PI / 2;
   addExt(box(0.28, 0.16, 0.06, P.unit, 15.3, 6.0, 49.78, { cast: false }));
+
+  // ---- Detalhes de realismo (v1.5.1): interfone e placa de número ao lado da porta principal, capacho externo ----
+  {
+    add(box(0.1, 0.2, 0.035, P.alu, 13.55, 1.4, 49.743)); add(box(0.06, 0.06, 0.006, P.plate, 13.55, 1.45, 49.764, { cast: false }));
+    const bt = cyl(0.012, 0.012, 0.006, P.plate, 13.55, 1.34, 49.764, 10); bt.rotation.x = Math.PI / 2; bt.castShadow = false; add(bt);
+    const numTex = ctx.makeTex(256, (g, S) => { g.fillStyle = '#121214'; g.fillRect(0, 0, S, S); g.fillStyle = '#f4f5f7'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `bold ${Math.round(S * 0.42)}px ${ctx.logo.font}`; g.fillText('802', S / 2, S * 0.4); g.font = `bold ${Math.round(S * 0.2)}px ${ctx.logo.font}`; g.fillText('SUL', S / 2, S * 0.75); });
+    add(box(0.26, 0.26, 0.012, std({ map: numTex, color: 0xffffff, roughness: 0.5 }), 13.55, 2.0, 49.731, { cast: false }));
+    add(box(1.8, 0.012, 0.8, std({ color: 0x1a1a1c, roughness: 0.92 }), 12.0, 0.012, 50.15, { cast: false }));
+  }
 }

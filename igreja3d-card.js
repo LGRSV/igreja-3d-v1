@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.5.1';
+export const VERSION = '1.5.2';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -1912,6 +1912,27 @@ function roomTemploPalco(ctx) {
   put(box(0.01, 0.3, 0.2, redSign, 0.093, SY + 0.95, 34.6, nc));
   put(box(0.004, 0.12, 0.05, whiteP, 0.1, SY + 0.97, 34.6, nc));
   put(box(0.004, 0.03, 0.14, whiteP, 0.1, SY + 0.86, 34.6, nc));
+
+  // ======================= DETALHES DE REALISMO (v1.5.1) =======================
+  // Púlpito de acrílico com a marca, Bíblia e garrafa d'água (frente do palco, z 28,1 — fora dos feixes dos moving heads,
+  // z 26,7 ± 1 e 29,5 ± 1), fitas de marcação no piso e a folha do repertório ao pé do microfone vocal.
+  {
+    const acryl = std({ color: 0xe6eef2, roughness: 0.08, transparent: true, opacity: 0.35 });   // (mesmas opções do vidro da ala → mesmo material)
+    const PX = 4.35, PZ = 28.1;
+    put(box(0.4, 0.02, 0.5, acryl, PX, SY + 0.01, PZ, nc));                                  // base
+    put(box(0.02, 1.12, 0.6, acryl, PX + 0.2, SY + 0.58, PZ, nc));                            // painel frontal (voltado para a plateia, +x)
+    put(box(0.36, 1.05, 0.02, acryl, PX, SY + 0.545, PZ, nc));                                // alma central
+    const top = box(0.44, 0.02, 0.6, acryl, PX - 0.02, SY + 1.16, PZ, nc); top.rotation.z = 0.22; put(top);   // tampo inclinado para quem fala
+    const lg = ctx.logo.mesh(0.28, 0, { layout: 'mark', color: '#f4f5f7', roughness: 0.4, cast: false }); lg.rotation.y = HP; lg.position.set(PX + 0.215, SY + 0.66, PZ); put(lg);
+    // Bíblia aberta sobre o tampo (capa preta, miolo claro) e garrafa d'água
+    const bib = G(); bib.add(box(0.26, 0.012, 0.19, blk, 0, 0.006, 0)); bib.add(box(0.245, 0.022, 0.175, whiteP, 0, 0.023, 0)); bib.add(box(0.004, 0.026, 0.19, blk, 0, 0.022, 0));
+    bib.rotation.z = 0.22; bib.position.set(PX - 0.05, SY + 1.176, PZ + 0.02); put(bib);
+    put(cyl(0.03, 0.028, 0.2, acryl, PX + 0.08, SY + 1.29, PZ - 0.22, 10)); put(cyl(0.016, 0.016, 0.02, blk, PX + 0.08, SY + 1.4, PZ - 0.22, 10));
+    // fitas de marcação (X brancos) nas posições dos músicos, rente ao piso do palco
+    for (const [x, z] of [[3.9, 22.4], [3.9, 33.9], [2.1, 27.0]]) for (const a of [0.785, -0.785]) { const t = box(0.24, 0.005, 0.04, whiteP, x, SY + 0.0045, z, nc); t.rotation.y = a; put(t); }
+    // repertório (folha A4) no piso, ao pé do pedestal do vocal (3,55; 28,1)
+    { const s = box(0.21, 0.004, 0.297, whiteP, 3.35, SY + 0.004, 28.5, nc); s.rotation.y = 0.2; put(s); }
+  }
 }
 
 function roomTemploPlateia(ctx) {
@@ -2173,6 +2194,33 @@ function roomTemploPlateia(ctx) {
 
   // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
   // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
+
+  // =====================================================================================
+  // 4) DETALHES DE REALISMO (v1.5.1) — blocos autônomos de emergência nas saídas, suportes dos controles
+  //    dos ares na parede x = 16,05, quadro de comando das luzes e gazofilácio (caixa de ofertas) no fundo, junto ao hall.
+  // =====================================================================================
+  const bWht = batch(std({ color: 0xf1efea, roughness: 0.5 })), bGray = batch(std({ color: 0xb8bcc0, roughness: 0.5, metalness: 0.3 }));
+  const bOak = batch(std({ color: 0xcfa97c, roughness: 0.7 }));
+  const bloco = (w, t, y) => {
+    const [nx, nz, ry] = WALL[w];
+    const [cx, cz] = onWall(w, t, 0.05), [hx, hz] = onWall(w, t, 0.11);
+    bx(bWht, 0.3, 0.1, 0.09, cx, y, cz, 0, ry, 0);
+    for (const k of [-0.09, 0.09]) bx(bPl, 0.06, 0.05, 0.03, hx + nz * k, y - 0.02, hz + nx * k, 0, ry, 0);
+  };
+  bloco('x0', 15.95, 2.45);     // ao lado da saída preta de 2 folhas (z 13,8–15,4)
+  bloco('z1', 13.4, 2.5);       // ao lado das portas de vidro do hall
+  // suportes de controle remoto dos ares da parede x = 16,05 (ao lado de cada unidade, y 1,45)
+  for (const z of [16.3, 32.35, 42.5]) {
+    const [nx, nz, ry] = WALL.x1;
+    const [ax, az] = onWall('x1', z, 0.015), [bxx, bz] = onWall('x1', z, 0.037), [cx, cz] = onWall('x1', z, 0.046);
+    bx(bWht, 0.06, 0.16, 0.03, ax, 1.45, az, 0, ry, 0); bx(bWht, 0.045, 0.15, 0.014, bxx, 1.47, bz, 0, ry, 0); bx(bPl, 0.03, 0.06, 0.004, cx, 1.525, cz, 0, ry, 0);
+  }
+  // quadro de comando (luzes/som) cinza na parede do hall, entre a placa do extintor (x 13,75) e o canto
+  { const [x, z] = onWall('z1', 14.6, 0.05), [hx, hz] = onWall('z1', 14.75, 0.105);
+    bx(bGray, 0.4, 0.6, 0.1, x, 1.5, z, 0, WALL.z1[2], 0); bx(bPl, 0.03, 0.08, 0.01, hx, 1.5, hz, 0, WALL.z1[2], 0); }
+  // gazofilácio: coluna preta com tampo de madeira clara e fenda, no canto x 15,3 · z 43,55 (fora da passagem de 1,25 m)
+  bx(bPl, 0.35, 1.05, 0.35, 15.3, 0.525, 43.55); bx(bOak, 0.4, 0.05, 0.4, 15.3, 1.075, 43.55); bx(bPl, 0.16, 0.012, 0.03, 15.3, 1.105, 43.55);
+  bx(bWht, 0.16, 0.05, 0.004, 15.3, 0.7, 43.373);
 
   flush();
 }
@@ -3008,6 +3056,47 @@ function roomHallFamilia(ctx) {
     put(box(0.26, 0.3, 0.1, whiteF, 3.35, 1.4, ZF + 0.05));
     // símbolo de acessibilidade na parede da bancada
     put(box(0.2, 0.2, 0.006, std({ color: 0x1f5fae, roughness: 0.5 }), 3.35, 1.85, ZF + 0.003, nc));
+  }
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores e tomadas junto às portas, blocos autônomos de
+  // emergência sobre as saídas, porta-guarda-chuvas na entrada e ralos dos WCs. Placas 4×2" a ≥ 3 mm
+  // da face da parede (sem z-fighting); nada no giro das portas nem no caminho das pessoas.
+  // =====================================================================
+  {
+    // placa 4×2" na parede — axis 'x': parede paralela a x (face em z = f); axis 'z': face em x = f. dir = lado da sala.
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        put(box(0.075, 0.12, d, whiteF, t, y, c, nc));
+        put(kind === 'sw' ? box(0.03, 0.045, dd, ceramic, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, felt, t, y, cc, nc));
+      } else {
+        put(box(d, 0.12, 0.075, whiteF, c, y, t, nc));
+        put(kind === 'sw' ? box(dd, 0.045, 0.03, ceramic, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, felt, cc, y, t, nc));
+      }
+    };
+    // bloco autônomo de emergência (2 faróis) — mesma convenção de eixos
+    const emergLight = (axis, f, dir, t, y) => {
+      const c = f + dir * 0.045, h = f + dir * 0.105;
+      if (axis === 'x') { put(box(0.3, 0.1, 0.09, whiteF, t, y, c)); for (const k of [-0.09, 0.09]) put(box(0.06, 0.05, 0.03, black, t + k, y - 0.02, h, nc)); }
+      else { put(box(0.09, 0.1, 0.3, whiteF, c, y, t)); for (const k of [-0.09, 0.09]) put(box(0.03, 0.05, 0.06, black, h, y - 0.02, t + k, nc)); }
+    };
+    // ralo quadrado de inox com grelha escura, rente ao porcelanato (y 0,004)
+    const drain = (x, z) => { put(box(0.1, 0.006, 0.1, M.steel, x, 0.008, z, nc)); put(box(0.08, 0.004, 0.08, felt, x, 0.013, z, nc)); };
+
+    // Hall: interruptores ao lado da porta principal (face interna z 49,575), tomadas baixas, blocos autônomos
+    plate('x', 49.575, -1, 10.45, 1.15, 'sw'); plate('x', 49.575, -1, 10.35, 1.15, 'sw');
+    plate('x', 44.075, 1, 9.0, 0.3, 'out'); plate('x', 49.575, -1, 15.8, 0.3, 'out');
+    emergLight('x', 44.075, 1, 11.85, 2.5);                                     // sobre as portas de vidro do templo
+    emergLight('x', 49.575, -1, 9.75, 2.55);                                    // ao lado do portal da entrada (fora da escada)
+    // porta-guarda-chuvas preto entre a escada e o portal (x 10,25–10,45)
+    put(cyl(0.1, 0.09, 0.5, black, 10.35, 0.25, 49.42, 16));
+    put(cyl(0.085, 0.085, 0.01, felt, 10.35, 0.505, 49.42, 16));
+    for (const [dx, dz, ry] of [[-0.03, 0.02, 0.2], [0.035, -0.015, -0.35]]) { const u = cyl(0.014, 0.02, 0.62, caramel, 10.35 + dx, 0.62, 49.42 + dz, 8); u.rotation.z = ry * 0.4; u.rotation.x = ry * 0.3; put(u); }
+    // Sala da Família: interruptor ao lado da porta (face x 3,925) e tomada baixa na parede de marmorato
+    plate('z', 3.925, -1, 47.85, 1.15, 'sw'); plate('z', 0.099, 1, 48.6, 0.3, 'out');
+    // WC / WC PCD: ralos
+    drain(1.35, 45.0); drain(3.4, 45.4);
   }
 }
 
@@ -3858,6 +3947,81 @@ function roomAlaDireita(ctx) {
     place(g, 16.4, 47.75, 0);
   }
   cica(16.6, 49.02, 0.32);
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores/tomadas junto às portas, persianas rolô nas janelas
+  // J13/J05, calha de cabos + régua sob a bancada da mídia, suportes de controle dos splits, relógio do
+  // voluntariado, lixeira da circulação, totem de álcool em gel, saboneteira e ralo do WC masculino.
+  // Placas a ≥ 3 mm das faces (as com placa acústica/marmorato consideram o revestimento de 12 mm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        add(box(0.075, 0.12, d, white, t, y, c, nc));
+        add(kind === 'sw' ? box(0.03, 0.045, dd, china, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, black, t, y, cc, nc));
+      } else {
+        add(box(d, 0.12, 0.075, white, c, y, t, nc));
+        add(kind === 'sw' ? box(dd, 0.045, 0.03, china, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, black, cc, y, t, nc));
+      }
+    };
+    // suporte de parede do controle remoto do split (berço branco + controle)
+    const remote = (axis, f, dir, t, y) => {
+      if (axis === 'x') { add(box(0.06, 0.16, 0.03, white, t, y, f + dir * 0.015, nc)); add(box(0.045, 0.15, 0.014, lampW, t, y + 0.02, f + dir * 0.037, nc)); add(box(0.03, 0.06, 0.004, smoke, t, y + 0.055, f + dir * 0.046, nc)); }
+      else { add(box(0.03, 0.16, 0.06, white, f + dir * 0.015, y, t, nc)); add(box(0.014, 0.15, 0.045, lampW, f + dir * 0.037, y + 0.02, t, nc)); add(box(0.004, 0.06, 0.03, smoke, f + dir * 0.046, y + 0.055, t, nc)); }
+    };
+    // persiana rolô (tubo grafite + tecido meio baixado) — axis 'x': janela na parede paralela a x (face z = f)
+    const blind = (axis, f, dir, a, b, yTop, drop) => {
+      const L = b - a + 0.1, c = (a + b) / 2;
+      if (axis === 'x') { const tb = cyl(0.035, 0.035, L, graph, c, yTop + 0.1, f + dir * 0.06, 12); tb.rotation.z = HPI; add(tb); add(box(L - 0.04, drop, 0.008, curtain, c, yTop + 0.1 - 0.035 - drop / 2, f + dir * 0.04, nc)); }
+      else { const tb = cyl(0.035, 0.035, L, graph, f + dir * 0.06, yTop + 0.1, c, 12); tb.rotation.x = HPI; add(tb); add(box(0.008, drop, L - 0.04, curtain, f + dir * 0.04, yTop + 0.1 - 0.035 - drop / 2, c, nc)); }
+    };
+    const drain = (x, z) => { add(box(0.1, 0.006, 0.1, inox, x, 0.008, z, nc)); add(box(0.08, 0.004, 0.08, black, x, 0.013, z, nc)); };
+    // saboneteira de parede (branca, bico cromado) — face x = f
+    const soap = (f, dir, z, y) => { add(box(0.05, 0.18, 0.1, white, f + dir * 0.025, y, z, nc)); add(box(0.03, 0.02, 0.02, inox, f + dir * 0.055, y - 0.07, z, nc)); };
+
+    // Corredor lateral: interruptor na parede do templo (face 16,125), antes dos cartazes (z 13,9 / 15,6) e fora do trecho z 11–13
+    plate('z', 16.125, 1, 13.3, 1.15, 'sw');
+    // Sala Gilvan: interruptor ao lado da porta (z 12,9–13,8) e persiana na janela J13 (parede z = 11, x 17,9–19,9)
+    plate('z', 17.175, 1, 12.55, 1.15, 'sw');
+    blind('x', 11.075, 1, 17.9, 19.9, 2.15, 0.55);
+    // Administrativo: interruptor ao lado da porta (z 14,4–15,3), persiana no visor J05 (x = 17,1 · z 16,8–18,3), tomada baixa
+    plate('z', 17.175, 1, 15.6, 1.15, 'sw'); plate('z', 17.175, 1, 16.4, 0.3, 'out');
+    blind('z', 17.175, 1, 16.8, 18.3, 2.15, 0.55);
+    // Circulação: lixeira preta com tampa inox no canto junto à parede do templo (fora do aparador z 19,37 e do banco)
+    add(cyl(0.14, 0.13, 0.55, black, 16.4, 0.275, 19.45, 16)); add(cyl(0.145, 0.145, 0.03, inox, 16.4, 0.565, 19.45, 16));
+    plate('x', 19.075, 1, 17.6, 0.3, 'out');
+    // Mídia: interruptor junto à porta (placa acústica na face z 23,375 + 12 mm), calha de cabos e régua sob a bancada,
+    // cabos descendo até a régua, suporte do controle do split (parede z = 28, à direita do aparelho)
+    plate('x', 23.387, 1, 17.5, 1.15, 'sw');
+    add(box(0.1, 0.05, 4.2, black, 16.3, 0.62, 25.6));                                        // calha de cabos (eletrocalha preta)
+    add(box(0.06, 0.04, 0.45, white, 16.34, 0.02, 25.0));                                     // régua de tomadas
+    for (const dz of [-0.14, -0.05, 0.04, 0.13]) add(box(0.02, 0.006, 0.05, black, 16.34, 0.041, 25.0 + dz, nc));
+    for (const z of [24.6, 24.92, 25.08, 26.8]) add(box(0.012, 0.56, 0.012, black, 16.34, 0.32, z, nc));
+    add(box(0.7, 0.012, 0.012, black, 16.65, 0.006, 26.9, nc)); add(box(0.012, 0.012, 0.5, black, 16.99, 0.006, 26.65, nc));   // cabo solto no piso
+    remote('x', 27.913, -1, 18.55, 1.45);
+    // Voluntariado: interruptor junto à porta (x 19,0–19,9 · parede z = 28), controle do split no marmorato (x = 20,1), relógio na parede z = 33,9
+    plate('x', 28.075, 1, 18.65, 1.15, 'sw'); plate('x', 28.075, 1, 17.2, 0.3, 'out');
+    remote('z', 20.001, -1, 30.4, 1.45);
+    { const cx = 17.45, cy0 = 2.1, zf = 33.825;
+      const body = cyl(0.16, 0.16, 0.03, black, cx, cy0, zf - 0.015, 24); body.rotation.x = HPI; add(body);
+      const face = cyl(0.145, 0.145, 0.006, white, cx, cy0, zf - 0.033, 24); face.rotation.x = HPI; face.castShadow = false; add(face);
+      add(box(0.012, 0.1, 0.006, black, cx, cy0 + 0.04, zf - 0.039, nc));
+      const hand = box(0.012, 0.07, 0.006, black, cx - 0.025, cy0 - 0.012, zf - 0.039, nc); hand.rotation.z = 2.1; add(hand); }
+    // Circ. dos banheiros: bloco autônomo na parede do templo e interruptor do depósito ao lado da porta (z 34,6–35,4)
+    emerg('z', 16.125, 35.6, 2.45, 1);
+    plate('z', 17.025, -1, 35.75, 1.15, 'sw');
+    // Sala Gilvan: tomada baixa atrás da cadeira (parede x = 20,1)
+    plate('z', 20.013, -1, 13.3, 0.3, 'out');
+    // WC masculino: ralo e saboneteira junto à bancada (o WC feminino fica como está)
+    drain(18.6, 39.2); soap(20.013, -1, 38.55, 1.12);
+    plate('x', 40.725, -1, 17.85, 1.15, 'sw');                                               // interruptor ao lado da porta (x 18,2–19,0)
+    // Hall dos banheiros: totem de álcool em gel com pedal, junto à parede z = 40,8 (fora do giro da porta do WC masc.)
+    add(cyl(0.15, 0.15, 0.02, black, 17.55, 0.01, 41.05, 16));
+    add(cyl(0.018, 0.018, 1.0, black, 17.55, 0.52, 41.05, 8));
+    add(box(0.1, 0.22, 0.1, white, 17.55, 1.08, 41.05)); add(box(0.04, 0.03, 0.05, inox, 17.55, 0.95, 41.11, nc));
+    add(box(0.08, 0.02, 0.14, black, 17.55, 0.04, 41.18));
+  }
 }
 
 function roomAdministrativo(ctx) {
@@ -4596,6 +4760,46 @@ function roomAdministrativo(ctx) {
     put(box(0.012, 0.1, 0.006, metalBk, 18.9, 2.09, 18.876, nc));
     const hand = box(0.012, 0.07, 0.006, metalBk, 18.925, 2.04, 18.876, nc); hand.rotation.z = -2.0; put(hand);
   }
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): interruptores/tomadas junto às portas, tomada da estação de café,
+  // calendários de parede (Gilvan e Adm.), cestos de lixo sob as mesas, ralo do banheiro pastoral.
+  // Placas a ≥ 3 mm das faces internas (bloco dos fundos: paredes de 7,5 cm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        put(box(0.075, 0.12, d, whiteTop, t, y, c, nc));
+        put(kind === 'sw' ? box(0.03, 0.045, dd, ceramic, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, blackM, t, y, cc, nc));
+      } else {
+        put(box(d, 0.12, 0.075, whiteTop, c, y, t, nc));
+        put(kind === 'sw' ? box(dd, 0.045, 0.03, ceramic, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, blackM, cc, y, t, nc));
+      }
+    };
+    // calendário de parede (folha branca, cabeçalho âmbar, grade de dias em grafite) — parede paralela a x, face z = f
+    const calendar = (f, dir, x, y) => {
+      put(box(0.3, 0.42, 0.006, paper, x, y, f + dir * 0.003, nc));
+      put(box(0.3, 0.1, 0.004, amber, x, y + 0.16, f + dir * 0.008, nc));
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++) if ((r * 7 + c) % 3 !== 1) put(box(0.026, 0.026, 0.003, graph, x - 0.12 + c * 0.04, y + 0.05 - r * 0.045, f + dir * 0.0085, nc));
+      put(cyl(0.006, 0.006, 0.02, metalBk, x, y + 0.225, f + dir * 0.01, 8));
+    };
+    const bin = (x, z) => { put(cyl(0.12, 0.1, 0.28, metalBk, x, 0.14, z, 14)); put(box(0.14, 0.02, 0.14, paper, x, 0.27, z, nc)); };
+    const drain = (x, z) => { put(box(0.1, 0.006, 0.1, steelBr, x, 0.008, z, nc)); put(box(0.08, 0.004, 0.08, blackM, x, 0.013, z, nc)); };
+
+    // Sala Pastoral: interruptores ao lado das portas (z = 9,25 · x 12,9–13,8 e x = 12,75 · z 8,2–9,1), tomada sobre a estação de café
+    plate('x', 9.2125, -1, 14.1, 1.15, 'sw'); plate('z', 12.7875, 1, 7.85, 1.15, 'sw');
+    plate('x', 0.012, 1, 15.2, 1.1, 'out'); plate('x', 0.012, 1, 14.2, 1.1, 'out');
+    drain(18.25, 3.95);                                                                        // banheiro pastoral
+    // Recepção: interruptor ao lado da porta (x 11,8–12,6)
+    plate('x', 9.2125, -1, 11.45, 1.15, 'sw');
+    // Sala Gilvan: calendário na parede z = 14,2 (ao lado do quadro) e cesto ao pé da mesa
+    calendar(14.125, -1, 19.5, 1.7);
+    bin(18.05, 13.1);
+    // Administrativo: calendário na parede z = 19 (à direita do relógio) e cesto entre as estações
+    calendar(18.925, -1, 19.5, 1.7);
+    bin(18.05, 16.9);
+  }
 }
 
 function roomServicoPatio(ctx) {
@@ -5181,6 +5385,38 @@ function roomServicoPatio(ctx) {
   }
   moreia(17.45, 9.75);
   spot(15.4, 9.95); spot(18.2, 9.55); spot(19.55, 10.4);
+
+  // =====================================================================
+  // DETALHES DE REALISMO (v1.5.1): tomadas do frontão da cozinha, interruptores junto às portas da
+  // cozinha e do almoxarifado e extintor da cozinha.
+  // Placas a ≥ 3 mm das faces (bloco dos fundos: paredes de 7,5 cm).
+  // =====================================================================
+  {
+    const plate = (axis, f, dir, t, y, kind) => {
+      const d = 0.012, c = f + dir * d / 2, dd = 0.006, cc = f + dir * (d + dd / 2);
+      if (axis === 'x') {
+        add(box(0.075, 0.12, d, P.cabW, t, y, c, nc));
+        add(kind === 'sw' ? box(0.03, 0.045, dd, P.paint, t, y + 0.01, cc, nc) : box(0.034, 0.034, dd, P.trim, t, y, cc, nc));
+      } else {
+        add(box(d, 0.12, 0.075, P.cabW, c, y, t, nc));
+        add(kind === 'sw' ? box(dd, 0.045, 0.03, P.paint, cc, y + 0.01, t, nc) : box(dd, 0.034, 0.034, P.trim, cc, y, t, nc));
+      }
+    };
+    // Cozinha: 2 tomadas no frontão (parede z = 0, face 0,012, abaixo dos aéreos) e interruptor junto à porta (x 11,6–12,5)
+    plate('x', 0.012, 1, 9.4, 1.15, 'out'); plate('x', 0.012, 1, 11.05, 1.15, 'out');
+    plate('x', 3.8625, -1, 11.3, 1.15, 'sw');
+    // porta-papel-toalha sob os aéreos (rolo em suporte de alumínio), entre as garrafas e a cuba
+    for (const dx of [-0.13, 0.13]) add(box(0.02, 0.03, 0.1, P.alu, 9.55 + dx, 1.33, 0.06, nc));
+    { const roll = cyl(0.055, 0.055, 0.24, P.paint, 9.55, 1.33, 0.1, 14); roll.rotation.z = PI / 2; add(roll); }
+    add(box(0.22, 0.14, 0.004, P.paint, 9.55, 1.2, 0.157, nc));
+    // extintor de pó (vermelho) em suporte na parede x = 12,75 (face 12,7125), perto da porta
+    const redExt = std({ color: 0xc4201b, roughness: 0.35, metalness: 0.1 });
+    add(box(0.02, 0.14, 0.12, P.trim, 12.7025, 1.28, 3.2));
+    add(cyl(0.08, 0.08, 0.5, redExt, 12.61, 1.05, 3.2, 14)); add(cyl(0.055, 0.055, 0.04, redExt, 12.61, 1.32, 3.2, 10));
+    add(cyl(0.026, 0.026, 0.08, P.trim, 12.61, 1.38, 3.2, 8)); add(box(0.03, 0.02, 0.14, P.trim, 12.61, 1.43, 3.2, nc));
+    // Almoxarifado: interruptor junto à porta (x 7,5–8,4)
+    plate('x', 3.8625, -1, 7.12, 1.15, 'sw');
+  }
 }
 
 function roomFachada(ctx) {
@@ -5610,6 +5846,16 @@ function roomFachada(ctx) {
   // câmera de segurança (canto esquerdo) e sensor branco (canto direito), como na foto
   addExt(box(0.12, 0.1, 0.18, P.grille, 0.9, 6.3, 49.83)); addExt(cyl(0.05, 0.05, 0.16, P.unit, 0.9, 6.24, 49.95, 10)).rotation.x = Math.PI / 2;
   addExt(box(0.28, 0.16, 0.06, P.unit, 15.3, 6.0, 49.78, { cast: false }));
+
+  // ---- Detalhes de realismo (v1.5.1): interfone e placa de número ao lado da porta principal, capacho externo ----
+  {
+    add(box(0.1, 0.2, 0.035, P.alu, 13.55, 1.4, 49.743)); add(box(0.06, 0.06, 0.006, P.plate, 13.55, 1.45, 49.764, { cast: false }));
+    const bt = cyl(0.012, 0.012, 0.006, P.plate, 13.55, 1.34, 49.764, 10); bt.rotation.x = Math.PI / 2; bt.castShadow = false; add(bt);
+    const numTex = ctx.makeTex(256, (g, S) => { g.fillStyle = '#121214'; g.fillRect(0, 0, S, S); g.fillStyle = '#f4f5f7'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `bold ${Math.round(S * 0.42)}px ${ctx.logo.font}`; g.fillText('802', S / 2, S * 0.4); g.font = `bold ${Math.round(S * 0.2)}px ${ctx.logo.font}`; g.fillText('SUL', S / 2, S * 0.75); });
+    add(box(0.26, 0.26, 0.012, std({ map: numTex, color: 0xffffff, roughness: 0.5 }), 13.55, 2.0, 49.731, { cast: false }));
+    add(box(1.8, 0.012, 0.8, std({ color: 0x1a1a1c, roughness: 0.92 }), 12.0, 0.012, 50.15, { cast: false }));
+  }
 }
 // @rooms-end
 
@@ -5705,75 +5951,155 @@ canvas.walk.pick { cursor: pointer; }
 .nav .enter:hover { background: rgba(255, 196, 107, .28); }
 @media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
-/* Painel inferior (dock) */
-.dock { position: absolute; left: 10px; right: 10px; bottom: 10px; max-height: min(48%, 372px); display: flex; flex-direction: column; overflow: hidden; z-index: 3; }
+/* Painel inferior (dock) — vidro escuro + âmbar; luz acesa brilha quente, clima frio azulado */
+.dock, .reopen { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #9aa6bd; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
+.dock { position: absolute; left: 0; right: 0; margin: 0 auto; bottom: 10px; width: min(1180px, calc(100% - 20px)); max-height: min(48%, 392px); display: flex; flex-direction: column; overflow: hidden; z-index: 3;
+  border-radius: 18px; border: 1px solid rgba(255, 255, 255, .11); background: linear-gradient(180deg, rgba(22, 29, 49, .92), rgba(9, 13, 25, .95));
+  box-shadow: 0 20px 56px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .08) inset; backdrop-filter: blur(14px) saturate(1.25); -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  animation: dockIn .34s var(--ease) backwards; }
 .dock[hidden] { display: none; }
-.tabs { display: flex; gap: 2px; padding: 6px 6px 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, .08); flex: none; align-items: center; }
-.tabs button[role="tab"] { padding: 7px 12px; font-size: 12px; }
-.tabs button[aria-selected="true"] { background: rgba(255, 196, 107, .16); color: #ffd48a; }
+.dock.closing { animation: dockOut .2s ease-in forwards; pointer-events: none; }
+@keyframes dockOut { to { opacity: 0; transform: translateY(24px) scale(.985); } }
+.dock::before { content: ""; display: none; flex: none; width: 38px; height: 4px; margin: 7px auto 0; border-radius: 4px; background: rgba(255, 255, 255, .2); }
+@keyframes dockIn { from { opacity: 0; transform: translateY(22px) scale(.985); } }
+@keyframes paneIn { from { opacity: 0; transform: translateY(8px); } }
+@keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(14px); } }
+@keyframes flashPulse { 0% { box-shadow: 0 0 0 0 rgba(255, 212, 138, .8); } 100% { box-shadow: 0 0 0 14px rgba(255, 212, 138, 0); } }
+.tabs { touch-action: none; display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); flex: none; align-items: center; }
+.tabs button[role="tab"] { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; font-size: 12.5px; border-radius: 999px; color: #a9b4ca; transition: background .22s, color .22s, box-shadow .22s; }
+.tabs button[role="tab"] svg { width: 14px; height: 14px; opacity: .8; }
+.tabs button[role="tab"]:hover { color: #e6edf7; }
+.tabs button[aria-selected="true"] { background: linear-gradient(180deg, rgba(255, 196, 107, .26), rgba(255, 196, 107, .12)); color: var(--amber2); box-shadow: inset 0 0 0 1px rgba(255, 196, 107, .38); }
 .tabs .spacer { flex: 1; }
-.tabs .count { color: #8f9bb3; font-size: 11px; font-variant-numeric: tabular-nums; padding: 0 8px; white-space: nowrap; }
-.tabs .collapse { width: 30px; height: 28px; padding: 0; display: grid; place-items: center; }
-.pane { overflow: auto; padding: 10px; display: none; overscroll-behavior: contain; }
-.pane.active { display: block; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 8px; }
+.tabs .count { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; margin-right: 4px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); color: #b4bfd4; font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tabs .count svg { width: 14px; height: 14px; color: #6b768f; transition: color .3s, filter .3s; }
+.tabs .count.lit svg { color: var(--amber); filter: drop-shadow(0 0 5px var(--amber)); }
+.tabs .count b { color: var(--ink); font-weight: 700; }
+.tabs .collapse { width: 32px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: rgba(255, 255, 255, .05); }
+.pane { overflow: auto; padding: 12px 12px 14px; display: none; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
+.pane.active { display: block; animation: paneIn .28s var(--ease); }
+.zonebar { display: flex; gap: 6px; margin: 0 0 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.zonebar::-webkit-scrollbar { display: none; }
+.zonebar button { flex: none; padding: 5px 12px; border-radius: 999px; font-size: 11.5px; color: #a9b4ca; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
+.zonebar button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: var(--amber2); border-color: rgba(255, 196, 107, .4); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.zone { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 8px 2px 0; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #9aa6bd; font-weight: 700; }
+.zone:first-child, .tiles.single .zone { margin-top: 0; }
+.zone::after { content: ""; order: 2; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, .12), transparent); }
+.zone .zn { order: 3; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 11px; color: #7f8ba3; font-variant-numeric: tabular-nums; }
+.zone.some .zn { color: var(--amber2); }
+.zone[hidden], .tile[hidden] { display: none; }
+.tile { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-height: 92px; padding: 10px 11px 11px; border-radius: 15px; text-align: left; color: #d5dcea;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .03)); border: 1px solid rgba(255, 255, 255, .08);
+  transition: background .3s, border-color .3s, box-shadow .3s, transform .14s var(--ease), opacity .3s; }
+.tile > * { position: relative; }
+.tile::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .4s; pointer-events: none; background: radial-gradient(95% 130% at 0% 0%, rgba(255, 196, 107, .3), transparent 64%); }
+.tile:hover { background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .05)); border-color: rgba(255, 255, 255, .16); }
+.tile:active { transform: scale(.975); }
+.tile:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 .tile .top { display: flex; align-items: center; justify-content: space-between; }
-.tile .eyebrow { display: block; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; margin-bottom: 3px; }
-.tile.on .eyebrow { color: #c9b48a; }
-.tile { aspect-ratio: 1 / 1; min-height: 112px; border-radius: 14px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); color: #d5dcea;
-  display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; padding: 10px; text-align: left; position: relative; transition: background .2s, border-color .2s, transform .1s; }
-.tile:hover { background: rgba(255, 255, 255, .09); }
-.tile:active { transform: scale(.98); }
-.tile .ico { width: 22px; height: 22px; color: #6b768f; display: flex; transition: color .25s, filter .25s; }
-.tile .ico svg { width: 22px; height: 22px; }
-.tile b { display: block; font-size: 13px; font-weight: 700; line-height: 1.2; color: #eef2f8; }
-.tile small { display: block; color: #8f9bb3; font-size: 11px; margin-top: 2px; line-height: 1.25; }
-.tile.on { background: rgba(255, 196, 107, .15); border-color: rgba(255, 196, 107, .45); }
-.tile.on .ico { color: var(--dot, #ffc46b); filter: drop-shadow(0 0 6px var(--dot, #ffc46b)); }
-.tile.on small { color: #dfe6f3; }
-.tile.unavailable { opacity: .45; }
-.tile.flash { box-shadow: 0 0 0 2px #ffd48a inset; }
-.tile .more { width: 26px; height: 22px; padding: 0; border-radius: 7px; background: rgba(255, 255, 255, .08); color: #c9d2e3; font-size: 14px; line-height: 22px; text-align: center; letter-spacing: .05em; cursor: pointer; }
-.tile .more:hover { background: rgba(255, 255, 255, .18); }
-.tile.routine { aspect-ratio: auto; min-height: 96px; justify-content: flex-start; gap: 8px; }
-.tile.routine .ico { width: 30px; height: 30px; border-radius: 9px; background: rgba(255, 196, 107, .12); color: #ffd48a; display: grid; place-items: center; }
-.tile.routine .ico svg { width: 18px; height: 18px; }
-.tile.routine:hover { background: rgba(255, 196, 107, .1); border-color: rgba(255, 196, 107, .3); }
-.detail { grid-column: 1 / -1; box-sizing: border-box; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 196, 107, .3); }
+.tile .eyebrow { display: none; }
+.tile .ico { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: rgba(255, 255, 255, .06); color: #79849e; transition: background .35s, color .35s, box-shadow .35s; }
+.tile .ico svg { width: 19px; height: 19px; }
+.tile b { display: block; font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--ink); }
+.tile small { display: block; margin-top: 3px; font-size: 11px; line-height: 1.3; color: var(--mute); }
+.tile small .st { color: #b3bed3; font-weight: 600; }
+.tile small .tm { display: block; color: #8b97af; } .tile small .sep { display: none; }
+.tile .lvl { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, .06); opacity: 0; transition: opacity .3s; }
+.tile .lvl::after { content: ""; display: block; height: 100%; width: var(--lvl, 0%); background: var(--dot, #ffc46b); box-shadow: 0 0 8px var(--dot, #ffc46b); transition: width .35s var(--ease); }
+.tile.on { border-color: rgba(255, 196, 107, .5); box-shadow: 0 8px 24px -10px rgba(255, 196, 107, .55), inset 0 1px 0 rgba(255, 255, 255, .1); }
+.tile.on::before { opacity: 1; }
+.tile.on { border-color: color-mix(in srgb, var(--dot, #ffc46b) 58%, transparent); box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--dot, #ffc46b) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .1); }
+.tile.on::before { background: radial-gradient(95% 130% at 0% 0%, color-mix(in srgb, var(--dot, #ffc46b) 30%, transparent), transparent 64%); }
+.tile.on .ico { background: color-mix(in srgb, var(--dot, #ffc46b) 22%, transparent); }
+.tile.on .ico { background: rgba(255, 196, 107, .2); color: var(--dot, #ffc46b); box-shadow: 0 0 16px -2px var(--dot, #ffc46b); }
+.tile.on b { color: #fff; } .tile.on small .st { color: #fff; }
+.tile.on .ico { background: rgba(255, 196, 107, .2); background: color-mix(in srgb, var(--dot, #ffc46b) 22%, transparent); }
+.tile.on.hasl .lvl { opacity: 1; }
+.tile[data-kind="sensor"] small .st { font-size: 12px; }
+.tile.unavailable { opacity: .45; filter: grayscale(.7); }
+.tile.flash { box-shadow: 0 0 0 3px rgba(255, 212, 138, .85), 0 0 26px rgba(255, 212, 138, .45); border-color: var(--amber2); }
+.tile .more { width: 28px; height: 28px; padding: 0; border-radius: 9px; background: rgba(255, 255, 255, .06); color: #aeb8cc; font-size: 15px; line-height: 28px; text-align: center; letter-spacing: .04em; cursor: pointer; opacity: .8; transition: background .2s, opacity .2s; }
+.tile .more:hover, .tile .more:focus-visible { background: rgba(255, 255, 255, .18); opacity: 1; }
+.tile .more:focus-visible { outline: 2px solid var(--amber); }
+.tiles.routines { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
+.tile.routine { min-height: 104px; justify-content: flex-start; gap: 10px; }
+.tile.routine .ico { background: rgba(255, 196, 107, .14); color: var(--amber2); box-shadow: 0 0 0 1px rgba(255, 196, 107, .2) inset; }
+.tile.routine small { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tile.routine:hover { background: linear-gradient(180deg, rgba(255, 196, 107, .16), rgba(255, 196, 107, .06)); border-color: rgba(255, 196, 107, .4); transform: translateY(-1px); }
+.tile.routine:active { transform: scale(.975); }
+/* folha de controles do aparelho: fica colada no fim da área rolável */
+.detail { grid-column: 1 / -1; position: sticky; bottom: 4px; z-index: 4; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 12px 14px; border-radius: 16px; margin-top: 4px;
+  background: linear-gradient(180deg, #1d2542, #10162a); border: 1px solid rgba(255, 196, 107, .4); box-shadow: 0 -12px 32px rgba(0, 0, 0, .45), 0 10px 26px -12px rgba(255, 196, 107, .35); animation: sheetIn .28s var(--ease); }
+.detail[data-kind="climate"] { border-color: rgba(103, 211, 255, .45); box-shadow: 0 -12px 32px rgba(0, 0, 0, .45), 0 10px 26px -12px rgba(103, 211, 255, .35); }
 .detail[hidden] { display: none; }
-.detail .dtitle { display: flex; align-items: center; gap: 8px; margin-right: auto; }
-.detail .dtitle .ico { color: var(--dot, #ffc46b); display: flex; }
-.detail .dtitle b { font-size: 13px; } .detail .dtitle small { color: #8f9bb3; font-size: 11px; display: block; }
-.detail .close { width: 26px; height: 26px; padding: 0; border-radius: 7px; background: rgba(255, 255, 255, .08); }
-.sw { width: 40px; height: 22px; border-radius: 999px; background: #2b3245; position: relative; padding: 0; border: 1px solid rgba(255, 255, 255, .1); transition: background .2s; flex: none; }
-.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #aab3c5; transition: transform .2s, background .2s; }
-.sw[aria-checked="true"] { background: #ffb85a; border-color: #ffb85a; } .sw[aria-checked="true"]::after { transform: translateX(18px); background: #1a1200; }
-.seg2 { display: inline-flex; gap: 2px; padding: 2px; background: rgba(255, 255, 255, .05); border-radius: 8px; }
-.seg2 button { padding: 5px 8px; font-size: 11px; }
-.timerseg .tlab { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px 0 4px; font-size: 11px; color: #8f9bb3; }
-.step { display: inline-flex; align-items: center; gap: 4px; }
-.step button { width: 28px; height: 28px; padding: 0; border-radius: 7px; background: rgba(255, 255, 255, .06); font-size: 16px; line-height: 1; }
-.step output { min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; }
-.mbtn { width: 32px; height: 28px; padding: 0; border-radius: 7px; background: rgba(255, 255, 255, .06); display: inline-grid; place-items: center; font-size: 15px; }
+.detail .dhead { display: flex; align-items: center; gap: 12px; }
+.detail .dbody { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.detail .dtitle { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+.detail .dtitle .ico { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: var(--dot, #ffc46b); background: rgba(255, 255, 255, .06); box-shadow: 0 0 18px -4px var(--dot, #ffc46b); flex: none; }
+.detail .dtitle .ico svg { width: 20px; height: 20px; }
+.detail .dtitle b { font-size: 14px; } .detail .dtitle small { color: var(--mute); font-size: 11.5px; display: block; margin-top: 1px; }
+.detail .close { width: 30px; height: 30px; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, .08); font-size: 16px; line-height: 1; }
+.sw { width: 46px; height: 26px; border-radius: 999px; background: #2b3245; position: relative; padding: 0; border: 1px solid rgba(255, 255, 255, .12); transition: background .25s, border-color .25s, box-shadow .25s; flex: none; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #aab3c5; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); transition: transform .28s cubic-bezier(.3, 1.4, .5, 1), background .2s; }
+.sw[aria-checked="true"] { background: linear-gradient(90deg, #ffab3f, #ffd27d); border-color: #ffc46b; box-shadow: 0 0 14px -2px rgba(255, 184, 90, .7); } .sw[aria-checked="true"]::after { transform: translateX(20px); background: #2a1a00; }
+.detail[data-kind="climate"] .sw[aria-checked="true"] { background: linear-gradient(90deg, #38b6ee, #8fe0ff); border-color: #67d3ff; box-shadow: 0 0 14px -2px rgba(103, 211, 255, .7); } .detail[data-kind="climate"] .sw[aria-checked="true"]::after { background: #04222f; }
+.sw:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.seg2 { display: inline-flex; gap: 2px; padding: 3px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); border-radius: 11px; }
+.seg2 button { padding: 6px 11px; font-size: 11.5px; border-radius: 8px; transition: background .2s, color .2s; }
+.seg2 button[aria-pressed="true"] { background: rgba(255, 196, 107, .2); color: var(--amber2); box-shadow: inset 0 0 0 1px rgba(255, 196, 107, .35); }
+.detail[data-kind="climate"] .seg2 button[aria-pressed="true"] { background: rgba(103, 211, 255, .18); color: #aee8ff; box-shadow: inset 0 0 0 1px rgba(103, 211, 255, .38); }
+.timerseg .tlab { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; font-size: 11px; color: var(--mute); }
+.step { display: inline-flex; align-items: center; gap: 6px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); }
+.step button { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, .08); font-size: 18px; line-height: 1; }
+.step button:hover { background: rgba(103, 211, 255, .22); color: #aee8ff; }
+.step output { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 18px; color: #aee8ff; }
+.mbtn { width: 36px; height: 32px; padding: 0; border-radius: 10px; background: rgba(255, 255, 255, .07); display: inline-grid; place-items: center; font-size: 16px; }
+.mbtn:hover { background: rgba(255, 196, 107, .2); }
 input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
-.swatches { display: flex; gap: 6px; } .swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .18); padding: 0; }
-.swatch:hover { transform: scale(1.12); }
-.sect { margin: 4px 2px 8px; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
-.sect small { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 11px; }
-.tiles + .sect { margin-top: 14px; }
-.autos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 10px; }
-.auto { display: grid; grid-template-columns: 22px 1fr auto auto; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .07); }
-.auto .ico { color: #6b768f; display: flex; } .auto.on .ico { color: #ffd48a; filter: drop-shadow(0 0 5px #ffd48a); }
-.auto b { display: block; font-size: 12.5px; font-weight: 600; } .auto small { color: #8f9bb3; font-size: 11px; }
+.detail .rng { flex: 1 1 200px; min-width: 150px; display: flex; align-items: center; gap: 10px; }
+.detail .rng output { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; color: var(--dot, var(--amber2)); }
+.detail input[type="range"] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 28px; margin: 0; background: transparent; cursor: pointer; --v: 100%; --c: var(--dot, #ffc46b); }
+.detail input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 6px; background: linear-gradient(90deg, var(--c) var(--v), rgba(255, 255, 255, .14) var(--v)); }
+.detail input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 50%; background: #fff; border: 4px solid var(--c); box-shadow: 0 2px 8px rgba(0, 0, 0, .55), 0 0 14px -2px var(--c); transition: transform .15s; }
+.detail input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
+.detail input[type="range"]::-moz-range-track { height: 6px; border-radius: 6px; background: rgba(255, 255, 255, .14); }
+.detail input[type="range"]::-moz-range-progress { height: 6px; border-radius: 6px; background: var(--c); }
+.detail input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 4px solid var(--c); box-shadow: 0 2px 8px rgba(0, 0, 0, .55); }
+.detail input[type="range"]:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 8px; }
+.swatches { display: flex; gap: 8px; } .swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .28); padding: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); transition: transform .15s, border-color .15s; }
+.swatch:hover { transform: scale(1.15); border-color: #fff; }
+.sect { margin: 2px 2px 10px; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #9aa6bd; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.sect::before { content: ""; width: 3px; height: 12px; border-radius: 2px; background: var(--amber); box-shadow: 0 0 8px rgba(255, 196, 107, .6); }
+.sect small { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 11px; color: #7f8ba3; }
+.tiles + .sect { margin-top: 18px; }
+.autos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px 10px; }
+.auto { display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 13px; background: linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .03)); border: 1px solid rgba(255, 255, 255, .07); transition: background .25s, border-color .25s; }
+.auto:hover { border-color: rgba(255, 255, 255, .15); }
+.auto.on { border-color: rgba(255, 196, 107, .22); }
+.auto .ico { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: rgba(255, 255, 255, .06); color: #6b768f; transition: all .3s; }
+.auto.on .ico { background: rgba(255, 196, 107, .16); color: var(--amber2); box-shadow: 0 0 14px -3px var(--amber); }
+.auto b { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink); } .auto small { display: block; margin-top: 2px; color: var(--mute); font-size: 11px; line-height: 1.3; }
 .auto.off b { color: #9aa6bd; }
-.auto .run { width: 30px; height: 26px; padding: 0; border-radius: 7px; background: rgba(255, 255, 255, .07); display: inline-grid; place-items: center; }
-.autos .empty { color: #8f9bb3; font-size: 12px; padding: 6px 2px; }
-.feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 18px; }
-.feed li { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: center; padding: 7px 4px; border-bottom: 1px solid rgba(255, 255, 255, .05); font-size: 12px; }
-.feed .d { width: 8px; height: 8px; border-radius: 50%; background: #4b5468; } .feed li.on .d { background: var(--dot, #ffc46b); box-shadow: 0 0 6px var(--dot, #ffc46b); }
-.feed b { font-weight: 600; } .feed time { color: #8f9bb3; font-variant-numeric: tabular-nums; font-size: 11px; text-align: right; }
-.feed .empty { color: #8f9bb3; padding: 12px 4px; font-size: 12px; }
-.reopen { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 8px 14px; z-index: 3; }
+.auto.flash { animation: flashPulse .7s var(--ease); }
+.auto .run { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, .07); display: inline-grid; place-items: center; transition: background .2s, color .2s; }
+.auto .run:hover { background: rgba(255, 196, 107, .25); color: var(--amber2); }
+.autos .empty { color: var(--mute); font-size: 12px; padding: 12px; border-radius: 12px; border: 1px dashed rgba(255, 255, 255, .14); grid-column: 1 / -1; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 10px; }
+.feed li { display: grid; grid-template-columns: 28px 1fr auto; gap: 11px; align-items: center; padding: 9px 12px; border-radius: 12px; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .06); font-size: 12.5px; }
+.feed .d { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(255, 255, 255, .05); color: #69748d; }
+.feed .d svg { width: 15px; height: 15px; }
+.feed li.on .d { background: rgba(255, 196, 107, .16); background: color-mix(in srgb, var(--dot, #ffc46b) 20%, transparent); color: var(--dot, #ffc46b); box-shadow: 0 0 12px -3px var(--dot, #ffc46b); }
+.feed li.on { border-color: rgba(255, 255, 255, .1); }
+.feed b { font-weight: 700; color: var(--ink); } .feed time { color: var(--mute); font-variant-numeric: tabular-nums; font-size: 11px; text-align: right; white-space: nowrap; }
+.feed .empty { color: var(--mute); padding: 14px 12px; font-size: 12px; grid-column: 1 / -1; display: block; border-style: dashed; }
+.reopen { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; font-size: 13px; color: var(--amber2); z-index: 3;
+  background: linear-gradient(180deg, rgba(32, 40, 66, .92), rgba(12, 16, 30, .94)); border: 1px solid rgba(255, 196, 107, .4); box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 22px -6px rgba(255, 196, 107, .45); animation: reopenIn .32s var(--ease) backwards; }
+@keyframes reopenIn { from { opacity: 0; transform: translateX(-50%) translateY(14px); } }
+.reopen:hover { background: linear-gradient(180deg, rgba(48, 58, 92, .94), rgba(18, 24, 42, .95)); }
+.reopen .rn { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--amber); color: #2a1a00; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+.reopen .rn:empty { display: none; }
 .reopen[hidden] { display: none; }
 /* Clima ao vivo — canto inferior direito, some quando o painel de automações abre por cima */
 .weather { position: absolute; right: 10px; bottom: 10px; width: 168px; box-sizing: border-box; padding: 10px 12px; z-index: 3;
@@ -5794,11 +6120,24 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
   .weather .wtemp { font-size: 22px; } .weather .wicon, .weather .wicon svg { width: 24px; height: 24px; }
 }
 @media (max-width: 640px) {
-  .dock { height: 50%; left: 6px; right: 6px; bottom: 6px; }
-  .tiles { grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 6px; }
-  .tile { min-height: 96px; padding: 8px; border-radius: 12px; } .tile b { font-size: 12px; } .tile small { font-size: 10.5px; } .tile .eyebrow { font-size: 9px; }
-  .tile.routine { grid-column: span 2; }
-  .tabs button[role="tab"] { padding: 7px 8px; } .tabs .count { display: none; }
+  .dock { width: auto; margin: 0; height: 50%; max-height: none; left: 6px; right: 6px; bottom: 6px; border-radius: 20px; }
+  .dock::before { display: block; }
+  .tabs { padding: 5px 8px 8px; gap: 0; }
+  .tabs .count { padding: 4px 8px; margin-right: 2px; } .tabs .collapse { width: 30px; }
+  .tabs button[role="tab"] { padding: 7px 9px; font-size: 12px; } .tabs button[role="tab"] svg { display: none; } .tabs .count .lbl { display: none; }
+  .pane { padding: 10px 10px 14px; }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 62px; padding: 8px 8px 8px 9px; border-radius: 14px; }
+  .tile .top { display: contents; }
+  .tile .ico { width: 32px; height: 32px; } .tile > span:not(.top) { min-width: 0; } .tile .more { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; }
+  .tile .more::after { content: ""; position: absolute; inset: -4px; }
+  .tile b { font-size: 12.5px; padding-right: 22px; } .tile small { font-size: 10.5px; }
+  .tile.routine b { padding-right: 0; } .tile.routine small { -webkit-line-clamp: 2; }
+  .tiles.routines { grid-template-columns: minmax(0, 1fr); }
+  .tile.routine { min-height: 62px; grid-template-columns: auto minmax(0, 1fr); }
+  .autos, .feed { grid-template-columns: minmax(0, 1fr); }
+  .detail { padding: 11px 12px; gap: 10px; } .detail .rng { flex-basis: 100%; }
+  .reopen { bottom: 12px; }
   .hud.top { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 6px; }   /* sem wrap: a linha teria a largura do maior item */
 
   .title { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 0; padding: 6px 10px; }
@@ -5814,7 +6153,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
   .btns { flex-wrap: wrap; overflow: visible; gap: 6px; }
   .btn { padding: 6px 9px; font-size: 11.5px; } .seg button { padding: 5px 8px; font-size: 11.5px; }
 }
-@media (prefers-reduced-motion: reduce) { .tile, .tile .ico, .sw, .sw::after { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dock, .reopen, .pane.active, .tile, .tile::before, .tile .ico, .tile .lvl::after, .detail, .feed li, .auto, .sw, .sw::after, .seg2 button, .swatch, .detail input[type="range"]::-webkit-slider-thumb { animation: none !important; transition: none !important; } }
 `;
 
 export class Igreja3DCard extends HTMLElement {
@@ -8381,7 +8720,11 @@ export class Igreja3DCard extends HTMLElement {
   }
   _setPanel(open) {
     this._panelOpen = !!open;
-    this._dock.hidden = !open; this._reopen.hidden = !!open;
+    clearTimeout(this._dockT); this._dock.classList.remove('closing');
+    if (!open && !this._dock.hidden && !this._reduced && this._wrap && this._wrap.isConnected) {   // recolhe deslizando (~0,2 s); o estado já vale na hora
+      this._dock.classList.add('closing'); this._dockT = setTimeout(() => { this._dock.classList.remove('closing'); this._dock.hidden = !this._panelOpen; }, 200);
+    } else this._dock.hidden = !open;
+    this._reopen.hidden = !!open;
     if (this._weatherEl) this._weatherEl.classList.toggle('out', !!open);
     this._panelBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
     if (open) this._renderPanel();
@@ -8393,37 +8736,61 @@ export class Igreja3DCard extends HTMLElement {
     const tabs = document.createElement('div'); tabs.className = 'tabs'; tabs.setAttribute('role', 'tablist'); dock.appendChild(tabs);
     this._panes = {};
     const panes = [];
-    for (const [id, label] of [['ctl', 'Ambientes'], ['scn', 'Automações'], ['act', 'Atividade']]) {
-      const b = document.createElement('button'); b.textContent = label; b.setAttribute('role', 'tab'); b.dataset.tab = id;
-      b.addEventListener('click', () => this._showTab(id)); tabs.appendChild(b);
-      const pane = document.createElement('div'); pane.className = 'pane'; pane.dataset.pane = id; panes.push(pane);
+    const TABS = [['ctl', 'Ambientes', 'home'], ['scn', 'Automações', 'auto'], ['act', 'Atividade', 'timer']];
+    for (const [id, label, ic] of TABS) {
+      const b = document.createElement('button'); b.innerHTML = `${iconSvg(ic)}<span>${label}</span>`; b.setAttribute('role', 'tab'); b.dataset.tab = id;
+      b.addEventListener('click', () => this._showTab(id));
+      b.addEventListener('keydown', (e) => {   // setas ← → trocam de aba (padrão WAI-ARIA)
+        const i = TABS.findIndex((x) => x[0] === id), d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
+        e.preventDefault(); const nx = TABS[(i + d + TABS.length) % TABS.length][0]; this._showTab(nx); this._panes[nx].btn.focus();
+      });
+      tabs.appendChild(b);
+      const pane = document.createElement('div'); pane.className = 'pane'; pane.dataset.pane = id; pane.setAttribute('role', 'tabpanel'); pane.setAttribute('aria-label', label); panes.push(pane);
       this._panes[id] = { btn: b, pane };
     }
+    let drag = null;   // no celular: arrastar a barra de abas para baixo recolhe o painel
+    tabs.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && !e.target.closest('button')) drag = { y: e.clientY, id: e.pointerId }; });
+    tabs.addEventListener('pointermove', (e) => { if (drag && e.pointerId === drag.id && e.clientY - drag.y > 48) { drag = null; this._setPanel(false); } });
+    const endDrag = () => { drag = null; }; tabs.addEventListener('pointerup', endDrag); tabs.addEventListener('pointercancel', endDrag);
     const spacer = document.createElement('div'); spacer.className = 'spacer'; tabs.appendChild(spacer);
-    this._countEl = document.createElement('span'); this._countEl.className = 'count'; tabs.appendChild(this._countEl);
+    this._countEl = document.createElement('span'); this._countEl.className = 'count'; this._countEl.setAttribute('role', 'status'); tabs.appendChild(this._countEl);
     const col = document.createElement('button'); col.className = 'collapse'; col.title = 'Recolher painel'; col.setAttribute('aria-label', 'Recolher painel');
     col.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg>';
     col.addEventListener('click', () => this._setPanel(false)); tabs.appendChild(col);
     for (const pane of panes) dock.appendChild(pane);
-    this._reopen = document.createElement('button'); this._reopen.className = 'panel btn reopen'; this._reopen.textContent = 'Painel ▴'; this._reopen.hidden = true;
+    this._reopen = document.createElement('button'); this._reopen.className = 'panel btn reopen'; this._reopen.innerHTML = '<span>Painel ▴</span><span class="rn" title="luzes acesas"></span>'; this._reopen.hidden = true;
     this._reopen.addEventListener('click', () => this._setPanel(true)); wrap.appendChild(this._reopen);
     this._buildWeather(wrap);
 
     // Ambientes: blocos quadrados agrupados por área
     this._tiles = {};
+    const zbar = document.createElement('div'); zbar.className = 'zonebar'; zbar.setAttribute('role', 'group'); zbar.setAttribute('aria-label', 'Filtrar por área'); this._panes.ctl.pane.appendChild(zbar); this._zbar = zbar;
     const grid = document.createElement('div'); grid.className = 'tiles'; this._panes.ctl.pane.appendChild(grid); this._grid = grid;
-    this._detail = document.createElement('div'); this._detail.className = 'detail'; this._detail.hidden = true; grid.appendChild(this._detail);
+    this._detail = document.createElement('div'); this._detail.className = 'detail'; this._detail.hidden = true;
     const ROOMS = [['Templo', ['palco', 'plateia', 'telao', 'som', 'ac_templo', 'presenca', 'temperatura']], ['Entrada', ['hall', 'fachada', 'estacionamento', 'porta', 'familia', 'banheiros']],
       ['Administração', ['recepcao', 'pastoral', 'ac_pastoral', 'administrativo', 'circulacao']], ['Apoio', ['midia', 'ac_midia', 'voluntariado', 'ac_voluntariado', 'cozinha']]];
-    for (const [title, keys] of ROOMS) for (const k of keys) grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), title));
+    this._zones = []; this._zone = '';
+    let ti = 0;
+    for (const [title, keys] of ROOMS) {
+      const zh = document.createElement('div'); zh.className = 'zone'; zh.dataset.room = title; zh.setAttribute('role', 'heading'); zh.setAttribute('aria-level', '3');
+      const zt = document.createElement('span'); zt.className = 'zt'; zt.textContent = title; const zn = document.createElement('span'); zn.className = 'zn'; zh.append(zt, zn); grid.appendChild(zh);
+      const z = { title, keys, zh, zn }; this._zones.push(z);
+      for (const k of keys) grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), title, ti++));
+    }
+    grid.appendChild(this._detail);
+    for (const [val, label] of [['', 'Todos'], ...ROOMS.map((r) => [r[0], r[0]])]) {
+      const c = document.createElement('button'); c.textContent = label; c.dataset.zone = val; c.setAttribute('aria-pressed', val === '' ? 'true' : 'false');
+      c.addEventListener('click', () => this._setZone(val)); zbar.appendChild(c);
+    }
     this._timers = {};
     // Automações: rotinas rápidas do cartão + automações do HA (descobertas sozinhas)
     const h1 = document.createElement('div'); h1.className = 'sect'; h1.textContent = 'Rotinas rápidas'; this._panes.scn.pane.appendChild(h1);
-    const rgrid = document.createElement('div'); rgrid.className = 'tiles'; this._panes.scn.pane.appendChild(rgrid);
+    const rgrid = document.createElement('div'); rgrid.className = 'tiles routines'; this._panes.scn.pane.appendChild(rgrid);
     const h2 = document.createElement('div'); h2.className = 'sect'; h2.innerHTML = 'Automações do Home Assistant <small>ligar/desligar · executar agora</small>'; this._panes.scn.pane.appendChild(h2);
     this._autoList = document.createElement('div'); this._autoList.className = 'autos'; this._panes.scn.pane.appendChild(this._autoList);
+    let si = 0;
     for (const sc of SCENES) {
-      const b = document.createElement('button'); b.className = 'tile routine';
+      const b = document.createElement('button'); b.className = 'tile routine'; b.style.setProperty('--i', si++);
       b.innerHTML = `<span class="ico">${iconSvg(sc.icon)}</span><span><b>${sc.name}</b><small>${sc.desc}</small></span>`;
       b.addEventListener('click', () => { sc.run(this._sceneCtx()); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 700); });
       rgrid.appendChild(b);
@@ -8471,19 +8838,32 @@ export class Igreja3DCard extends HTMLElement {
     }
   }
   _showTab(id) {
-    for (const [k, t] of Object.entries(this._panes)) { t.btn.setAttribute('aria-selected', k === id ? 'true' : 'false'); t.pane.classList.toggle('active', k === id); }
+    for (const [k, t] of Object.entries(this._panes)) { t.btn.setAttribute('aria-selected', k === id ? 'true' : 'false'); t.btn.tabIndex = k === id ? 0 : -1; t.pane.classList.toggle('active', k === id); }
+  }
+  // filtro por área (Todos · Templo · Entrada …): esconde cabeçalhos e blocos das outras áreas
+  _setZone(z) {
+    this._zone = z || '';
+    for (const c of this._zbar.children) c.setAttribute('aria-pressed', c.dataset.zone === this._zone ? 'true' : 'false');
+    for (const zz of this._zones) zz.zh.hidden = !!this._zone && zz.title !== this._zone;
+    for (const t of Object.values(this._tiles)) if (t.room) t.tile.hidden = !!this._zone && t.room !== this._zone;
+    this._grid.classList.toggle('single', !!this._zone); this._panes.ctl.pane.scrollTop = 0;
   }
   _hasDetail(it) { return it.kind !== 'sensor'; }
-  _makeTile(it, room) {
-    const tile = document.createElement('button'); tile.className = 'tile'; tile.dataset.key = it.key; tile.setAttribute('aria-pressed', 'false');
+  _makeTile(it, room, idx = 0) {
+    const tile = document.createElement('button'); tile.className = 'tile'; tile.dataset.key = it.key; tile.dataset.kind = it.kind; tile.setAttribute('aria-pressed', 'false');
+    tile.style.setProperty('--i', Math.min(idx, 16));
     const top = document.createElement('span'); top.className = 'top';
     const ico = document.createElement('span'); ico.className = 'ico'; ico.innerHTML = iconSvg(it.icon); top.appendChild(ico);
     const txt = document.createElement('span');
     const eye = document.createElement('span'); eye.className = 'eyebrow'; eye.textContent = room || '';
     const b = document.createElement('b'); b.textContent = it.label; const small = document.createElement('small'); txt.append(eye, b, small);
+    // estado em três partes (estado · separador · tempo) — o texto junto continua "acesa · 30% · há 6 min"
+    const sSt = document.createElement('span'); sSt.className = 'st'; const sSep = document.createElement('span'); sSep.className = 'sep'; const sTm = document.createElement('span'); sTm.className = 'tm';
+    small.append(sSt, sSep, sTm);
     tile.append(top, txt);
+    if (it.dim || it.rgb) { tile.classList.add('hasl'); const lv = document.createElement('i'); lv.className = 'lvl'; lv.setAttribute('aria-hidden', 'true'); tile.appendChild(lv); }
     tile.style.setProperty('--dot', this._dotColor(it.key));
-    const t = { tile, small, it };
+    const t = { tile, small, it, room, sSt, sSep, sTm };
     if (this._hasDetail(it)) {
       const more = document.createElement('span'); more.className = 'more'; more.textContent = '⋯'; more.title = 'Mais controles'; more.setAttribute('role', 'button'); more.tabIndex = 0;
       more.addEventListener('click', (e) => { e.stopPropagation(); this._openDetail(it.key); });
@@ -8496,23 +8876,29 @@ export class Igreja3DCard extends HTMLElement {
   // Faixa de detalhes (brilho/cor do LED, modo/temperatura do ar, controles da TV)
   _openDetail(key) {
     const it = ITEMS.find((i) => i.key === key); if (!it) return;
-    const d = this._detail; d.innerHTML = ''; d.hidden = false; d.dataset.key = key; this._detailKey = key;
-    this._dSw = this._dSmall = this._dModes = this._dOut = this._dPP = this._dVol = this._dTimer = null;
+    const d = this._detail; d.innerHTML = ''; d.hidden = false; d.dataset.key = key; d.dataset.kind = it.kind; this._detailKey = key;
+    d.style.setProperty('--dot', this._dotColor(key));
+    d.setAttribute('role', 'group'); d.setAttribute('aria-label', `Controles: ${it.label}`);
+    this._dSw = this._dSmall = this._dModes = this._dOut = this._dPP = this._dVol = this._dTimer = this._dRange = null;
+    const head = document.createElement('div'); head.className = 'dhead'; d.appendChild(head);
+    const body = document.createElement('div'); body.className = 'dbody'; d.appendChild(body);
     const title = document.createElement('div'); title.className = 'dtitle'; title.style.setProperty('--dot', this._dotColor(key));
     title.innerHTML = `<span class="ico">${iconSvg(it.icon)}</span><span><b>${it.label}</b><small></small></span>`;
-    d.appendChild(title); this._dSmall = title.querySelector('small');
+    head.appendChild(title); this._dSmall = title.querySelector('small');
     const sw = document.createElement('button'); sw.className = 'sw'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', 'false'); sw.setAttribute('aria-label', `${it.label} ligado`);
-    d.appendChild(sw); this._dSw = sw;
+    head.appendChild(sw); this._dSw = sw;
     if (it.rgb || it.dim) {
       sw.addEventListener('click', () => this._activate(key));
       const range = document.createElement('input'); range.type = 'range'; range.min = 1; range.max = 100; range.setAttribute('aria-label', 'Brilho');
       const st = this._state[key]; range.value = st && st.attrs && st.attrs.brightness != null ? Math.round(st.attrs.brightness / 2.55) : 100;
       range.addEventListener('change', () => this._svc('light', 'turn_on', this.entity(key), { brightness_pct: +range.value }));
-      d.append(range);
+      const rw = document.createElement('div'); rw.className = 'rng'; const ro = document.createElement('output'); rw.append(range, ro); this._dRange = { range, ro };
+      const fill = () => { range.style.setProperty('--v', `${((+range.value - 1) / 99) * 100}%`); ro.textContent = `${range.value}%`; }; range.addEventListener('input', fill); fill();
+      body.append(rw);
       if (it.rgb) {
         const sws = document.createElement('div'); sws.className = 'swatches';
         for (const [name, rgb] of LED_PRESETS) { const c = document.createElement('button'); c.className = 'swatch'; c.title = name; c.setAttribute('aria-label', name); c.style.background = `rgb(${rgb.join(',')})`; c.addEventListener('click', () => this._svc('light', 'turn_on', this.entity(key), { rgb_color: rgb })); sws.appendChild(c); }
-        d.append(sws);
+        body.append(sws);
       }
     } else if (it.kind === 'climate') {
       sw.addEventListener('click', () => this._svc('climate', 'set_hvac_mode', this.entity(key), { hvac_mode: this._state[key] && this._state[key].on ? 'off' : 'cool' }));
@@ -8524,14 +8910,14 @@ export class Igreja3DCard extends HTMLElement {
       const plus = document.createElement('button'); plus.textContent = '+'; plus.setAttribute('aria-label', 'Aumentar temperatura');
       const bump = (dd) => { const st = this._state[key]; const a = (st && st.attrs) || {}; const cur = a.temperature != null ? a.temperature : 23; const tt = clamp(cur + dd, a.min_temp || 16, a.max_temp || 31); out.textContent = `${tt}°`; this._svc('climate', 'set_temperature', this.entity(key), { temperature: tt }); };
       minus.addEventListener('click', () => bump(-1)); plus.addEventListener('click', () => bump(1));
-      step.append(minus, out, plus); d.append(seg, step); this._dOut = out;
+      step.append(minus, out, plus); body.append(seg, step); this._dOut = out;
     } else if (it.kind === 'media') {
       sw.addEventListener('click', () => this._svc('media_player', this._state[key] && this._state[key].on ? 'turn_off' : 'turn_on', this.entity(key)));
-      const mk = (html, label, fn) => { const x = document.createElement('button'); x.className = 'mbtn'; x.innerHTML = html; x.setAttribute('aria-label', label); x.addEventListener('click', fn); d.appendChild(x); return x; };
+      const mk = (html, label, fn) => { const x = document.createElement('button'); x.className = 'mbtn'; x.innerHTML = html; x.setAttribute('aria-label', label); x.addEventListener('click', fn); body.appendChild(x); return x; };
       this._dPP = mk(iconSvg('play'), 'Tocar / pausar', () => this._svc('media_player', 'media_play_pause', this.entity(key)));
       mk('−', 'Volume −', () => this._svc('media_player', 'volume_down', this.entity(key)));
       mk('+', 'Volume +', () => this._svc('media_player', 'volume_up', this.entity(key)));
-      const vol = document.createElement('small'); d.appendChild(vol); this._dVol = vol;
+      const vol = document.createElement('small'); body.appendChild(vol); this._dVol = vol;
     }
     if (it.kind === 'light' || it.kind === 'switch') {
       if (!it.rgb && !it.dim) sw.addEventListener('click', () => this._activate(key));
@@ -8539,10 +8925,11 @@ export class Igreja3DCard extends HTMLElement {
       const lab = document.createElement('span'); lab.className = 'tlab'; lab.innerHTML = `${iconSvg('timer')} desligar em`; tm.appendChild(lab);
       for (const m of [15, 30, 60]) { const b = document.createElement('button'); b.textContent = `${m} min`; b.addEventListener('click', () => this._setTimer(key, m)); tm.appendChild(b); }
       const cancel = document.createElement('button'); cancel.textContent = 'cancelar'; cancel.addEventListener('click', () => this._setTimer(key, 0)); tm.appendChild(cancel);
-      d.appendChild(tm); this._dTimer = tm;
+      body.appendChild(tm); this._dTimer = tm;
     }
+    d.onkeydown = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); d.hidden = true; this._detailKey = null; const t = this._tiles[key]; const mo = t && t.tile.querySelector('.more'); if (mo) mo.focus(); } };
     const close = document.createElement('button'); close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', 'Fechar');
-    close.addEventListener('click', () => { d.hidden = true; this._detailKey = null; }); d.appendChild(close);
+    close.addEventListener('click', () => { d.hidden = true; this._detailKey = null; }); head.appendChild(close);
     this._showTab('ctl'); this._renderPanel();
     d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
@@ -8565,12 +8952,24 @@ export class Igreja3DCard extends HTMLElement {
       t.tile.classList.toggle('on', on); t.tile.classList.toggle('unavailable', !!(st && st.unavailable));
       t.tile.setAttribute('aria-pressed', on ? 'true' : 'false');
       const lc = this._lastChanged[k];
-      t.small.textContent = this._stateText(t.it, st) + (lc ? ` · ${fmtRel(lc, now)}` : '') + this._timerText(k, now);
+      const tm = [lc ? fmtRel(lc, now) : '', this._timerText(k, now).replace(/^ · /, '')].filter(Boolean).join(' · ');
+      const stx = this._stateText(t.it, st);
+      if (t.sSt.textContent !== stx) t.sSt.textContent = stx;
+      t.sSep.textContent = tm ? ' · ' : ''; if (t.sTm.textContent !== tm) t.sTm.textContent = tm;
       if (t.it.rgb && st && st.attrs && st.attrs.rgb_color) t.tile.style.setProperty('--dot', `rgb(${st.attrs.rgb_color.join(',')})`);
+      if (st && st.attrs && st.attrs.brightness != null && (t.it.dim || t.it.rgb)) t.tile.style.setProperty('--lvl', `${Math.round(st.attrs.brightness / 2.55)}%`);
+    }
+    for (const z of this._zones || []) {
+      const act = z.keys.filter((k) => this._state[k] && this._state[k].on).length;
+      z.zn.textContent = `${act} de ${z.keys.length} ativos`; z.zh.classList.toggle('some', act > 0);
     }
     const lights = ITEMS.filter((i) => i.kind === 'light');
     const n = lights.filter((i) => this._state[i.key] && this._state[i.key].on).length;
-    if (this._countEl) this._countEl.textContent = `${n} de ${lights.length} luzes acesas`;
+    if (this._countEl) {
+      if (this._cN !== n) { this._cN = n; this._countEl.innerHTML = `${iconSvg('bulb')}<span><b>${n}</b> de ${lights.length}<span class="lbl"> luzes acesas</span></span>`; }
+      this._countEl.classList.toggle('lit', n > 0);
+    }
+    if (this._reopen) { const rn = this._reopen.querySelector('.rn'); if (rn) rn.textContent = n ? String(n) : ''; }
     const key = this._detailKey;
     if (key && this._detail && !this._detail.hidden) {
       const st = this._state[key]; const on = !!(st && st.on); const it = ITEMS.find((i) => i.key === key);
@@ -8578,6 +8977,9 @@ export class Igreja3DCard extends HTMLElement {
       if (this._dSmall) this._dSmall.textContent = this._stateText(it, st) + this._timerText(key, now);
       if (this._dTimer) for (const b of this._dTimer.querySelectorAll('button')) b.setAttribute('aria-pressed', this._timers[key] && b.textContent === `${this._timers[key].min} min` ? 'true' : 'false');
       if (this._dModes) for (const [m, mb] of Object.entries(this._dModes)) mb.setAttribute('aria-pressed', st && st.state === m ? 'true' : 'false');
+      if (this._dRange && st && st.attrs && st.attrs.brightness != null && this._dRange.range.getRootNode().activeElement !== this._dRange.range) {
+        const r = this._dRange.range; r.value = Math.max(1, Math.round(st.attrs.brightness / 2.55)); r.dispatchEvent(new Event('input'));
+      }
       if (this._dOut && st && st.attrs && st.attrs.temperature != null) this._dOut.textContent = `${st.attrs.temperature}°`;
       if (this._dPP) this._dPP.innerHTML = iconSvg(st && st.state === 'playing' ? 'pause' : 'play');
       if (this._dVol && st && st.attrs) this._dVol.textContent = st.attrs.volume_level != null ? `vol ${Math.round(st.attrs.volume_level * 100)}%` : '';
@@ -8611,7 +9013,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const ev of this._activity.slice(0, 30)) {
       if (ev.state === 'triggered') {
         const a = this._autos.find((x) => x.id === ev.key); const li = document.createElement('li'); li.classList.add('on'); li.style.setProperty('--dot', '#ffd48a');
-        li.innerHTML = `<i class="d"></i><span><b>${a ? a.name : ev.key}</b> disparou</span><time>${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
+        li.innerHTML = `<i class="d">${iconSvg('auto')}</i><span><b>${a ? a.name : ev.key}</b> disparou</span><time>${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
         this._feed.appendChild(li); continue;
       }
       const it = ITEMS.find((i) => i.key === ev.key); if (!it) continue;
@@ -8624,13 +9026,13 @@ export class Igreja3DCard extends HTMLElement {
       else if (it.kind === 'sensor') what = it.key === 'presenca' ? (ev.state === 'on' ? '→ pessoas no templo' : '→ vazio') : it.key === 'porta' ? (ev.state === 'on' ? 'aberta' : 'fechada') : `→ ${ev.state} °C`;
       else if (it.kind === 'switch') what = ev.state === 'on' ? 'ligado' : 'desligado';
       else what = ev.state === 'on' ? 'acesa' : 'apagada';
-      li.innerHTML = `<i class="d"></i><span><b>${it.label}</b> ${what}</span><time datetime="${new Date(ev.ts).toISOString()}">${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
+      li.innerHTML = `<i class="d">${iconSvg(it.icon)}</i><span><b>${it.label}</b> ${what}</span><time datetime="${new Date(ev.ts).toISOString()}">${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
       this._feed.appendChild(li);
     }
   }
   _flashRow(key) {
     const t = this._tiles && this._tiles[key]; if (!t || !this._panelOpen) return;
-    this._showTab('ctl'); t.tile.classList.add('flash'); t.tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    this._showTab('ctl'); if (this._zone && t.room !== this._zone) this._setZone(''); t.tile.classList.add('flash'); t.tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     setTimeout(() => t.tile.classList.remove('flash'), 900);
   }
 
