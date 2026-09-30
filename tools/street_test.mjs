@@ -1,4 +1,4 @@
-// Modo Pessoa "tipo Street View" (v1.4.6): clique no piso caminha (A* com colisão), escada e mezanino (subir/descer andando e pelo clique),
+// Modo Pessoa "tipo Street View" (v1.4.6): clique no piso caminha (A* com colisão), mezanino (v1.5.4: sem escada, troca de andar direta),
 // marcador sob o cursor, bonequinho arrastável (mouse e toque), "Entrar aqui" na Vista de cima, "Ir para…", portas do WC Feminino e do pátio (v1.5.1).
 // Uso: THREE_LOCAL=<three.module.min.js> OUT=<pasta-dos-png> node tools/street_test.mjs <index.html>   (imprime o JSON com os resultados; `ok` = tudo passou)
 import { open, proj } from './lib.mjs';
@@ -14,15 +14,20 @@ const exitWalk = async () => { await page.keyboard.press('Escape'); await C((c) 
 // (a) caminhar até um ponto do piso: sai da rua, entra pela porta principal e chega ao ponto
 await C((c) => { c.setWalkPose(12, 52, 0, 0); c._walk.update(0.05); c.walkTo(9.0, 46.0); });
 await step(20); R.a = await pose(); ok.a = near(R.a, 9.0, 46.0, 0.2) && !R.a.walking;
-// (b) escada: clique no mezanino sobe até lá (y dos olhos 3,05 + 1,6)
+// (b) v1.5.4 (sem escada até a salinha): pedir o mezanino leva direto lá (y dos olhos 3,05 + 1,6)
 await C((c) => c.walkTo(2.0, 46.5, true)); await step(2); R.b0 = await pose(); await step(25); R.b = await pose();
 ok.b = R.b.up === true && Math.abs(R.b.y - 4.65) < 0.02 && near(R.b, 2.0, 46.5, 0.2);
-// (c) do mezanino, clique no piso do hall desce pela escada
+// (c) do mezanino, pedir o piso do hall desce direto
 await C((c) => c.walkTo(6.0, 46.0)); await step(30); R.c = await pose(); ok.c = R.c.up === false && Math.abs(R.c.y - 1.6) < 0.02 && near(R.c, 6.0, 46.0, 0.25);
-// (d) subir/descer andando pelo teclado (W): a altura acompanha a escada e o guarda-corpo segura no mezanino
+// (d) v1.5.4: andando junto à fachada onde era a escada reta, a pessoa fica no térreo; a escada em U do hall é obstáculo,
+//     mas a passagem sob o patamar de cima (z ≈ 45,2) continua livre; o guarda-corpo segura no mezanino
 await C((c) => { c.setWalkPose(10.4, 48.8, Math.PI / 2, 0); c._walk.update(0.05); });
-await page.keyboard.down('KeyW'); await step(2.5); R.d1 = await pose(); await step(3); R.d2 = await pose(); await step(3); R.d3 = await pose(); await page.keyboard.up('KeyW');
-ok.d = R.d1.y > 1.6 && R.d2.y > R.d1.y && R.d3.up === true && R.d3.y > 4.5;
+await page.keyboard.down('KeyW'); await step(2.5); R.d1 = await pose(); await step(3); R.d2 = await pose(); await page.keyboard.up('KeyW');
+await C((c) => { c.setWalkPose(12.3, 47.6, -Math.PI / 2, 0); c._walk.update(0.05); });
+await page.keyboard.down('KeyW'); await step(3); await page.keyboard.up('KeyW'); R.d3 = await pose();
+await C((c) => { c.setWalkPose(12.3, 45.2, -Math.PI / 2, 0); c._walk.update(0.05); });
+await page.keyboard.down('KeyW'); await step(3); await page.keyboard.up('KeyW'); R.d3b = await pose();
+ok.d = !R.d1.up && Math.abs(R.d1.y - 1.6) < 0.02 && !R.d2.up && Math.abs(R.d2.y - 1.6) < 0.02 && R.d2.x < 9 && R.d3.x < 13.45 && R.d3b.x > 15.3;
 await C((c) => { c.setWalkPose(3.0, 46.0, -Math.PI / 2, 0, true); c._walk.update(0.05); });   // contra o guarda-corpo (x 4,06)
 await page.keyboard.down('KeyW'); await step(3); await page.keyboard.up('KeyW'); R.d4 = await pose(); ok.d4 = R.d4.up && R.d4.x < 3.9 && R.d4.x > 3.6;
 await C((c) => { c.setWalkPose(2.0, 45.0, Math.PI, 0, true); c._walk.update(0.05); });    // contra a parede z = 49,65 do mezanino
