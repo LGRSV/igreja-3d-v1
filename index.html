@@ -190,6 +190,7 @@ export const ITEMS = [
     fixtures: [
       { p: [7.5, 2.7, 46.8], i: 30, d: 8, shadow: true, liteShadow: true },
       { p: [11.5, 2.7, 46.8], i: 30, d: 8 },
+      { p: [3.15, 3.86, 46.35], i: 10, d: 5.5, lamp: true, mezz: true },   // abajur da mesinha do mezanino (v1.4.6)
     ] },
   { key: 'fachada', label: 'Fachada / letreiro', kind: 'light', icon: 'sign', color: 0xffd9a8,
     fixtures: [
@@ -425,6 +426,11 @@ const STAIR = { XS: 4.1, GO: 0.3, N: 18, Y: 3.05, Z0: 48.05, Z1: 49.563 };
 STAIR.R = STAIR.Y / STAIR.N; STAIR.XE = STAIR.XS + 17 * STAIR.GO;   // XE = borda de baixo do degrau 1 (x = 9,2)
 // piso do mezanino (interior das paredes) e a passagem da escada; MZ_SPOT = ponto de entrada livre da salinha (poltronas e mesinha ficam junto ao guarda-corpo)
 const MEZZ = { x0: 0.087, x1: 4.075, z0: 44.075, z1: 49.563 };
+const stairNose = (x) => STAIR.R * (18 - (x - STAIR.XS) / STAIR.GO);                                  // altura da linha dos bocéis em x
+const inChan = (x, z) => x >= MEZZ.x1 && x <= STAIR.XE + STAIR.GO && z >= STAIR.Z0 && z <= STAIR.Z1;   // passagem da escada (rampa)
+const inMezz = (x, z) => x >= MEZZ.x0 && x <= STAIR.XS && z >= MEZZ.z0 && z <= MEZZ.z1;               // piso do mezanino
+// para onde a pessoa olha ao entrar num cômodo (x, y, z do mundo); sem entrada aqui: rumo ao canto mais fundo do cômodo
+const ROOM_FOCUS = { plateia: [1.0, 1.6, 28.1], palco: [10.5, 1.6, 28.1], hall: [11.85, 1.6, 44.0], familia: [3.9, 1.5, 48.55], mezanino: [4.6, 1.6, 45.6] };
 
 // Vista de cima navegável: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco; cada cômodo junta zonas de ZONES (ou tem `rects`
 // próprios quando divide uma zona, como palco/plateia) e lista os aparelhos (chaves de ITEMS) — _buildBlocks() ainda acrescenta os
@@ -1410,6 +1416,7 @@ class Walker {
     this.vel = new THREE.Vector3(); this.keys = new Set(); this.joy = { x: 0, y: 0 };
     this.on = false; this.moving = false; this.dirty = false; this.head = false; this.gesture = false;
     this.look = null; this.moved = 0; this.lx = 0; this.ly = 0; this.btn = 0; this.used = false;
+    this.high = false; this.path = null;   // up: no andar do mezanino/escada · path: caminhada até o ponto clicado { pts, i, … }
     this._pd = (e) => this.down(e); this._pm = (e) => this.move(e); this._pu = (e) => this.up(e);
     this._kd = (e) => this.key(e, true); this._ku = (e) => this.key(e, false); this._blur = () => this.keys.clear();
     this._wheel = (e) => e.preventDefault();
@@ -1433,7 +1440,12 @@ class Walker {
     window.removeEventListener('keydown', this._kd, true); window.removeEventListener('keyup', this._ku, true); window.removeEventListener('blur', this._blur);
     this.keys.clear(); this.look = null; this._joyReset(); this.vel.set(0, 0, 0);
   }
-  reset(x, z, yaw = 0, pitch = 0) { this.pos.set(x, this.card._walkFloor(x, z) + 1.6, z); this.yaw = yaw; this.pitch = pitch; this.vel.set(0, 0, 0); this.dirty = true; }
+  reset(x, z, yaw = 0, pitch = 0, up = false) {
+    this.path = null; this.high = this.card._walkUp(x, z, up);
+    this.pos.set(x, this.card._walkFloor(x, z, this.high) + 1.6, z); this.yaw = yaw; this.pitch = pitch; this.vel.set(0, 0, 0); this.dirty = true;
+  }
+  // interrompe a caminhada até o ponto clicado (teclado/joystick assumem, chegou ou travou)
+  stop(arrived) { if (!this.path) return; this.path = null; this.card._walkStopped(arrived); }
   down(e) {
     if (this.look != null) return;   // um dedo olha por vez (o outro pode estar no joystick)
     this.look = e.pointerId; this.moved = 0; this.lx = e.clientX; this.ly = e.clientY; this.btn = e.button;
@@ -1491,18 +1503,38 @@ class Walker {
     let iy = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) + this.joy.y;
     let ix = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + this.joy.x;
     const turn = (k.has('KeyQ') ? 1 : 0) - (k.has('KeyE') ? 1 : 0);
+    if (this.path && (iy || ix || turn)) this.stop(false);   // o teclado / joystick assume o comando
     if (turn) { this.yaw += turn * 1.6 * dt; this.head = true; }
     const l = Math.hypot(ix, iy); if (l > 1) { ix /= l; iy /= l; }
     const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw), rx = Math.cos(this.yaw), rz = -Math.sin(this.yaw);   // frente e direita no piso
     const sp = 1.6 * (k.has('ShiftLeft') || k.has('ShiftRight') ? 2 : 1);
-    const gx = (fx * iy + rx * ix) * sp, gz = (fz * iy + rz * ix) * sp;
+    let gx = (fx * iy + rx * ix) * sp, gz = (fz * iy + rz * ix) * sp;
+    // caminhada até o ponto clicado (estilo Street View): vira o corpo para o rumo e anda pelos pontos do caminho (já livre de paredes)
+    const P = this.path; let can = false;
+    if (P) {
+      const [tx, tz] = P.pts[P.i], dx = tx - this.pos.x, dz = tz - this.pos.z, dd = Math.hypot(dx, dz), lastPt = P.i === P.pts.length - 1;
+      if (dd < (lastPt ? 0.1 : 0.16)) { P.i++; if (P.i >= P.pts.length) this.stop(true); }
+      else {
+        let err = Math.atan2(-dx, -dz) - this.yaw; err = Math.atan2(Math.sin(err), Math.cos(err));
+        if (this.look == null) { const st = clamp(err, -4.5 * dt, 4.5 * dt); this.yaw += st; err -= st; this.head = true; }
+        const ali = Math.max(0, Math.cos(err)), spd = 1.75 * (lastPt ? clamp(dd * 2.5, 0.3, 1) : 1) * (ali > 0.8 ? 1 : ali * ali);
+        gx = dx / dd * spd; gz = dz / dd * spd; can = ali > 0.8;
+      }
+    }
     const kv = 1 - Math.exp(-dt * 10);
     this.vel.x += (gx - this.vel.x) * kv; this.vel.z += (gz - this.vel.z) * kv;
     if (!gx && !gz && Math.hypot(this.vel.x, this.vel.z) < 0.02) this.vel.set(0, 0, 0);
     const walking = this.vel.x !== 0 || this.vel.z !== 0;
-    if (walking) { const r = c._walkCollide(this.pos.x, this.pos.z, this.pos.x + this.vel.x * dt, this.pos.z + this.vel.z * dt); this.pos.x = r[0]; this.pos.z = r[1]; }
-    // altura dos olhos: piso (palco a 1 m) + 1,6 m, com subida suave
-    const ty = c._walkFloor(this.pos.x, this.pos.z) + 1.6, dy = ty - this.pos.y; let rising = false;
+    if (walking) { const r = c._walkCollide(this.pos.x, this.pos.z, this.pos.x + this.vel.x * dt, this.pos.z + this.vel.z * dt, this.high); this.pos.x = r[0]; this.pos.z = r[1]; this.high = c._walkUp(r[0], r[1], this.high); }
+    if (this.path) {   // travou numa parede / móvel do caminho: para onde deu para chegar
+      const Q = this.path; if (can) Q.t += dt; else Q.t = 0;
+      if (Q.t > 0.6) {
+        if (Math.hypot(this.pos.x - Q.px, this.pos.z - Q.pz) < 0.07) { if (Q.tries++ < 3) c._walkReplan(); else this.stop(true); }   // roçou numa quina: refaz o caminho daqui
+        Q.px = this.pos.x; Q.pz = this.pos.z; Q.t = 0;
+      }
+    }
+    // altura dos olhos: piso (palco a 1 m, escada e mezanino) + 1,6 m, com subida suave
+    const ty = c._walkFloor(this.pos.x, this.pos.z, this.high) + 1.6, dy = ty - this.pos.y; let rising = false;
     if (Math.abs(dy) > 0.002) { this.pos.y += dy * (1 - Math.exp(-dt * 8)); rising = true; } else this.pos.y = ty;
     const moving = walking || this.head || rising;
     // câmera
@@ -5738,6 +5770,27 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
   text-align: center; pointer-events: none; opacity: 0; transition: opacity .6s; }
 .walkhint.show { opacity: 1; }
 canvas.walk { cursor: crosshair; }
+canvas.walk.pick { cursor: pointer; }
+/* Bonequinho (arrastar até o ambiente), "Ir para…", "Entrar aqui" — v1.4.6 */
+.peg { display: inline-flex; align-items: center; justify-content: center; color: #ffc46b; touch-action: none; cursor: grab; padding: 8px 10px; }
+.peg[hidden], .btns > button[hidden], .nav .enter[hidden] { display: none; }
+.peg[aria-pressed="true"] { background: rgba(255, 196, 107, .18); }
+.pegghost { position: absolute; left: 0; top: 0; width: 44px; height: 44px; z-index: 7; pointer-events: none; display: grid; place-items: center; color: #ffc46b;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .55)); opacity: .85; }
+.pegghost svg { width: 40px; height: 40px; } .pegghost.ok { opacity: 1; color: #ffd48a; } .pegghost[hidden] { display: none; }
+.pegtip { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; padding: 5px 9px; font-size: 12px; font-weight: 600; color: #ffd48a; white-space: nowrap; }
+.pegtip[hidden] { display: none; }
+.goto { position: absolute; right: 10px; top: 64px; z-index: 6; width: min(340px, calc(100% - 20px)); max-height: calc(100% - 150px); overflow: auto; padding: 8px 10px 10px; overscroll-behavior: contain; }
+.goto[hidden] { display: none; }
+.goto .gh { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; padding: 2px 2px 6px; }
+.goto .gt { font-size: 11px; color: #9aa6bd; font-weight: 700; margin: 8px 2px 4px; }
+.goto .grow { display: flex; flex-wrap: wrap; gap: 5px; }
+.goto .grow button { background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); border-radius: 999px; padding: 7px 11px; font-size: 12px; }
+.goto .grow button:hover { background: rgba(255, 196, 107, .18); color: #ffd48a; }
+.fade { position: absolute; inset: 0; background: #06090f; opacity: 0; pointer-events: none; z-index: 5; }
+.nav .enter { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; background: rgba(255, 196, 107, .18); color: #ffd48a; border: 1px solid rgba(255, 196, 107, .4); }
+.nav .enter:hover { background: rgba(255, 196, 107, .28); }
+@media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; } .goto { top: 96px; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
 /* Painel inferior (dock) */
 .dock { position: absolute; left: 10px; right: 10px; bottom: 10px; max-height: min(48%, 372px); display: flex; flex-direction: column; overflow: hidden; z-index: 3; }
@@ -5961,6 +6014,20 @@ export class Igreja3DCard extends HTMLElement {
     this._walkBtn.setAttribute('aria-pressed', 'false');
     this._walkBtn.addEventListener('click', () => this._setWalk(!this._walkOn));
     btns.appendChild(this._walkBtn);
+    // Bonequinho (v1.4.6): arraste até um ambiente da maquete/planta e solte para entrar ali na visão de Pessoa; toque simples abre "Ir para…"
+    const PERSON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.2" r="3"/><path d="M12 9.6c-2.9 0-4.6 1.5-4.8 4l-.2 3.2c0 .6.4 1 .9 1h.9l.4 4.2c0 .5.4.8.8.8h4c.4 0 .8-.3.8-.8l.4-4.2h.9c.5 0 .9-.4.9-1l-.2-3.2c-.2-2.5-1.9-4-4.8-4z"/></svg>';
+    this._pegBtn = document.createElement('button'); this._pegBtn.className = 'panel btn peg'; this._pegBtn.innerHTML = PERSON;
+    this._pegBtn.title = 'Arraste até um ambiente e solte para entrar nele (visão de Pessoa) · toque: lista de ambientes';
+    this._pegBtn.setAttribute('aria-label', 'Bonequinho: arraste até um ambiente para entrar nele; Enter abre a lista de ambientes'); this._pegBtn.setAttribute('aria-pressed', 'false');
+    btns.appendChild(this._pegBtn); this._pegBind(this._pegBtn);
+    this._gotoBtn = document.createElement('button'); this._gotoBtn.className = 'panel btn'; this._gotoBtn.textContent = 'Ir para…'; this._gotoBtn.hidden = true;
+    this._gotoBtn.title = 'Vai direto a um ambiente (inclui a salinha do mezanino)'; this._gotoBtn.setAttribute('aria-pressed', 'false');
+    this._gotoBtn.addEventListener('click', () => this._toggleGoto());
+    btns.appendChild(this._gotoBtn);
+    this._pegGhost = document.createElement('div'); this._pegGhost.className = 'pegghost'; this._pegGhost.innerHTML = PERSON; this._pegGhost.hidden = true; wrap.appendChild(this._pegGhost);
+    this._pegTip = document.createElement('div'); this._pegTip.className = 'panel pegtip'; this._pegTip.hidden = true; wrap.appendChild(this._pegTip);
+    this._gotoPanel = document.createElement('div'); this._gotoPanel.className = 'panel goto'; this._gotoPanel.hidden = true; this._gotoPanel.setAttribute('role', 'dialog'); this._gotoPanel.setAttribute('aria-label', 'Ir para um ambiente'); wrap.appendChild(this._gotoPanel);
+    this._fadeEl = document.createElement('div'); this._fadeEl.className = 'fade'; wrap.appendChild(this._fadeEl);
     const joy = document.createElement('div'); joy.className = 'joy'; joy.hidden = true; joy.setAttribute('role', 'application'); joy.setAttribute('aria-label', 'Andar');
     const knob = document.createElement('div'); knob.className = 'knob'; joy.appendChild(knob); wrap.appendChild(joy); this._joy = joy;
     this._walkHint = document.createElement('div'); this._walkHint.className = 'panel walkhint'; wrap.appendChild(this._walkHint);
@@ -5984,8 +6051,11 @@ export class Igreja3DCard extends HTMLElement {
     back.addEventListener('click', () => this._navBack());
     const crumbs = document.createElement('nav'); crumbs.className = 'crumbs'; crumbs.setAttribute('aria-label', 'Trilha da planta');
     const chips = document.createElement('div'); chips.className = 'chips'; chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Aparelhos do cômodo');
-    nav.append(back, crumbs, chips); navrow.appendChild(nav); top.appendChild(navrow);
-    this._navRow = navrow; this._navCrumbs = crumbs; this._navChipsEl = chips;
+    const enter = document.createElement('button'); enter.className = 'enter'; enter.hidden = true; enter.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.2" r="3"/><path d="M12 9.6c-2.9 0-4.6 1.5-4.8 4l-.2 3.2c0 .6.4 1 .9 1h.9l.4 4.2c0 .5.4.8.8.8h4c.4 0 .8-.3.8-.8l.4-4.2h.9c.5 0 .9-.4.9-1l-.2-3.2c-.2-2.5-1.9-4-4.8-4z"/></svg><span>Entrar aqui</span>';
+    enter.title = 'Entra neste cômodo na visão de Pessoa (num ponto livre, olhando para dentro)';
+    enter.addEventListener('click', () => { if (this._nav.room) this._enterRoom(this._nav.room); });
+    nav.append(back, crumbs, enter, chips); navrow.appendChild(nav); top.appendChild(navrow);
+    this._navRow = navrow; this._navCrumbs = crumbs; this._navChipsEl = chips; this._enterBtn = enter;
     const navKey = (e) => { if ((e.key === 'Escape' || e.key === 'Backspace') && this._topView) { e.preventDefault(); this._navBack(); } };
     canvas.addEventListener('keydown', navKey); nav.addEventListener('keydown', navKey);
 
@@ -6136,6 +6206,8 @@ export class Igreja3DCard extends HTMLElement {
       }
     }
     this._buildWalls(scene, M);
+    // a borda da escada do lado do hall (vidro + massa) é uma parede para quem anda no térreo; só se entra por ela pela base, no lado leste
+    this._walls.push({ axis: 'x', c: STAIR.Z0, a0: MEZZ.x1, a1: STAIR.XE + STAIR.GO, t: 0.06, h: 1.0 });
     // Rodapés nas zonas internas (só nas bordas que encostam em parede)
     // madeira no laminado (~7 cm), porcelanato cinza no templo, branco no resto
     // afastamento do eixo = meia parede + 2 cm; no bloco dos fundos (z < 11) meia parede fina, e na divisa (x 0 / 20,1, z 0)
@@ -6193,7 +6265,7 @@ export class Igreja3DCard extends HTMLElement {
   // sem travar a página na carga — com a fachada e o entorno visíveis, para os botões não engasgarem depois.
   // Enquanto isso _frame não desenha.
   _precompile() {
-    const r = this._renderer, hide = [this._ext, this._out, this._hl].filter((g) => g && !g.visible);
+    const r = this._renderer, hide = [this._ext, this._out, this._hl, this._mk].filter((g) => g && !g.visible);
     this._busy = true;
     let p;
     try {
@@ -6255,7 +6327,7 @@ export class Igreja3DCard extends HTMLElement {
       const boost = keep.size ? realIdx.length / keep.size : 1;
       for (const [fk, f] of it.fixtures.entries()) {
         const [px, py, pz] = f.p;
-        const holder = f.ext ? this._ext : scene;
+        const holder = f.ext ? this._ext : f.mezz ? this._mezz : scene;
         // GPU apertada (uniforms/samplers no limite): as luzes fracas das salas viram só halo + emissivo
         const glowOnly = !keep.has(fk);
         const lp = new THREE.Vector3(px, f.pole ? py - 0.2 : f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);
@@ -6520,7 +6592,7 @@ export class Igreja3DCard extends HTMLElement {
     };
     const seg = (a, b, y0, y1) => {
       if (b - a <= 0.001 || y1 - y0 <= 0.001) return;
-      if (y0 <= 0.5 && y1 >= 0.9) W.push({ axis, c, a0: a, a1: b, t });   // parede cheia ou sob o peitoril; vergas de porta (y0 2,1) não bloqueiam
+      if (y0 <= 0.5 && y1 >= 0.9) W.push({ axis, c, a0: a, a1: b, t, h });   // parede cheia ou sob o peitoril; vergas de porta (y0 2,1) não bloqueiam
       put(b - a, y1 - y0, t, mat, (a + b) / 2, (y0 + y1) / 2);
       // revestimento interno: só entre as faces internas das paredes vizinhas (nas pontas
       // estendidas ele apareceria como um filete branco do lado de fora)
@@ -6652,7 +6724,7 @@ export class Igreja3DCard extends HTMLElement {
     // obstáculos = mobiliário/decoração entre 0,12 e 2,0 m de altura (o "arquitetônico" foi marcado com userData.arch); paredes vêm de _walls
     const obs = [], bb = new THREE.Box3();
     for (const top of scene.children) {
-      if (top.userData.arch || top === this._out || top === this._ext) continue;
+      if (top.userData.arch || top === this._out || top === this._ext || top === this._mezz) continue;
       top.traverseVisible((o) => {
         if (!o.isMesh || o.isInstancedMesh || o.material.isShaderMaterial || o.material.transparent || o.material.blending === THREE.AdditiveBlending) return;
         bb.setFromObject(o);
@@ -6660,6 +6732,7 @@ export class Igreja3DCard extends HTMLElement {
         obs.push([bb.min.x, bb.min.z, bb.max.x, bb.max.z]);
       });
     }
+    this._furnObs = obs;   // móveis (caixas na planta): a navegação por clique escolhe pontos de entrada longe deles
     const walls = (this._walls || []).map((w) => (w.axis === 'z' ? { ax: 'z', c: w.c, b: [w.c - w.t / 2, w.a0, w.c + w.t / 2, w.a1] } : { ax: 'x', c: w.c, b: [w.a0, w.c - w.t / 2, w.a1, w.c + w.t / 2] }));
     const DEG = Math.PI / 180;
     for (const d of D) {
@@ -7528,6 +7601,7 @@ export class Igreja3DCard extends HTMLElement {
   _setTopView(on, keepCamera = false) {
     if (this._walkOn && this._setWalk) this._setWalk(false);   // sai da visão de pessoa
     this._topView = !!on; this._nav = { level: 0, block: null, room: null }; this._clearHover();
+    if (this._mezz) { this._mezz.visible = !this._topView; this._needShadow = true; }   // a planta enxerga os cômodos que ficam sob o mezanino
     if (this._navRow) this._renderNav();
     if (this._topBtn) this._topBtn.setAttribute('aria-pressed', this._topView ? 'true' : 'false');
     if (this._topView && this._roofOn) this._setRoof(false);   // sem cobertura/fachada: o interior fica à mostra
@@ -7557,6 +7631,11 @@ export class Igreja3DCard extends HTMLElement {
     this._hlMat = new THREE.MeshBasicMaterial({ color: 0xffc46b, transparent: true, opacity: 0.34, depthTest: false, depthWrite: false, toneMapped: false });
     this._hl = new THREE.Group(); this._hl.visible = false; this._hl.userData.keep = true; this._scene.add(this._hl);
     this._hlShow([[0, 0, 1, 1]]); this._hl.visible = false;   // uma peça pronta (o material entra no _precompile)
+    // marcador do destino da caminhada (visão de Pessoa): anel âmbar + ponto no piso
+    const mkMat = new THREE.MeshBasicMaterial({ color: 0xffc46b, transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false, fog: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.2, 40), mkMat), dot = new THREE.Mesh(new THREE.CircleGeometry(0.045, 20), mkMat);
+    ring.material = mkMat.clone(); ring.rotation.x = dot.rotation.x = -Math.PI / 2; ring.renderOrder = dot.renderOrder = 30;
+    this._mk = new THREE.Group(); this._mk.add(ring, dot); this._mk.visible = false; this._mk.userData.keep = true; ring.userData.noMerge = dot.userData.noMerge = true; this._scene.add(this._mk);
     const near = (rs, x, z, m) => rs.some(([rx, rz, w, d]) => x >= rx - m && x <= rx + w + m && z >= rz - m && z <= rz + d + m);
     const pts = ITEMS.map((it) => {
       const rt = this._items.get(it.key);
@@ -7660,6 +7739,7 @@ export class Igreja3DCard extends HTMLElement {
     const row = this._navRow; if (!row) return;
     row.hidden = !this._topView;
     if (!this._topView) { this._navSig = ''; return; }
+    if (this._enterBtn) this._enterBtn.hidden = !(this._nav.level === 2 && this._nav.room);   // "Entrar aqui" só no nível do cômodo
     const n = this._nav, sig = [n.level, n.block && n.block.id, n.room && n.room.id].join('|');
     if (sig !== this._navSig) {
       this._navSig = sig;
@@ -7764,11 +7844,363 @@ export class Igreja3DCard extends HTMLElement {
   }
 
   // ---- Visão de pessoa (ver classe Walker) ----
-  // altura do piso sob (x, z): só o palco do templo (1,0 m) sobe; o resto é térreo
-  _walkFloor(x, z) { return x >= 0.15 && x <= 5.0 && z >= 19.6 && z <= 36.6 ? 1.0 : 0; }
+  // altura do piso sob (x, z): o palco do templo (1,0 m), a escada e o mezanino sobem; o resto é térreo
+  // ---- Escada e mezanino (v1.4.6) ----
+  // o piso do mezanino só vale para quem já subiu (`up`): embaixo dele ficam os WCs e a Sala da Família
+  _walkFloor(x, z, up = false) {
+    if (inChan(x, z)) return clamp(stairNose(x), 0, STAIR.Y);        // rampa pela linha dos bocéis (a câmera suaviza os degraus)
+    if (up && inMezz(x, z)) return STAIR.Y;
+    return x >= 0.15 && x <= 5.0 && z >= 19.6 && z <= 36.6 ? 1.0 : 0;   // palco do templo
+  }
+  // no lance a partir de 1,3 m de altura já vale a colisão do andar de cima; fora do mezanino e da escada volta ao térreo
+  _walkUp(x, z, up) { if (inChan(x, z)) return stairNose(x) > 1.3; return !!up && inMezz(x, z); }
+  // chão livre do andar de cima: piso do mezanino (até o guarda-corpo, x 4,06) + a passagem da escada (z 48,05–49,56)
+  _upFree(x, z) {
+    return (x >= MEZZ.x0 && x <= 4.06 && z >= MEZZ.z0 && z <= MEZZ.z1) || (x >= 4.0 && x <= STAIR.XE + STAIR.GO + 0.01 && z >= STAIR.Z0 && z <= STAIR.Z1);
+  }
+  _collideUp(px, pz, nx, nz) {
+    const ok = (x, z) => { if (!this._upFree(x, z)) return false; for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; if (!this._upFree(x + 0.22 * Math.cos(a), z + 0.22 * Math.sin(a))) return false; } return true; };
+    if (ok(nx, nz)) return [nx, nz];
+    if (ok(nx, pz)) return [nx, pz];
+    if (ok(px, nz)) return [px, nz];
+    return [px, pz];
+  }
+
+  // ---- Navegação por clique (v1.4.6): grade de 0,1 m com as paredes engordadas pelo raio da pessoa; A* + alisamento ----
+  _navGrid() {
+    if (this._ng) return this._ng;
+    const CS = 0.1, R = 0.26, x0 = LOT.x0, z0 = LOT.z0, nx = Math.round((LOT.x1 - LOT.x0) / CS), nz = Math.round((LOT.z1 - LOT.z0) / CS);
+    const blk = new Uint8Array(nx * nz), fur = new Uint8Array(nx * nz);
+    const fill = (a, bx0, bz0, bx1, bz1) => {
+      const i0 = Math.max(0, Math.ceil((bx0 - x0) / CS - 0.5)), i1 = Math.min(nx - 1, Math.floor((bx1 - x0) / CS - 0.5));
+      const j0 = Math.max(0, Math.ceil((bz0 - z0) / CS - 0.5)), j1 = Math.min(nz - 1, Math.floor((bz1 - z0) / CS - 0.5));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) a[j * nx + i] = 1;
+    };
+    for (const w of this._walls || []) {
+      if (w.axis === 'z') fill(blk, w.c - w.t / 2 - R, w.a0 - R, w.c + w.t / 2 + R, w.a1 + R); else fill(blk, w.a0 - R, w.c - w.t / 2 - R, w.a1 + R, w.c + w.t / 2 + R);
+    }
+    fill(blk, STAIR.XS - 0.1, STAIR.Z0 - R, STAIR.XE + R, STAIR.Z1 + R);   // a escada (massa): só se entra por ela pelo lado leste, tratado em _walkGo
+    fill(blk, LOT.x0, LOT.z0, LOT.x1, LOT.z0 + 0.5); fill(blk, LOT.x0, LOT.z1 - 0.5, LOT.x1, LOT.z1);
+    fill(blk, LOT.x0, LOT.z0, LOT.x0 + 0.5, LOT.z1); fill(blk, LOT.x1 - 0.5, LOT.z0, LOT.x1, LOT.z1);
+    for (const b of this._furnObs || []) fill(fur, b[0] - 0.3, b[1] - 0.3, b[2] + 0.3, b[3] + 0.3);   // móveis (não travam, mas o ponto de entrada os evita)
+    return (this._ng = { CS, x0, z0, nx, nz, blk, fur });
+  }
+  _navFree(x, z, furn = true) {
+    const g = this._navGrid(), i = Math.floor((x - g.x0) / g.CS), j = Math.floor((z - g.z0) / g.CS);
+    if (i < 0 || j < 0 || i >= g.nx || j >= g.nz) return false;
+    return !g.blk[j * g.nx + i] && !(furn && g.fur[j * g.nx + i]);
+  }
+  // caminho (planta) de (sx, sz) até o ponto alcançável mais perto de (tx, tz): [[x, z], …] sem o ponto de partida
+  _navPath(sx, sz, tx, tz) {
+    const g = this._navGrid(), { CS, x0, z0, nx, nz, blk } = g, N = nx * nz;
+    const cell = (x, z) => [clamp(Math.floor((x - x0) / CS), 0, nx - 1), clamp(Math.floor((z - z0) / CS), 0, nz - 1)];
+    const free = (i, j) => i >= 0 && j >= 0 && i < nx && j < nz && !blk[j * nx + i];
+    const near = (i, j) => {
+      if (free(i, j)) return [i, j];
+      for (let r = 1; r < 40; r++) {
+        let best = null, bd = 1e9;
+        for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
+          if (Math.max(Math.abs(di), Math.abs(dj)) !== r || !free(i + di, j + dj)) continue;
+          const d = di * di + dj * dj; if (d < bd) { bd = d; best = [i + di, j + dj]; }
+        }
+        if (best) return best;
+      }
+      return null;
+    };
+    let [si, sj] = cell(sx, sz), [ti, tj] = cell(tx, tz);
+    const s0 = near(si, sj); if (!s0) return [[tx, tz]]; [si, sj] = s0;
+    const t0 = near(ti, tj); if (t0) [ti, tj] = t0;
+    const gs = new Float32Array(N).fill(1e9), par = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
+    const hf = (i, j) => { const dx = Math.abs(i - ti), dz = Math.abs(j - tj); return dx + dz + (Math.SQRT2 - 2) * Math.min(dx, dz); };
+    const HK = [], HI = [];
+    const push = (k, idx) => { let n = HK.length; HK.push(k); HI.push(idx); while (n > 0) { const p = (n - 1) >> 1; if (HK[p] <= HK[n]) break; [HK[p], HK[n]] = [HK[n], HK[p]]; [HI[p], HI[n]] = [HI[n], HI[p]]; n = p; } };
+    const pop = () => {
+      const top = HI[0], lk = HK.pop(), li = HI.pop();
+      if (HK.length) {
+        HK[0] = lk; HI[0] = li; let n = 0;
+        for (;;) { const l = 2 * n + 1, r = l + 1; let m = n; if (l < HK.length && HK[l] < HK[m]) m = l; if (r < HK.length && HK[r] < HK[m]) m = r; if (m === n) break; [HK[m], HK[n]] = [HK[n], HK[m]]; [HI[m], HI[n]] = [HI[n], HI[m]]; n = m; }
+      }
+      return top;
+    };
+    const start = sj * nx + si, goal = tj * nx + ti; gs[start] = 0; push(hf(si, sj), start);
+    let best = start, bh = hf(si, sj), found = false;
+    const DI = [1, -1, 0, 0, 1, 1, -1, -1], DJ = [0, 0, 1, -1, 1, -1, 1, -1];
+    while (HI.length) {
+      const cur = pop(); if (closed[cur]) continue; closed[cur] = 1;
+      const ci = cur % nx, cj = (cur / nx) | 0, h = hf(ci, cj);
+      if (h < bh - 1e-6 || (Math.abs(h - bh) < 1e-6 && gs[cur] < gs[best])) { bh = h; best = cur; }
+      if (cur === goal) { found = true; break; }
+      for (let d = 0; d < 8; d++) {
+        const ni = ci + DI[d], nj = cj + DJ[d]; if (!free(ni, nj)) continue;
+        if (d > 3 && (!free(ci + DI[d], cj) || !free(ci, cj + DJ[d]))) continue;   // sem cortar quina
+        const nn = nj * nx + ni; if (closed[nn]) continue;
+        const ng = gs[cur] + (d > 3 ? 1.4142 : 1);
+        if (ng < gs[nn]) { gs[nn] = ng; par[nn] = cur; push(ng + hf(ni, nj), nn); }
+      }
+    }
+    const raw = []; for (let c = found ? goal : best; c >= 0; c = par[c]) raw.push([x0 + ((c % nx) + 0.5) * CS, z0 + (((c / nx) | 0) + 0.5) * CS]);
+    raw.reverse();
+    const blkAt = (x, z) => { const i = Math.floor((x - x0) / CS), j = Math.floor((z - z0) / CS); return i < 0 || j < 0 || i >= nx || j >= nz || blk[j * nx + i] === 1; };
+    const los = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], n = Math.ceil(Math.hypot(dx, dz) / 0.05); for (let k = 1; k < n; k++) if (blkAt(a[0] + dx * k / n, a[1] + dz * k / n)) return false; return true; };
+    const out = []; let cur = [sx, sz], j = 0;
+    while (j < raw.length - 1) { let k = j + 1; while (k + 1 < raw.length && los(cur, raw[k + 1])) k++; out.push(raw[k]); cur = raw[k]; j = k; }
+    if (found && !blkAt(tx, tz) && out.length) out[out.length - 1] = [tx, tz];
+    return out;
+  }
+
+  // ---- Raio → mundo (paredes, escada, palco, mezanino, chão): o que está sob o cursor/dedo ----
+  // Devolve { kind: 'ground'|'stage'|'stair'|'mezz'|'wall'|'ceil', t, x, y, z } do primeiro ponto atingido
+  _pickWorld(o, d) {
+    let bt = Infinity, kind = null;
+    const mzOn = !this._mezz || this._mezz.visible;
+    const hit = (t, k) => { if (t > 1e-4 && t < bt) { bt = t; kind = k; } };
+    const boxT = (x0, y0, z0, x1, y1, z1) => {   // entrada do raio na caixa (Infinity se não acerta ou se a origem está dentro)
+      let t0 = 0, t1 = Infinity;
+      for (const [p, dd, lo, hi] of [[o.x, d.x, x0, x1], [o.y, d.y, y0, y1], [o.z, d.z, z0, z1]]) {
+        if (Math.abs(dd) < 1e-9) { if (p < lo || p > hi) return Infinity; continue; }
+        let ta = (lo - p) / dd, tb = (hi - p) / dd; if (ta > tb) [ta, tb] = [tb, ta];
+        t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 > t1) return Infinity;
+      }
+      return t0 > 0 ? t0 : Infinity;
+    };
+    for (const w of this._walls || []) {
+      const h = w.h || H, hh = w.t / 2;
+      hit(w.axis === 'x' ? boxT(w.a0, 0, w.c - hh, w.a1, h, w.c + hh) : boxT(w.c - hh, 0, w.a0, w.c + hh, h, w.a1), 'wall');
+    }
+    if (mzOn) for (const b of [[-0.075, 0.075, 43.925, 49.725], [0.075, 4.075, 43.925, 44.075], [0.075, 4.075, 49.575, 49.725]]) hit(boxT(b[0], 3.03, b[2], b[1], 5.92, b[3]), 'wall');
+    const plane = (h, inside, k) => { if (Math.abs(d.y) < 1e-9) return; const t = (h - o.y) / d.y; if (t <= 1e-4 || t >= bt || (o.y > h) !== (d.y < 0)) return; const x = o.x + d.x * t, z = o.z + d.z * t; if (inside(x, z)) hit(t, k); };
+    plane(0, (x, z) => x > LOT.x0 && x < LOT.x1 && z > LOT.z0 && z < LOT.z1, 'ground');
+    plane(1.0, (x, z) => x >= 0.15 && x <= 5.0 && z >= 19.6 && z <= 36.6, 'stage');
+    for (let i = 1; i <= STAIR.N - 1; i++) {
+      const xa = STAIR.XS + (STAIR.N - 1 - i) * STAIR.GO;
+      plane(i * STAIR.R, (x, z) => x >= xa && x <= xa + STAIR.GO && z >= STAIR.Z0 && z <= STAIR.Z1, 'stair');
+    }
+    if (mzOn) {
+      const inR = (x, z) => x >= MEZZ.x0 && x <= STAIR.XS && z >= MEZZ.z0 && z <= MEZZ.z1;
+      plane(STAIR.Y, inR, 'mezz');
+      if (o.y < 2.91 && d.y > 0) { const t = (2.91 - o.y) / d.y, x = o.x + d.x * t, z = o.z + d.z * t; if (inR(x, z)) hit(t, 'ceil'); }   // por baixo da laje: nada
+    }
+    if (!kind) return null;
+    return { kind, t: bt, x: o.x + d.x * bt, y: o.y + d.y * bt, z: o.z + d.z * bt };
+  }
+  _rayAt(cx, cy) {
+    const r = this._canvas.getBoundingClientRect();
+    this._ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+    this._raycaster.setFromCamera(this._ndc, this._camera);
+    return this._raycaster.ray;
+  }
+  // destino de caminhada sob o cursor: { x, z, up, kind, t } (nulo no céu/teto)
+  _destAt(cx, cy) {
+    const ray = this._rayAt(cx, cy), p = this._pickWorld(ray.origin, ray.direction); if (!p || p.kind === 'ceil') return null;
+    let x = p.x, z = p.z, up = p.kind === 'mezz';
+    if (p.kind === 'wall') {   // parede: o ponto do chão em frente a ela, do lado de quem olha
+      const hl = Math.hypot(ray.direction.x, ray.direction.z) || 1;
+      x -= ray.direction.x / hl * 0.5; z -= ray.direction.z / hl * 0.5; up = p.y > 3.03 && inMezz(x, z);
+    }
+    if (p.kind === 'stair') { up = true; }
+    if (up && !p.kind.startsWith('st')) { x = clamp(x, MEZZ.x0 + 0.35, 3.8); z = clamp(z, MEZZ.z0 + 0.35, MEZZ.z1 - 0.3); }
+    return { x: clamp(x, LOT.x0 + 0.6, LOT.x1 - 0.6), z: clamp(z, LOT.z0 + 0.6, LOT.z1 - 0.6), up, kind: p.kind, t: p.t, y: p.y };
+  }
+
+  // Caminho até o destino: térreo → A*; para o mezanino passa pela base da escada (x 9,75) e sobe pela passagem; do mezanino desce do mesmo jeito
+  _walkRoute(d) {
+    const w = this._walk, S0 = [STAIR.XE + 0.55, (STAIR.Z0 + STAIR.Z1) / 2], TOP = [4.35, S0[1]], MZE = [3.4, 48.7], pos = [w.pos.x, w.pos.z];
+    const inStair = inChan(pos[0], pos[1]) || (w.high && pos[0] > 4.06);
+    if (d.up) {
+      const tg = [clamp(d.x, MEZZ.x0 + 0.35, 3.8), clamp(d.z, MEZZ.z0 + 0.35, MEZZ.z1 - 0.3)];
+      if (w.high && !inStair) return [tg];
+      return inStair ? [TOP, MZE, tg] : [...this._navPath(pos[0], pos[1], S0[0], S0[1]), S0, TOP, MZE, tg];
+    }
+    if (w.high || inStair) return [...(w.high && !inStair ? [MZE, TOP] : []), S0, ...this._navPath(S0[0], S0[1], d.x, d.z)];
+    return this._navPath(pos[0], pos[1], d.x, d.z);
+  }
+  _walkGo(d) {
+    const w = this._walk; if (!this._walkOn || !w) return false;
+    const pts = this._walkRoute(d); if (!pts.length) return false;
+    w.path = { pts, i: 0, t: 0, px: w.pos.x, pz: w.pos.z, goal: d, tries: 0 };
+    w.head = true; this._orbit.dirty = true;
+    const e = pts[pts.length - 1]; this._mkSet(e[0], e[1], d.up, true);
+    return true;
+  }
+  _walkReplan() {
+    const w = this._walk, P = w && w.path; if (!P) return;
+    const pts = this._walkRoute(P.goal); if (!pts.length) { w.stop(true); return; }
+    P.pts = pts; P.i = 0; P.t = 0; P.px = w.pos.x; P.pz = w.pos.z;
+  }
+  _walkStopped() { this._mkDestOff = performance.now() + 500; this._orbit.dirty = true; }
+
+  // marcador discreto no piso: anel âmbar sob o cursor (hover) ou no destino (pulsa até chegar)
+  _mkSet(x, z, up, dest) {
+    const m = this._mk; if (!m) return;
+    m.position.set(x, this._walkFloor(x, z, up) + 0.035, z); m.visible = true; this._mkIsDest = !!dest; m.scale.setScalar(1);
+    m.children[0].material.opacity = dest ? 0.95 : 0.7; this._mkDestOff = 0; this._orbit.dirty = true;
+  }
+  _mkHide(destToo) { if (!this._mk || (this._mkIsDest && !destToo && this._walk && this._walk.path)) return; if (this._mk.visible) { this._mk.visible = false; this._orbit.dirty = true; } }
+  _mkTick(t) {
+    const m = this._mk; if (!m || !m.visible) return false;
+    if (this._mkIsDest) {
+      if (this._mkDestOff && performance.now() > this._mkDestOff) { m.visible = false; return true; }
+      m.scale.setScalar(1 + 0.18 * Math.sin(t * 7)); return true;
+    }
+    return false;
+  }
+  _walkHover(e) {
+    const now = performance.now(); if (now - (this._hvT || 0) < 45) return; this._hvT = now;
+    const d = this._destAt(e.clientX, e.clientY);
+    this._hoverDest = d;
+    if (d && d.kind !== 'ceil') { if (!(this._mkIsDest && this._walk.path)) this._mkSet(d.x, d.z, d.up, false); } else this._mkHide();
+  }
+  // clique/toque no modo Pessoa: aparelho liga/desliga (como sempre); qualquer outro ponto do piso/escada/mezanino/parede vira caminhada
+  _walkClick(e, hit) {
+    const d = this._destAt(e.clientX, e.clientY), o = hit && hit.object;
+    if (o && o.userData.item && !o.userData.zone && !(d && d.kind === 'wall' && d.t < hit.distance - 0.05)) return false;
+    if (!d) return true;
+    if (d.kind === 'stair') {   // clicou na escada: sobe até a salinha (quem está em cima e clica num degrau bem abaixo, desce)
+      if (this._walk.high && stairNose(d.x) < this._walk.pos.y - 1.6 - 0.3) { d.up = false; d.x = STAIR.XE + 0.55; d.z = (STAIR.Z0 + STAIR.Z1) / 2; }
+      else { d.up = true; d.x = 3.3; d.z = 48.7; }
+    }
+    this._walkGo(d);
+    return true;
+  }
+
+  // ---- Cômodos: pontos de entrada livres, para onde olhar, e o bonequinho / "Entrar aqui" / "Ir para…" ----
+  _roomsAll() {
+    if (!this._blocks) return [];
+    if (!this._mezzRoom) {
+      const hall = this._blocks.find((b) => b.id === 'hall');
+      this._mezzRoom = { id: 'mezanino', label: 'Mezanino (salinha)', rects: [[MEZZ.x0, MEZZ.z0, MEZZ.x1 - MEZZ.x0, MEZZ.z1 - MEZZ.z0]], zones: [], items: [], up: true, block: hall };
+    }
+    return [...this._blocks.flatMap((b) => b.rooms), this._mezzRoom];
+  }
+  _roomAt(x, z, up) {
+    if (up && inMezz(x, z)) return this._roomsAll().find((r) => r.up) || null;
+    const h = this._hit(x, z); return h && h.r ? h.r : null;
+  }
+  _roomBox(r) { return this._rectsBox(r.rects); }
+  // ponto livre (sem parede, sem móvel) do cômodo mais perto de `want` (padrão: o centro do cômodo)
+  _roomSpot(r, want) {
+    if (r.up) return { x: 1.55, z: 46.9, up: true };
+    const g = this._navGrid(), b = this._roomBox(r), w = want || [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+    let best = null, bd = 1e9;
+    for (const [rx, rz, rw, rd] of r.rects) for (let z = rz + 0.05; z < rz + rd; z += 0.1) for (let x = rx + 0.05; x < rx + rw; x += 0.1) {
+      if (!this._navFree(x, z)) continue;
+      const d = Math.hypot(x - w[0], z - w[1]); if (d < bd) { bd = d; best = { x, z, up: false }; }
+    }
+    if (!best) for (const [rx, rz, rw, rd] of r.rects) for (let z = rz + 0.05; z < rz + rd; z += 0.1) for (let x = rx + 0.05; x < rx + rw; x += 0.1) {   // cômodo cheio: aceita móvel, só não parede
+      if (!this._navFree(x, z, false)) continue;
+      const d = Math.hypot(x - w[0], z - w[1]); if (d < bd) { bd = d; best = { x, z, up: false }; }
+    }
+    return best || { x: (b[0] + b[2]) / 2, z: (b[1] + b[3]) / 2, up: false };
+  }
+  _roomYaw(r, x, z) {
+    const f = ROOM_FOCUS[r.id], b = this._roomBox(r);
+    let tx, tz;
+    if (f) { tx = f[0]; tz = f[2]; }
+    else {   // para o canto mais fundo do cômodo (quem entra vê o ambiente inteiro)
+      let bd = -1; tx = (b[0] + b[2]) / 2; tz = (b[1] + b[3]) / 2;
+      for (const [cx, cz] of [[b[0], b[1]], [b[2], b[1]], [b[0], b[3]], [b[2], b[3]]]) { const d = Math.hypot(cx - x, cz - z); if (d > bd) { bd = d; tx = (cx + x * 2) / 3; tz = (cz + z * 2) / 3; } }
+    }
+    if (Math.hypot(tx - x, tz - z) < 0.5) return 0;
+    return Math.atan2(-(tx - x), -(tz - z));
+  }
+  // ponto de entrada perto de (x, z) dentro do cômodo r (o próprio ponto se estiver livre)
+  _dropSpot(r, x, z, up) {
+    if (up || r.up) return { x: clamp(x, MEZZ.x0 + 0.5, 3.6), z: clamp(z, MEZZ.z0 + 0.5, MEZZ.z1 - 0.4), up: true };
+    if (this._navFree(x, z) && this._roomAt(x, z, false) === r) return { x, z, up: false };
+    return this._roomSpot(r, [x, z]);
+  }
+  _fade() {
+    const el = this._fadeEl; if (!el || this._reduced) return;
+    el.style.transition = 'none'; el.style.opacity = '0.9'; void el.offsetWidth; el.style.transition = 'opacity .55s ease-out'; el.style.opacity = '0';
+  }
+  // entra (ou já andando, teleporta) no ponto — a 1,6 m, olhando para `yaw`
+  _enterAt(sp, yaw) {
+    this._fade(); this._closeGoto();
+    this._setWalk(true);
+    this._walk.reset(sp.x, sp.z, yaw, 0, !!sp.up); this._mkHide(true);
+    this._orbit.dirty = true;
+  }
+  _enterRoom(r, at) {
+    if (!r) return false;
+    const sp = at ? this._dropSpot(r, at[0], at[1], r.up) : this._roomSpot(r);
+    this._enterAt(sp, this._roomYaw(r, sp.x, sp.z)); return true;
+  }
+  enterRoom(id, x, z) { const r = this._roomsAll().find((q) => q.id === id); return this._enterRoom(r, x != null ? [x, z] : null); }
+  walkTo(x, z, up = false) { return this._walkGo({ x, z, up: !!up }); }
+
+  // Bonequinho (estilo Street View): arrastar até um ponto do piso da planta/maquete e soltar → entra na visão de Pessoa ali
+  _pegBind(btn) {
+    let st = null;
+    const pt = (e) => ({ x: e.clientX, y: e.clientY - (e.pointerType === 'touch' ? 56 : 0) });   // no toque a mira fica acima do dedo
+    btn.addEventListener('pointerdown', (e) => {
+      if (e.button > 0 || this._walkOn) return;
+      st = { id: e.pointerId, x0: e.clientX, y0: e.clientY, live: false }; try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault();
+    });
+    btn.addEventListener('pointermove', (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      if (!st.live && Math.hypot(e.clientX - st.x0, e.clientY - st.y0) < 6) return;
+      st.live = true; this._pegMove(pt(e));
+    });
+    const end = (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      const s = st; st = null; try { btn.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (!s.live) { if (e.type === 'pointerup') this._toggleGoto(); return; }
+      this._pegDrop(e.type === 'pointerup' ? pt(e) : null);
+    };
+    btn.addEventListener('pointerup', end); btn.addEventListener('pointercancel', end);
+    btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this._toggleGoto(); } });
+  }
+  _pegAt(p) {
+    const el = this.shadowRoot.elementFromPoint(p.x, p.y);
+    if (el !== this._canvas) return null;
+    const d = this._destAt(p.x, p.y); if (!d || d.kind === 'ceil') return null;
+    const r = this._roomAt(d.x, d.z, d.up); if (!r) return null;
+    return { d, r };
+  }
+  _pegMove(p) {
+    const g = this._pegGhost, tip = this._pegTip, wr = this._wrap.getBoundingClientRect();
+    g.hidden = false; g.style.transform = `translate(${p.x - wr.left - 22}px, ${p.y - wr.top - 44}px)`;
+    const hit = this._pegAt(p); this._pegSel = hit;
+    if (hit) {
+      this._hlShow(hit.r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]));
+      tip.hidden = false; tip.textContent = hit.r.label; tip.style.transform = `translate(${p.x - wr.left + 26}px, ${p.y - wr.top - 30}px)`;
+      g.classList.add('ok');
+    } else { this._hlShow(null); tip.hidden = true; g.classList.remove('ok'); }
+    this._orbit.dirty = true;
+  }
+  _pegDrop(p) {
+    const sel = p ? this._pegAt(p) : null;   // soltar fora do piso (painéis, fora do lote) ou cancelar o gesto: nada acontece
+    this._pegGhost.hidden = true; this._pegTip.hidden = true; this._hlShow(null); this._pegSel = null; this._orbit.dirty = true;
+    if (sel) this._enterRoom(sel.r, [sel.d.x, sel.d.z]);
+  }
+
+  // "Ir para…": lista de cômodos por bloco (mezanino incluído) — teleporte suave até um ponto livre do cômodo
+  _buildGoto() {
+    const box = this._gotoPanel; box.innerHTML = '';
+    const hd = document.createElement('div'); hd.className = 'gh'; hd.textContent = 'Ir para…'; box.appendChild(hd);
+    for (const b of this._blocks || []) {
+      const sec = document.createElement('div'); sec.className = 'gsec'; const t = document.createElement('div'); t.className = 'gt'; t.textContent = b.label; sec.appendChild(t);
+      const row = document.createElement('div'); row.className = 'grow';
+      for (const r of [...b.rooms, ...(b.id === 'hall' ? [this._roomsAll().find((q) => q.up)] : [])]) {
+        const c = document.createElement('button'); c.textContent = r.up ? '↑ ' + r.label : r.label; c.addEventListener('click', () => this._enterRoom(r));
+        row.appendChild(c);
+      }
+      sec.appendChild(row); box.appendChild(sec);
+    }
+  }
+  _toggleGoto(force) {
+    const box = this._gotoPanel; if (!box) return;
+    const open = force != null ? force : box.hidden;
+    if (open && !box.dataset.built) { this._buildGoto(); box.dataset.built = '1'; }
+    box.hidden = !open; this._gotoBtn.setAttribute('aria-pressed', open ? 'true' : 'false'); this._pegBtn.setAttribute('aria-pressed', open && !this._walkOn ? 'true' : 'false');
+  }
+  _closeGoto() { if (this._gotoPanel && !this._gotoPanel.hidden) this._toggleGoto(false); }
+
   // Colisão simples: cada segmento de parede (registrado em _wallSeg) vira uma caixa engordada pelo raio da pessoa; move por eixo
   // (X e depois Z), então encostar numa parede desliza ao longo dela. Vãos de porta passam (o segmento não existe ali).
-  _walkCollide(px, pz, nx, nz) {
+  _walkCollide(px, pz, nx, nz, up = false) {
+    if (up) return this._collideUp(px, pz, nx, nz);
     const R = 0.22, W = this._walls || [];
     if (!this._wbox || this._wbox.length !== W.length) this._wbox = W.map((w) => w.axis === 'z' ? [w.c - w.t / 2 - R, w.a0 - R, w.c + w.t / 2 + R, w.a1 + R] : [w.a0 - R, w.c - w.t / 2 - R, w.a1 + R, w.c + w.t / 2 + R]);
     const B = this._wbox, e = 1e-3;
@@ -7790,9 +8222,10 @@ export class Igreja3DCard extends HTMLElement {
       cam.near = 0.15; cam.fov = this._walkFov(); cam.updateProjectionMatrix();
       cv.classList.add('walk'); try { cv.focus({ preventScroll: true }); } catch (_) {}
       this._joy.hidden = false; this._showWalkHint();
+      this._pegBtn.hidden = true; this._gotoBtn.hidden = false; this._closeGoto();
     } else {
-      this._walk.disable(); this._walkOn = false; o.enabled = true;
-      this._doorsReset();
+      this._walk.disable(); this._walk.path = null; this._walkOn = false; o.enabled = true;
+      this._doorsReset(); this._mkHide(true); this._closeGoto(); this._pegBtn.hidden = false; this._gotoBtn.hidden = true;
       cam.near = 0.3; cam.fov = 42; cam.updateProjectionMatrix();
       cv.classList.remove('walk'); this._joy.hidden = true; this._walkHint.classList.remove('show');
       const sv = this._walkSaved;
@@ -7808,7 +8241,7 @@ export class Igreja3DCard extends HTMLElement {
   _walkFov() { return this._camera.aspect < 1 ? 80 : 66; }
   _showWalkHint() {
     const h = this._walkHint, coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-    h.textContent = coarse ? 'Joystick anda · arraste para olhar' : 'Setas/WASD ou joystick andam · arraste para olhar · Shift corre · Enter/F ou toque abre a porta · Esc sai';
+    h.textContent = coarse ? 'Toque no piso para ir até lá · joystick anda · arraste para olhar' : 'Clique no piso (ou na escada) para ir até lá · setas/WASD ou joystick andam · arraste para olhar · Shift corre · Enter/F abre a porta · Esc sai';
     h.classList.add('show'); clearTimeout(this._walkHintT); this._walkHintT = setTimeout(() => h.classList.remove('show'), 6000);
   }
 
@@ -7824,8 +8257,8 @@ export class Igreja3DCard extends HTMLElement {
   // setWalk(true|false) entra/sai da visão de pessoa · setWalkPose(x, z, yaw, pitch) posiciona a pessoa na hora (sem colisão; yaw 0 olha para −z,
   // + vira à esquerda) · getWalkPose() → { x, y, z, yaw, pitch }
   setWalk(on) { this._setWalk(!!on); }
-  setWalkPose(x, z, yaw = 0, pitch = 0) { this._setWalk(true); this._walk.reset(x, z, yaw, pitch); this._orbit.dirty = true; }
-  getWalkPose() { const w = this._walk; return w ? { x: w.pos.x, y: w.pos.y, z: w.pos.z, yaw: w.yaw, pitch: w.pitch } : null; }
+  setWalkPose(x, z, yaw = 0, pitch = 0, up = false) { this._setWalk(true); this._walk.reset(x, z, yaw, pitch, up); this._orbit.dirty = true; }
+  getWalkPose() { const w = this._walk; return w ? { x: w.pos.x, y: w.pos.y, z: w.pos.z, yaw: w.yaw, pitch: w.pitch, up: w.high, walking: !!w.path } : null; }
   // setTopNav('ala', 'midia') — liga a Vista de cima (se preciso) e navega direto para o bloco / cômodo; getTopNav() → { level, block, room }
   setTopNav(block, room) {
     if (!this._blocks || !this._orbit) return;
@@ -7868,6 +8301,7 @@ export class Igreja3DCard extends HTMLElement {
     const hit = this._pickHit(e), o = hit ? hit.object : null;
     if (this._topView) return this._topClick(e, o);
     if (this._walkOn && this._doorClick(hit)) return;
+    if (this._walkOn && this._walkClick(e, hit)) return;   // piso / escada / mezanino / parede: caminha até lá
     if (o && o.userData.item) { this._activate(o.userData.item); this._flashRow(o.userData.item); }
   }
   // Vista de cima: planta → 1º clique aproxima o bloco → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
@@ -7906,7 +8340,8 @@ export class Igreja3DCard extends HTMLElement {
     }
     if (this._hoverKey) { this._hlShow(null); this._hoverKey = ''; }
     const o = this._pick(e);
-    this._canvas.classList.toggle('pick', !!o || (this._walkOn && !!this._doorHit()));   // no modo Pessoa a folha da porta também é clicável
+    if (this._walkOn) this._walkHover(e);
+    this._canvas.classList.toggle('pick', (!!o && !(this._walkOn && o.userData.zone)) || (this._walkOn && (!!this._doorHit() || !!this._hoverDest)));   // no modo Pessoa a folha da porta também é clicável
     if (o !== this._hoverObj) {
       // zonas em L têm vários retângulos: realça todos
       const tint = (obj, hex) => { if (obj && obj.userData.zone) for (const m of this._zoneMeshes[obj.userData.zone] || [obj]) m.material.emissive.setHex(hex); };
@@ -8334,6 +8769,7 @@ export class Igreja3DCard extends HTMLElement {
     const t = this._clock.elapsedTime;
     let dirty = this._walkOn ? this._walk.update(dt) : this._orbit.update(dt);
     if (this._walkOn && this._doorsTick(dt)) dirty = true;   // portas abrindo/fechando na visão de pessoa
+    if (this._walkOn && this._mkTick(t)) dirty = true;        // marcador do destino pulsando
     const k = 1 - Math.exp(-dt * 7);
     // Ambiente dia/noite — em "auto" segue a elevação do sol (transição suave no crepúsculo)
     this._updateTime();
