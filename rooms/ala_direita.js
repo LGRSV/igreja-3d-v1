@@ -909,10 +909,14 @@ function roomAlaDireita(ctx) {
       const face = cyl(0.145, 0.145, 0.006, white, cx, cy0, zf - 0.033, 24); face.rotation.x = HPI; face.castShadow = false; add(face);
       add(box(0.012, 0.1, 0.006, black, cx, cy0 + 0.04, zf - 0.039, nc));
       const hand = box(0.012, 0.07, 0.006, black, cx - 0.025, cy0 - 0.012, zf - 0.039, nc); hand.rotation.z = 2.1; add(hand); }
-    // Circ. dos banheiros: bloco autônomo na parede do templo
+    // Circ. dos banheiros: bloco autônomo na parede do templo e interruptor do depósito ao lado da porta (z 34,6–35,4)
     emerg('z', 16.125, 35.6, 2.45, 1);
+    plate('z', 17.025, -1, 35.75, 1.15, 'sw');
+    // Sala Gilvan: tomada baixa atrás da cadeira (parede x = 20,1)
+    plate('z', 20.013, -1, 13.3, 0.3, 'out');
     // WC masculino: ralo e saboneteira junto à bancada (o WC feminino fica como está)
     drain(18.6, 39.2); soap(20.013, -1, 38.55, 1.12);
+    plate('x', 40.725, -1, 17.85, 1.15, 'sw');                                               // interruptor ao lado da porta (x 18,2–19,0)
     // Hall dos banheiros: totem de álcool em gel com pedal, junto à parede z = 40,8 (fora do giro da porta do WC masc.)
     add(cyl(0.15, 0.15, 0.02, black, 17.55, 0.01, 41.05, 16));
     add(cyl(0.018, 0.018, 1.0, black, 17.55, 0.52, 41.05, 8));

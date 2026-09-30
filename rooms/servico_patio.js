@@ -601,6 +601,10 @@ function roomServicoPatio(ctx) {
     // Cozinha: 2 tomadas no frontão (parede z = 0, face 0,012, abaixo dos aéreos) e interruptor junto à porta (x 11,6–12,5)
     plate('x', 0.012, 1, 9.4, 1.15, 'out'); plate('x', 0.012, 1, 11.05, 1.15, 'out');
     plate('x', 3.8625, -1, 11.3, 1.15, 'sw');
+    // porta-papel-toalha sob os aéreos (rolo em suporte de alumínio), entre as garrafas e a cuba
+    for (const dx of [-0.13, 0.13]) add(box(0.02, 0.03, 0.1, P.alu, 9.55 + dx, 1.33, 0.06, nc));
+    { const roll = cyl(0.055, 0.055, 0.24, P.paint, 9.55, 1.33, 0.1, 14); roll.rotation.z = PI / 2; add(roll); }
+    add(box(0.22, 0.14, 0.004, P.paint, 9.55, 1.2, 0.157, nc));
     // extintor de pó (vermelho) em suporte na parede x = 12,75 (face 12,7125), perto da porta
     const redExt = std({ color: 0xc4201b, roughness: 0.35, metalness: 0.1 });
     add(box(0.02, 0.14, 0.12, P.trim, 12.7025, 1.28, 3.2));

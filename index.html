@@ -3189,6 +3189,9 @@ function roomHallFamilia(ctx) {
     for (const [dx, dz, ry] of [[-0.03, 0.02, 0.2], [0.035, -0.015, -0.35]]) { const u = cyl(0.014, 0.02, 0.62, caramel, 10.35 + dx, 0.62, 49.42 + dz, 8); u.rotation.z = ry * 0.4; u.rotation.x = ry * 0.3; put(u); }
     // Sala da Família: interruptor ao lado da porta (face x 3,925) e tomada baixa na parede de marmorato
     plate('z', 3.925, -1, 47.85, 1.15, 'sw'); plate('z', 0.099, 1, 48.6, 0.3, 'out');
+    // cabideiro de parede (3 ganchos pretos) para as mochilas das crianças, ao lado do interruptor
+    put(box(0.02, 0.06, 0.6, woodLt, 3.915, 1.3, 48.5));
+    for (const z of [48.3, 48.5, 48.7]) { put(box(0.05, 0.02, 0.02, black, 3.88, 1.29, z)); put(box(0.02, 0.05, 0.02, black, 3.865, 1.31, z)); }
     // WC / WC PCD: ralos
     drain(1.35, 45.0); drain(3.4, 45.4);
   }
@@ -4105,10 +4108,14 @@ function roomAlaDireita(ctx) {
       const face = cyl(0.145, 0.145, 0.006, white, cx, cy0, zf - 0.033, 24); face.rotation.x = HPI; face.castShadow = false; add(face);
       add(box(0.012, 0.1, 0.006, black, cx, cy0 + 0.04, zf - 0.039, nc));
       const hand = box(0.012, 0.07, 0.006, black, cx - 0.025, cy0 - 0.012, zf - 0.039, nc); hand.rotation.z = 2.1; add(hand); }
-    // Circ. dos banheiros: bloco autônomo na parede do templo
+    // Circ. dos banheiros: bloco autônomo na parede do templo e interruptor do depósito ao lado da porta (z 34,6–35,4)
     emerg('z', 16.125, 35.6, 2.45, 1);
+    plate('z', 17.025, -1, 35.75, 1.15, 'sw');
+    // Sala Gilvan: tomada baixa atrás da cadeira (parede x = 20,1)
+    plate('z', 20.013, -1, 13.3, 0.3, 'out');
     // WC masculino: ralo e saboneteira junto à bancada (o WC feminino fica como está)
     drain(18.6, 39.2); soap(20.013, -1, 38.55, 1.12);
+    plate('x', 40.725, -1, 17.85, 1.15, 'sw');                                               // interruptor ao lado da porta (x 18,2–19,0)
     // Hall dos banheiros: totem de álcool em gel com pedal, junto à parede z = 40,8 (fora do giro da porta do WC masc.)
     add(cyl(0.15, 0.15, 0.02, black, 17.55, 0.01, 41.05, 16));
     add(cyl(0.018, 0.018, 1.0, black, 17.55, 0.52, 41.05, 8));
@@ -5498,6 +5505,10 @@ function roomServicoPatio(ctx) {
     // Cozinha: 2 tomadas no frontão (parede z = 0, face 0,012, abaixo dos aéreos) e interruptor junto à porta (x 11,6–12,5)
     plate('x', 0.012, 1, 9.4, 1.15, 'out'); plate('x', 0.012, 1, 11.05, 1.15, 'out');
     plate('x', 3.8625, -1, 11.3, 1.15, 'sw');
+    // porta-papel-toalha sob os aéreos (rolo em suporte de alumínio), entre as garrafas e a cuba
+    for (const dx of [-0.13, 0.13]) add(box(0.02, 0.03, 0.1, P.alu, 9.55 + dx, 1.33, 0.06, nc));
+    { const roll = cyl(0.055, 0.055, 0.24, P.paint, 9.55, 1.33, 0.1, 14); roll.rotation.z = PI / 2; add(roll); }
+    add(box(0.22, 0.14, 0.004, P.paint, 9.55, 1.2, 0.157, nc));
     // extintor de pó (vermelho) em suporte na parede x = 12,75 (face 12,7125), perto da porta
     const redExt = std({ color: 0xc4201b, roughness: 0.35, metalness: 0.1 });
     add(box(0.02, 0.14, 0.12, P.trim, 12.7025, 1.28, 3.2));
