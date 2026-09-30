@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.7';
+export const VERSION = '1.4.8';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -2129,10 +2129,9 @@ function roomTemploPlateia(ctx) {
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
-  { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
 
-  // Saída de vidro da parede z = 12,4 (x 12,9–15,1): as folhas pretas de correr estacionadas ao lado (x 11,6–12,75),
-  // o puxador e o trilho saíram a pedido do cliente (v1.4.6) — ali fica só a parede lisa.
+  // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
+  // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
 
   flush();
 }
@@ -6412,9 +6411,9 @@ export class Igreja3DCard extends HTMLElement {
     wallX(14.2, 17.1, 20.1);
     wallX(19.0, 17.1, 20.1);
     // Templo: faces internas do perímetro PRETAS (fosco), o lado dos cômodos vizinhos continua claro.
-    // Ponta z = 12,4 (parede comum de 3 m, porta de vidro para o backstage) e lateral direita x = 16,05 (mídia de frente para o palco)
+    // Ponta z = 12,4 (parede comum de 3 m, lisa — a saída de vidro x 12,9–15,1 não existe na obra, saiu na v1.4.8) e lateral direita x = 16,05 (mídia de frente para o palco)
     const TB = (side, a, b) => ({ clad: [{ side, mat: M.pretoFosco, a, b }] });
-    wallX(12.4, 0, 16.05, [{ a: 12.9, b: 15.1, t: 'glass' }], TB(1, T / 2, 16.05 - T / 2));
+    wallX(12.4, 0, 16.05, [], TB(1, T / 2, 16.05 - T / 2));
     // (v1.4.5, pedido do cliente: a porta preta de correr z 34,2–35,1 e a preta dupla z 42,0–43,6 saíram — parede lisa)
     wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' }],
       TB(-1, 12.4 + T / 2, 44.0 - T / 2));

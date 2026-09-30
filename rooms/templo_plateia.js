@@ -253,10 +253,9 @@ function roomTemploPlateia(ctx) {
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
-  { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
 
-  // Saída de vidro da parede z = 12,4 (x 12,9–15,1): as folhas pretas de correr estacionadas ao lado (x 11,6–12,75),
-  // o puxador e o trilho saíram a pedido do cliente (v1.4.6) — ali fica só a parede lisa.
+  // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
+  // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
 
   flush();
 }
