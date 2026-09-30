@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.8';
+export const VERSION = '1.4.9';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -2125,10 +2125,11 @@ function roomTemploPlateia(ctx) {
   extintor('z1', 9.8); extintor('z1', 13.75);
   // parede z = 12,4 e parede do palco, fora do palco e das escadas
   extintor('z0', 9.8); extintor('z0', 4.6);
-  extintor('x0', 15.0); extintor('x0', 42.0);
+  extintor('x0', 16.6); extintor('x0', 42.0);   // (o de z 15,0 foi para 16,6: ali entrou a saída preta)
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
+  { const [x, z] = onWall('x0', 14.6, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.x0[2]); }   // saída preta de 2 folhas (z 13,8–15,4)
 
   // Parede z = 12,4: a saída de vidro (x 12,9–15,1) não existe na obra — parede preta lisa, sem placa de SAÍDA (v1.4.8);
   // as folhas pretas de correr que ficavam ao lado já tinham saído na v1.4.6
@@ -6386,7 +6387,8 @@ export class Igreja3DCard extends HTMLElement {
     // divisa esquerda (x = 0) em 3 trechos: o do templo (z 12,4–44,0) é a PAREDE DO PALCO — sobe a 8,5 m
     // já no modo normal e é preta por dentro (correção do cliente: o palco fica nesta parede lateral longa)
     wallZ(-TF / 2, 0, 12.4, [], Object.assign({}, DK, F, { ext1: false, clad: [{ side: 1, mat: M.wall, a: 0, b: 12.4 }] }));
-    wallZ(0, 12.4, 44.0, [], Object.assign({}, DK, { ext: false, h: SPEC.H_TEMPLO, clad: [{ side: 1, mat: M.pretoFosco, a: 12.4, b: 44.0 }] }));
+    // saída preta de 2 folhas na parede do palco, perto do fundo (z 13,8–15,4, entre os perfis de z 13,5 e 18,5 — pedido do cliente, v1.4.8)
+    wallZ(0, 12.4, 44.0, [{ a: 13.8, b: 15.4, t: 'door', style: 'black2', metal: true }], Object.assign({}, DK, { ext: false, h: SPEC.H_TEMPLO, clad: [{ side: 1, mat: M.pretoFosco, a: 12.4, b: 44.0 }] }));
     wallZ(0, 44.0, 49.65, [], Object.assign({}, DK, { ext0: false, clad: [{ side: 1, mat: M.wall, a: 44.0, b: 49.65 - T / 2 }] }));
     wallZ(20.1 + TF / 2, 0, 11.0, [], Object.assign({ inner: -1 }, DK, F, { ext1: false }));
     wallZ(20.1, 11.0, 49.5, [], Object.assign({ inner: -1 }, DK, { ext0: false }));
@@ -6498,7 +6500,7 @@ export class Igreja3DCard extends HTMLElement {
         // porta interna (vídeos): folha lisa de cedro com veio, batente + guarnição de madeira nas duas faces, alavanca
         // cromada dos dois lados. style 'black': porta preta de correr (saídas do templo) com trilho aparente e puxador preto.
         seg(op.a, op.b, 2.1, h);
-        const black = op.style === 'black' || op.style === 'black2' || op.style === 'glass2', df = black ? M.frameDark : (o.doorFrame || M.doorFrame);
+        const black = op.style === 'black' || op.style === 'black2' || op.style === 'glass2', df = op.metal ? M.steel : black ? M.frameDark : (o.doorFrame || M.doorFrame);   // metal: guarnição de aço (porta preta em parede preta)
         const w = op.b - op.a, mid = (op.a + op.b) / 2;
         put(0.04, 2.1, t + 0.02, df, op.a + 0.02, 1.05); put(0.04, 2.1, t + 0.02, df, op.b - 0.02, 1.05); put(w, 0.04, t + 0.02, df, mid, 2.08);
         for (const sd of [-1, 1]) {
@@ -6575,7 +6577,13 @@ export class Igreja3DCard extends HTMLElement {
       part(A, 'box', lm, [A.len, 2.06, lt], (op.a + 0.04 + mid - 0.002) / 2, 1.03, 0, !glass2, !glass2);
       part(B, 'box', lm, [B.len, 2.06, lt], (mid + 0.002 + op.b - 0.04) / 2, 1.03, 0, !glass2, !glass2);
       part(A, 'box', M.frameDark, [0.012, 2.06, 0.05], mid, 1.03, 0, false, true);   // junta central
-      for (const s2 of [-1, 1]) for (const dx of [-0.09, 0.09]) part(dx < 0 ? A : B, 'box', M.frameDark, [0.025, 0.6, 0.025], mid + dx, 1.05, s2 * 0.045, false, true);
+      if (op.metal) {
+        // saída de emergência: barra antipânico cromada nas duas faces de cada folha
+        for (const s2 of [-1, 1]) for (const L of [A, B]) {
+          const u0 = L === A ? op.a + 0.04 : mid + 0.002, u1 = L === A ? mid - 0.002 : op.b - 0.04;
+          part(L, 'box', M.chrome, [u1 - u0 - 0.2, 0.045, 0.035], (u0 + u1) / 2, 1.0, s2 * 0.045, false, true);
+        }
+      } else for (const s2 of [-1, 1]) for (const dx of [-0.09, 0.09]) part(dx < 0 ? A : B, 'box', M.frameDark, [0.025, 0.6, 0.025], mid + dx, 1.05, s2 * 0.045, false, true);
     } else if (black) {
       const l = lf(op.a, 1, w - 0.08);
       part(l, 'box', M.pretoFosco, [w - 0.08, 2.06, 0.04], mid, 1.03, 0, true, true);

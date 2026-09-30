@@ -9,6 +9,10 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.4.9 — saída de emergência na parede do palco
+
+- Nova saída preta de 2 folhas na parede esquerda do templo (x = 0, z 13,8–15,4), perto do fundo, com guarnição de aço, barra antipânico cromada e placa SAÍDA verde; abre no modo Pessoa como as outras. O extintor que ficava ali foi para z 16,6.
+
 ## Novidades da v1.4.8 — fundo do templo sem saída
 
 - A saída de vidro da parede do fundo do templo (z = 12,4, x 12,9–15,1) não existe na obra: virou parede preta lisa, e a placa de SAÍDA de cima dela saiu.
