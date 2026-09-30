@@ -9,6 +9,33 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.5.0 — escada e "salinha", porta do WC Feminino e Pessoa "tipo Street View"
+
+- **Escada do hall no canto da fachada**: agora é **reta, encostada na parede da fachada** (x 4,1–9,2 · z 48,05–49,56), entre a Sala da
+  Família e a porta principal, e sobe para a esquerda até o **mezanino / "salinha"** (piso em y = 3,05) que fica sobre o WC, o WC PCD e a
+  Sala da Família. Mesma linguagem de antes: lance maciço grafite, degraus de madeira soltos com fita de LED, painel de vidro inclinado com
+  corrimão preto e corrimão de parede. A salinha tem laje com testeira grafite, **guarda-corpo de vidro do lado do hall**, paredes altas com
+  janela para a fachada, piso laminado com rodapé, 2 poltronas, mesinha com abajur (acende com a luz do hall), tapete e plantas. O espaço à
+  direita (onde ficava a escada em U) ficou livre: o café e o bistrô foram para lá e o lounge foi para a parede do templo. A salinha some na
+  **Vista de cima** (a planta continua mostrando os cômodos de baixo).
+- **Porta do WC Feminino no hall de entrada**: a porta saiu da parede do hall dos banheiros (que virou parede lisa) e foi para a parede
+  x = 16,05 do hall (z 48,35–49,25), no canto onde ficava o vaso; o vaso (cica) trocou de lugar com ela e o espelho e o banco subiram para
+  liberar o giro da porta.
+- **Pessoa "tipo Street View"**: no modo Pessoa, **clique ou toque num ponto do piso** e a pessoa caminha até lá (desvia das paredes,
+  as portas abrem no caminho; se o ponto for inalcançável ela vai ao ponto alcançável mais perto). Um **anel âmbar** sob o cursor mostra
+  o destino. **Clicar na escada ou no mezanino sobe até a salinha**; clicar no piso de baixo, estando lá em cima, desce. Também dá para
+  subir e descer **andando** (setas/WASD/joystick): a altura dos olhos acompanha os degraus e o guarda-corpo segura a pessoa. Arrastar continua
+  girando a cabeça; teclado ou joystick assumem o comando a qualquer momento; clicar num aparelho continua ligando/desligando.
+- **Escolher em qual ambiente entrar** (como o bonequinho do Street View):
+  - **Bonequinho** (ícone de pessoa âmbar ao lado de *Pessoa*, na órbita e na Vista de cima): **arraste e solte** num ponto do piso e a
+    pessoa entra ali, a 1,6 m, olhando para o centro do cômodo (ou para o que importa nele: palco, portas do templo…). Enquanto arrasta,
+    o cômodo sob o cursor é realçado e o nome aparece; soltar fora do piso (sobre os botões, fora do lote) cancela. No toque a mira fica
+    acima do dedo. Um toque simples no bonequinho abre a lista *Ir para…*.
+  - **Entrar aqui** (Vista de cima, no nível do cômodo, na trilha *Planta › Bloco › Cômodo*): entra no modo Pessoa num ponto livre do cômodo.
+  - **Ir para…** (botão no modo Pessoa): lista os cômodos por bloco — com o **Mezanino (salinha)** — e leva a pessoa direto ao escolhido,
+    com uma transição suave. Os pontos de entrada são sempre livres (sem parede nem móvel).
+- Testes: `tools/street_test.mjs` (clique-para-andar, escada, marcador, bonequinho com mouse e toque, *Entrar aqui*, *Ir para…*, porta do WC Feminino).
+
 ## Novidades da v1.4.9 — saída de emergência na parede do palco
 
 - Nova saída preta de 2 folhas na parede esquerda do templo (x = 0, z 13,8–15,4), perto do fundo, com guarnição de aço, barra antipânico cromada e placa SAÍDA verde; abre no modo Pessoa como as outras. O extintor que ficava ali foi para z 16,6.
@@ -229,7 +256,7 @@ que passaram a ser a referência principal. A planta continua valendo para pared
 | `rooms/*.js` + `integrate_rooms.py` | Fonte da decoração de cada área (uma função `room…(ctx)` por arquivo), colada no cartão pelo `integrate_rooms.py`. |
 | `rooms/BRIEF.md` | Especificação da planta: coordenadas, paredes, aberturas, pilares, objetos do cartão e regras da decoração. |
 | `tools/shot.mjs` | Screenshot da demo com Playwright (Chromium/SwiftShader), para conferir o cartão sem GPU. |
-| `tools/lib.mjs` + `nav_test.mjs`, `walk_test.mjs`, `gov_test.mjs`, `integ_test.mjs` | Testes headless da v1.4 (Vista de cima navegável, visão de pessoa, governador, convivência). `THREE_LOCAL=<three.module.min.js> node tools/nav_test.mjs index.html` |
+| `tools/lib.mjs` + `nav_test.mjs`, `walk_test.mjs`, `gov_test.mjs`, `integ_test.mjs`, `door_test.mjs`, `air_test.mjs`, `street_test.mjs` | Testes headless (Vista de cima navegável, visão de pessoa, governador, convivência, portas, ares, clique-para-andar / escada / bonequinho). `THREE_LOCAL=<three.module.min.js> node tools/nav_test.mjs index.html` |
 | `hacs.json` | Permite instalar pelo HACS como repositório personalizado. |
 
 ## Instalação no Home Assistant
@@ -335,7 +362,8 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
   ar ligado (❄ frio · chama quente · gota seco · hélice ventilar · A auto). Dela dá para **descer por níveis** — clique num
   bloco, depois num cômodo, e ligue/desligue os aparelhos dele; **‹ Voltar** (ou Esc) sobe um nível. *Recentrar* volta à vista normal.
 - **Pessoa**: o botão *Pessoa* põe a câmera na altura dos olhos, dentro do prédio: setas/WASD (ou o joystick na tela) andam,
-  arrastar vira a cabeça, Shift corre, Esc sai. As paredes seguram a pessoa; portas e vãos passam.
+  arrastar vira a cabeça, Shift corre, Esc sai. As paredes seguram a pessoa; portas e vãos passam. **Clique/toque no piso** (ou na
+  escada / no mezanino) caminha até lá; o **bonequinho**, o *Entrar aqui* (Vista de cima) e o *Ir para…* escolhem o ambiente de entrada.
 - **Porta principal**: as duas folhas de vidro abrem para fora quando `binary_sensor.porta_principal` fica `on`.
 - **Sombras reais**: as paredes bloqueiam a luz (8 luminárias projetam sombra). As sombras só
   recalculam quando um estado muda, então o custo em repouso é baixo.
@@ -401,7 +429,7 @@ Coordenadas em metros (X → direita a partir do muro esquerdo, Z → frente; fa
 | Fundos (z 0–12,4) | Estacionamento interno e pátio · Almoxarifado · Cozinha · Recepção · Sala Pastoral (+ banheiro) · Caixa d'água · jardins | `estacionamento` · `cozinha` · `recepcao` · `pastoral` |
 | Ala direita (x 16–20) | Corredor da entrada lateral · Sala Gilvan · Administrativo · Circulação · Mídia · Voluntariado · Depósito · Área técnica · WC Masc. · Hall dos banheiros · WC Fem. | `circulacao` · `administrativo` · `midia` (+ `ac_midia`) · `voluntariado` (+ `ac_voluntariado`) · `banheiros` |
 | Templo (z 12,4–44) | Palco na parede lateral x = 0 com telão, telas de projeção, banda, treliça e line arrays · plateia de 414 cadeiras virada para −x · cobertura aparente | `plateia` (piso, high-bays), `palco` (moving heads), `telao`, `som`, `ac_templo` |
-| Entrada (z 44–49,65) | Hall com balcão, café, lounge e escada · Sala da Família · WC · WC PCD | `hall` · `familia` · `banheiros` |
+| Entrada (z 44–49,65) | Hall com café, lounge e escada até o mezanino (salinha) · Sala da Família · WC · WC PCD | `hall` · `familia` · `banheiros` |
 | Frente (z > 49,7) | Jardins, calçada, estacionamento frontal com vagas PCD | `fachada` · `estacionamento` |
 
 ## Ajustando a planta

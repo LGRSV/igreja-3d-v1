@@ -43,9 +43,10 @@ O cartão (`igreja3d-card.js`) é um fork do motor do `casa-chefe` (Three.js r17
 | Área técnica (shaft) | 17,1 – 20,1 | 35,9 – 37,0 | |
 | WC masculino | 17,1 – 20,1 | 37,0 – 40,8 | |
 | Hall dos banheiros (18,6 m²) | 16,05 – 20,1 | 40,8 – 44,3 | + faixa x 16,05–17,1 · z 37,0–40,8 |
-| WC feminino (13,4 m²) | 16,05 – 20,1 | 44,3 – 49,5 | antecâmara x 16,05–17,1 |
+| WC feminino (13,4 m²) | 16,05 – 20,1 | 44,3 – 49,5 | porta na parede do hall de entrada (x = 16,05 · z 48,35–49,25, v1.4.6); parede z = 44,3 lisa |
 | **Templo (501,7 m²)** | 0 – 16,05 | 12,4 – 44,0 | **palco na parede lateral longa x = 0**, plateia virada para −x (ver "Geometria do templo") |
-| Hall de entrada (62,7 m²) | 4,0 – 16,05 | 44,0 – 49,65 | escada em x 13,3–16,0 · z 44,4–49,4 |
+| Hall de entrada (62,7 m²) | 4,0 – 16,05 | 44,0 – 49,65 | escada reta ao longo da fachada (v1.4.6): x 4,1–9,2 · z 48,05–49,56, sobe para −x até o mezanino |
+| **Mezanino / "salinha"** (v1.4.6) | 0,09 – 4,1 | 44,08 – 49,56 | laje sobre WC / WC PCD / Sala da Família, piso em **y = 3,05**, guarda-corpo de vidro do lado do hall (x = 4,06), paredes altas (até y 5,92) com janela para a fachada, laminado + rodapé, 2 poltronas + mesinha com abajur |
 | WC | 0 – 1,9 | 44,0 – 46,3 | |
 | WC PCD | 1,9 – 4,0 | 44,0 – 46,3 | |
 | Sala da Família (11,7 m²) | 0 – 4,0 | 46,3 – 49,65 | |
@@ -74,7 +75,7 @@ Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass
 - Caixa/banheiro: `wallZ(17,0, 0–4,9)` window z 1,2–2,2, door z 3,4–4,2 · `wallX(3,1, 17,0–20,1)` · `wallX(4,9, 17,0–20,1)`.
 - `wallX(11,0, 16,05–20,1)`: door x 16,15–17,0 (PM01, entrada lateral); window x 17,9–19,9 (J13, Gilvan).
 - **Templo** `wallX(12,4, 0–16,05)`: parede comum de 3 m (ponta do templo), glass x 12,9–15,1.
-- **Templo** `wallZ(16,05, 11,0–49,65)`: glass z 19,2–22,6 · window z 23,6–27,7 (J12 da mídia, peitoril 1,1 — de frente para o palco) · window z 29,9–31,9 · **door z 34,2–35,1 preta de correr** (trilho aparente do lado do templo, x ≈ 15,93, y 2,21–2,31, até z ≈ 36,0) · open z 44,4–46,0 (hall → banheiros).
+- **Templo** `wallZ(16,05, 11,0–49,65)`: glass z 19,2–22,6 · window z 23,6–27,7 (J12 da mídia, peitoril 1,1 — de frente para o palco) · window z 29,9–31,9 · **door z 34,2–35,1 preta de correr** (trilho aparente do lado do templo, x ≈ 15,93, y 2,21–2,31, até z ≈ 36,0) · **door z 48,35–49,25** (WC Fem., vinda do hall de entrada, v1.4.6).
 - **Faces internas do perímetro do templo PRETAS** (revestimento de 12 mm, `M.pretoFosco`, face a 0,087 m do eixo): x = 0 (8,5 m),
   z = 12,4, x = 16,05 (z 12,475–43,925) e z = 44,0 (3 m). O lado dos cômodos vizinhos continua claro (greige).
 - `wallZ(17,1, 11,0–19,0)`: door z 12,9–13,8 (Gilvan), door z 14,4–15,3 (Adm.), window z 16,8–18,3 (J05).
@@ -82,8 +83,8 @@ Tipos de abertura: `door` (0,9×2,1), `window` (peitoril 1,0, topo 2,15), `glass
 - Mídia: `wallX(23,3, 16,05–18,9)` door x 17,9–18,8 · `wallZ(18,9, 23,3–28,0)`.
 - Voluntariado: `wallX(28,0, 16,05–20,1)` door x 19,0–19,9 · `wallX(33,9, 16,05–20,1)` door x 16,2–17,0.
 - `wallZ(17,1, 33,9–40,8)` door z 34,6–35,4 (depósito) · `wallX(35,9, 17,1–20,1)` · `wallX(37,0, 17,1–20,1)` · `wallX(40,8, 17,1–20,1)` door x 18,2–19,0 (WC mas.).
-- `wallX(44,3, 17,1–20,1)` · `wallZ(17,1, 44,3–49,5)` door z 45,0–45,8 (WC fem.).
-- **Templo ↔ Hall** `wallX(44,0, 0–16,05)`: glass x 10,6–13,1 (portas de vidro do templo).
+- `wallX(44,3, 16,05–20,1)` (lisa desde a v1.4.6: a porta do WC Fem. foi para a parede do hall) · `wallZ(17,1, 44,3–49,5)` door z 45,0–45,8 (WC fem.).
+- **Templo ↔ Hall** `wallX(44,0, 0–16,05)`: glass x 10,6–13,1 (portas de vidro do templo)
 - Família/WCs: `wallZ(1,9, 44,0–46,3)` · `wallZ(4,0, 44,0–49,65)` door z 44,4–45,3 (WC PCD), door z 46,6–47,5 (família) · `wallX(46,3, 0–4,0)` door x 0,5–1,3 (WC).
 - Pilares do templo (0,4×0,4, altura 3,05 no modo normal), **metade voltada para o templo preta**: x = 0 em z = 12,4 · 16,9 · 21,4 · 25,9 ·
   30,4 · 35,0 · 39,5 · 44,0 (`PILLARS_L` — por dentro do templo **só nos cantos z 12,4 e 44,0**: no trecho do palco a face da
