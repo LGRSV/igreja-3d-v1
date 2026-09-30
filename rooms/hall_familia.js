@@ -11,7 +11,7 @@ function roomHallFamilia(ctx) {
   // inox de pedal; faixa azul-marinho no acesso aos banheiros. Sala da Família:
   // laminado (cartão) + marmorato, sofá cinza, cortina cinza, brinquedos.
   // Livres: rota porta principal → portas de vidro do templo (x 10,3–13,6),
-  // a porta do WC Feminino (x = 16,05, z 48,35–49,25, v1.4.6), portas em x = 4,0 e a porta do WC (z = 46,3).
+  // portas em x = 4,0 e a porta do WC (z = 46,3). (A porta do WC Feminino voltou para o hall dos banheiros na v1.5.1.)
   // v1.4.6 — Escada RETA ao longo da fachada (x 4,1–9,2 · z 48,05–49,56), 17 degraus de 0,30 × 0,169, até o MEZANINO ("salinha",
   // piso em y = 3,05) sobre o WC / WC PCD / Sala da Família (x 0,09–4,1 · z 44,1–49,56): laje, guarda-corpo de vidro do lado do hall,
   // paredes altas com janela para a fachada, piso laminado + rodapé, 2 poltronas, mesinha com abajur, tapete e plantas. As peças do

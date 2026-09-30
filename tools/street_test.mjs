@@ -1,5 +1,5 @@
 // Modo Pessoa "tipo Street View" (v1.4.6): clique no piso caminha (A* com colisão), escada e mezanino (subir/descer andando e pelo clique),
-// marcador sob o cursor, bonequinho arrastável (mouse e toque), "Entrar aqui" na Vista de cima, "Ir para…", porta nova do WC Feminino.
+// marcador sob o cursor, bonequinho arrastável (mouse e toque), "Entrar aqui" na Vista de cima, "Ir para…", portas do WC Feminino e do pátio (v1.5.1).
 // Uso: THREE_LOCAL=<three.module.min.js> OUT=<pasta-dos-png> node tools/street_test.mjs <index.html>   (imprime o JSON com os resultados; `ok` = tudo passou)
 import { open, proj } from './lib.mjs';
 const [,, html] = process.argv; const OUT = process.env.OUT || '.';
@@ -85,14 +85,16 @@ R.l2 = await C((c) => ({ pose: c.getWalkPose(), open: !c._gotoPanel.hidden }));
 ok.l = R.l1.open && R.l1.mezz && R.l1.n >= 20 && R.l2.pose.up && Math.abs(R.l2.pose.y - 4.65) < 0.02 && !R.l2.open;
 await C((c) => { [...c._gotoBtn.parentNode.querySelectorAll('button')]; c._gotoBtn.click(); [...c._gotoPanel.querySelectorAll('button')].find((b) => /^Plateia/.test(b.textContent)).click(); }); await page.waitForTimeout(400);
 R.l3 = await C((c) => ({ pose: c.getWalkPose(), free: c._navFree(c._walk.pos.x, c._walk.pos.z) })); ok.l3 = !R.l3.pose.up && R.l3.pose.x > 5 && R.l3.pose.x < 16 && R.l3.free;
-// (m) porta do WC Feminino na parede do hall (x = 16,05): existe, abre para a pessoa; a antiga (z = 44,3) virou parede
+// (m) v1.5.1: porta do WC Feminino de volta na parede do hall dos banheiros (z = 44,3); a parede do hall de entrada (x = 16,05, z 48,35) é lisa;
+//     a porta PM01 do pátio foi para a parede x = 16,05 (z 11,25–12,15) e a parede z = 11 ficou lisa; ela abre para a pessoa
 R.m = await C((c) => {
   const f = (ax, cc, a) => c._doors.find((d) => d.axis === ax && Math.abs(d.c - cc) < 0.02 && Math.abs(d.a - a) < 0.02);
-  const wc = f('z', 16.05, 48.35), old = f('x', 44.3, 16.25), ex = f('x', 44.0, 13.4);
-  return { wc: wc && wc.kind, old: !!old, exitDoor: !!ex, wall: c._walls.some((w) => w.axis === 'x' && Math.abs(w.c - 44.3) < 0.01 && w.a0 <= 16.06 && w.a1 >= 20.09) };
+  const wc = f('x', 44.3, 16.25), hall = f('z', 16.05, 48.35), pm = f('z', 16.05, 11.25), old = f('x', 11.0, 16.15), ex = f('x', 44.0, 13.4);
+  return { wc: wc && wc.kind, hall: !!hall, pm: pm && pm.kind, old: !!old, exitDoor: !!ex };
 });
-ok.m = R.m.wc === 'swing' && !R.m.old && !R.m.exitDoor && R.m.wall;
-await C((c) => { c.setWalkPose(14.6, 48.8, -Math.PI / 2, 0); c._walk.update(0.05); }); await step(2.5); R.m2 = await C((c) => { const d = c._doors.find((q) => q.axis === 'z' && Math.abs(q.c - 16.05) < 0.02 && Math.abs(q.a - 48.35) < 0.02); return { q: +d.q.toFixed(2) }; }); ok.m2 = R.m2.q > 0.5;
+ok.m = R.m.wc === 'swing' && !R.m.hall && R.m.pm === 'swing' && !R.m.old && !R.m.exitDoor;
+await C((c) => { c.setWalkPose(16.7, 43.6, Math.PI, 0); c._walk.update(0.05); }); await step(2.5); R.m2 = await C((c) => { const d = c._doors.find((q) => q.axis === 'x' && Math.abs(q.c - 44.3) < 0.02 && Math.abs(q.a - 16.25) < 0.02); return { q: +d.q.toFixed(2) }; }); ok.m2 = R.m2.q > 0.5;
+await C((c) => { c.setWalkPose(15.35, 11.7, -Math.PI / 2, 0); c._walk.update(0.05); }); await step(2.5); R.m3 = await C((c) => { const d = c._doors.find((q) => q.axis === 'z' && Math.abs(q.c - 16.05) < 0.02 && Math.abs(q.a - 11.25) < 0.02); return { q: +d.q.toFixed(2) }; }); ok.m3 = R.m3.q > 0.5;
 // (n) Vista de cima esconde o mezanino; Pessoa/órbita mostram
 R.n = await C((c) => { c.setWalk(false); c._start(); return null; }); await page.waitForFunction(() => document.querySelector('igreja3d-card')._camera.position.y > 8, null, { timeout: 90000 }); await S(300);
 R.n1 = await C((c) => { c._setTopView(true, true); return c._mezz.visible; }); R.n2 = await C((c) => { c._setTopView(false, true); return c._mezz.visible; }); ok.n = R.n1 === false && R.n2 === true;
