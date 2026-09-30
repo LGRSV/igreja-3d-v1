@@ -255,27 +255,35 @@ render();
 
 // Ocultar/mostrar a faixa (lembra a escolha neste navegador)
 const btnHide = document.getElementById('skyHide');
-function setMin(on) {
+function setMin(on, save = true) {
   sky.classList.toggle('min', on);
   btnHide.setAttribute('aria-expanded', String(!on));
   btnHide.setAttribute('aria-label', on ? 'Mostrar a faixa da hora' : 'Ocultar a faixa da hora'); btnHide.title = on ? 'Mostrar' : 'Ocultar';
-  try { localStorage.setItem('igreja3d-sky-min', on ? '1' : '0'); } catch (_) {}
+  if (save) try { localStorage.setItem('igreja3d-sky-min', on ? '1' : '0'); } catch (_) {}
   if (typeof place === 'function') place();
 }
 btnHide.addEventListener('click', (e) => { e.stopPropagation(); setMin(!sky.classList.contains('min')); });
 sky.addEventListener('click', () => { if (sky.classList.contains('min')) setMin(false); });
-try { if (localStorage.getItem('igreja3d-sky-min') === '1') setMin(true); } catch (_) {}
+// no celular começa recolhida (só a hora), a não ser que a pessoa já tenha aberto antes
+const narrow = () => window.innerWidth < 600;
+{ let saved = null; try { saved = localStorage.getItem('igreja3d-sky-min'); } catch (_) {}
+  if (saved === '1' || (saved === null && narrow())) setMin(true, false); }
 
 // Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas);
 // senão logo abaixo do HUD (título, botões e a trilha da Vista de cima). Recalcula quando o layout muda.
 function place() {
   const root = card.shadowRoot; if (!root) return;
   const hud = root.querySelector('.hud.top'); if (!hud) return;
+  sky.style.width = '';
   const W = window.innerWidth, bw = sky.getBoundingClientRect().width;
   const title = hud.querySelector('.title'), btns = hud.querySelector('.btns');
   const tr = title && title.getBoundingClientRect(), br = btns && btns.getBoundingClientRect();
   let top, cx = W / 2;
-  if (tr && br && Math.abs(tr.top - br.top) < 8 && br.left - tr.right >= bw + 24) { top = tr.top; cx = (tr.right + br.left) / 2; }
+  if (narrow() && tr) {
+    // celular: nunca no meio da tela — recolhida, a pílula fica no canto do cartão do título; aberta, cobre o cartão do título
+    if (sky.classList.contains('min')) { top = tr.top + 5; cx = tr.right - 6 - bw / 2; }
+    else { sky.style.width = Math.round(tr.width) + 'px'; top = tr.top + Math.max(0, (tr.height - sky.getBoundingClientRect().height) / 2); cx = (tr.left + tr.right) / 2; }
+  } else if (tr && br && Math.abs(tr.top - br.top) < 8 && br.left - tr.right >= bw + 24) { top = tr.top; cx = (tr.right + br.left) / 2; }
   else top = hud.getBoundingClientRect().bottom + 4;
   sky.style.top = Math.round(top) + 'px'; sky.style.left = Math.round(cx) + 'px';
 }
