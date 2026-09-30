@@ -6917,11 +6917,14 @@ export class Igreja3DCard extends HTMLElement {
     for (const im of d.meshes) im.instanceMatrix.needsUpdate = true;
   }
   // curva do movimento (q = tempo normalizado 0…1 → ângulo/deslize 0…1): a folha de giro abre com um "empurrão" que passa um tico
-  // do fim e assenta (mola amortecida, ~5%); fecha em S suave; a de correr e a principal largam rápido e vão freando devagar
+  // do fim e assenta (~4%); fecha em S suave; a de correr e a principal largam rápido e vão freando devagar
   _doorEase(d, q) {
     if (q <= 0) return 0;
     if (d.kind === 'slide' || d.kind === 'main') { if (q >= 1) return 1; const w = 1 - Math.pow(1 - q, 1.7); return w * w * (3 - 2 * w); }
-    if (d.target) { if (q >= 1) return 1; const tau = q * 1.4; return 1 - Math.exp(-4.2 * tau) * (Math.cos(4.6 * tau) + 0.913 * Math.sin(4.6 * tau)); }
+    if (d.target) {   // abre em S até 72% do tempo e ainda passa ~4% do batente, voltando devagar (a folha "assenta")
+      if (q >= 1) return 1; const x = q / 0.72; if (x < 1) return x * x * (3 - 2 * x);
+      const y = Math.sin(Math.PI * (q - 0.72) / 0.28); return 1 + 0.04 * y * y;
+    }
     return q * q * (3 - 2 * q);
   }
 
@@ -6962,16 +6965,16 @@ export class Igreja3DCard extends HTMLElement {
       // maçaneta (portas de giro): a "mão" aperta antes de a folha sair do batente e solta logo que ela anda; ao fechar aperta de novo
       // perto do batente (a lingueta recua) e solta quando a folha encosta
       const lev = d.lever && !this._reduced, slideLike = d.kind === 'slide' || d.kind === 'main';
-      const wantH = lev ? (d.target ? (d.q < 0.05 ? 1 : 0) : (d.q > 0 && d.q < 0.1 ? 1 : 0)) : 0;
+      const wantH = lev ? (d.target ? (d.q < 0.13 ? 1 : 0) : (d.q > 0 && d.q < 0.1 ? 1 : 0)) : 0;
       if (d.q !== d.target || d.hs !== wantH) {
-        const dur = slideLike ? 1.0 : d.kind === 'double' ? 1.2 : 1.3;
+        const dur = slideLike ? 0.95 : d.kind === 'double' ? 1.15 : 1.05;
         if (this._reduced) { d.q = d.target; d.hs = 0; }
         else {
-          if (!(d.target && lev && d.q < 0.02 && d.hs < 0.97)) d.q = d.target ? Math.min(1, d.q + dt / dur) : Math.max(0, d.q - dt / (dur * 1.05));   // espera a maçaneta descer
+          if (!(d.target && lev && d.q < 0.02 && d.hs < 0.97)) d.q = d.target ? Math.min(1, d.q + dt / dur) : Math.max(0, d.q - dt / (dur * 0.9));   // espera a maçaneta descer
           if (d.hs !== wantH) { const r = dt / (wantH > d.hs ? 0.14 : 0.26); d.hs = wantH > d.hs ? Math.min(wantH, d.hs + r) : Math.max(wantH, d.hs - r); }
         }
         d.p = this._doorEase(d, d.q);
-        if (d.kind === 'double') d.p2 = this._doorEase(d, clamp((d.q - 0.06) / 0.94, 0, 1));
+        if (d.kind === 'double') d.p2 = this._doorEase(d, clamp((d.q - 0.07) / 0.93, 0, 1));
         d.moving = moving = true;
         if (d.kind === 'main') { d.rt.pOpen = d.p; d.rt.pMoving = true; } else this._doorApply(d);
       } else if (d.moving) {
@@ -7638,7 +7641,7 @@ export class Igreja3DCard extends HTMLElement {
       rt.color.copy(c);
       for (const f of rt.fixtures || []) if (f.material && f.material.emissive) f.material.emissive.copy(c);
     }
-    if (it.kind === 'climate') { rt.hvac = state; rt.on = on; if (!this._activitySeeded) rt.snap = true; }   // na carga inicial as unidades já estão como o HA diz, sem animar
+    if (it.kind === 'climate') { rt.hvac = state; if (on) rt.hvacOn = state; rt.on = on; if (!this._activitySeeded) rt.snap = true; }   // na carga inicial as unidades já estão como o HA diz, sem animar
     this._state[key].text = val;
     this._needShadow = true;
   }
@@ -8832,7 +8835,7 @@ export class Igreja3DCard extends HTMLElement {
 
   // Sequência de cada unidade de ar (estilo split real): o LED pisca duas vezes (o "bip") e fica aceso → ~0,35 s depois a aleta destrava e abre devagar
   // (mola: passa um tico e assenta) → o fluxo nasce da aleta, cresce até o comprimento cheio (~1,4 s) e a névoa começa a descer. Com o ar rodando a aleta
-  // balança de leve (só enquanto a animação anda). Ao desligar o fluxo recolhe primeiro (~0,7 s), depois a aleta fecha (~0,9 s) e por fim o LED apaga.
+  // balança de leve (só enquanto a animação anda). Ao desligar o fluxo recolhe primeiro (~0,7 s), a aleta fecha logo em seguida (~0,75 s) e por fim o LED apaga.
   // rt.seq = { t0, off[i] } escalona o início de cada unidade (templo: uma após a outra).
   // Sem animação (unidades vão direto ao estado): carga inicial, prefers-reduced-motion, aba oculta e cartão fora da tela. Devolve true enquanto algo muda.
   _airStep(rt, ledColor, now, dt, nl, key) {
@@ -8854,7 +8857,7 @@ export class Igreja3DCard extends HTMLElement {
         if (u.f > 0.45) u.g = Math.min(1, u.g + dt / 1.4);
       } else {
         u.on = false; u.ign = 0;
-        u.g = Math.max(0, u.g - dt / 0.7); if (u.g < 0.4) u.f = Math.max(0, u.f - dt / 0.9); if (u.f <= 0) u.led = Math.max(0, u.led - dt / 0.3);
+        u.g = Math.max(0, u.g - dt / 0.7); if (u.g < 0.6) u.f = Math.max(0, u.f - dt / 0.75); if (u.f <= 0) u.led = Math.max(0, u.led - dt / 0.25);
       }
       if (u.g !== want || u.f !== want || u.led !== want) busy = true;
       const fl = rt.flaps[i], lm = rt.ledMats[i], b = rt.badges[i];
@@ -8882,7 +8885,7 @@ export class Igreja3DCard extends HTMLElement {
     }
     m.visible = vis;
     if (rt.badgeMat && rt.on) { const tx = this._airBadge(rt.hvac); if (rt.badgeMat.map !== tx) { rt.badgeMat.map = tx; rt.badgeMat.needsUpdate = true; } }
-    const uf = m.material.uniforms; uf.uI.value = THREE.MathUtils.lerp(0.45, 0.6, nl) * (top ? 1.5 : 1); uf.uTop.value = top ? 1 : 0; uf.uC.value.setHex(AIR_COL[rt.hvac] || 0xe8eef4);
+    const uf = m.material.uniforms; uf.uI.value = THREE.MathUtils.lerp(0.45, 0.6, nl) * (top ? 1.5 : 1); uf.uTop.value = top ? 1 : 0; uf.uC.value.setHex(AIR_COL[rt.hvacOn || rt.hvac] || 0xe8eef4);
     const pt = rt.airPts;
     if (pt) {
       pt.visible = vis; const pu = pt.material.uniforms;
@@ -9073,7 +9076,7 @@ export class Igreja3DCard extends HTMLElement {
       }
       if (it.key === 'som' && rt.ledMats) for (const m of rt.ledMats) m.emissiveIntensity = lv * 2.6;
       if (it.kind === 'climate' && rt.ledMats) {
-        const c = rt.hvac === 'cool' ? 0x67d3ff : rt.hvac === 'heat' ? 0xff8a5b : 0x8ef0b0;
+        const hv = rt.hvacOn || rt.hvac, c = hv === 'cool' ? 0x67d3ff : hv === 'heat' ? 0xff8a5b : 0x8ef0b0;   // ao desligar mantém a cor do modo (o LED apaga sem trocar de cor)
         // cada unidade tem a sua sequência (LED → aleta → fluxo nasce e cresce); cor pelo modo (frio azul-claro, quente laranja, seco/ventilar neutro)
         if (this._airStep(rt, c, nowA, dtA, nl, it.key)) dirty = true;
       }
