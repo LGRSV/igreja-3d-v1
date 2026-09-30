@@ -21,49 +21,46 @@
 
   /* Faixa de hora do dia (só na demo) — mesmo visual do HUD do cartão */
   .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
-    width: min(540px, calc(100vw - 32px)); padding: 7px 8px 7px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time track btn"; align-items: center; column-gap: 10px;
-    background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 16px; color: #e6edf7;
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
-    font: 13px/1.3 -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif; transition: opacity .2s; }
-  .sky-time { grid-area: time; display: flex; flex-direction: column; min-width: 92px; }
-  .sky output { font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: #f3f6fc; }
+    width: min(380px, calc(100vw - 24px)); padding: 4px 6px 4px 11px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time track btn"; align-items: center; column-gap: 8px;
+    background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; color: #e6edf7;
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+    font: 12px/1.25 -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif; transition: opacity .2s; }
+  .sky-time { grid-area: time; display: flex; flex-direction: column; min-width: 58px; }
+  .sky output { font-size: 16px; font-weight: 700; line-height: 1; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: #f3f6fc; }
   .sky.sim output { color: var(--amber-soft); }
-  .sky-cap { margin-top: 3px; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; color: #8f9bb3; white-space: nowrap; }
-  .sky-track { grid-area: track; position: relative; height: 48px; min-width: 0; }
-  .sky-bar { position: absolute; left: 14px; right: 14px; top: 7px; height: 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
-  .sky-mark { position: absolute; top: 30px; left: calc(14px + (100% - 28px) * var(--f)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-  .sky-mark i { position: absolute; top: -10px; width: 1px; height: 7px; background: rgba(255, 255, 255, .35); }
-  .sky-mark em { font-style: normal; font-size: 10px; font-weight: 600; color: #8f9bb3; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sky-cap { margin-top: 2px; font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: #8f9bb3; white-space: nowrap; }
+  .sky-track { grid-area: track; position: relative; height: 32px; min-width: 0; }
+  .sky-bar { position: absolute; left: 11px; right: 11px; top: 6px; height: 8px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
+  .sky-mark { position: absolute; top: 21px; left: calc(11px + (100% - 22px) * var(--f)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+  .sky-mark i { position: absolute; top: -7px; width: 1px; height: 5px; background: rgba(255, 255, 255, .35); }
+  .sky-mark em { font-style: normal; font-size: 8.5px; font-weight: 600; color: #8f9bb3; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sky-mark em b { color: var(--amber); font-weight: 700; margin-right: 2px; }
-  .sky input[type=range] { position: absolute; left: 0; top: 0; width: 100%; height: 26px; margin: 0; padding: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none; }
-  .sky input[type=range]::-webkit-slider-runnable-track { height: 26px; background: transparent; border: 0; }
-  .sky input[type=range]::-moz-range-track { height: 26px; background: transparent; border: 0; }
-  .sky input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 26px; background: transparent; border: 0; }
-  .sky input[type=range]::-moz-range-thumb { width: 28px; height: 26px; background: transparent; border: 0; border-radius: 0; }
+  .sky input[type=range] { position: absolute; left: 0; top: 0; width: 100%; height: 20px; margin: 0; padding: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none; }
+  .sky input[type=range]::-webkit-slider-runnable-track { height: 20px; background: transparent; border: 0; }
+  .sky input[type=range]::-moz-range-track { height: 20px; background: transparent; border: 0; }
+  .sky input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 20px; background: transparent; border: 0; }
+  .sky input[type=range]::-moz-range-thumb { width: 22px; height: 20px; background: transparent; border: 0; border-radius: 0; }
   .sky input[type=range]:focus { outline: none; }
-  .sky-thumb { position: absolute; top: 0; left: calc(14px + (100% - 28px) * var(--f, 0)); width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; box-sizing: border-box; pointer-events: none;
+  .sky-thumb { position: absolute; top: 0; left: calc(11px + (100% - 22px) * var(--f, 0)); width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; box-sizing: border-box; pointer-events: none;
     display: flex; align-items: center; justify-content: center; background: #0a0f1e; border: 2px solid var(--amber); color: var(--amber);
     box-shadow: 0 0 0 3px rgba(255, 196, 107, .14), 0 2px 8px rgba(0, 0, 0, .5); transition: box-shadow .15s, border-color .3s, color .3s; }
-  .sky-thumb svg { width: 15px; height: 15px; display: block; }
+  .sky-thumb svg { width: 11px; height: 11px; display: block; }
   .sky-thumb .moon { display: none; } .sky-thumb.night { border-color: #9db6ee; color: #b9ccf5; box-shadow: 0 0 0 3px rgba(157, 182, 238, .14), 0 2px 8px rgba(0, 0, 0, .5); }
   .sky-thumb.night .sun { display: none; } .sky-thumb.night .moon { display: block; }
   .sky input[type=range]:focus-visible ~ .sky-thumb { box-shadow: 0 0 0 2px #0a0f1e, 0 0 0 4px var(--amber); }
-  .sky-live { grid-area: btn; appearance: none; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .01em; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+  .sky-live { grid-area: btn; appearance: none; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: .01em; padding: 5px 9px; border-radius: 999px; cursor: pointer;
     color: #d5dcea; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); white-space: nowrap; }
   .sky-live:hover { background: rgba(255, 255, 255, .12); }
   .sky-live:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-  .sky-live .dot { width: 8px; height: 8px; border-radius: 50%; background: #6b768f; flex: none; }
+  .sky-live .dot { width: 7px; height: 7px; border-radius: 50%; background: #6b768f; flex: none; }
   .sky-live.on { color: #ffd48a; background: rgba(255, 196, 107, .16); border-color: rgba(255, 196, 107, .4); cursor: default; }
   .sky-live.on .dot { background: #4be38b; animation: skypulse 1.8s ease-out infinite; }
   .sky-live:not(.on) .dot { background: transparent; border: 2px solid var(--amber); box-sizing: border-box; }
   @keyframes skypulse { 0% { box-shadow: 0 0 0 0 rgba(75, 227, 139, .6); } 70%, 100% { box-shadow: 0 0 0 7px rgba(75, 227, 139, 0); } }
   @media (prefers-reduced-motion: reduce) { .sky-live.on .dot { animation: none; } }
   @media (max-width: 560px) {
-    .sky { width: calc(100vw - 32px); padding: 8px 10px 6px 12px; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "time btn" "track track"; row-gap: 2px; }
-    .sky-time { flex-direction: row; align-items: baseline; gap: 10px; }
-    .sky-cap { margin-top: 0; }
-    .sky output { font-size: 22px; }
-    .sky-live { padding: 6px 11px; }
+    .sky { width: min(360px, calc(100vw - 24px)); }
+    .sky-cap { display: none; }
   }
 </style>
 <div class="app">
