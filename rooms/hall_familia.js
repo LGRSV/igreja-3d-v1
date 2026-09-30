@@ -11,11 +11,13 @@ function roomHallFamilia(ctx) {
   // inox de pedal; faixa azul-marinho no acesso aos banheiros. Sala da Família:
   // laminado (cartão) + marmorato, sofá cinza, cortina cinza, brinquedos.
   // Livres: rota porta principal → portas de vidro do templo (x 10,3–13,6),
-  // vão para os banheiros (x = 16,05, z 44,4–46,0: passa por baixo do patamar
-  // superior da escada), portas em x = 4,0 e a porta do WC (z = 46,3).
-  // Escada em U (x 13,62–15,94 · z 44,2–49,55): lance 1 maciço subindo para +z,
-  // patamar intermediário (y 1,5) junto à fachada, lance 2 de degraus soltos
-  // voltando para −z e patamar/mezanino em y 3,0 sobre a passagem dos banheiros.
+  // a porta do WC Feminino (x = 16,05, z 48,35–49,25, v1.4.6), portas em x = 4,0 e a porta do WC (z = 46,3).
+  // v1.4.6 — Escada RETA ao longo da fachada (x 4,1–9,2 · z 48,05–49,56), 17 degraus de 0,30 × 0,169, até o MEZANINO ("salinha",
+  // piso em y = 3,05) sobre o WC / WC PCD / Sala da Família (x 0,09–4,1 · z 44,1–49,56): laje, guarda-corpo de vidro do lado do hall,
+  // paredes altas com janela para a fachada, piso laminado + rodapé, 2 poltronas, mesinha com abajur, tapete e plantas. As peças do
+  // mezanino vão para o grupo `ctx.addMezz` (some na Vista de cima, que enxerga os cômodos de baixo); a geometria da escada está
+  // em `ctx.STAIR` / `ctx.MEZZ` (a visão de Pessoa sobe por ela). O lounge foi para a parede do templo (x 5,8–8,0), o café e o
+  // bistrô para o canto livre à direita (x 13,35–15,55 / 14,7).
   // Objetos do cartão (pendentes do hall e da família, arandelas) NÃO são recriados.
   // ---------------------------------------------------------------------------
   const THREE = ctx.THREE, M = ctx.M;
@@ -48,6 +50,8 @@ function roomHallFamilia(ctx) {
   // aceso junto com a luz do hall
   const ledWarm  = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });
   ctx.bindEmissive('hall', ledWarm, 1.0, { min: 0.1 });
+  const ledFam   = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });   // abajur da salinha: acende com a luz da Sala da Família
+  ctx.bindEmissive('familia', ledFam, 1.0, { min: 0.1 });
   const frost    = std({ color: 0xf1f3f4, roughness: 0.85, transparent: true, opacity: 0.55 });   // vidro jateado
   const rugHall  = std({ color: 0x4a4b50, roughness: 1 });
   const rugEdge  = std({ color: 0x8a6a4c, roughness: 1 });
@@ -389,9 +393,9 @@ function roomHallFamilia(ctx) {
   }, 0.7, true);
   plane(1.16, 0.22, tpl, 11.85, 2.62, WZ + 0.024);
   ctx.bindEmissive('hall', tpl, 0.7, { min: 0.25 });
-  // Extintor (pó ABC) com placa, à direita da nova porta de saída do templo (x 13,4–15,2)
+  // Extintor (pó ABC) com placa, à direita das portas de vidro do templo
   {
-    const x = 15.55, z = 44.175;
+    const x = 13.38, z = 44.175;
     put(box(0.12, 0.06, 0.04, black, x, 1.6, 44.095));                            // suporte
     put(cyl(0.085, 0.085, 0.52, alarm, x, 1.25, z, 16));
     put(sph(0.085, alarm, x, 1.51, z)).scale.y = 0.5;
@@ -534,6 +538,7 @@ function roomHallFamilia(ctx) {
     // laje (face de baixo = forro dos cômodos de baixo) e testeira grafite com fita de LED no lado do hall
     mz(box(4.125, 0.12, 5.75, M.wall, 2.0125, 2.97, 46.825));
     mz(box(0.05, 0.23, z1 - z0 - (z1 - SX.Z0), mass, 4.1, 2.955, (z0 + SX.Z0) / 2));
+    put(box(0.03, 0.195, SX.Z1 - SX.Z0, mass, SX.XS - 0.005, 2.9475, (SX.Z0 + SX.Z1) / 2));            // último espelho da escada, até o piso do mezanino
     mz(box(0.012, 0.012, SX.Z0 - z0 - 0.2, ledWarm, 4.1, 2.83, (z0 + SX.Z0) / 2, nc));
     // piso laminado (mesma textura e escala dos pisos do cartão)
     {
@@ -582,6 +587,10 @@ function roomHallFamilia(ctx) {
       T2.add(box(0.2, 0.03, 0.15, terra, -0.08, 0.535, 0.05)); T2.add(box(0.17, 0.025, 0.13, paper, -0.08, 0.56, 0.05));
       T2.add(cyl(0.05, 0.04, 0.1, ceramic, 0.1, 0.57, -0.05, 10));
       T2.position.set(3.15, YF, 46.35); mz(T2); }
+    { const L = G();                                                                     // abajur (a luz real vem do cartão: fixture da Sala da Família)
+      L.add(cyl(0.06, 0.07, 0.025, black, 0, 0.0125, 0, 14)); L.add(cyl(0.01, 0.01, 0.3, black, 0, 0.175, 0, 6));
+      L.add(cyl(0.085, 0.13, 0.17, ledFam, 0, 0.4, 0, 18));
+      L.position.set(3.27, YF + 0.5175, 46.45); mz(L); }
     { const c = cycas(0.5, 0.55, 5); c.position.set(0.55, YF, 48.95); mz(c); }
     { const c = bigPlant(1.6, 0.24, 3); c.position.set(0.55, YF, 44.65); mz(c); }
     [[45.6, 0.5, mustard], [46.3, 0.42, terra]].forEach(([z, s, c]) => { mz(box(0.03, s, s, black, x0 + 0.02, YF + 1.5, z)); mz(box(0.012, s - 0.08, s - 0.08, c, x0 + 0.04, YF + 1.5, z, nc)); });

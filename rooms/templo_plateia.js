@@ -247,15 +247,14 @@ function roomTemploPlateia(ctx) {
   };
   // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, sem portas desde a v1.4.5)
   extintor('x1', 17.3); extintor('x1', 29.3); extintor('x1', 36.7);
-  // parede do hall (z = 44): à esquerda do acesso de vidro x 10,6–13,1 (pilar em x 10,5) e à direita da porta de saída x 13,4–15,2
-  extintor('z1', 9.8); extintor('z1', 15.55);   // v1.4.6: o de 13,75 deu lugar à nova porta de saída (x 13,4–15,2)
+  // parede do hall (z = 44): dos dois lados do acesso de vidro x 10,6–13,1 (pilar em x 10,5)
+  extintor('z1', 9.8); extintor('z1', 13.75);
   // parede z = 12,4 e parede do palco, fora do palco e das escadas
   extintor('z0', 9.8); extintor('z0', 4.6);
   extintor('x0', 15.0); extintor('x0', 42.0);
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
-  { const [x, z] = onWall('z1', 14.3, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }   // v1.4.6: SAÍDA acesa sobre a porta preta de 2 folhas, de frente para a saída de vidro do fundo
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
 
   // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à

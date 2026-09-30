@@ -93,7 +93,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.5';
+export const VERSION = '1.4.6';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -190,7 +190,6 @@ export const ITEMS = [
     fixtures: [
       { p: [7.5, 2.7, 46.8], i: 30, d: 8, shadow: true, liteShadow: true },
       { p: [11.5, 2.7, 46.8], i: 30, d: 8 },
-      { p: [3.15, 3.86, 46.35], i: 10, d: 5.5, lamp: true, mezz: true },   // abajur da mesinha do mezanino (v1.4.6)
     ] },
   { key: 'fachada', label: 'Fachada / letreiro', kind: 'light', icon: 'sign', color: 0xffd9a8,
     fixtures: [
@@ -245,7 +244,8 @@ export const ITEMS = [
       { p: [18.6, 2.7, 34.9], glowOnly: true },
     ] },
   { key: 'familia', label: 'Sala da família', kind: 'light', icon: 'bulb', color: 0xffdcae,
-    fixtures: [{ p: [2.0, 2.7, 48.0], i: 20, d: 5.5, shadow: true }] },
+    fixtures: [{ p: [2.0, 2.7, 48.0], i: 20, d: 5.5, shadow: true },
+      { p: [3.27, 3.95, 46.45], i: 10, d: 5.5, hidden: true }] },   // luz do abajur da mesinha do mezanino (v1.4.6; o abajur é desenhado em rooms/hall_familia.js)
   { key: 'presenca', label: 'Presença', kind: 'sensor', icon: 'motion' },
   { key: 'porta', label: 'Porta principal', kind: 'sensor', icon: 'door' },
   { key: 'temperatura', label: 'Temperatura', kind: 'sensor', icon: 'thermo' },
@@ -2247,15 +2247,14 @@ function roomTemploPlateia(ctx) {
   };
   // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, sem portas desde a v1.4.5)
   extintor('x1', 17.3); extintor('x1', 29.3); extintor('x1', 36.7);
-  // parede do hall (z = 44): à esquerda do acesso de vidro x 10,6–13,1 (pilar em x 10,5) e à direita da porta de saída x 13,4–15,2
-  extintor('z1', 9.8); extintor('z1', 15.55);   // v1.4.6: o de 13,75 deu lugar à nova porta de saída (x 13,4–15,2)
+  // parede do hall (z = 44): dos dois lados do acesso de vidro x 10,6–13,1 (pilar em x 10,5)
+  extintor('z1', 9.8); extintor('z1', 13.75);
   // parede z = 12,4 e parede do palco, fora do palco e das escadas
   extintor('z0', 9.8); extintor('z0', 4.6);
   extintor('x0', 15.0); extintor('x0', 42.0);
 
   // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
-  { const [x, z] = onWall('z1', 14.3, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }   // v1.4.6: SAÍDA acesa sobre a porta preta de 2 folhas, de frente para a saída de vidro do fundo
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
 
   // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à
@@ -2283,11 +2282,13 @@ function roomHallFamilia(ctx) {
   // inox de pedal; faixa azul-marinho no acesso aos banheiros. Sala da Família:
   // laminado (cartão) + marmorato, sofá cinza, cortina cinza, brinquedos.
   // Livres: rota porta principal → portas de vidro do templo (x 10,3–13,6),
-  // vão para os banheiros (x = 16,05, z 44,4–46,0: passa por baixo do patamar
-  // superior da escada), portas em x = 4,0 e a porta do WC (z = 46,3).
-  // Escada em U (x 13,62–15,94 · z 44,2–49,55): lance 1 maciço subindo para +z,
-  // patamar intermediário (y 1,5) junto à fachada, lance 2 de degraus soltos
-  // voltando para −z e patamar/mezanino em y 3,0 sobre a passagem dos banheiros.
+  // a porta do WC Feminino (x = 16,05, z 48,35–49,25, v1.4.6), portas em x = 4,0 e a porta do WC (z = 46,3).
+  // v1.4.6 — Escada RETA ao longo da fachada (x 4,1–9,2 · z 48,05–49,56), 17 degraus de 0,30 × 0,169, até o MEZANINO ("salinha",
+  // piso em y = 3,05) sobre o WC / WC PCD / Sala da Família (x 0,09–4,1 · z 44,1–49,56): laje, guarda-corpo de vidro do lado do hall,
+  // paredes altas com janela para a fachada, piso laminado + rodapé, 2 poltronas, mesinha com abajur, tapete e plantas. As peças do
+  // mezanino vão para o grupo `ctx.addMezz` (some na Vista de cima, que enxerga os cômodos de baixo); a geometria da escada está
+  // em `ctx.STAIR` / `ctx.MEZZ` (a visão de Pessoa sobe por ela). O lounge foi para a parede do templo (x 5,8–8,0), o café e o
+  // bistrô para o canto livre à direita (x 13,35–15,55 / 14,7).
   // Objetos do cartão (pendentes do hall e da família, arandelas) NÃO são recriados.
   // ---------------------------------------------------------------------------
   const THREE = ctx.THREE, M = ctx.M;
@@ -2320,6 +2321,8 @@ function roomHallFamilia(ctx) {
   // aceso junto com a luz do hall
   const ledWarm  = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });
   ctx.bindEmissive('hall', ledWarm, 1.0, { min: 0.1 });
+  const ledFam   = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });   // abajur da salinha: acende com a luz da Sala da Família
+  ctx.bindEmissive('familia', ledFam, 1.0, { min: 0.1 });
   const frost    = std({ color: 0xf1f3f4, roughness: 0.85, transparent: true, opacity: 0.55 });   // vidro jateado
   const rugHall  = std({ color: 0x4a4b50, roughness: 1 });
   const rugEdge  = std({ color: 0x8a6a4c, roughness: 1 });
@@ -2661,9 +2664,9 @@ function roomHallFamilia(ctx) {
   }, 0.7, true);
   plane(1.16, 0.22, tpl, 11.85, 2.62, WZ + 0.024);
   ctx.bindEmissive('hall', tpl, 0.7, { min: 0.25 });
-  // Extintor (pó ABC) com placa, à direita da nova porta de saída do templo (x 13,4–15,2)
+  // Extintor (pó ABC) com placa, à direita das portas de vidro do templo
   {
-    const x = 15.55, z = 44.175;
+    const x = 13.38, z = 44.175;
     put(box(0.12, 0.06, 0.04, black, x, 1.6, 44.095));                            // suporte
     put(cyl(0.085, 0.085, 0.52, alarm, x, 1.25, z, 16));
     put(sph(0.085, alarm, x, 1.51, z)).scale.y = 0.5;
@@ -2806,6 +2809,7 @@ function roomHallFamilia(ctx) {
     // laje (face de baixo = forro dos cômodos de baixo) e testeira grafite com fita de LED no lado do hall
     mz(box(4.125, 0.12, 5.75, M.wall, 2.0125, 2.97, 46.825));
     mz(box(0.05, 0.23, z1 - z0 - (z1 - SX.Z0), mass, 4.1, 2.955, (z0 + SX.Z0) / 2));
+    put(box(0.03, 0.195, SX.Z1 - SX.Z0, mass, SX.XS - 0.005, 2.9475, (SX.Z0 + SX.Z1) / 2));            // último espelho da escada, até o piso do mezanino
     mz(box(0.012, 0.012, SX.Z0 - z0 - 0.2, ledWarm, 4.1, 2.83, (z0 + SX.Z0) / 2, nc));
     // piso laminado (mesma textura e escala dos pisos do cartão)
     {
@@ -2854,6 +2858,10 @@ function roomHallFamilia(ctx) {
       T2.add(box(0.2, 0.03, 0.15, terra, -0.08, 0.535, 0.05)); T2.add(box(0.17, 0.025, 0.13, paper, -0.08, 0.56, 0.05));
       T2.add(cyl(0.05, 0.04, 0.1, ceramic, 0.1, 0.57, -0.05, 10));
       T2.position.set(3.15, YF, 46.35); mz(T2); }
+    { const L = G();                                                                     // abajur (a luz real vem do cartão: fixture da Sala da Família)
+      L.add(cyl(0.06, 0.07, 0.025, black, 0, 0.0125, 0, 14)); L.add(cyl(0.01, 0.01, 0.3, black, 0, 0.175, 0, 6));
+      L.add(cyl(0.085, 0.13, 0.17, ledFam, 0, 0.4, 0, 18));
+      L.position.set(3.27, YF + 0.5175, 46.45); mz(L); }
     { const c = cycas(0.5, 0.55, 5); c.position.set(0.55, YF, 48.95); mz(c); }
     { const c = bigPlant(1.6, 0.24, 3); c.position.set(0.55, YF, 44.65); mz(c); }
     [[45.6, 0.5, mustard], [46.3, 0.42, terra]].forEach(([z, s, c]) => { mz(box(0.03, s, s, black, x0 + 0.02, YF + 1.5, z)); mz(box(0.012, s - 0.08, s - 0.08, c, x0 + 0.04, YF + 1.5, z, nc)); });
@@ -5790,7 +5798,7 @@ canvas.walk.pick { cursor: pointer; }
 .fade { position: absolute; inset: 0; background: #06090f; opacity: 0; pointer-events: none; z-index: 5; }
 .nav .enter { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; background: rgba(255, 196, 107, .18); color: #ffd48a; border: 1px solid rgba(255, 196, 107, .4); }
 .nav .enter:hover { background: rgba(255, 196, 107, .28); }
-@media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; } .goto { top: 96px; } }
+@media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
 /* Painel inferior (dock) */
 .dock { position: absolute; left: 10px; right: 10px; bottom: 10px; max-height: min(48%, 372px); display: flex; flex-direction: column; overflow: hidden; z-index: 3; }
@@ -6327,7 +6335,7 @@ export class Igreja3DCard extends HTMLElement {
       const boost = keep.size ? realIdx.length / keep.size : 1;
       for (const [fk, f] of it.fixtures.entries()) {
         const [px, py, pz] = f.p;
-        const holder = f.ext ? this._ext : f.mezz ? this._mezz : scene;
+        const holder = f.ext ? this._ext : scene;
         // GPU apertada (uniforms/samplers no limite): as luzes fracas das salas viram só halo + emissivo
         const glowOnly = !keep.has(fk);
         const lp = new THREE.Vector3(px, f.pole ? py - 0.2 : f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);
@@ -6350,6 +6358,7 @@ export class Igreja3DCard extends HTMLElement {
           }
           scene.add(L); rt.lights.push({ L, i: this._lite ? f.i * boost : f.i }); this._nLights++;
         }
+        if (f.hidden) continue;   // só a luz (a peça visível é da decoração)
         // uma lente emissiva por entidade (todas acendem juntas) → depois vira uma malha só
         const emis = () => rt.emisMat || (rt.emisMat = new THREE.MeshStandardMaterial({ color: 0xfff6e6, emissive: rt.color, emissiveIntensity: 0, roughness: 0.4 }));
         let mesh, gs = 1.5, gb = 0.8;
@@ -6553,7 +6562,7 @@ export class Igreja3DCard extends HTMLElement {
     wallX(40.8, 17.1, 20.1, [{ a: 18.2, b: 19.0, t: 'open' }]);   // WC masc.: entrada sem porta (vão aberto)
     wallX(44.3, 16.05, 20.1);   // WC fem.: parede lisa (a porta antiga em x 16,25–17,15 foi para a parede do hall, v1.4.6)
     // Templo ↔ hall (porta de 2 folhas de vidro, caixilho preto)
-    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'glass2' }, { a: 13.4, b: 15.2, t: 'door', style: 'black2' }], TB(-1, T / 2, 16.05 - T / 2));   // v1.4.6: saída de 2 folhas de frente para a saída de vidro do fundo
+    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'glass2' }], TB(-1, T / 2, 16.05 - T / 2));
     // Sala da família / WCs
     wallZ(1.9, 44.0, 46.3);
     wallZ(4.0, 44.0, 49.65, [{ a: 44.4, b: 45.3, t: 'door' }, { a: 46.6, b: 47.5, t: 'door' }]);
@@ -7954,36 +7963,35 @@ export class Igreja3DCard extends HTMLElement {
     let bt = Infinity, kind = null;
     const mzOn = !this._mezz || this._mezz.visible;
     const hit = (t, k) => { if (t > 1e-4 && t < bt) { bt = t; kind = k; } };
+    let ax = 0;   // eixo da face de entrada da última caixa acertada (0 x · 1 y · 2 z)
     const boxT = (x0, y0, z0, x1, y1, z1) => {   // entrada do raio na caixa (Infinity se não acerta ou se a origem está dentro)
-      let t0 = 0, t1 = Infinity;
+      let t0 = 0, t1 = Infinity, k0 = 0, k = 0;
       for (const [p, dd, lo, hi] of [[o.x, d.x, x0, x1], [o.y, d.y, y0, y1], [o.z, d.z, z0, z1]]) {
-        if (Math.abs(dd) < 1e-9) { if (p < lo || p > hi) return Infinity; continue; }
+        if (Math.abs(dd) < 1e-9) { if (p < lo || p > hi) return Infinity; k++; continue; }
         let ta = (lo - p) / dd, tb = (hi - p) / dd; if (ta > tb) [ta, tb] = [tb, ta];
-        t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 > t1) return Infinity;
+        if (ta > t0) { t0 = ta; k0 = k; }
+        t1 = Math.min(t1, tb); k++; if (t0 > t1) return Infinity;
       }
-      return t0 > 0 ? t0 : Infinity;
+      ax = k0; return t0 > 0 ? t0 : Infinity;
     };
     for (const w of this._walls || []) {
       const h = w.h || H, hh = w.t / 2;
       hit(w.axis === 'x' ? boxT(w.a0, 0, w.c - hh, w.a1, h, w.c + hh) : boxT(w.c - hh, 0, w.a0, w.c + hh, h, w.a1), 'wall');
     }
-    if (mzOn) for (const b of [[-0.075, 0.075, 43.925, 49.725], [0.075, 4.075, 43.925, 44.075], [0.075, 4.075, 49.575, 49.725]]) hit(boxT(b[0], 3.03, b[2], b[1], 5.92, b[3]), 'wall');
-    const plane = (h, inside, k) => { if (Math.abs(d.y) < 1e-9) return; const t = (h - o.y) / d.y; if (t <= 1e-4 || t >= bt || (o.y > h) !== (d.y < 0)) return; const x = o.x + d.x * t, z = o.z + d.z * t; if (inside(x, z)) hit(t, k); };
-    plane(0, (x, z) => x > LOT.x0 && x < LOT.x1 && z > LOT.z0 && z < LOT.z1, 'ground');
-    plane(1.0, (x, z) => x >= 0.15 && x <= 5.0 && z >= 19.6 && z <= 36.6, 'stage');
-    for (let i = 1; i <= STAIR.N - 1; i++) {
-      const xa = STAIR.XS + (STAIR.N - 1 - i) * STAIR.GO;
-      plane(i * STAIR.R, (x, z) => x >= xa && x <= xa + STAIR.GO && z >= STAIR.Z0 && z <= STAIR.Z1, 'stair');
-    }
+    // escada (degraus maciços: acerta o piso e o espelho) e palco
+    for (let i = 1; i <= STAIR.N - 1; i++) { const xa = STAIR.XS + (STAIR.N - 1 - i) * STAIR.GO; hit(boxT(xa, 0, STAIR.Z0, xa + STAIR.GO, i * STAIR.R, STAIR.Z1), 'stair'); }
+    hit(boxT(0.15, 0, 19.6, 5.0, 1.0, 36.6), 'stage');
     if (mzOn) {
-      const inR = (x, z) => x >= MEZZ.x0 && x <= STAIR.XS && z >= MEZZ.z0 && z <= MEZZ.z1;
-      plane(STAIR.Y, inR, 'mezz');
-      if (o.y < 2.91 && d.y > 0) { const t = (2.91 - o.y) / d.y, x = o.x + d.x * t, z = o.z + d.z * t; if (inR(x, z)) hit(t, 'ceil'); }   // por baixo da laje: nada
+      for (const b of [[-0.075, 0.075, 43.925, 49.725], [0.075, 4.075, 43.925, 44.075], [0.075, 4.075, 49.575, 49.725]]) hit(boxT(b[0], 3.03, b[2], b[1], 5.92, b[3]), 'wall');
+      const t = boxT(0, 2.91, 43.95, 4.1, STAIR.Y, 49.7);   // laje: por cima e pela testeira é o mezanino; por baixo, teto
+      if (t < bt) hit(t, ax === 1 && d.y > 0 ? 'ceil' : 'mezz');
     }
+    if (Math.abs(d.y) > 1e-9 && d.y < 0 && o.y > 0) { const t = -o.y / d.y, x = o.x + d.x * t, z = o.z + d.z * t; if (x > LOT.x0 && x < LOT.x1 && z > LOT.z0 && z < LOT.z1) hit(t, 'ground'); }
     if (!kind) return null;
     return { kind, t: bt, x: o.x + d.x * bt, y: o.y + d.y * bt, z: o.z + d.z * bt };
   }
   _rayAt(cx, cy) {
+    this._camera.updateMatrixWorld();
     const r = this._canvas.getBoundingClientRect();
     this._ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
     this._raycaster.setFromCamera(this._ndc, this._camera);
@@ -8094,14 +8102,16 @@ export class Igreja3DCard extends HTMLElement {
   }
   _roomYaw(r, x, z) {
     const f = ROOM_FOCUS[r.id], b = this._roomBox(r);
-    let tx, tz;
-    if (f) { tx = f[0]; tz = f[2]; }
-    else {   // para o canto mais fundo do cômodo (quem entra vê o ambiente inteiro)
-      let bd = -1; tx = (b[0] + b[2]) / 2; tz = (b[1] + b[3]) / 2;
-      for (const [cx, cz] of [[b[0], b[1]], [b[2], b[1]], [b[0], b[3]], [b[2], b[3]]]) { const d = Math.hypot(cx - x, cz - z); if (d > bd) { bd = d; tx = (cx + x * 2) / 3; tz = (cz + z * 2) / 3; } }
+    if (f && Math.hypot(f[0] - x, f[2] - z) > 0.5) return Math.atan2(-(f[0] - x), -(f[2] - z));
+    // sem foco próprio: o rumo com a vista mais longa (quem entra enxerga o ambiente), com um leve gosto pelo centro do cômodo
+    const cx = (b[0] + b[2]) / 2, cz = (b[1] + b[3]) / 2, ac = Math.atan2(-(cx - x), -(cz - z)), far = Math.hypot(cx - x, cz - z) > 0.6;
+    let best = -1e9, ba = 0;
+    for (let k = 0; k < 24; k++) {
+      const a = k * Math.PI / 12, dx = -Math.sin(a), dz = -Math.cos(a); let d = 0;
+      while (d < 14 && this._navFree(x + dx * d, z + dz * d, false)) d += 0.2;
+      const sc = d + (far ? 1.2 * Math.cos(a - ac) : 0); if (sc > best) { best = sc; ba = a; }
     }
-    if (Math.hypot(tx - x, tz - z) < 0.5) return 0;
-    return Math.atan2(-(tx - x), -(tz - z));
+    return ba;
   }
   // ponto de entrada perto de (x, z) dentro do cômodo r (o próprio ponto se estiver livre)
   _dropSpot(r, x, z, up) {
