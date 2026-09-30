@@ -30,8 +30,6 @@ function roomTemploPlateia(ctx) {
   const steelBlk   = std({ color: 0x0d0d0f, roughness: 0.38, metalness: 0.55 });   // pilares, vigas, perfis, treliça de luz
   const redExt     = std({ color: 0xc4201b, roughness: 0.3, metalness: 0.1 });
   const blackPl    = std({ color: 0x1a1a1c, roughness: 0.55 });                     // válvula/mangueira, carcaças
-  const doorBlack  = std({ color: 0x19191b, roughness: 0.5, metalness: 0.15 });     // folhas pretas de correr
-  const chrome     = M.chrome;
   // lampadinhas quentes do beiral (acendem com a plateia; ficam num mínimo aceso como nos vídeos)
   const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffb45a, emissiveIntensity: 0, roughness: 0.4 });
   ctx.bindEmissive('plateia', bulbMat, 2.4, { min: 0.3 });
@@ -227,9 +225,9 @@ function roomTemploPlateia(ctx) {
   }
 
   // =====================================================================================
-  // 3) PAREDES — extintores com placa, placas de saída, folhas pretas de correr
+  // 3) PAREDES — extintores com placa, placas de saída
   // =====================================================================================
-  const bRed = batch(redExt), bPl = batch(blackPl), bDoor = batch(doorBlack), bChrome = batch(chrome, false);
+  const bRed = batch(redExt), bPl = batch(blackPl);
   const bExit = batch(exitMat, false), bExtSign = batch(extSignMat, false);
   // parede: 'x0' (face x = 0,087, olha +x), 'x1' (face 15,963, olha −x), 'z0' (face 12,487, olha +z), 'z1' (face 43,913, olha −z)
   const WALL = { x0: [1, 0, Math.PI / 2], x1: [-1, 0, -Math.PI / 2], z0: [0, 1, 0], z1: [0, -1, Math.PI] };
@@ -257,14 +255,8 @@ function roomTemploPlateia(ctx) {
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
 
-  // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à
-  // esquerda, x 11,6–12,75) + trilho aparente acima do vão (termina antes do pilar de x = 16,05)
-  for (const [x, z] of [[12.17, FZ0 + 0.075], [12.2, FZ0 + 0.125]]) {
-    bx(bDoor, 1.15, 2.2, 0.04, x, 1.13, z);
-    bx(bChrome, 0.02, 0.5, 0.025, x + 0.5, 1.05, z + 0.035, 0, 0, 0);  // puxador
-  }
-  bx(bPl, 3.7, 0.07, 0.07, 13.4, 2.36, FZ0 + 0.1);                       // trilho
-  for (const x of [11.7, 13.4, 15.1]) bx(bPl, 0.05, 0.05, 0.1, x, 2.36, FZ0 + 0.05);
+  // Saída de vidro da parede z = 12,4 (x 12,9–15,1): as folhas pretas de correr estacionadas ao lado (x 11,6–12,75),
+  // o puxador e o trilho saíram a pedido do cliente (v1.4.6) — ali fica só a parede lisa.
 
   flush();
 }
