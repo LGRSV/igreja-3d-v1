@@ -9,6 +9,10 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.4.6 — fundo do templo
+
+- As folhas pretas de correr que ficavam estacionadas ao lado da saída de vidro do fundo do templo (parede z = 12,4) saíram, com puxador e trilho: ali agora é parede lisa. A saída de vidro continua.
+
 ## Novidades da v1.4.5 — portas conforme as fotos e portas que abrem no modo Pessoa
 
 - **Modo Pessoa**: as portas abrem sozinhas quando a pessoa chega perto (~1,6 m) e fecham ~2,5 s depois que ela se afasta;
