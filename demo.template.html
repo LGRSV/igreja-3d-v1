@@ -13,14 +13,14 @@
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .app { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
-  .toast { position: fixed; left: 50%; bottom: calc(var(--sky-top, 96px) + 10px); transform: translateX(-50%); background: rgba(10, 15, 30, .88); color: #e6edf7; border: 1px solid rgba(255, 196, 107, .28);
+  .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: rgba(10, 15, 30, .88); color: #e6edf7; border: 1px solid rgba(255, 196, 107, .28);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 30; text-align: center; }
   .toast.show { opacity: 1; }
   igreja3d-card { flex: 1; min-height: 0; --igreja3d-height: 100%; border-radius: 0; }
 
   /* Faixa de hora do dia (só na demo) — mesmo visual do HUD do cartão */
-  .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
+  .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
     width: min(540px, calc(100vw - 32px)); padding: 7px 8px 7px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time track btn"; align-items: center; column-gap: 10px;
     background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 16px; color: #e6edf7;
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
@@ -244,22 +244,18 @@ setInterval(() => { if (live) { hora.value = nowMin(); } render(); }, 15000);
 setTimeout(render, 600); setTimeout(render, 2500);
 render();
 
-// Posiciona a faixa logo acima do que estiver no rodapé do cartão (painel, botão "Painel", clima, joystick),
-// sem cobrir nada do HUD; recalcula quando o layout muda.
+// Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas);
+// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima). Recalcula quando o layout muda.
 function place() {
   const root = card.shadowRoot; if (!root) return;
-  const W = window.innerWidth, H = window.innerHeight;
-  const sw = sky.getBoundingClientRect(); const left = sw.left, right = sw.right;
-  let top = H - 10;
-  for (const sel of ['.dock', '.reopen', '.weather', '.joy', '.walkhint']) {
-    const el = root.querySelector(sel); if (!el || el.hidden) continue;
-    const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) continue;
-    const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2 || r.bottom < H * 0.4) continue;
-    if (r.right > left - 6 && r.left < right + 6) top = Math.min(top, r.top);
-  }
-  const b = Math.max(10, Math.round(H - top + 8));
-  sky.style.bottom = b + 'px';
-  document.documentElement.style.setProperty('--sky-top', (b + sw.height) + 'px');
+  const hud = root.querySelector('.hud.top'); if (!hud) return;
+  const W = window.innerWidth, bw = sky.getBoundingClientRect().width;
+  const title = hud.querySelector('.title'), btns = hud.querySelector('.btns');
+  const tr = title && title.getBoundingClientRect(), br = btns && btns.getBoundingClientRect();
+  let top, cx = W / 2;
+  if (tr && br && Math.abs(tr.top - br.top) < 8 && br.left - tr.right >= bw + 24) { top = tr.top; cx = (tr.right + br.left) / 2; }
+  else top = hud.getBoundingClientRect().bottom + 4;
+  sky.style.top = Math.round(top) + 'px'; sky.style.left = Math.round(cx) + 'px';
 }
 setInterval(place, 400); addEventListener('resize', place); setTimeout(place, 300);
 place();

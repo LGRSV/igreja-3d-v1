@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.4.4';
+export const VERSION = '1.4.5';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -1303,6 +1303,8 @@ class Orbit {
   }
 }
 
+const _dm1 = new THREE.Matrix4(), _dm2 = new THREE.Matrix4(), _dm3 = new THREE.Matrix4();   // temporários das portas (_doorApply)
+
 // ---------------------------------------------------------------------------
 // Visão de pessoa: câmera a 1,6 m do piso; setas/WASD ou joystick andam, arrastar vira a cabeça (Q/E também), Shift corre.
 // Colisão simples com as paredes do modelo (card._walkCollide); portas e vãos passam. Espelha o estado nas flags do Orbit
@@ -1362,6 +1364,11 @@ class Walker {
     if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '')) return;   // digitando em outro campo da página
     const c = e.code;
     if (c === 'Escape') { if (down) { e.stopPropagation(); this.card._setWalk(false); } return; }
+    if (c === 'Enter' || c === 'KeyF') {   // interagir: abre/fecha a porta mais perto e à frente (E já é "girar")
+      if (t && t !== this.card._canvas && t !== document.body && t !== document.documentElement) return;   // Enter em botões/links/diálogos da página segue normal
+      if (down && !e.repeat) this.card._doorInteract();
+      e.preventDefault(); e.stopPropagation(); return;
+    }
     if (/^(Key[WASDQE]|Arrow(Up|Down|Left|Right)|Shift(Left|Right))$/.test(c)) {
       if (down) { this.keys.add(c); this.gesture = true; } else this.keys.delete(c);
       if (!c.startsWith('Shift')) { e.preventDefault(); e.stopPropagation(); }   // a página não rola e os atalhos do HA não disparam
@@ -1925,12 +1932,6 @@ function roomTemploPlateia(ctx) {
     g.beginPath(); g.moveTo(W * 0.86, cy - 9 * k); g.lineTo(W * 0.95, cy); g.lineTo(W * 0.86, cy + 9 * k); g.closePath(); g.fill();
     g.fillRect(W * 0.8, cy - 3 * k, W * 0.07, 6 * k);
   });
-  const texEmerg = signTex(0.62, 0.17, (g, W, H) => {                  // placa vermelha "SAÍDA DE EMERGÊNCIA" (v7)
-    g.fillStyle = '#c21d1d'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `bold ${Math.round(H * 0.34)}px Arial, Helvetica, sans-serif`; g.fillText('SAÍDA DE', W / 2, H * 0.3);
-    g.font = `bold ${Math.round(H * 0.3)}px Arial, Helvetica, sans-serif`; g.fillText('EMERGÊNCIA', W / 2, H * 0.72);
-  });
   const texExt = signTex(0.2, 0.28, (g, W, H) => {                     // placa do extintor (vermelha, pictograma branco)
     g.fillStyle = '#c8201c'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#ffffff'; const k = W / 100;
@@ -1944,7 +1945,7 @@ function roomTemploPlateia(ctx) {
   });
   const signMat = (tex, glow) => new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.5,
     emissive: glow ? 0xffffff : 0x000000, emissiveMap: glow ? tex : null, emissiveIntensity: glow ? 0.55 : 0 });
-  const exitMat = signMat(texExit, true), emergMat = signMat(texEmerg, false), extSignMat = signMat(texExt, false);
+  const exitMat = signMat(texExit, true), extSignMat = signMat(texExt, false);
 
   // ---- fusão local: peças repetidas viram UMA malha por material ----
   const ONE = new THREE.Vector3(1, 1, 1), UP = new THREE.Vector3(0, 1, 0);
@@ -2105,7 +2106,7 @@ function roomTemploPlateia(ctx) {
   // 3) PAREDES — extintores com placa, placas de saída, folhas pretas de correr
   // =====================================================================================
   const bRed = batch(redExt), bPl = batch(blackPl), bDoor = batch(doorBlack), bChrome = batch(chrome, false);
-  const bExit = batch(exitMat, false), bEmerg = batch(emergMat, false), bExtSign = batch(extSignMat, false);
+  const bExit = batch(exitMat, false), bExtSign = batch(extSignMat, false);
   // parede: 'x0' (face x = 0,087, olha +x), 'x1' (face 15,963, olha −x), 'z0' (face 12,487, olha +z), 'z1' (face 43,913, olha −z)
   const WALL = { x0: [1, 0, Math.PI / 2], x1: [-1, 0, -Math.PI / 2], z0: [0, 1, 0], z1: [0, -1, Math.PI] };
   const onWall = (w, t, off) => (w === 'x0' ? [FX0 + off, t] : w === 'x1' ? [FX1 - off, t] : w === 'z0' ? [t, FZ0 + off] : [t, FZ1 - off]);
@@ -2120,7 +2121,7 @@ function roomTemploPlateia(ctx) {
     bar(bPl, [cx + nz * 0.07, 1.37, cz + nx * 0.07], [cx + nz * 0.1 + nx * 0.05, 0.95, cz + nx * 0.1 + nz * 0.05], 0.012, true);   // mangueira
     pl(bExtSign, 0.2, 0.28, sx, 1.85, sz, ry);                          // placa acima (v6_12, v7_01)
   };
-  // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, porta 34,2–35,1 + trilho até 36,0)
+  // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, sem portas desde a v1.4.5)
   extintor('x1', 17.3); extintor('x1', 29.3); extintor('x1', 36.7);
   // parede do hall (z = 44): dos dois lados do acesso de vidro x 10,6–13,1 (pilar em x 10,5)
   extintor('z1', 9.8); extintor('z1', 13.75);
@@ -2128,10 +2129,9 @@ function roomTemploPlateia(ctx) {
   extintor('z0', 9.8); extintor('z0', 4.6);
   extintor('x0', 15.0); extintor('x0', 42.0);
 
-  // Placas de SAÍDA verdes (acesas) sobre as saídas; placa vermelha sobre a porta preta de correr (cartão)
+  // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
-  { const [x, z] = onWall('x1', 34.65, 0.006); pl(bEmerg, 0.62, 0.17, x, 2.55, z, WALL.x1[2]); }
 
   // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à
   // esquerda, x 11,6–12,75) + trilho aparente acima do vão (termina antes do pilar de x = 16,05)
@@ -3015,7 +3015,6 @@ function roomAlaDireita(ctx) {
   const frond   = std({ color: 0x2f5a2a, roughness: 0.9 });
   const frond2  = std({ color: 0x3d6e34, roughness: 0.9 });
   const trunk   = std({ color: 0x5b4632, roughness: 1 });
-  const navyBand = std({ color: 0x0e2a4f, roughness: 0.85 });              // faixa azul-escura da entrada dos banheiros
   const ledG    = std({ color: 0x0f2a18, emissive: 0x22c55e, emissiveIntensity: 1.2 });
   const ledR    = std({ color: 0x3a0a0a, emissive: 0xff3030, emissiveIntensity: 1.2 });
   const ledB    = std({ color: 0x0a1a3a, emissive: 0x3aa0ff, emissiveIntensity: 1.2 });
@@ -3742,7 +3741,7 @@ function roomAlaDireita(ctx) {
   wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
   clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
   wetWall('z', 16.125, 1, 37.0, 39.08, M.marmorato);                                         // parede do templo (pilar em z 39,3)
-  wetWall('z', 16.125, 1, 39.52, 41.9, M.marmorato);                                          // porta do templo em z 42,0–43,6
+  wetWall('z', 16.125, 1, 39.52, 44.225, M.marmorato);                                        // parede do templo (sem porta desde a v1.4.5)
   wetWall('z', 17.025, -1, 37.0, 40.8, M.marmorato);                                         // faixa de circulação
   // bancada branca de quartzo com 3 cubas de apoio retangulares e espelhos com LED
   add(box(2.6, 0.04, 0.5, quartz, 18.66, 0.86, 43.96));
@@ -3770,26 +3769,6 @@ function roomAlaDireita(ctx) {
   add(box(0.08, 0.32, 0.1, black, 19.97, 1.32, 41.2));                                         // porta-copos
   add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
   emerg('x', 40.887, 17.55, 2.5, 1);
-  // entrada dos banheiros pelo templo (porta preta x = 16,05 · z 42,0–43,6): faixa azul-escura e placa com pictograma
-  {
-    const xf = 15.975 - 0.006;
-    add(box(0.012, 0.69, 2.02, navyBand, xf, 2.645, 42.8, nc));                                // verga
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 41.9, nc));                                  // ombreiras
-    add(box(0.012, 2.3, 0.18, navyBand, xf, 1.15, 43.7, nc));
-    const pg = texMat(1.1, (g, W, Hh) => {
-      g.fillStyle = '#1f5fae'; g.fillRect(0, 0, W, Hh);
-      g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(4, 4, W - 8, Hh - 8);
-      g.fillStyle = '#ffffff';
-      for (const [cx, fem] of [[W * 0.32, false], [W * 0.68, true]]) {
-        g.beginPath(); g.arc(cx, 20, 7, 0, PI * 2); g.fill();
-        if (fem) { g.beginPath(); g.moveTo(cx, 29); g.lineTo(cx + 13, 60); g.lineTo(cx - 13, 60); g.closePath(); g.fill(); g.fillRect(cx - 6, 60, 4, 14); g.fillRect(cx + 2, 60, 4, 14); }
-        else { g.fillRect(cx - 9, 29, 18, 28); g.fillRect(cx - 8, 56, 7, 18); g.fillRect(cx + 1, 56, 7, 18); }
-      }
-      text(g, 'TOILETTE', W / 2, 88, 12, '#ffffff');
-    });
-    add(box(0.01, 0.3, 0.33, pg, xf - 0.011, 2.66, 42.35, nc));
-  }
-
   // ---- WC FEMININO (x 16,05–20,1 · z 44,3–49,5) — sem antecâmara ----
   // Porta na parede z = 44,3 (x 16,25–17,15), vinda do hall dos banheiros → área de giro x 16,1–17,3 · z 44,3–45,3 livre.
   wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
@@ -5160,9 +5139,6 @@ function roomFachada(ctx) {
     lampLens: std({ color: 0xf6f1e4, emissive: 0xffe6b8, emissiveIntensity: 0.55, roughness: 0.4 }),               // postes da rua (iluminação pública)
     bark: std({ color: 0x5a4a3a, roughness: 1 }),
     leafT1: std({ color: 0x55713a, roughness: 0.95 }), leafT2: std({ color: 0x415d2c, roughness: 0.95 }), leafT3: std({ color: 0x6f8a45, roughness: 0.95 }),
-    neigh: std({ color: 0x86837c, roughness: 0.92 }), neigh2: std({ color: 0xa9a399, roughness: 0.92 }), neighCap: std({ color: 0xb4afa5, roughness: 0.9 }),
-    neighRoof: std({ color: 0x6d7074, roughness: 0.7, metalness: 0.3 }),
-    muro: std({ color: 0xcdc7bb, roughness: 0.95 }), winN: std({ color: 0x2a3440, roughness: 0.15, metalness: 0.5 }),
     black: M.wallDark || std({ color: 0x2b2b2e, roughness: 0.85 }), cap: M.wallDarkCap || std({ color: 0x232326, roughness: 0.8 }),
     frame: M.frameDark || std({ color: 0x18181a, roughness: 0.45, metalness: 0.3 }),
     vase: std({ color: 0x141416, roughness: 0.32, metalness: 0.15 }),
@@ -5421,23 +5397,7 @@ function roomFachada(ctx) {
     out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
   }
 
-  // ---- Vizinhos (volumes simples, sem roubar a cena) e muros de divisa ----
-  const neighbor = (x0, x1, z0, z1, h, face) => {
-    out(box(x1 - x0, h, z1 - z0, P.neigh, (x0 + x1) / 2, h / 2, (z0 + z1) / 2));
-    out(box(x1 - x0 + 0.1, 0.1, z1 - z0 + 0.1, P.neighCap, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, { cast: false }));        // platibanda
-    out(box(x1 - x0 - 0.5, 0.02, z1 - z0 - 0.5, P.neighRoof, (x0 + x1) / 2, h + 0.11, (z0 + z1) / 2, { cast: false }));   // telhado metálico (a platibanda vira só a borda)
-    const xf = face < 0 ? x0 - 0.012 : x1 + 0.012;                                          // janelas na face voltada para a igreja
-    for (let z = z0 + 3.5; z < z1 - 2; z += 6.5) out(box(0.02, 1.1, 2.4, P.winN, xf, h * 0.55, z, { cast: false }));
-    // frente: vitrine + porta de enrolar
-    out(box(Math.min(5, x1 - x0 - 2), 2.2, 0.02, P.winN, x0 + (x1 - x0) * 0.35, 1.3, z1 + 0.012, { cast: false }));
-    out(box(2.6, 2.6, 0.03, P.neigh2, x0 + (x1 - x0) * 0.8, 1.3, z1 + 0.015, { cast: false }));
-  };
-  neighbor(-14, -4.2, 4, 46, 4.0, 1);
-  neighbor(24.4, 32, 10, 46, 3.0, -1);
-  for (const x of [-3.35, 23.45]) {
-    add(box(0.15, 2.2, 49.6, P.muro, x, 1.1, 24.8));
-    add(box(0.21, 0.05, 49.64, P.neighCap, x, 2.225, 24.8, { cast: false }));
-  }
+  // ---- Vizinhos e muros de divisa: retirados a pedido do cliente (v1.4.5) ----
 
   // ---- Totem de entrada (monólito preto com face ripada e o logo em relevo), na calçada à esquerda ----
   {
@@ -6076,6 +6036,7 @@ export class Igreja3DCard extends HTMLElement {
       }
     }
 
+    for (const o of scene.children) o.userData.arch = true;   // arquitetura pronta (pisos, paredes, rodapés…): não conta como obstáculo das portas
     // Grupo externo (modo Fachada): paredes altas, platibandas, telhados e revestimento da
     // fachada — preenchido pela decoração roomFachada via ctx.addExt; só aparece com o botão.
     this._ext = new THREE.Group(); this._ext.name = 'fachada'; this._ext.userData.keep = true; this._ext.visible = false; scene.add(this._ext);
@@ -6086,6 +6047,7 @@ export class Igreja3DCard extends HTMLElement {
     this._buildFurniture(scene, M);
     this._buildFixtures(scene, M);
     mergeItems(scene, this._clickables, this._items); mergeItems(this._ext, this._clickables, this._items);
+    this._buildDoors(scene);   // folhas das portas viram instâncias animáveis (antes do merge estático)
 
     const stats = mergeStatic(scene, true);
     const extStats = mergeStatic(this._ext, true);
@@ -6384,8 +6346,9 @@ export class Igreja3DCard extends HTMLElement {
     // Ponta z = 12,4 (parede comum de 3 m, porta de vidro para o backstage) e lateral direita x = 16,05 (mídia de frente para o palco)
     const TB = (side, a, b) => ({ clad: [{ side, mat: M.pretoFosco, a, b }] });
     wallX(12.4, 0, 16.05, [{ a: 12.9, b: 15.1, t: 'glass' }], TB(1, T / 2, 16.05 - T / 2));
-    wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' },
-      { a: 34.2, b: 35.1, t: 'door', style: 'black' }, { a: 42.0, b: 43.6, t: 'door', style: 'black2' }], TB(-1, 12.4 + T / 2, 44.0 - T / 2));
+    // (v1.4.5, pedido do cliente: a porta preta de correr z 34,2–35,1 e a preta dupla z 42,0–43,6 saíram — parede lisa)
+    wallZ(16.05, 11.0, 49.65, [{ a: 19.2, b: 22.6, t: 'glass' }, { a: 23.6, b: 27.7, t: 'window', sill: 1.1 }, { a: 29.9, b: 31.9, t: 'window' }],
+      TB(-1, 12.4 + T / 2, 44.0 - T / 2));
     // Mídia, voluntariado, depósito, WCs
     wallX(23.3, 16.05, 18.9, [{ a: 17.9, b: 18.8, t: 'door' }]);
     wallZ(18.9, 23.3, 28.0);
@@ -6394,10 +6357,10 @@ export class Igreja3DCard extends HTMLElement {
     wallZ(17.1, 33.9, 40.8, [{ a: 34.6, b: 35.4, t: 'door' }]);
     wallX(35.9, 17.1, 20.1);
     wallX(37.0, 17.1, 20.1);
-    wallX(40.8, 17.1, 20.1, [{ a: 18.2, b: 19.0, t: 'door' }]);
+    wallX(40.8, 17.1, 20.1, [{ a: 18.2, b: 19.0, t: 'open' }]);   // WC masc.: entrada sem porta (vão aberto)
     wallX(44.3, 16.05, 20.1, [{ a: 16.25, b: 17.15, t: 'door' }]);   // WC fem.: porta pelo hall dos banheiros
-    // Templo ↔ hall (porta preta de 2 folhas)
-    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'black2' }], TB(-1, T / 2, 16.05 - T / 2));
+    // Templo ↔ hall (porta de 2 folhas de vidro, caixilho preto)
+    wallX(44.0, 0, 16.05, [{ a: 10.6, b: 13.1, t: 'door', style: 'glass2' }], TB(-1, T / 2, 16.05 - T / 2));
     // Sala da família / WCs
     wallZ(1.9, 44.0, 46.3);
     wallZ(4.0, 44.0, 49.65, [{ a: 44.4, b: 45.3, t: 'door' }, { a: 46.6, b: 47.5, t: 'door' }]);
@@ -6467,7 +6430,7 @@ export class Igreja3DCard extends HTMLElement {
         // porta interna (vídeos): folha lisa de cedro com veio, batente + guarnição de madeira nas duas faces, alavanca
         // cromada dos dois lados. style 'black': porta preta de correr (saídas do templo) com trilho aparente e puxador preto.
         seg(op.a, op.b, 2.1, h);
-        const black = op.style === 'black' || op.style === 'black2', df = black ? M.frameDark : (o.doorFrame || M.doorFrame);
+        const black = op.style === 'black' || op.style === 'black2' || op.style === 'glass2', df = black ? M.frameDark : (o.doorFrame || M.doorFrame);
         const w = op.b - op.a, mid = (op.a + op.b) / 2;
         put(0.04, 2.1, t + 0.02, df, op.a + 0.02, 1.05); put(0.04, 2.1, t + 0.02, df, op.b - 0.02, 1.05); put(w, 0.04, t + 0.02, df, mid, 2.08);
         for (const sd of [-1, 1]) {
@@ -6476,24 +6439,11 @@ export class Igreja3DCard extends HTMLElement {
           put(0.07, 2.17, 0.016, df, op.b + 0.025, 1.085, { cast: false }, off);
           put(w + 0.12, 0.07, 0.016, df, mid, 2.135, { cast: false }, off);
         }
-        put(w - 0.08, 2.06, 0.04, black ? M.pretoFosco : M.door, mid, 1.03);
-        if (op.style === 'black2') {
-          // 2 folhas: junta central + puxadores verticais pretos dos dois lados
-          put(0.012, 2.06, 0.05, M.frameDark, mid, 1.03, { cast: false });
-          for (const s2 of [-1, 1]) for (const dx of [-0.09, 0.09]) put(0.025, 0.6, 0.025, M.frameDark, mid + dx, 1.05, { cast: false }, s2 * 0.045);
-        } else if (black) {
+        // a folha e as ferragens são instâncias próprias (animadas no modo Pessoa; fechadas ficam idênticas às de sempre)
+        this._doorAdd(axis, c, t, op, M);
+        if (black && op.style !== 'black2' && op.style !== 'glass2') {
           const sd = op.side || -1;
           put(2 * w + 0.1, 0.1, 0.07, M.frameDark, op.a + w - 0.05, 2.26, { cast: false }, sd * (t / 2 + 0.05));   // trilho/caixa da porta de correr
-          for (const s2 of [-1, 1]) put(0.025, 0.4, 0.025, M.frameDark, op.b - 0.1, 1.05, { cast: false }, s2 * 0.045);
-        } else {
-          const hx = op.b - 0.1;
-          for (const s2 of [-1, 1]) {
-            const ros = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.012, 14), M.chrome);
-            if (axis === 'x') ros.rotation.x = Math.PI / 2; else ros.rotation.z = Math.PI / 2;
-            ros.castShadow = false; at(ros, hx, 1.02, s2 * 0.026);
-            const lev = axis === 'x' ? box(0.13, 0.02, 0.022, M.chrome, 0, 0, 0, { cast: false }) : box(0.022, 0.02, 0.13, M.chrome, 0, 0, 0, { cast: false });
-            at(lev, hx - 0.05, 1.02, s2 * 0.05);
-          }
         }
       } else if (op.t === 'gate') {
         W.push({ axis, c, a0: op.a, a1: op.b, t });   // portão de correr fechado bloqueia
@@ -6523,12 +6473,250 @@ export class Igreja3DCard extends HTMLElement {
           scene.add(g); this._clickables.push(gl); rt.fixtures.push(gl);
           rt.leaves.push({ g, dir: sgn * out, base: g.rotation.y });
         }
+        (this._doors || (this._doors = [])).push(this._doorNew({ kind: 'main', axis, c, t, a: op.a, b: op.b, rt }));   // abre sozinha no modo Pessoa (só visual)
       } else if (op.t === 'open') {
         seg(op.a, op.b, Math.min(h - 0.35, 2.3), h);
       }
       cur = op.b;
     }
     seg(cur, a1, 0, h);
+  }
+
+  // ---- Portas que abrem sozinhas no modo Pessoa ----
+  // Cada porta interna (op 'door' de _wallSeg) vira uma definição em this._doors: folhas com pivô na dobradiça, cujas peças (folha, alavanca,
+  // puxadores) são INSTÂNCIAS de poucos InstancedMesh (um por geometria × material × sombra ≈ 5 draw calls para o prédio inteiro; fechadas
+  // ficam idênticas às malhas estáticas de antes). O quadro da folha tem x = ao longo da parede e z = lateral; no eixo z ele é o mundo
+  // girado −90°, então o lateral local é −x do mundo. A porta principal (kind 'main') só ganha um "abrir" local nas folhas que já existem.
+  _doorNew(d) {
+    d = Object.assign({ leaves: [], q: 0, p: 0, target: 0, side: 1, open: 1.5, slideLen: 0, max: { '-1': 1.55, '1': 1.55 }, awayAt: 0, hold: 0, suppress: false, moving: false, dist: 99, du: 99, n: 0 }, d);
+    d.mx = d.axis === 'x' ? (d.a + d.b) / 2 : d.c; d.mz = d.axis === 'x' ? d.c : (d.a + d.b) / 2;
+    return d;
+  }
+  _doorAdd(axis, c, t, op, M) {
+    const glass2 = op.style === 'glass2', two = op.style === 'black2' || glass2, black = op.style === 'black' || two;
+    const w = op.b - op.a, mid = (op.a + op.b) / 2, sd = op.side || -1, hx = op.b - 0.1;
+    const d = this._doorNew({ kind: two ? 'double' : black ? 'slide' : 'swing', axis, c, t, a: op.a, b: op.b, sd, latOff: sd * (t / 2 + 0.05) });
+    const ln = (n) => (axis === 'x' ? n : -n);
+    const lf = (u, dirU, len) => { const l = { u, dirU, len, parts: [] }; d.leaves.push(l); return l; };
+    // peça: s = tamanho (ao longo da parede, altura, lateral) · (u, y, n) = posição absoluta no mundo da parede
+    const part = (l, geo, mat, s, u, y, n, cast, recv) => l.parts.push({ geo, mat, s, pos: [u - l.u, y, ln(n)], cast, recv });
+    if (two) {
+      const A = lf(op.a + 0.04, 1, mid - 0.002 - (op.a + 0.04)), B = lf(op.b - 0.04, -1, op.b - 0.04 - (mid + 0.002));
+      // folhas pretas (black2) ou de vidro (glass2, transparentes: sem sombra)
+      const lm = glass2 ? M.glass : M.pretoFosco, lt = glass2 ? 0.02 : 0.04;
+      part(A, 'box', lm, [A.len, 2.06, lt], (op.a + 0.04 + mid - 0.002) / 2, 1.03, 0, !glass2, !glass2);
+      part(B, 'box', lm, [B.len, 2.06, lt], (mid + 0.002 + op.b - 0.04) / 2, 1.03, 0, !glass2, !glass2);
+      part(A, 'box', M.frameDark, [0.012, 2.06, 0.05], mid, 1.03, 0, false, true);   // junta central
+      for (const s2 of [-1, 1]) for (const dx of [-0.09, 0.09]) part(dx < 0 ? A : B, 'box', M.frameDark, [0.025, 0.6, 0.025], mid + dx, 1.05, s2 * 0.045, false, true);
+    } else if (black) {
+      const l = lf(op.a, 1, w - 0.08);
+      part(l, 'box', M.pretoFosco, [w - 0.08, 2.06, 0.04], mid, 1.03, 0, true, true);
+      for (const s2 of [-1, 1]) part(l, 'box', M.frameDark, [0.025, 0.4, 0.025], op.b - 0.1, 1.05, s2 * 0.045, false, true);
+    } else {
+      const l = lf(op.a + 0.04, 1, w - 0.08);   // dobradiça no lado oposto à alavanca
+      part(l, 'box', M.door, [w - 0.08, 2.06, 0.04], mid, 1.03, 0, true, true);
+      for (const s2 of [-1, 1]) {
+        part(l, 'cyl', M.chrome, null, hx, 1.02, s2 * 0.026, false, false);   // roseta
+        part(l, 'box', M.chrome, [0.13, 0.02, 0.022], hx - 0.05, 1.02, s2 * 0.05, false, true);   // alavanca
+      }
+    }
+    (this._doors || (this._doors = [])).push(d);
+  }
+
+  // Depois de toda a decoração (antes do mergeStatic): mede o que atrapalha o giro/deslize de cada porta e cria os InstancedMesh.
+  _buildDoors(scene) {
+    const D = (this._doors || []).filter((d) => d.kind !== 'main'); this._doorMeshes = [];
+    if (!D.length) return;
+    scene.updateMatrixWorld(true);
+    // obstáculos = mobiliário/decoração entre 0,12 e 2,0 m de altura (o "arquitetônico" foi marcado com userData.arch); paredes vêm de _walls
+    const obs = [], bb = new THREE.Box3();
+    for (const top of scene.children) {
+      if (top.userData.arch || top === this._out || top === this._ext) continue;
+      top.traverseVisible((o) => {
+        if (!o.isMesh || o.isInstancedMesh || o.material.isShaderMaterial || o.material.transparent || o.material.blending === THREE.AdditiveBlending) return;
+        bb.setFromObject(o);
+        if (bb.max.y < 0.12 || bb.min.y > 2.0 || bb.max.x - bb.min.x > 7 || bb.max.z - bb.min.z > 7) return;
+        obs.push([bb.min.x, bb.min.z, bb.max.x, bb.max.z]);
+      });
+    }
+    const walls = (this._walls || []).map((w) => (w.axis === 'z' ? { ax: 'z', c: w.c, b: [w.c - w.t / 2, w.a0, w.c + w.t / 2, w.a1] } : { ax: 'x', c: w.c, b: [w.a0, w.c - w.t / 2, w.a1, w.c + w.t / 2] }));
+    const DEG = Math.PI / 180;
+    for (const d of D) {
+      // caixas no quadro da porta: (u0, l0, u1, l1); a parede da própria porta (mesmo eixo e c) não conta
+      const loc = (b) => (d.axis === 'x' ? [b[0], b[1] - d.c, b[2], b[3] - d.c] : [b[1], -(b[2] - d.c), b[3], -(b[0] - d.c)]);
+      const near = (b) => b[2] > d.a - 2.6 && b[0] < d.b + 2.6 && b[3] > -2.6 && b[1] < 2.6;
+      const F = obs.map(loc).filter(near), Wl = walls.filter((w) => !(w.ax === d.axis && Math.abs(w.c - d.c) < 0.02)).map((w) => loc(w.b)).filter(near);
+      const hit = (u, l, rf, rw) => { for (const b of F) if (u > b[0] - rf && u < b[2] + rf && l > b[1] - rf && l < b[3] + rf) return true; for (const b of Wl) if (u > b[0] - rw && u < b[2] + rw && l > b[1] - rw && l < b[3] + rw) return true; return false; };
+      if (d.kind === 'slide') {
+        const lat = d.axis === 'x' ? d.latOff : -d.latOff, u0 = d.a + 0.04, u1 = d.b - 0.04; let free = 0;
+        for (let s = 0.05; s <= d.b - d.a + 1e-6; s += 0.05) {
+          let bad = false; for (let u = u0 + s; u <= u1 + s + 1e-6 && !bad; u += 0.1) bad = hit(u, lat, 0.05, 0.03);
+          if (bad || hit(u1 + s, lat, 0.05, 0.03)) break; free = s;
+        }
+        d.slideLen = Math.max(free, 0.3);
+      } else {
+        for (const s of [-1, 1]) {
+          let ok = 0;
+          for (let a = 4; a <= 92; a += 4) {
+            const th = a * DEG; let bad = false;
+            for (const l of d.leaves) { for (let r = 0.1; r <= l.len + 1e-6 && !bad; r += 0.1) bad = hit(l.u + l.dirU * Math.cos(th) * r, s * Math.sin(th) * r, 0.05, 0.03); if (!bad) bad = hit(l.u + l.dirU * Math.cos(th) * l.len, s * Math.sin(th) * l.len, 0.05, 0.03); if (bad) break; }
+            if (bad) break; ok = th;
+          }
+          d.max[s] = ok;
+        }
+      }
+    }
+    // InstancedMesh por (geometria, material, sombra)
+    const gBox = new THREE.BoxGeometry(1, 1, 1), gRos = new THREE.CylinderGeometry(0.028, 0.028, 0.012, 14);
+    const groups = new Map(), q = new THREE.Quaternion(), qc = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), one = new THREE.Vector3(1, 1, 1);
+    for (const d of D) for (const l of d.leaves) for (const p of l.parts) {
+      p.local = new THREE.Matrix4().compose(new THREE.Vector3(...p.pos), p.geo === 'cyl' ? qc : q, p.geo === 'cyl' ? one : new THREE.Vector3(...p.s));
+      const key = [p.geo, p.mat.uuid, p.cast ? 1 : 0, p.recv ? 1 : 0].join('|');
+      if (!groups.has(key)) groups.set(key, { p, list: [] });
+      groups.get(key).list.push([d, p]);
+    }
+    for (const { p, list } of groups.values()) {
+      const im = new THREE.InstancedMesh(p.geo === 'cyl' ? gRos : gBox, p.mat, list.length);
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.castShadow = !!p.cast; im.receiveShadow = !!p.recv; im.frustumCulled = false;
+      im.userData.noMerge = true; im.userData.owners = [];
+      list.forEach(([d, pp], i) => { pp.mesh = im; pp.idx = i; im.userData.owners.push(d); (d.meshes || (d.meshes = [])).includes(im) || d.meshes.push(im); });
+      scene.add(im); this._doorMeshes.push(im);
+    }
+    for (const d of D) this._doorApply(d);
+    for (const im of this._doorMeshes) { im.computeBoundingSphere(); im.boundingSphere.radius += 3; }
+  }
+  // posição das peças da porta no estado atual (d.p eased 0…1, d.side, d.open)
+  _doorApply(d) {
+    if (d.kind === 'main') return;
+    const z = d.axis === 'z', base = z ? -Math.PI / 2 : 0, m1 = _dm1, m2 = _dm2, m3 = _dm3;
+    const p = d.p, lat = z ? -d.latOff : d.latOff;
+    for (const l of d.leaves) {
+      if (d.kind === 'slide') {
+        m1.makeRotationY(base);
+        m2.makeTranslation(clamp((p - 0.12) / 0.88, 0, 1) * d.slideLen, 0, clamp(p / 0.25, 0, 1) * lat); m1.multiply(m2);
+      } else m1.makeRotationY(base - d.side * l.dirU * p * d.open);
+      const e = m1.elements; e[12] += z ? d.c : l.u; e[14] += z ? l.u : d.c;   // pivô no mundo
+      for (const pt of l.parts) { m3.multiplyMatrices(m1, pt.local); pt.mesh.setMatrixAt(pt.idx, m3); }
+    }
+    for (const im of d.meshes) im.instanceMatrix.needsUpdate = true;
+  }
+
+  // Lado para onde a folha gira (para longe da pessoa, se couber) e quanto abre
+  _doorSide(d) {
+    if (d.kind !== 'swing' && d.kind !== 'double') return;
+    const lp = d.axis === 'x' ? d.n : -d.n;   // lateral da pessoa no quadro da folha
+    let s = Math.abs(lp) < 0.12 ? d.side : lp > 0 ? -1 : 1;
+    const o = -s;
+    if (d.max[s] < 0.87 && d.max[o] > d.max[s] + 0.1) s = o;   // móvel/parede atrapalha desse lado: abre para o outro
+    d.side = s; d.open = Math.max(d.max[s], 0.35);
+  }
+  // Pessoa (walk) → portas: abre a mais "de frente" a ~1,6 m do vão (2,1 m correndo), mantém aberta enquanto está por perto e fecha
+  // 2,5 s depois que ela se afasta. Devolve true enquanto alguma porta se move (só então o cartão pede quadros).
+  _doorsTick(dt) {
+    const D = this._doors, w = this._walk; if (!D || !D.length || !w) return false;
+    const px = w.pos.x, pz = w.pos.z, fx = -Math.sin(w.yaw), fz = -Math.cos(w.yaw), now = performance.now();
+    const R = 1.6 + (Math.hypot(w.vel.x, w.vel.z) > 2.4 ? 0.5 : 0);
+    let best = null, bs = 1e9, moving = false;
+    for (const d of D) {
+      const u = d.axis === 'x' ? px : pz, n = (d.axis === 'x' ? pz : px) - d.c, du = Math.max(d.a - u, u - d.b, 0);
+      d.du = du; d.n = n; d.dist = Math.hypot(du, n);
+      if (d.suppress && d.dist > R + 0.6) d.suppress = false;
+      if (d.suppress || du > 0.6 || Math.abs(n) > R || d.dist > R) continue;
+      const mx = d.mx - px, mz = d.mz - pz, cs = (fx * mx + fz * mz) / (Math.hypot(mx, mz) || 1);
+      if (cs < 0.35 && d.dist > 0.9) continue;   // só a que está de frente (ou colada nela)
+      const sc = d.dist + (1 - cs) * 0.8;
+      if (sc < bs) { bs = sc; best = d; }
+    }
+    for (const d of D) {
+      const want = !d.suppress && (d === best || d.hold > now || (d.target === 1 && d.dist < 2.2 && d.du < 0.9));
+      if (want) {
+        d.awayAt = 0;
+        if (!d.target) { d.target = 1; if (d.q < 0.001) this._doorSide(d); }
+      } else if (d.target) {
+        if (!d.awayAt) d.awayAt = now; else if (now - d.awayAt > 2500) { d.target = 0; d.awayAt = 0; }
+      }
+      if (d.q !== d.target) {
+        const dur = d.kind === 'slide' ? 0.95 : 0.75;
+        d.q = this._reduced ? d.target : d.target ? Math.min(1, d.q + dt / dur) : Math.max(0, d.q - dt / (dur * 1.15));
+        d.p = d.q * d.q * (3 - 2 * d.q); d.moving = moving = true;
+        if (d.kind === 'main') { d.rt.pOpen = d.p; d.rt.pMoving = true; } else this._doorApply(d);
+      } else if (d.moving) {
+        d.moving = false; moving = true;   // acabou de assentar: um último quadro + sombras refeitas uma vez
+        if (d.kind === 'main') { d.rt.pMoving = false; this._refreshPointShadows('hall'); } else this._refreshShadowsNear(d.mx, d.mz);
+      }
+    }
+    return moving;
+  }
+  // Sombras das luzes de sombra perto de (x, z) — uma vez, quando a porta assenta
+  _refreshShadowsNear(x, z) {
+    for (const [, rt] of this._items) for (const { L } of rt.lights || []) if (L.castShadow && Math.hypot(L.position.x - x, L.position.z - z) < 14) L.shadow.needsUpdate = true;
+    this._needShadow = true;
+  }
+  // Toque/clique/Enter: alterna a porta (aberta → fecha e não reabre até a pessoa se afastar; fechada → abre e segura 6 s)
+  _doorToggle(d) {
+    const now = performance.now();
+    if (d.target) { if (d.dist < 0.6) return; d.target = 0; d.hold = 0; d.suppress = true; d.awayAt = 0; }
+    else { d.suppress = false; if (d.q < 0.001) this._doorSide(d); d.target = 1; d.hold = now + 6000; d.awayAt = 0; }
+    this._orbit.dirty = true;
+  }
+  // Enter/F: a porta mais perto e à frente (até ~2,4 m)
+  _doorInteract() {
+    const D = this._doors, w = this._walk; if (!D || !w) return false;
+    const fx = -Math.sin(w.yaw), fz = -Math.cos(w.yaw); let best = null, bs = 1e9;
+    for (const d of D) {
+      const mx = d.mx - w.pos.x, mz = d.mz - w.pos.z, cs = (fx * mx + fz * mz) / (Math.hypot(mx, mz) || 1);
+      if (d.dist > 2.4 || (cs < 0.2 && d.dist > 0.9)) continue;
+      const sc = d.dist + (1 - cs) * 0.8; if (sc < bs) { bs = sc; best = d; }
+    }
+    if (best) this._doorToggle(best);
+    return !!best;
+  }
+  // Ao sair da visão de pessoa: tudo fechado na hora (o modo normal mostra as portas fechadas e paradas, como sempre)
+  _doorsReset() {
+    let any = false;
+    for (const d of this._doors || []) {
+      if (d.q === 0 && d.target === 0 && !d.moving) continue;
+      any = true; d.q = d.p = d.target = 0; d.hold = 0; d.awayAt = 0; d.suppress = false; d.moving = false;
+      if (d.kind === 'main') { d.rt.pOpen = 0; d.rt.pMoving = false; } else this._doorApply(d);
+    }
+    if (any) { this._refreshPointShadows(); this._needShadow = true; }
+  }
+  // O raio de _pick (já apontado) acerta uma folha de porta? { d, dist } se estiver a ≤ 3,4 m e sem parede no caminho
+  _doorHit() {
+    if (!this._doorMeshes || !this._doorMeshes.length || !this._walk) return null;
+    const cam = this._camera.position;
+    for (const h of this._raycaster.intersectObjects(this._doorMeshes, false)) {
+      if (h.distance > 3.4 || h.instanceId == null) continue;
+      if (this._segBlocked(cam.x, cam.z, h.point.x, h.point.z)) continue;
+      return { d: h.object.userData.owners[h.instanceId], dist: h.distance };
+    }
+    return null;
+  }
+  // Clique/toque no modo Pessoa: a folha de uma porta (ou a folha de vidro da principal) abre/fecha; vence o que estiver atrás dela
+  _doorClick(hit) {
+    const dh = this._doorHit();
+    if (dh && (!hit || dh.dist <= hit.distance + 0.02)) { this._doorToggle(dh.d); return true; }
+    if (hit && hit.object.userData.item === 'porta' && hit.distance <= 4.5) {
+      const m = (this._doors || []).find((d) => d.kind === 'main');
+      if (m) { this._doorToggle(m); return true; }
+    }
+    return false;
+  }
+  // segmento (planta) atravessa alguma parede sólida?
+  _segBlocked(x0, z0, x1, z1) {
+    for (const w of this._walls || []) {
+      const a0 = w.a0 + 0.15, a1 = w.a1 - 0.15, h = w.t / 2 - 0.01;
+      const bx0 = w.axis === 'x' ? a0 : w.c - h, bx1 = w.axis === 'x' ? a1 : w.c + h, bz0 = w.axis === 'x' ? w.c - h : a0, bz1 = w.axis === 'x' ? w.c + h : a1;
+      if (bx1 <= bx0 || bz1 <= bz0) continue;
+      let t0 = 0, t1 = 1; const dx = x1 - x0, dz = z1 - z0;
+      for (const [p, dd, lo, hi] of [[x0, dx, bx0, bx1], [z0, dz, bz0, bz1]]) {
+        if (Math.abs(dd) < 1e-9) { if (p < lo || p > hi) { t0 = 2; break; } continue; }
+        let ta = (lo - p) / dd, tb = (hi - p) / dd; if (ta > tb) [ta, tb] = [tb, ta];
+        t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 > t1) break;
+      }
+      if (t0 <= t1) return true;
+    }
+    return false;
   }
 
   _buildFurniture(scene, M) {
@@ -7482,6 +7670,7 @@ export class Igreja3DCard extends HTMLElement {
       this._joy.hidden = false; this._showWalkHint();
     } else {
       this._walk.disable(); this._walkOn = false; o.enabled = true;
+      this._doorsReset();
       cam.near = 0.3; cam.fov = 42; cam.updateProjectionMatrix();
       cv.classList.remove('walk'); this._joy.hidden = true; this._walkHint.classList.remove('show');
       const sv = this._walkSaved;
@@ -7497,7 +7686,7 @@ export class Igreja3DCard extends HTMLElement {
   _walkFov() { return this._camera.aspect < 1 ? 80 : 66; }
   _showWalkHint() {
     const h = this._walkHint, coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-    h.textContent = coarse ? 'Joystick anda · arraste para olhar' : 'Setas/WASD ou joystick andam · arraste para olhar · Shift corre · Esc sai';
+    h.textContent = coarse ? 'Joystick anda · arraste para olhar' : 'Setas/WASD ou joystick andam · arraste para olhar · Shift corre · Enter/F ou toque abre a porta · Esc sai';
     h.classList.add('show'); clearTimeout(this._walkHintT); this._walkHintT = setTimeout(() => h.classList.remove('show'), 6000);
   }
 
@@ -7543,18 +7732,20 @@ export class Igreja3DCard extends HTMLElement {
     this._lastSig = '';
   }
 
-  _pick(e) {
+  _pick(e) { const h = this._pickHit(e); return h ? h.object : null; }
+  _pickHit(e) {
     const r = this._canvas.getBoundingClientRect();
     this._ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     this._raycaster.setFromCamera(this._ndc, this._camera);
     const hits = this._raycaster.intersectObjects(this._clickables, false);
     // ignora o que está escondido (ex.: luminárias do modo Fachada com o botão desligado)
-    for (const h of hits) { let vis = true; for (let o = h.object; o; o = o.parent) if (!o.visible) { vis = false; break; } if (vis) return h.object; }
+    for (const h of hits) { let vis = true; for (let o = h.object; o; o = o.parent) if (!o.visible) { vis = false; break; } if (vis) return h; }
     return null;
   }
   _onClick(e) {
-    const o = this._pick(e);
+    const hit = this._pickHit(e), o = hit ? hit.object : null;
     if (this._topView) return this._topClick(e, o);
+    if (this._walkOn && this._doorClick(hit)) return;
     if (o && o.userData.item) { this._activate(o.userData.item); this._flashRow(o.userData.item); }
   }
   // Vista de cima: planta → 1º clique aproxima o bloco → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
@@ -7593,7 +7784,7 @@ export class Igreja3DCard extends HTMLElement {
     }
     if (this._hoverKey) { this._hlShow(null); this._hoverKey = ''; }
     const o = this._pick(e);
-    this._canvas.classList.toggle('pick', !!o);
+    this._canvas.classList.toggle('pick', !!o || (this._walkOn && !!this._doorHit()));   // no modo Pessoa a folha da porta também é clicável
     if (o !== this._hoverObj) {
       // zonas em L têm vários retângulos: realça todos
       const tint = (obj, hex) => { if (obj && obj.userData.zone) for (const m of this._zoneMeshes[obj.userData.zone] || [obj]) m.material.emissive.setHex(hex); };
@@ -8020,6 +8211,7 @@ export class Igreja3DCard extends HTMLElement {
     const dt = Math.min(this._clock.getDelta(), 0.1);
     const t = this._clock.elapsedTime;
     let dirty = this._walkOn ? this._walk.update(dt) : this._orbit.update(dt);
+    if (this._walkOn && this._doorsTick(dt)) dirty = true;   // portas abrindo/fechando na visão de pessoa
     const k = 1 - Math.exp(-dt * 7);
     // Ambiente dia/noite — em "auto" segue a elevação do sol (transição suave no crepúsculo)
     this._updateTime();
@@ -8109,7 +8301,11 @@ export class Igreja3DCard extends HTMLElement {
         // cada unidade tem a sua sequência (LED → aleta → fluxo nasce e cresce); cor pelo modo (frio azul-claro, quente laranja, seco/ventilar neutro)
         if (this._airStep(rt, c, nowA, dtA, nl)) dirty = true;
       }
-      if (it.key === 'porta' && rt.leaves) for (const lf of rt.leaves) { const ry = lf.base - lf.dir * lv * 1.25; if (lf.g.rotation.y !== ry) { lf.g.rotation.y = ry; this._needShadow = true; this._refreshPointShadows('hall'); } }
+      if (it.key === 'porta' && rt.leaves) {
+        // a entidade abre; a pessoa também pode abrir localmente (rt.pOpen, só visual): vale o maior dos dois
+        const lvp = Math.max(lv, rt.pOpen || 0);
+        for (const lf of rt.leaves) { const ry = lf.base - lf.dir * lvp * 1.25; if (lf.g.rotation.y !== ry) { lf.g.rotation.y = ry; dirty = true; if (!rt.pMoving) { this._needShadow = true; this._refreshPointShadows('hall'); } } }
+      }
     }
     if (this._airTick()) dirty = true;   // fluxo dos ares andando (~16 q/s, só em cena e por pouco tempo)
     if (this._needShadow) { this._renderer.shadowMap.needsUpdate = true; this._needShadow = false; dirty = true; }

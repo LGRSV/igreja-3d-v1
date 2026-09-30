@@ -56,12 +56,6 @@ function roomTemploPlateia(ctx) {
     g.beginPath(); g.moveTo(W * 0.86, cy - 9 * k); g.lineTo(W * 0.95, cy); g.lineTo(W * 0.86, cy + 9 * k); g.closePath(); g.fill();
     g.fillRect(W * 0.8, cy - 3 * k, W * 0.07, 6 * k);
   });
-  const texEmerg = signTex(0.62, 0.17, (g, W, H) => {                  // placa vermelha "SAÍDA DE EMERGÊNCIA" (v7)
-    g.fillStyle = '#c21d1d'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `bold ${Math.round(H * 0.34)}px Arial, Helvetica, sans-serif`; g.fillText('SAÍDA DE', W / 2, H * 0.3);
-    g.font = `bold ${Math.round(H * 0.3)}px Arial, Helvetica, sans-serif`; g.fillText('EMERGÊNCIA', W / 2, H * 0.72);
-  });
   const texExt = signTex(0.2, 0.28, (g, W, H) => {                     // placa do extintor (vermelha, pictograma branco)
     g.fillStyle = '#c8201c'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#ffffff'; const k = W / 100;
@@ -75,7 +69,7 @@ function roomTemploPlateia(ctx) {
   });
   const signMat = (tex, glow) => new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.5,
     emissive: glow ? 0xffffff : 0x000000, emissiveMap: glow ? tex : null, emissiveIntensity: glow ? 0.55 : 0 });
-  const exitMat = signMat(texExit, true), emergMat = signMat(texEmerg, false), extSignMat = signMat(texExt, false);
+  const exitMat = signMat(texExit, true), extSignMat = signMat(texExt, false);
 
   // ---- fusão local: peças repetidas viram UMA malha por material ----
   const ONE = new THREE.Vector3(1, 1, 1), UP = new THREE.Vector3(0, 1, 0);
@@ -236,7 +230,7 @@ function roomTemploPlateia(ctx) {
   // 3) PAREDES — extintores com placa, placas de saída, folhas pretas de correr
   // =====================================================================================
   const bRed = batch(redExt), bPl = batch(blackPl), bDoor = batch(doorBlack), bChrome = batch(chrome, false);
-  const bExit = batch(exitMat, false), bEmerg = batch(emergMat, false), bExtSign = batch(extSignMat, false);
+  const bExit = batch(exitMat, false), bExtSign = batch(extSignMat, false);
   // parede: 'x0' (face x = 0,087, olha +x), 'x1' (face 15,963, olha −x), 'z0' (face 12,487, olha +z), 'z1' (face 43,913, olha −z)
   const WALL = { x0: [1, 0, Math.PI / 2], x1: [-1, 0, -Math.PI / 2], z0: [0, 1, 0], z1: [0, -1, Math.PI] };
   const onWall = (w, t, off) => (w === 'x0' ? [FX0 + off, t] : w === 'x1' ? [FX1 - off, t] : w === 'z0' ? [t, FZ0 + off] : [t, FZ1 - off]);
@@ -251,7 +245,7 @@ function roomTemploPlateia(ctx) {
     bar(bPl, [cx + nz * 0.07, 1.37, cz + nx * 0.07], [cx + nz * 0.1 + nx * 0.05, 0.95, cz + nx * 0.1 + nz * 0.05], 0.012, true);   // mangueira
     pl(bExtSign, 0.2, 0.28, sx, 1.85, sz, ry);                          // placa acima (v6_12, v7_01)
   };
-  // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, porta 34,2–35,1 + trilho até 36,0)
+  // parede x = 16,05 (fora do vidro z 19,2–22,6, visor 23,6–28,4, janela 29,9–31,9, sem portas desde a v1.4.5)
   extintor('x1', 17.3); extintor('x1', 29.3); extintor('x1', 36.7);
   // parede do hall (z = 44): dos dois lados do acesso de vidro x 10,6–13,1 (pilar em x 10,5)
   extintor('z1', 9.8); extintor('z1', 13.75);
@@ -259,10 +253,9 @@ function roomTemploPlateia(ctx) {
   extintor('z0', 9.8); extintor('z0', 4.6);
   extintor('x0', 15.0); extintor('x0', 42.0);
 
-  // Placas de SAÍDA verdes (acesas) sobre as saídas; placa vermelha sobre a porta preta de correr (cartão)
+  // Placas de SAÍDA verdes (acesas) sobre as saídas (a porta preta de correr da parede x = 16,05 saiu na v1.4.5)
   { const [x, z] = onWall('z1', 11.85, 0.006); pl(bExit, 0.4, 0.15, x, 2.62, z, WALL.z1[2]); }
   { const [x, z] = onWall('z0', 14.0, 0.006); pl(bExit, 0.4, 0.15, x, 2.66, z, WALL.z0[2]); }
-  { const [x, z] = onWall('x1', 34.65, 0.006); pl(bEmerg, 0.62, 0.17, x, 2.55, z, WALL.x1[2]); }
 
   // Saída de vidro da parede z = 12,4 (x 12,9–15,1): 2 folhas pretas de correr, abertas (estacionadas à
   // esquerda, x 11,6–12,75) + trilho aparente acima do vão (termina antes do pilar de x = 16,05)

@@ -9,6 +9,18 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.4.5 — portas conforme as fotos e portas que abrem no modo Pessoa
+
+- **Modo Pessoa**: as portas abrem sozinhas quando a pessoa chega perto (~1,6 m) e fecham ~2,5 s depois que ela se afasta;
+  também abrem com clique/toque ou Enter/E perto delas. Porta de giro gira para o lado livre (sem atravessar parede nem
+  móvel), a de 2 folhas abre as duas. As folhas são instâncias de poucos InstancedMesh (~5 draw calls no prédio todo);
+  fora do modo Pessoa ficam fechadas e iguais a antes. Parado, nada é redesenhado.
+- **Portas (fotos do cliente)**: saíram a porta preta de correr do templo (com a placa de emergência) e a porta preta
+  dupla para o hall dos banheiros (parede lisa); o WC masculino ficou com o vão aberto; a porta do hall de entrada para
+  o templo virou 2 folhas de vidro.
+- **Entorno**: saíram os dois prédios vizinhos e os muros brancos de divisa.
+- **Demo**: a faixa da hora foi para o alto da tela.
+
 ## Novidades da v1.4.4 — cada ar liga na sua vez, com a câmera acompanhando
 
 Voltou (e ficou melhor) a animação dos ares: **cada aparelho tem a sua própria sequência de ligar**, e ela vale em todas as vistas.
@@ -252,7 +264,7 @@ panel: true           # painel inferior aberto ao iniciar (false = recolhido)
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
 quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM;
                       #   min em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB) · alta · media · leve · min
-entorno: auto         # ruas, vizinhos, árvores de rua e postes: auto (some só no leve) · true · false
+entorno: auto         # ruas, árvores de rua e postes: auto (some só no leve) · true · false
 weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
@@ -321,7 +333,8 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
   CHURCH e o refletor ficam visíveis nos dois modos** (a identidade do prédio vista da rua); os rótulos dos
   ambientes somem enquanto o modo Fachada está ligado.
 - **Entorno**: estacionamento frontal em intertravado cinza (espinha de peixe), sem carros, vagas PCD, cerca-viva e cicas na
-  frente, totem de entrada com o logo, ruas da frente e dos fundos, vizinhos, árvores e postes — só contexto.
+  frente, totem de entrada com o logo, ruas da frente e dos fundos, árvores e postes — só contexto (vizinhos e muros de
+  divisa saíram na v1.4.5).
 - **Clima ao vivo (Palmas)**: widget no canto inferior direito com temperatura, condição, sensação
   térmica e vento — dados da [Open-Meteo](https://open-meteo.com/) (gratuita, sem chave), atualizados
   a cada 15 min, nas coordenadas `latitude`/`longitude` (padrão: Palmas-TO). Some quando o painel
