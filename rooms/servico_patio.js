@@ -489,7 +489,7 @@ function roomServicoPatio(ctx) {
     return g;
   };
   place(cycaPot(1), 12.2, 11.6);
-  // Espada-de-são-jorge em vaso preto alto do outro lado da porta de vidro (cabe entre o vão e a parede x=16,05)
+  // Espada-de-são-jorge em vaso preto alto diante da parede z = 11 do corredor lateral (onde era a porta PM01)
   const sansevieria = () => {
     const g = G();
     g.add(cyl(0.22, 0.18, 0.62, P.potBlk, 0, 0.31, 0, 16));
@@ -501,7 +501,7 @@ function roomServicoPatio(ctx) {
     }
     return g;
   };
-  place(sansevieria(), 15.55, 11.6);
+  place(sansevieria(), 16.6, 10.62);   // v1.5.1: trocou de lugar com a porta PM01 (agora na parede x = 16,05, onde o vaso ficava)
 
   // Spot de chão (embutido, só emissivo — sem luz real)
   const spot = (x, z) => { add(cyl(0.055, 0.06, 0.05, P.spotBody, x, 0.03, z, 12)); add(flat(cyl(0.04, 0.04, 0.008, P.spotLens, x, 0.058, z, 12))); };
@@ -550,9 +550,9 @@ function roomServicoPatio(ctx) {
   spot(7.95, 6.75); spot(8.8, 9.3); spot(9.95, 9.45);
 
   // =================================== JARDIM PASTORAL ===================================
-  // Pisantes de concreto: porta da pastoral → pátio, e pátio → porta PM01 (x 16,15–17,0)
+  // Pisantes de concreto: porta da pastoral → pátio (a porta PM01 fica no pátio, parede x = 16,05)
   for (const z of [9.62, 10.2, 10.75]) add(flat(box(0.8, 0.04, 0.4, P.slab, 13.35, 0.02, z)));
-  for (const x of [14.1, 14.75, 15.4, 16.05, 16.6]) add(flat(box(0.5, 0.04, 0.55, P.slab, x, 0.02, 10.6)));
+  for (const x of [14.1, 14.75, 15.4]) add(flat(box(0.5, 0.04, 0.55, P.slab, x, 0.02, 10.6)));   // (daqui se entra no pátio e na porta PM01, x = 16,05)
   // Canteiros com borda metálica preta e forração (grama-amendoim com florzinhas amarelas)
   const bed = (x0, x1, z0, z1) => {
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, w = x1 - x0, d = z1 - z0;

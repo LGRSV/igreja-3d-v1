@@ -9,6 +9,11 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.5.1 — porta dos fundos no canto do vaso; WC Feminino como antes
+
+- A porta de madeira do pátio dos fundos para o corredor lateral da ala direita (PM01) foi para a parede x = 16,05 (z 11,25–12,15), no canto onde ficava o vaso de espada-de-são-jorge; o vaso foi para a frente da parede z = 11, onde era a porta (agora lisa). Capacho e placa de saída do corredor acompanharam a porta.
+- A porta do WC Feminino voltou para a parede do hall dos banheiros (z = 44,3), com o pictograma, a cica, o espelho e o banco nos lugares de antes; a parede do hall de entrada ficou lisa.
+
 ## Novidades da v1.5.0 — escada e "salinha", porta do WC Feminino e Pessoa "tipo Street View"
 
 - **Escada do hall no canto da fachada**: agora é **reta, encostada na parede da fachada** (x 4,1–9,2 · z 48,05–49,56), entre a Sala da
