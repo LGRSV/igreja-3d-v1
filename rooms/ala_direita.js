@@ -783,8 +783,7 @@ function roomAlaDireita(ctx) {
 
   // ---- HALL DOS BANHEIROS (x 16,05–20,1 · z 40,8–44,3 + faixa x 16,05–17,1 · z 37,0–40,8) ----
   wetWall('z', 20.013, -1, 40.875, 44.225, M.marmoreMarrom);                                 // parede do bebedouro
-  wetWall('x', 44.225, -1, 17.25, 20.013, M.marmoreMarrom);                                  // parede da bancada (porta do WC fem. em x 16,25–17,15)
-  doorPicto('x', 44.225, 16.7, -1, true);
+  wetWall('x', 44.225, -1, 16.125, 20.013, M.marmoreMarrom);                                 // parede da bancada (v1.4.6: sem a porta do WC fem. — ela foi para o hall de entrada)
   wetWall('x', 40.875, 1, 17.1, 18.1, M.marmorato);                                          // parede da porta do WC masc.
   wetWall('x', 40.875, 1, 19.1, 20.013, M.marmorato);
   clad('x', 40.875, 1, 18.1, 19.1, 2.3, YT, M.marmorato);
@@ -818,8 +817,10 @@ function roomAlaDireita(ctx) {
   add(cyl(0.035, 0.035, 0.18, white, 19.93, 1.4, 41.2, 10));
   emerg('x', 40.887, 17.55, 2.5, 1);
   // ---- WC FEMININO (x 16,05–20,1 · z 44,3–49,5) — sem antecâmara ----
-  // Porta na parede z = 44,3 (x 16,25–17,15), vinda do hall dos banheiros → área de giro x 16,1–17,3 · z 44,3–45,3 livre.
+  // v1.4.6: a porta fica na parede x = 16,05 (z 48,35–49,25), vinda do HALL DE ENTRADA, no canto onde ficava o vaso → área de giro
+  // x 16,1–17,1 · z 47,5–49,3 livre (o espelho e o banco subiram para z 45,55 / 46,9). A parede z = 44,3 é lisa; o vaso (cica) foi para lá.
   wetWall('z', 20.013, -1, 44.375, 49.413, M.marmoreMarrom);
+  wetWall('x', 44.375, 1, 16.125, 18.05, M.marmorato);                                       // parede onde ficava a porta (agora lisa)
   cabins(18.05, 20.013, 44.375, 45.85, 2, [true, false]);
   cabins(17.175, 20.013, 49.413, 47.75, 3, [false, false], 0.08);
   add(box(0.8, 0.3, 0.04, graph, 17.6, 0.8, 44.395));                                        // fraldário
@@ -834,14 +835,17 @@ function roomAlaDireita(ctx) {
     place(g, 19.86, 46.8, 0, 0.88); }
   add(cyl(0.12, 0.1, 0.4, inox, 19.8, 0.2, 45.98, 14));
   // parede x = 16,05 (lado do WC) em marmorato; espelho de corpo inteiro, banco e cica
-  wetWall('z', 16.125, 1, 44.375, 49.413, M.marmorato);
-  add(box(0.012, 1.62, 0.62, black, 16.132, 1.2, 46.2));
-  add(box(0.008, 1.54, 0.54, M.mirror, 16.141, 1.2, 46.2, nc));
+  wetWall('z', 16.125, 1, 44.375, 48.29, M.marmorato);                                         // (vão da porta z 48,35–49,25 + guarnição)
+  wetWall('z', 16.125, 1, 49.31, 49.413, M.marmorato);
+  clad('z', 16.125, 1, 48.29, 49.31, 2.28, YT, M.marmorato);
+  doorPicto('z', 15.975, 48.8, -1, true);                                                    // pictograma MULHER sobre a porta, lado do hall
+  add(box(0.012, 1.62, 0.62, black, 16.132, 1.2, 45.55));
+  add(box(0.008, 1.54, 0.54, M.mirror, 16.141, 1.2, 45.55, nc));
   {
     const g = G();
     for (let i = 0; i < 4; i++) g.add(box(0.075, 0.035, 1.3, woodL, -0.135 + i * 0.09, 0.45, 0));
     for (const sz of [-0.5, 0.5]) { g.add(box(0.38, 0.03, 0.05, black, 0, 0.418, sz)); g.add(box(0.035, 0.42, 0.035, black, -0.16, 0.21, sz)); g.add(box(0.035, 0.42, 0.035, black, 0.16, 0.21, sz)); }
-    place(g, 16.4, 47.75, 0);
+    place(g, 16.4, 46.9, 0);
   }
-  cica(16.6, 49.02, 0.32);
+  cica(16.7, 44.72, 0.32);                                                                   // o vaso trocou de lugar com a porta
 }
