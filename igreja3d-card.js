@@ -5709,19 +5709,21 @@ canvas.walk.pick { cursor: pointer; }
 @media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
 /* Painel inferior (dock) — vidro escuro + âmbar; luz acesa brilha quente, clima frio azulado */
-.dock, .reopen { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #8f9bb3; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
+.dock, .reopen { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #9aa6bd; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
 .dock { position: absolute; left: 0; right: 0; margin: 0 auto; bottom: 10px; width: min(1180px, calc(100% - 20px)); max-height: min(48%, 392px); display: flex; flex-direction: column; overflow: hidden; z-index: 3;
-  border-radius: 18px; border: 1px solid rgba(255, 255, 255, .11); background: linear-gradient(180deg, rgba(22, 29, 49, .86), rgba(9, 13, 25, .92));
-  box-shadow: 0 20px 56px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .08) inset; backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border-radius: 18px; border: 1px solid rgba(255, 255, 255, .11); background: linear-gradient(180deg, rgba(22, 29, 49, .92), rgba(9, 13, 25, .95));
+  box-shadow: 0 20px 56px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .08) inset; backdrop-filter: blur(14px) saturate(1.25); -webkit-backdrop-filter: blur(14px) saturate(1.25);
   animation: dockIn .34s var(--ease) backwards; }
 .dock[hidden] { display: none; }
+.dock.closing { animation: dockOut .2s ease-in forwards; pointer-events: none; }
+@keyframes dockOut { to { opacity: 0; transform: translateY(24px) scale(.985); } }
 .dock::before { content: ""; display: none; flex: none; width: 38px; height: 4px; margin: 7px auto 0; border-radius: 4px; background: rgba(255, 255, 255, .2); }
 @keyframes dockIn { from { opacity: 0; transform: translateY(22px) scale(.985); } }
 @keyframes paneIn { from { opacity: 0; transform: translateY(8px); } }
 @keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @keyframes sheetIn { from { opacity: 0; transform: translateY(14px); } }
 @keyframes flashPulse { 0% { box-shadow: 0 0 0 0 rgba(255, 212, 138, .8); } 100% { box-shadow: 0 0 0 14px rgba(255, 212, 138, 0); } }
-.tabs { display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); flex: none; align-items: center; }
+.tabs { touch-action: none; display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); flex: none; align-items: center; }
 .tabs button[role="tab"] { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; font-size: 12.5px; border-radius: 999px; color: #a9b4ca; transition: background .22s, color .22s, box-shadow .22s; }
 .tabs button[role="tab"] svg { width: 14px; height: 14px; opacity: .8; }
 .tabs button[role="tab"]:hover { color: #e6edf7; }
@@ -5740,14 +5742,14 @@ canvas.walk.pick { cursor: pointer; }
 .zonebar button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: var(--amber2); border-color: rgba(255, 196, 107, .4); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .zone { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 8px 2px 0; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #9aa6bd; font-weight: 700; }
-.zone:first-child { margin-top: 0; }
+.zone:first-child, .tiles.single .zone { margin-top: 0; }
 .zone::after { content: ""; order: 2; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, .12), transparent); }
 .zone .zn { order: 3; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 11px; color: #7f8ba3; font-variant-numeric: tabular-nums; }
 .zone.some .zn { color: var(--amber2); }
 .zone[hidden], .tile[hidden] { display: none; }
 .tile { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-height: 92px; padding: 10px 11px 11px; border-radius: 15px; text-align: left; color: #d5dcea;
   background: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .03)); border: 1px solid rgba(255, 255, 255, .08);
-  transition: background .3s, border-color .3s, box-shadow .3s, transform .14s var(--ease), opacity .3s; animation: tileIn .34s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 16ms); }
+  transition: background .3s, border-color .3s, box-shadow .3s, transform .14s var(--ease), opacity .3s; }
 .tile > * { position: relative; }
 .tile::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .4s; pointer-events: none; background: radial-gradient(95% 130% at 0% 0%, rgba(255, 196, 107, .3), transparent 64%); }
 .tile:hover { background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .05)); border-color: rgba(255, 255, 255, .16); }
@@ -5760,7 +5762,7 @@ canvas.walk.pick { cursor: pointer; }
 .tile b { display: block; font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--ink); }
 .tile small { display: block; margin-top: 3px; font-size: 11px; line-height: 1.3; color: var(--mute); }
 .tile small .st { color: #b3bed3; font-weight: 600; }
-.tile small .tm { display: block; opacity: .78; } .tile small .sep { display: none; }
+.tile small .tm { display: block; color: #8b97af; } .tile small .sep { display: none; }
 .tile .lvl { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, .06); opacity: 0; transition: opacity .3s; }
 .tile .lvl::after { content: ""; display: block; height: 100%; width: var(--lvl, 0%); background: var(--dot, #ffc46b); box-shadow: 0 0 8px var(--dot, #ffc46b); transition: width .35s var(--ease); }
 .tile.on { border-color: rgba(255, 196, 107, .5); box-shadow: 0 8px 24px -10px rgba(255, 196, 107, .55), inset 0 1px 0 rgba(255, 255, 255, .1); }
@@ -5842,8 +5844,10 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
 .auto .run:hover { background: rgba(255, 196, 107, .25); color: var(--amber2); }
 .autos .empty { color: var(--mute); font-size: 12px; padding: 12px; border-radius: 12px; border: 1px dashed rgba(255, 255, 255, .14); grid-column: 1 / -1; }
 .feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 10px; }
-.feed li { display: grid; grid-template-columns: 10px 1fr auto; gap: 11px; align-items: center; padding: 9px 12px; border-radius: 12px; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .06); font-size: 12.5px; }
-.feed .d { width: 9px; height: 9px; border-radius: 50%; background: #4b5468; } .feed li.on .d { background: var(--dot, #ffc46b); box-shadow: 0 0 9px var(--dot, #ffc46b); }
+.feed li { display: grid; grid-template-columns: 28px 1fr auto; gap: 11px; align-items: center; padding: 9px 12px; border-radius: 12px; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .06); font-size: 12.5px; }
+.feed .d { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(255, 255, 255, .05); color: #69748d; }
+.feed .d svg { width: 15px; height: 15px; }
+.feed li.on .d { background: rgba(255, 196, 107, .16); background: color-mix(in srgb, var(--dot, #ffc46b) 20%, transparent); color: var(--dot, #ffc46b); box-shadow: 0 0 12px -3px var(--dot, #ffc46b); }
 .feed li.on { border-color: rgba(255, 255, 255, .1); }
 .feed b { font-weight: 700; color: var(--ink); } .feed time { color: var(--mute); font-variant-numeric: tabular-nums; font-size: 11px; text-align: right; white-space: nowrap; }
 .feed .empty { color: var(--mute); padding: 14px 12px; font-size: 12px; grid-column: 1 / -1; display: block; border-style: dashed; }
@@ -5885,7 +5889,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
   .tile .ico { width: 32px; height: 32px; } .tile > span:not(.top) { min-width: 0; } .tile .more { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; }
   .tile .more::after { content: ""; position: absolute; inset: -4px; }
   .tile b { font-size: 12.5px; padding-right: 22px; } .tile small { font-size: 10.5px; }
-  .tile.routine b { padding-right: 0; }
+  .tile.routine b { padding-right: 0; } .tile.routine small { -webkit-line-clamp: 2; }
   .tiles.routines { grid-template-columns: minmax(0, 1fr); }
   .tile.routine { min-height: 62px; grid-template-columns: auto minmax(0, 1fr); }
   .autos, .feed { grid-template-columns: minmax(0, 1fr); }
@@ -8472,7 +8476,11 @@ export class Igreja3DCard extends HTMLElement {
   }
   _setPanel(open) {
     this._panelOpen = !!open;
-    this._dock.hidden = !open; this._reopen.hidden = !!open;
+    clearTimeout(this._dockT); this._dock.classList.remove('closing');
+    if (!open && !this._dock.hidden && !this._reduced && this._wrap && this._wrap.isConnected) {   // recolhe deslizando (~0,2 s); o estado já vale na hora
+      this._dock.classList.add('closing'); this._dockT = setTimeout(() => { this._dock.classList.remove('closing'); this._dock.hidden = !this._panelOpen; }, 200);
+    } else this._dock.hidden = !open;
+    this._reopen.hidden = !!open;
     if (this._weatherEl) this._weatherEl.classList.toggle('out', !!open);
     this._panelBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
     if (open) this._renderPanel();
@@ -8496,6 +8504,10 @@ export class Igreja3DCard extends HTMLElement {
       const pane = document.createElement('div'); pane.className = 'pane'; pane.dataset.pane = id; pane.setAttribute('role', 'tabpanel'); pane.setAttribute('aria-label', label); panes.push(pane);
       this._panes[id] = { btn: b, pane };
     }
+    let drag = null;   // no celular: arrastar a barra de abas para baixo recolhe o painel
+    tabs.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && !e.target.closest('button')) drag = { y: e.clientY, id: e.pointerId }; });
+    tabs.addEventListener('pointermove', (e) => { if (drag && e.pointerId === drag.id && e.clientY - drag.y > 48) { drag = null; this._setPanel(false); } });
+    const endDrag = () => { drag = null; }; tabs.addEventListener('pointerup', endDrag); tabs.addEventListener('pointercancel', endDrag);
     const spacer = document.createElement('div'); spacer.className = 'spacer'; tabs.appendChild(spacer);
     this._countEl = document.createElement('span'); this._countEl.className = 'count'; this._countEl.setAttribute('role', 'status'); tabs.appendChild(this._countEl);
     const col = document.createElement('button'); col.className = 'collapse'; col.title = 'Recolher painel'; col.setAttribute('aria-label', 'Recolher painel');
@@ -8590,7 +8602,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const c of this._zbar.children) c.setAttribute('aria-pressed', c.dataset.zone === this._zone ? 'true' : 'false');
     for (const zz of this._zones) zz.zh.hidden = !!this._zone && zz.title !== this._zone;
     for (const t of Object.values(this._tiles)) if (t.room) t.tile.hidden = !!this._zone && t.room !== this._zone;
-    this._panes.ctl.pane.scrollTop = 0;
+    this._grid.classList.toggle('single', !!this._zone); this._panes.ctl.pane.scrollTop = 0;
   }
   _hasDetail(it) { return it.kind !== 'sensor'; }
   _makeTile(it, room, idx = 0) {
@@ -8671,6 +8683,7 @@ export class Igreja3DCard extends HTMLElement {
       const cancel = document.createElement('button'); cancel.textContent = 'cancelar'; cancel.addEventListener('click', () => this._setTimer(key, 0)); tm.appendChild(cancel);
       body.appendChild(tm); this._dTimer = tm;
     }
+    d.onkeydown = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); d.hidden = true; this._detailKey = null; const t = this._tiles[key]; const mo = t && t.tile.querySelector('.more'); if (mo) mo.focus(); } };
     const close = document.createElement('button'); close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', 'Fechar');
     close.addEventListener('click', () => { d.hidden = true; this._detailKey = null; }); head.appendChild(close);
     this._showTab('ctl'); this._renderPanel();
@@ -8756,7 +8769,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const ev of this._activity.slice(0, 30)) {
       if (ev.state === 'triggered') {
         const a = this._autos.find((x) => x.id === ev.key); const li = document.createElement('li'); li.classList.add('on'); li.style.setProperty('--dot', '#ffd48a');
-        li.innerHTML = `<i class="d"></i><span><b>${a ? a.name : ev.key}</b> disparou</span><time>${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
+        li.innerHTML = `<i class="d">${iconSvg('auto')}</i><span><b>${a ? a.name : ev.key}</b> disparou</span><time>${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
         this._feed.appendChild(li); continue;
       }
       const it = ITEMS.find((i) => i.key === ev.key); if (!it) continue;
@@ -8769,7 +8782,7 @@ export class Igreja3DCard extends HTMLElement {
       else if (it.kind === 'sensor') what = it.key === 'presenca' ? (ev.state === 'on' ? '→ pessoas no templo' : '→ vazio') : it.key === 'porta' ? (ev.state === 'on' ? 'aberta' : 'fechada') : `→ ${ev.state} °C`;
       else if (it.kind === 'switch') what = ev.state === 'on' ? 'ligado' : 'desligado';
       else what = ev.state === 'on' ? 'acesa' : 'apagada';
-      li.innerHTML = `<i class="d"></i><span><b>${it.label}</b> ${what}</span><time datetime="${new Date(ev.ts).toISOString()}">${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
+      li.innerHTML = `<i class="d">${iconSvg(it.icon)}</i><span><b>${it.label}</b> ${what}</span><time datetime="${new Date(ev.ts).toISOString()}">${fmtClock(ev.ts)} · ${fmtRel(ev.ts, now)}</time>`;
       this._feed.appendChild(li);
     }
   }
