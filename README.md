@@ -9,6 +9,15 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.6.0 — painel lateral e menu de opções
+
+- **Painel lateral** no lugar do painel de baixo. Desktop/tablet: coluna à direita (abaixo dos botões do topo até o pé do cartão, largura ~34 %, entre 272 e 380 px), mesmo vidro escuro/âmbar, agora mais pesado (blur e sombra maiores). Cabeçalho com o contador "N de M luzes acesas" e o botão **→ recolher**; abas Ambientes · Automações · Atividade num segmentado; filtros por área (Todos, Templo, Entrada, Administração, Apoio) quebram em 2 linhas; blocos em grade de 2 colunas (ícone à esquerda); a folha de controle continua presa ao pé da coluna. Recolhido, sobra a aba **‹ Painel** na borda direita com o número de luzes acesas. A **cena é enquadrada à esquerda do painel** (deslocamento horizontal da câmera): a igreja e a Vista de cima não ficam escondidas atrás dele; a trilha da Vista de cima e a lista *Ir para…* também ficam à esquerda da coluna.
+- **Celular** (cartão ≤ 640 px): o painel é uma **gaveta que entra pela direita** (até 88 % da largura, 360 px no máximo, da linha de baixo do cabeçalho até o pé), com véu escuro sobre a cena; começa recolhida (a aba "Painel" abre). Fecha pelo botão →, tocando no véu, com Esc ou **arrastando para a direita**: depois de ~10 px na horizontal a gaveta segue o dedo 1:1, além do aberto resiste (rubber band), ao soltar decide pela velocidade (projeção do movimento) e assenta com uma mola (feita à mão, sem biblioteca); dá para agarrar a gaveta no meio da animação. Não há reenquadramento no celular (a gaveta fica por cima). No modo Pessoa a gaveta fecha (no desktop a coluna fica).
+- **Menu ☰ Opções** no canto superior direito no lugar da fileira de botões, em seções: **Ambiente** (Auto/Dia/Noite + Visão noturna) · **Vista** (Rótulos, Fachada, Vista de cima, Recentrar) · **Navegação** (Pessoa, Ir para um ambiente…) · **Painel** (Painel lateral). Liga/desliga com interruptor; nasce do botão (escala 0,96 → 1, sem passada). Fecha no clique de novo, Esc, clique fora e depois de Recentrar, Ir para… e de entrar na Pessoa. Teclado: Enter/↓ abre com o foco no 1º item, ↑/↓/Home/End andam, Tab sai; com o menu aberto o **Esc só fecha o menu** (não sai da Pessoa nem volta um nível na Vista de cima). Fora do menu ficam o **bonequinho** (arrastar até a maquete) e, no modo Pessoa, **Ir para…**. No celular o menu ocupa a largura e rola.
+- **Clima** foi para o **canto inferior esquerdo** (o direito é do painel); some no modo Pessoa (lugar do joystick) e sob a gaveta do celular.
+- Acessibilidade: `prefers-reduced-motion` troca deslize/mola/escala por um fade curto; `prefers-reduced-transparency` deixa painel/menu quase sólidos sem blur; `prefers-contrast: more` usa fundo sólido e borda clara. Retorno visual no toque (escala 0,97) nos botões.
+- Teste novo: `tools/ui_test.mjs` (menu, painel, gaveta com toque via CDP); `tools/integ_test.mjs` usa os botões pelo menu.
+
 ## Novidades da v1.5.5 — Fachada automática no modo Pessoa
 
 - Ao entrar na visão de **Pessoa** a **Fachada** liga sozinha: paredes altas, forro e telhado aparecem, então por fora se vê a fachada completa e por dentro o teto (some o céu sobre as salas). Ao sair, a Fachada volta a como estava. O botão Fachada continua valendo durante o passeio. Opção `fachada_pessoa: false` desliga esse comportamento.
@@ -333,12 +342,12 @@ mode: auto            # auto = segue sun.sun | day | night
 night_vision: true    # à noite, luz de lua + ambiente frio: a igreja inteira fica legível
 labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
-panel: true           # painel inferior aberto ao iniciar (false = recolhido)
+panel: true           # painel lateral aberto ao iniciar (false = recolhido); no celular a gaveta sempre começa recolhida
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
 quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM;
                       #   min em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB) · alta · media · leve · min
 entorno: auto         # ruas, árvores de rua e postes: auto (some só no leve) · true · false
-weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
+weather: true         # widget de clima ao vivo no canto inferior esquerdo (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
 latitude: -10.27                 # clima (sempre) e posição do sol fora do HA — no HA o sol usa
@@ -409,7 +418,7 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
 - **Entorno**: estacionamento frontal em intertravado cinza (espinha de peixe), sem carros, vagas PCD, cerca-viva e cicas na
   frente, totem de entrada com o logo, ruas da frente e dos fundos, árvores e postes — só contexto (vizinhos e muros de
   divisa saíram na v1.4.5).
-- **Clima ao vivo (Palmas)**: widget no canto inferior direito com temperatura, condição, sensação
+- **Clima ao vivo (Palmas)**: widget no canto inferior esquerdo (some no modo Pessoa) com temperatura, condição, sensação
   térmica e vento — dados da [Open-Meteo](https://open-meteo.com/) (gratuita, sem chave), atualizados
   a cada 15 min, nas coordenadas `latitude`/`longitude` (padrão: Palmas-TO). Some quando o painel
   abre por cima e volta quando fecha. Desative com `weather: false`.

@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.5.5';
+export const VERSION = '1.6.0';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -206,6 +206,15 @@ const ICONS = {
   sign: '<rect x="1.5" y="3" width="13" height="7.5" rx="1"/><path d="M5 13.8h6M8 10.5v3.3M5.5 6.8h5"/>',
   key: '<circle cx="5" cy="8" r="2.8"/><path d="M7.8 8h6.7M12.5 8v2.4M10.5 8v1.8"/>',
   mic: '<rect x="6" y="1.5" width="4" height="7.5" rx="2"/><path d="M3.8 7.5a4.2 4.2 0 0 0 8.4 0M8 11.7v2.8M5.6 14.5h4.8"/>',
+  // v1.6.0: menu de opções do topo e painel lateral
+  menu: '<path d="M2.5 4h11M2.5 8h11M2.5 12h11"/>',
+  tag: '<path d="M2 2.6h5.3l6.6 6.6-4.7 4.7L2.6 7.3z"/><circle cx="5.2" cy="5.6" r=".9" fill="currentColor"/>',
+  plan: '<rect x="2" y="2" width="12" height="12" rx="1.2"/><path d="M2 7.5h5.5V14M7.5 2v2.6M10.6 7.5H14"/>',
+  recenter: '<circle cx="8" cy="8" r="2.3"/><path d="M8 1.5v2.6M8 11.9v2.6M1.5 8h2.6M11.9 8h2.6"/>',
+  pin: '<path d="M8 14.5s4.6-4.3 4.6-8a4.6 4.6 0 0 0-9.2 0c0 3.7 4.6 8 4.6 8z"/><circle cx="8" cy="6.5" r="1.6"/>',
+  side: '<rect x="1.5" y="2.5" width="13" height="11" rx="1.6"/><path d="M10 2.5v11"/>',
+  chevr: '<path d="M6 3l5 5-5 5"/>',
+  chevl: '<path d="M10 3 5 8l5 5"/>',
   briefcase: '<rect x="1.5" y="5" width="13" height="8.5" rx="1.2"/><path d="M5.8 5V3.3h4.4V5M1.5 9h13"/>',
 };
 
@@ -1398,6 +1407,7 @@ class Walker {
     const t = e.composedPath ? e.composedPath()[0] : e.target;
     if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '')) return;   // digitando em outro campo da página
     const c = e.code;
+    if (down && this.card._menuOn) return;   // v1.6.0: menu de opções aberto — Esc fecha só o menu, setas andam pelos itens
     if (c === 'Escape') { if (down) { e.stopPropagation(); this.card._setWalk(false); } return; }
     if (c === 'Enter' || c === 'KeyF') {   // interagir: abre/fecha a porta mais perto e à frente (E já é "girar")
       if (t && t !== this.card._canvas && t !== document.body && t !== document.documentElement) return;   // Enter em botões/links/diálogos da página segue normal
@@ -5934,12 +5944,42 @@ canvas:active { cursor: grabbing; }
 .panel { background: rgba(10, 14, 26, .72); border: 1px solid rgba(255, 255, 255, .09); border-radius: 10px;
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .title { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
-.title b { font-size: 15px; font-weight: 700; letter-spacing: .01em; }
+.title b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
 .title .sub { color: #9aa6bd; font-size: 12px; font-variant-numeric: tabular-nums; }
 .title .clock { color: #e6edf7; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .title .clock .per { color: #ffd48a; font-weight: 700; }
 .title .clock .suntimes { color: #9aa6bd; font-weight: 500; }
-.btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+/* v1.6.0: as opções do topo ficam num menu suspenso (☰ Opções); fora dele só o bonequinho e, no modo Pessoa, "Ir para…" */
+.btns { position: relative; display: flex; gap: 6px; flex: none; align-items: flex-start; justify-content: flex-end; margin-left: auto; }
+.menubtn { display: inline-flex; align-items: center; gap: 7px; }
+.menubtn svg { width: 16px; height: 16px; }
+.menubtn[aria-expanded="true"] { background: rgba(255, 196, 107, .18); color: #ffd48a; border-color: rgba(255, 196, 107, .45); }
+.menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 8; width: 292px; max-height: calc(var(--ch, 640px) - 74px); overflow: auto; overscroll-behavior: contain; box-sizing: border-box;
+  padding: 4px 6px 6px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(26, 33, 54, .88);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .45), 0 1px 0 rgba(255, 255, 255, .09) inset; backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; animation: menuIn .18s cubic-bezier(.2, .8, .2, 1); transform-origin: top right; }   /* material mais leve que o painel; nasce do botão ☰ */
+.menu[hidden] { display: none; }
+@keyframes menuIn { from { opacity: 0; transform: scale(.96); } }
+.btn:active, .menu .mi:active, .menu .mseg button:active, .phead .collapse:active { transform: scale(.97); transition: transform .1s ease-out; }   /* retorno no toque, não no soltar */
+.reopen:active { transform: translateY(-50%) scale(.97); }
+.menu .msec { padding: 2px 0 4px; } .menu .msec + .msec { border-top: 1px solid rgba(255, 255, 255, .07); }
+.menu .mh { padding: 8px 8px 4px; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; }
+.menu .mi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 9px; border-radius: 9px; text-align: left; font-size: 12.5px; color: #d5dcea; }
+.menu .mi:hover, .menu .mi:focus-visible { background: rgba(255, 255, 255, .07); }
+.menu .mi[aria-pressed="true"] { background: transparent; color: #ffd48a; }
+.menu .mi[aria-pressed="true"]:hover, .menu .mi[aria-pressed="true"]:focus-visible { background: rgba(255, 196, 107, .1); }
+.menu .mi:disabled { cursor: default; } .menu .mi:disabled:hover { background: transparent; }
+.menu .mi .mic { flex: none; width: 18px; display: grid; place-items: center; color: #8f9bb3; } .menu .mi .mic svg { width: 16px; height: 16px; }
+.menu .mi[aria-pressed="true"] .mic { color: #ffc46b; }
+.menu .mi .ml { flex: 1; min-width: 0; }
+.menu .mi .mk { flex: none; font-size: 11px; color: #6b768f; font-weight: 500; }
+.menu .ms { flex: none; position: relative; width: 32px; height: 18px; box-sizing: border-box; border-radius: 999px; background: #2b3245; border: 1px solid rgba(255, 255, 255, .12); transition: background .2s, border-color .2s; }
+.menu .ms::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #aab3c5; transition: transform .22s cubic-bezier(.3, 1.4, .5, 1), background .2s; }
+.menu .mi[aria-pressed="true"] .ms { background: linear-gradient(90deg, #ffab3f, #ffd27d); border-color: #ffc46b; box-shadow: 0 0 10px -2px rgba(255, 184, 90, .7); }
+.menu .mi[aria-pressed="true"] .ms::after { transform: translateX(14px); background: #2a1a00; }
+.menu .mseg { display: flex; gap: 2px; margin: 2px 4px 6px; padding: 3px; border-radius: 10px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
+.menu .mseg button { flex: 1; padding: 7px 6px; border-radius: 8px; }
+.menu .mseg button[aria-pressed="true"] { background: rgba(255, 196, 107, .2); color: #ffd48a; box-shadow: inset 0 0 0 1px rgba(255, 196, 107, .35); }
 .seg { display: inline-flex; padding: 3px; gap: 2px; }
 button { appearance: none; border: 0; background: transparent; color: #d5dcea; font: inherit; font-weight: 600; font-size: 12px;
   padding: 6px 10px; border-radius: 7px; cursor: pointer; letter-spacing: .01em; }
@@ -5954,7 +5994,8 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
 .hint.hide { opacity: 0; }
 .err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #ffb4b4; background: #0a0f1e; }
 /* Vista de cima navegável: trilha Planta › Bloco › Cômodo + aparelhos do cômodo */
-.navrow { flex: 1 0 100%; display: flex; pointer-events: none; min-width: 0; }
+.navrow { flex: 1 0 100%; display: flex; pointer-events: none; min-width: 0; box-sizing: border-box; }
+.wrap.side .navrow { padding-right: calc(var(--pw, 0px) - 10px); }   /* painel lateral aberto: a trilha não passa por baixo dele */
 .navrow[hidden] { display: none; }
 .navrow > * { pointer-events: auto; }
 .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 8px 4px 4px; max-width: 100%; box-sizing: border-box; }
@@ -5986,6 +6027,7 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
 .walkhint { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 4; padding: 7px 12px; font-size: 12px; color: #d5dcea; max-width: calc(100% - 32px);
   text-align: center; pointer-events: none; opacity: 0; transition: opacity .6s; }
 .walkhint.show { opacity: 1; }
+.wrap.side .walkhint { left: calc((100% - var(--pw, 0px)) / 2); max-width: calc(100% - var(--pw, 0px) - 32px); }
 canvas.walk { cursor: crosshair; }
 canvas.walk.pick { cursor: pointer; }
 /* Bonequinho (arrastar até o ambiente), "Ir para…", "Entrar aqui" — v1.4.6 */
@@ -5999,6 +6041,7 @@ canvas.walk.pick { cursor: pointer; }
 .pegtip[hidden] { display: none; }
 .goto { position: absolute; right: 10px; top: 64px; z-index: 6; width: min(340px, calc(100% - 20px)); max-height: calc(100% - 150px); overflow: auto; padding: 8px 10px 10px; overscroll-behavior: contain; }
 .goto[hidden] { display: none; }
+.wrap.side .goto { right: var(--pw); width: min(340px, calc(100% - var(--pw, 0px) - 10px)); }   /* à esquerda do painel lateral, nunca por baixo dele */
 .goto .gh { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; padding: 2px 2px 6px; }
 .goto .gt { font-size: 11px; color: #9aa6bd; font-weight: 700; margin: 8px 2px 4px; }
 .goto .grow { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -6009,37 +6052,44 @@ canvas.walk.pick { cursor: pointer; }
 .nav .enter:hover { background: rgba(255, 196, 107, .28); }
 @media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
-/* Painel inferior (dock) — vidro escuro + âmbar; luz acesa brilha quente, clima frio azulado */
-.dock, .reopen { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #9aa6bd; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
-.dock { position: absolute; left: 0; right: 0; margin: 0 auto; bottom: 10px; width: min(1180px, calc(100% - 20px)); max-height: min(48%, 392px); display: flex; flex-direction: column; overflow: hidden; z-index: 3;
-  border-radius: 18px; border: 1px solid rgba(255, 255, 255, .11); background: linear-gradient(180deg, rgba(22, 29, 49, .92), rgba(9, 13, 25, .95));
-  box-shadow: 0 20px 56px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .08) inset; backdrop-filter: blur(14px) saturate(1.25); -webkit-backdrop-filter: blur(14px) saturate(1.25);
-  animation: dockIn .34s var(--ease) backwards; }
+/* Painel lateral (v1.6.0) — coluna à direita no desktop/tablet, gaveta que entra pela direita no celular; vidro escuro + âmbar;
+   luz acesa brilha quente, clima frio azulado */
+.dock, .reopen, .scrim { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #9aa6bd; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
+.dock { position: absolute; top: 60px; right: 10px; bottom: 10px; width: clamp(272px, 34%, 380px); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; z-index: 3;
+  border-radius: 18px; border: 1px solid rgba(255, 255, 255, .1); background: linear-gradient(180deg, rgba(17, 23, 40, .95), rgba(7, 10, 20, .97));
+  box-shadow: 0 28px 72px rgba(0, 0, 0, .62), 0 1px 0 rgba(255, 255, 255, .07) inset; backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  touch-action: pan-y; will-change: transform; }   /* material pesado (estrutura); abre/recolhe pela direita com mola em JS (_dockGo) */
 .dock[hidden] { display: none; }
-.dock.closing { animation: dockOut .2s ease-in forwards; pointer-events: none; }
-@keyframes dockOut { to { opacity: 0; transform: translateY(24px) scale(.985); } }
-.dock::before { content: ""; display: none; flex: none; width: 38px; height: 4px; margin: 7px auto 0; border-radius: 4px; background: rgba(255, 255, 255, .2); }
-@keyframes dockIn { from { opacity: 0; transform: translateY(22px) scale(.985); } }
+@keyframes scrimIn { from { opacity: 0; } }
+/* alça vertical na borda esquerda da gaveta: arrastar para a direita fecha */
+.dock::before { content: ""; display: none; position: absolute; left: 4px; top: 50%; width: 4px; height: 38px; margin-top: -19px; border-radius: 4px; background: rgba(255, 255, 255, .2); z-index: 1; }
+.wrap.drawer .dock { top: var(--hud, 72px); right: 6px; bottom: 6px; width: min(88%, 360px); z-index: 5; border-radius: 20px; }
+.wrap.drawer .dock::before { display: block; }
+.scrim { position: absolute; left: 0; right: 0; bottom: 0; top: var(--hud, 72px); z-index: 4; background: rgba(4, 7, 14, .42); touch-action: none; }   /* véu só no celular (gaveta modal); a opacidade segue a gaveta */
+.scrim[hidden] { display: none; }
 @keyframes paneIn { from { opacity: 0; transform: translateY(8px); } }
 @keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @keyframes sheetIn { from { opacity: 0; transform: translateY(14px); } }
 @keyframes flashPulse { 0% { box-shadow: 0 0 0 0 rgba(255, 212, 138, .8); } 100% { box-shadow: 0 0 0 14px rgba(255, 212, 138, 0); } }
-.tabs { touch-action: none; display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); flex: none; align-items: center; }
-.tabs button[role="tab"] { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; font-size: 12.5px; border-radius: 999px; color: #a9b4ca; transition: background .22s, color .22s, box-shadow .22s; }
-.tabs button[role="tab"] svg { width: 14px; height: 14px; opacity: .8; }
+.phead { display: flex; align-items: center; gap: 8px; padding: 10px 10px 8px 12px; flex: none; }
+.phead .spacer { flex: 1; }
+.phead .count { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); color: #b4bfd4; font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.phead .count svg { width: 14px; height: 14px; color: #6b768f; transition: color .3s, filter .3s; }
+.phead .count.lit svg { color: var(--amber); filter: drop-shadow(0 0 5px var(--amber)); }
+.phead .count b { color: var(--ink); font-weight: 700; }
+.phead .collapse { width: 32px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: rgba(255, 255, 255, .05); }
+.phead .collapse:hover { background: rgba(255, 196, 107, .18); color: var(--amber2); }
+.tabs { display: flex; gap: 2px; margin: 0 10px 8px; padding: 3px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); flex: none; }
+.tabs button[role="tab"] { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 4px; font-size: 12px; border-radius: 9px; color: #a9b4ca; white-space: nowrap; transition: background .22s, color .22s, box-shadow .22s; }
+.tabs button[role="tab"] svg { width: 14px; height: 14px; opacity: .8; flex: none; }
 .tabs button[role="tab"]:hover { color: #e6edf7; }
 .tabs button[aria-selected="true"] { background: linear-gradient(180deg, rgba(255, 196, 107, .26), rgba(255, 196, 107, .12)); color: var(--amber2); box-shadow: inset 0 0 0 1px rgba(255, 196, 107, .38); }
-.tabs .spacer { flex: 1; }
-.tabs .count { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; margin-right: 4px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); color: #b4bfd4; font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tabs .count svg { width: 14px; height: 14px; color: #6b768f; transition: color .3s, filter .3s; }
-.tabs .count.lit svg { color: var(--amber); filter: drop-shadow(0 0 5px var(--amber)); }
-.tabs .count b { color: var(--ink); font-weight: 700; }
-.tabs .collapse { width: 32px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: rgba(255, 255, 255, .05); }
-.pane { overflow: auto; padding: 12px 12px 14px; display: none; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
+.pane { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 4px 10px 12px; touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(transparent, #000 10px); mask-image: linear-gradient(transparent, #000 10px); display: none; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
 .pane.active { display: block; animation: paneIn .28s var(--ease); }
-.zonebar { display: flex; gap: 6px; margin: 0 0 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.zonebar { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 12px; }   /* quebra em 2 linhas em vez de rolar de lado (o gesto de lado fecha a gaveta) */
 .zonebar::-webkit-scrollbar { display: none; }
-.zonebar button { flex: none; padding: 5px 12px; border-radius: 999px; font-size: 11.5px; color: #a9b4ca; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
+.zonebar button { flex: none; padding: 5px 11px; border-radius: 999px; font-size: 11.5px; color: #a9b4ca; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
 .zonebar button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: var(--amber2); border-color: rgba(255, 196, 107, .4); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .zone { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 8px 2px 0; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #9aa6bd; font-weight: 700; }
@@ -6097,7 +6147,7 @@ canvas.walk.pick { cursor: pointer; }
 .detail .dtitle { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
 .detail .dtitle .ico { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: var(--dot, #ffc46b); background: rgba(255, 255, 255, .06); box-shadow: 0 0 18px -4px var(--dot, #ffc46b); flex: none; }
 .detail .dtitle .ico svg { width: 20px; height: 20px; }
-.detail .dtitle b { font-size: 14px; } .detail .dtitle small { color: var(--mute); font-size: 11.5px; display: block; margin-top: 1px; }
+.detail .dtitle b { font-size: 14px; letter-spacing: -.005em; } .detail .dtitle small { color: var(--mute); font-size: 11.5px; display: block; margin-top: 1px; }
 .detail .close { width: 30px; height: 30px; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, .08); font-size: 16px; line-height: 1; }
 .sw { width: 46px; height: 26px; border-radius: 999px; background: #2b3245; position: relative; padding: 0; border: 1px solid rgba(255, 255, 255, .12); transition: background .25s, border-color .25s, box-shadow .25s; flex: none; }
 .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #aab3c5; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); transition: transform .28s cubic-bezier(.3, 1.4, .5, 1), background .2s; }
@@ -6112,7 +6162,7 @@ canvas.walk.pick { cursor: pointer; }
 .step { display: inline-flex; align-items: center; gap: 6px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); }
 .step button { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, .08); font-size: 18px; line-height: 1; }
 .step button:hover { background: rgba(103, 211, 255, .22); color: #aee8ff; }
-.step output { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 18px; color: #aee8ff; }
+.step output { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 18px; letter-spacing: -.01em; color: #aee8ff; }
 .mbtn { width: 36px; height: 32px; padding: 0; border-radius: 10px; background: rgba(255, 255, 255, .07); display: inline-grid; place-items: center; font-size: 16px; }
 .mbtn:hover { background: rgba(255, 196, 107, .2); }
 input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
@@ -6152,22 +6202,25 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
 .feed li.on { border-color: rgba(255, 255, 255, .1); }
 .feed b { font-weight: 700; color: var(--ink); } .feed time { color: var(--mute); font-variant-numeric: tabular-nums; font-size: 11px; text-align: right; white-space: nowrap; }
 .feed .empty { color: var(--mute); padding: 14px 12px; font-size: 12px; grid-column: 1 / -1; display: block; border-style: dashed; }
-.reopen { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; font-size: 13px; color: var(--amber2); z-index: 3;
-  background: linear-gradient(180deg, rgba(32, 40, 66, .92), rgba(12, 16, 30, .94)); border: 1px solid rgba(255, 196, 107, .4); box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 22px -6px rgba(255, 196, 107, .45); animation: reopenIn .32s var(--ease) backwards; }
-@keyframes reopenIn { from { opacity: 0; transform: translateX(-50%) translateY(14px); } }
+.reopen { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 7px 12px 8px; border-radius: 14px 0 0 14px; font-size: 12.5px; color: var(--amber2); z-index: 3;
+  background: linear-gradient(180deg, rgba(32, 40, 66, .92), rgba(12, 16, 30, .94)); border: 1px solid rgba(255, 196, 107, .4); border-right: 0; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 22px -6px rgba(255, 196, 107, .45); animation: reopenIn .32s var(--ease) backwards; }
+.reopen svg { width: 14px; height: 14px; flex: none; }
+.reopen .rl { writing-mode: vertical-rl; letter-spacing: .05em; }
+@keyframes reopenIn { from { opacity: 0; transform: translateY(-50%) translateX(14px); } }
 .reopen:hover { background: linear-gradient(180deg, rgba(48, 58, 92, .94), rgba(18, 24, 42, .95)); }
 .reopen .rn { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--amber); color: #2a1a00; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
 .reopen .rn:empty { display: none; }
 .reopen[hidden] { display: none; }
-/* Clima ao vivo — canto inferior direito, some quando o painel de automações abre por cima */
-.weather { position: absolute; right: 10px; bottom: 10px; width: 168px; box-sizing: border-box; padding: 10px 12px; z-index: 3;
+/* Clima ao vivo — v1.6.0: canto inferior esquerdo (o direito agora é do painel lateral); some no modo Pessoa (lugar do joystick)
+   e com a gaveta do celular aberta por cima */
+.weather { position: absolute; left: 10px; bottom: 10px; width: 168px; box-sizing: border-box; padding: 10px 12px; z-index: 3;
   display: flex; flex-direction: column; gap: 4px; transition: opacity .25s, transform .25s; }
 .weather[hidden] { display: none; }
 .weather.out { opacity: 0; transform: translateY(6px); pointer-events: none; }
 .weather .wtop { display: flex; align-items: center; gap: 8px; }
 .weather .wicon { width: 30px; height: 30px; color: #ffc46b; flex: none; display: flex; }
 .weather .wicon svg { width: 30px; height: 30px; }
-.weather .wtemp { font-size: 26px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.weather .wtemp { font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .weather .wtemp sup { font-size: 15px; font-weight: 600; opacity: .8; }
 .weather .wcond { font-size: 12px; color: #c9d2e3; line-height: 1.25; }
 .weather .wcity { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; }
@@ -6177,41 +6230,37 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
   .weather { width: 140px; padding: 8px 10px; }
   .weather .wtemp { font-size: 22px; } .weather .wicon, .weather .wicon svg { width: 24px; height: 24px; }
 }
+/* coluna estreita (desktop e gaveta do celular): blocos compactos em 2 colunas — ícone à esquerda, nome e estado à direita */
+.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 62px; padding: 8px 8px 8px 9px; border-radius: 14px; }
+.tile .top { display: contents; }
+.tile .ico { width: 32px; height: 32px; } .tile > span:not(.top) { min-width: 0; } .tile .more { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; }
+.tile .more::after { content: ""; position: absolute; inset: -4px; }
+.tile b { font-size: 12.5px; padding-right: 22px; letter-spacing: 0; } .tile small { font-size: 10.5px; }
+.tile.routine b { padding-right: 0; } .tile.routine small { -webkit-line-clamp: 2; }
+.tiles.routines { grid-template-columns: minmax(0, 1fr); }
+.tile.routine { min-height: 62px; grid-template-columns: auto minmax(0, 1fr); }
+.autos, .feed { grid-template-columns: minmax(0, 1fr); }
+.detail { padding: 11px 12px; gap: 10px; } .detail .rng { flex-basis: 100%; }
 @media (max-width: 640px) {
-  .dock { width: auto; margin: 0; height: 50%; max-height: none; left: 6px; right: 6px; bottom: 6px; border-radius: 20px; }
-  .dock::before { display: block; }
-  .tabs { padding: 5px 8px 8px; gap: 0; }
-  .tabs .count { padding: 4px 8px; margin-right: 2px; } .tabs .collapse { width: 30px; }
-  .tabs button[role="tab"] { padding: 7px 9px; font-size: 12px; } .tabs button[role="tab"] svg { display: none; } .tabs .count .lbl { display: none; }
-  .pane { padding: 10px 10px 14px; }
-  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
-  .tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 62px; padding: 8px 8px 8px 9px; border-radius: 14px; }
-  .tile .top { display: contents; }
-  .tile .ico { width: 32px; height: 32px; } .tile > span:not(.top) { min-width: 0; } .tile .more { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; }
-  .tile .more::after { content: ""; position: absolute; inset: -4px; }
-  .tile b { font-size: 12.5px; padding-right: 22px; } .tile small { font-size: 10.5px; }
-  .tile.routine b { padding-right: 0; } .tile.routine small { -webkit-line-clamp: 2; }
-  .tiles.routines { grid-template-columns: minmax(0, 1fr); }
-  .tile.routine { min-height: 62px; grid-template-columns: auto minmax(0, 1fr); }
-  .autos, .feed { grid-template-columns: minmax(0, 1fr); }
-  .detail { padding: 11px 12px; gap: 10px; } .detail .rng { flex-basis: 100%; }
-  .reopen { bottom: 12px; }
-  .hud.top { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 6px; }   /* sem wrap: a linha teria a largura do maior item */
-
-  .title { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 0; padding: 6px 10px; }
+  .hud.top { gap: 6px; }
+  .title { flex: 1 1 0; min-width: 0; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 0; padding: 6px 10px; }
   .title b { font-size: 14px; }
-  .btns { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-  .btns::-webkit-scrollbar { display: none; }
-  .btns > * { flex: none; }
-  .btn { padding: 7px 10px; }
+  .btn { padding: 8px 10px; }
   .hint { display: none; }
 }
-/* celular em retrato: os botões quebram em duas linhas em vez de rolar escondidos */
-@media (max-width: 480px) {
-  .btns { flex-wrap: wrap; overflow: visible; gap: 6px; }
-  .btn { padding: 6px 9px; font-size: 11.5px; } .seg button { padding: 5px 8px; font-size: 11.5px; }
+/* celular em retrato: o botão do menu vira só o ícone ☰ (o nome fica no aria-label) */
+@media (max-width: 400px) { .menubtn .mbl { display: none; } .menubtn { padding: 8px 11px; } }
+/* gaveta do celular: o menu ocupa a largura do cartão (10 px de cada lado) e rola se for alto */
+.wrap.drawer .menu { width: calc(var(--cw, 100vw) - 20px); max-height: calc(var(--ch, 100vh) - 68px); }
+/* menos transparência: vidro vira fundo quase sólido, sem blur · mais contraste: fundo sólido e borda clara */
+@media (prefers-reduced-transparency: reduce) { .panel, .dock, .menu, .reopen { background: #0e1426; backdrop-filter: none; -webkit-backdrop-filter: none; } .scrim { background: rgba(4, 7, 14, .7); } }
+@media (prefers-contrast: more) {
+  .panel, .dock, .menu, .reopen { background: #05070d; backdrop-filter: none; -webkit-backdrop-filter: none; border: 1px solid #dfe6f2; }
+  .menu .mh, .phead .count, .tile small, .zone, .menu .mi .mic { color: #e6edf7; } .tile, .zonebar button, .tabs { border-color: rgba(255, 255, 255, .55); }
 }
-@media (prefers-reduced-motion: reduce) { .dock, .reopen, .pane.active, .tile, .tile::before, .tile .ico, .tile .lvl::after, .detail, .feed li, .auto, .sw, .sw::after, .seg2 button, .swatch, .detail input[type="range"]::-webkit-slider-thumb { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .dock:not([hidden]), .menu:not([hidden]) { animation: scrimIn .15s ease-out !important; transform: none !important; } }   /* deslize/mola/escala → fade curto */
+@media (prefers-reduced-motion: reduce) { .menu .ms, .menu .ms::after, .reopen, .btn, .mi, .menu .mseg button, .pane.active, .tile, .tile::before, .tile .ico, .tile .lvl::after, .detail, .feed li, .auto, .sw, .sw::after, .seg2 button, .swatch, .detail input[type="range"]::-webkit-slider-thumb { animation: none !important; transition: none !important; } }
 `;
 
 export class Igreja3DCard extends HTMLElement {
@@ -6296,45 +6345,75 @@ export class Igreja3DCard extends HTMLElement {
     this._subEl = document.createElement('span'); this._subEl.className = 'sub'; this._subEl.textContent = '—';
     title.append(this._titleEl, this._clockEl, this._subEl); top.appendChild(title);
 
-    const btns = document.createElement('div'); btns.className = 'btns'; top.appendChild(btns);
-    const seg = document.createElement('div'); seg.className = 'panel seg'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Iluminação ambiente');
+    // v1.6.0: as opções do topo ficam num menu suspenso (☰ Opções) organizado em seções — Ambiente · Vista · Navegação · Painel. As referências
+    // (_modeBtns, _nvBtn, _labelsBtn, _roofBtn, _topBtn, _walkBtn, _panelBtn) são as mesmas de antes e o estado continua em aria-pressed
+    // (espelhado em aria-checked para os leitores de tela). Fora do menu: o bonequinho (arrasta até a maquete/planta) e, no modo Pessoa, "Ir para…".
+    const btns = document.createElement('div'); btns.className = 'btns'; top.appendChild(btns); this._btnsEl = btns;
+    const menu = document.createElement('div'); menu.className = 'menu'; menu.id = 'igreja3d-menu'; menu.hidden = true;
+    menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'Opções'); this._menu = menu;
+    const sec = (title) => {
+      const d = document.createElement('div'); d.className = 'msec'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', title);
+      const h = document.createElement('div'); h.className = 'mh'; h.setAttribute('aria-hidden', 'true'); h.textContent = title; d.appendChild(h); menu.appendChild(d); return d;
+    };
+    // item: ícone + nome + interruptor (liga/desliga, estado em aria-pressed) ou, nas ações de um disparo, um atalho à direita
+    const item = (parent, icon, label, { toggle = false, title = '', hint = '' } = {}) => {
+      const b = document.createElement('button'); b.className = 'mi'; b.tabIndex = -1; b.setAttribute('role', toggle ? 'menuitemcheckbox' : 'menuitem');
+      b.innerHTML = `<span class="mic">${iconSvg(icon)}</span><span class="ml"></span>` + (toggle ? '<span class="ms" aria-hidden="true"></span>' : hint ? `<span class="mk" aria-hidden="true">${hint}</span>` : '');
+      b.querySelector('.ml').textContent = label; if (title) b.title = title; if (toggle) b.setAttribute('aria-pressed', 'false');
+      parent.appendChild(b); return b;
+    };
+    const sAmb = sec('Ambiente');
+    const seg = document.createElement('div'); seg.className = 'mseg'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Iluminação ambiente');
     this._modeBtns = {};
     for (const [m, lbl] of [['auto', 'Auto'], ['day', 'Dia'], ['night', 'Noite']]) {
-      const b = document.createElement('button'); b.textContent = lbl; b.dataset.mode = m;
+      const b = document.createElement('button'); b.textContent = lbl; b.dataset.mode = m; b.tabIndex = -1; b.setAttribute('role', 'menuitemradio');
       b.addEventListener('click', () => { this._mode = m; this._applyMode(); });
       seg.appendChild(b); this._modeBtns[m] = b;
     }
-    btns.appendChild(seg);
-    this._nvBtn = document.createElement('button'); this._nvBtn.className = 'panel btn'; this._nvBtn.textContent = 'Visão noturna';
-    this._nvBtn.title = 'À noite, deixa a igreja inteira visível (luz de lua)';
+    sAmb.appendChild(seg);
+    this._nvBtn = item(sAmb, 'moon', 'Visão noturna', { toggle: true, title: 'À noite, deixa a igreja inteira visível (luz de lua)' });
     this._nvBtn.addEventListener('click', () => { this._nightVision = !this._nightVision; this._applyMode(); });
-    btns.appendChild(this._nvBtn);
-    this._labelsBtn = document.createElement('button'); this._labelsBtn.className = 'panel btn'; this._labelsBtn.textContent = 'Rótulos';
+    const sVis = sec('Vista');
+    this._labelsBtn = item(sVis, 'tag', 'Rótulos', { toggle: true, title: 'Nomes dos ambientes sobre a maquete' });
     this._labelsBtn.addEventListener('click', () => this._setLabels(!this._labelsOn));
-    btns.appendChild(this._labelsBtn);
-    const reset = document.createElement('button'); reset.className = 'panel btn'; reset.textContent = 'Recentrar';
-    reset.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(false); });
-    btns.appendChild(reset);
-    this._topBtn = document.createElement('button'); this._topBtn.className = 'panel btn'; this._topBtn.textContent = 'Vista de cima';
-    this._topBtn.title = 'Planta vista de cima, sem cobertura: confira luzes, ares e automações de todos os cômodos';
-    this._topBtn.setAttribute('aria-pressed', 'false');
+    this._roofBtn = item(sVis, 'church', 'Fachada', { toggle: true, title: 'Mostra a fachada, paredes altas e cobertura' });
+    this._roofBtn.addEventListener('click', () => this._setRoof(!this._roofOn));
+    this._topBtn = item(sVis, 'plan', 'Vista de cima', { toggle: true, title: 'Planta vista de cima, sem cobertura: confira luzes, ares e automações de todos os cômodos' });
     this._topBtn.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(!this._topView); });
-    btns.appendChild(this._topBtn);
-    this._walkBtn = document.createElement('button'); this._walkBtn.className = 'panel btn'; this._walkBtn.textContent = 'Pessoa';
-    this._walkBtn.title = 'Ande pela igreja na altura dos olhos: setas/WASD ou joystick; arraste para olhar';
-    this._walkBtn.setAttribute('aria-pressed', 'false');
-    this._walkBtn.addEventListener('click', () => this._setWalk(!this._walkOn));
-    btns.appendChild(this._walkBtn);
+    const reset = item(sVis, 'recenter', 'Recentrar', { title: 'Volta à vista inicial da maquete', hint: '↺' });
+    reset.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(false); this._menuSet(false); });
+    const sNav = sec('Navegação');
+    this._walkBtn = item(sNav, 'person', 'Pessoa', { toggle: true, title: 'Ande pela igreja na altura dos olhos: setas/WASD ou joystick; arraste para olhar' });
+    this._walkBtn.addEventListener('click', () => { const on = !this._walkOn; this._setWalk(on); if (on) this._menuSet(false); });   // entrar na Pessoa fecha o menu (o foco vai para a cena)
+    const gotoMi = item(sNav, 'pin', 'Ir para um ambiente…', { title: 'Vai direto a um ambiente na visão de Pessoa (inclui a salinha do mezanino)', hint: '›' });
+    gotoMi.addEventListener('click', () => { this._menuSet(false); this._toggleGoto(true); });
+    const sPan = sec('Painel');
+    this._panelBtn = item(sPan, 'side', 'Painel lateral', { toggle: true, title: 'Ambientes, automações e atividade (coluna à direita; no celular, gaveta)' });
+    this._panelBtn.addEventListener('click', () => this._setPanel(!this._panelOpen));
+    // leitores de tela: menuitemcheckbox/menuitemradio leem aria-checked — acompanha o aria-pressed que a lógica do cartão já mantém
+    const mirror = (b) => b.setAttribute('aria-checked', b.getAttribute('aria-pressed') === 'true' ? 'true' : 'false');
+    for (const b of menu.querySelectorAll('[aria-pressed], [role="menuitemradio"]')) mirror(b);
+    try { new window.MutationObserver((rs) => { for (const r of rs) if (r.target.getAttribute('role') !== 'menuitem') mirror(r.target); }).observe(menu, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] }); } catch { /* sem MutationObserver: só o aria-pressed */ }
+
     // Bonequinho (v1.4.6): arraste até um ambiente da maquete/planta e solte para entrar ali na visão de Pessoa; toque simples abre "Ir para…"
     const PERSON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.2" r="3"/><path d="M12 9.6c-2.9 0-4.6 1.5-4.8 4l-.2 3.2c0 .6.4 1 .9 1h.9l.4 4.2c0 .5.4.8.8.8h4c.4 0 .8-.3.8-.8l.4-4.2h.9c.5 0 .9-.4.9-1l-.2-3.2c-.2-2.5-1.9-4-4.8-4z"/></svg>';
     this._pegBtn = document.createElement('button'); this._pegBtn.className = 'panel btn peg'; this._pegBtn.innerHTML = PERSON;
     this._pegBtn.title = 'Arraste até um ambiente e solte para entrar nele (visão de Pessoa) · toque: lista de ambientes';
     this._pegBtn.setAttribute('aria-label', 'Bonequinho: arraste até um ambiente para entrar nele; Enter abre a lista de ambientes'); this._pegBtn.setAttribute('aria-pressed', 'false');
-    btns.appendChild(this._pegBtn); this._pegBind(this._pegBtn);
+    this._pegBind(this._pegBtn);
     this._gotoBtn = document.createElement('button'); this._gotoBtn.className = 'panel btn'; this._gotoBtn.textContent = 'Ir para…'; this._gotoBtn.hidden = true;
     this._gotoBtn.title = 'Vai direto a um ambiente (inclui a salinha do mezanino)'; this._gotoBtn.setAttribute('aria-pressed', 'false');
     this._gotoBtn.addEventListener('click', () => this._toggleGoto());
-    btns.appendChild(this._gotoBtn);
+    this._menuBtn = document.createElement('button'); this._menuBtn.className = 'panel btn menubtn'; this._menuBtn.innerHTML = `${iconSvg('menu')}<span class="mbl">Opções</span>`;
+    this._menuBtn.setAttribute('aria-haspopup', 'true'); this._menuBtn.setAttribute('aria-expanded', 'false'); this._menuBtn.setAttribute('aria-controls', menu.id); this._menuBtn.setAttribute('aria-label', 'Opções');
+    this._menuBtn.title = 'Opções: ambiente (Auto/Dia/Noite), rótulos, fachada, Vista de cima, Pessoa, painel';
+    this._menuBtn.addEventListener('click', (e) => this._menuSet(!this._menuOn, e.detail === 0));   // detail 0 = Enter/Espaço: o foco vai para o 1º item
+    this._menuBtn.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); this._menuSet(true); this._menuFocus(e.key === 'ArrowDown' ? 0 : -1); } });
+    btns.append(this._gotoBtn, this._pegBtn, this._menuBtn, menu);
+    // teclado e clique fora com o menu aberto: escutados na janela, em captura (antes do Walker e da trilha da Vista de cima)
+    this._menuKeyH = (e) => this._menuKey(e);
+    this._menuOut = (e) => { if (!this._menuOn) return; const path = e.composedPath(); if (!path.includes(menu) && !path.includes(this._menuBtn)) this._menuSet(false); };
+    window.addEventListener('keydown', this._menuKeyH, true); window.addEventListener('pointerdown', this._menuOut, true);
     this._pegGhost = document.createElement('div'); this._pegGhost.className = 'pegghost'; this._pegGhost.innerHTML = PERSON; this._pegGhost.hidden = true; wrap.appendChild(this._pegGhost);
     this._pegTip = document.createElement('div'); this._pegTip.className = 'panel pegtip'; this._pegTip.hidden = true; wrap.appendChild(this._pegTip);
     this._gotoPanel = document.createElement('div'); this._gotoPanel.className = 'panel goto'; this._gotoPanel.hidden = true; this._gotoPanel.setAttribute('role', 'dialog'); this._gotoPanel.setAttribute('aria-label', 'Ir para um ambiente'); wrap.appendChild(this._gotoPanel);
@@ -6342,13 +6421,6 @@ export class Igreja3DCard extends HTMLElement {
     const joy = document.createElement('div'); joy.className = 'joy'; joy.hidden = true; joy.setAttribute('role', 'application'); joy.setAttribute('aria-label', 'Andar');
     const knob = document.createElement('div'); knob.className = 'knob'; joy.appendChild(knob); wrap.appendChild(joy); this._joy = joy;
     this._walkHint = document.createElement('div'); this._walkHint.className = 'panel walkhint'; wrap.appendChild(this._walkHint);
-    this._roofBtn = document.createElement('button'); this._roofBtn.className = 'panel btn'; this._roofBtn.textContent = 'Fachada';
-    this._roofBtn.title = 'Mostra a fachada, paredes altas e cobertura';
-    this._roofBtn.addEventListener('click', () => this._setRoof(!this._roofOn));
-    btns.appendChild(this._roofBtn);
-    this._panelBtn = document.createElement('button'); this._panelBtn.className = 'panel btn'; this._panelBtn.textContent = 'Painel';
-    this._panelBtn.addEventListener('click', () => this._setPanel(!this._panelOpen));
-    btns.appendChild(this._panelBtn);
 
     this._hint = document.createElement('div'); this._hint.className = 'hint';
     this._hint.textContent = 'Arraste para girar · roda/pinça para zoom · clique num ambiente para acender';
@@ -6367,7 +6439,7 @@ export class Igreja3DCard extends HTMLElement {
     enter.addEventListener('click', () => { if (this._nav.room) this._enterRoom(this._nav.room); });
     nav.append(back, crumbs, enter, chips); navrow.appendChild(nav); top.appendChild(navrow);
     this._navRow = navrow; this._navCrumbs = crumbs; this._navChipsEl = chips; this._enterBtn = enter;
-    const navKey = (e) => { if ((e.key === 'Escape' || e.key === 'Backspace') && this._topView) { e.preventDefault(); this._navBack(); } };
+    const navKey = (e) => { if ((e.key === 'Escape' || e.key === 'Backspace') && this._topView && !this._menuOn) { e.preventDefault(); this._navBack(); } };   // com o menu aberto o Esc só fecha o menu
     canvas.addEventListener('keydown', navKey); nav.addEventListener('keydown', navKey);
 
     try {
@@ -6386,7 +6458,8 @@ export class Igreja3DCard extends HTMLElement {
     this._timersOn();
     this._setLabels(!!this._config.labels);
     this._applyMode();
-    this._setPanel(this._config.panel !== false);
+    this._drawer = this._isDrawer();
+    this._setPanel(this._config.panel !== false && !this._drawer);   // no celular a gaveta cobriria a cena: começa recolhida (aba "Painel" na borda)
     this._setRoof(!!(this._config.fachada != null ? this._config.fachada : this._config.roof));   // `fachada:` (ou `roof:`, como no casa3d)
     if (this._hass) this._syncFromHass();
     else this._applyDemoDefaults();
@@ -8027,13 +8100,11 @@ export class Igreja3DCard extends HTMLElement {
   // A câmera vem da frente (lado do estacionamento), um pouco à direita e alta: a fachada com o
   // painel ripado e o logo fica de frente e legível, e o interior (palco/telão) aparece por cima das paredes.
   _homeFor(aspect) {
-    const panel = !!(this._panelOpen && this._dock && !this._dock.hidden);
     if (aspect < 1.0) {
-      // retrato: vista mais de cima, com o comprimento do lote na vertical da tela
-      // (a faixa visível já desconta o HUD e o painel: ver _resize) com o painel aberto chega um pouco mais perto
+      // retrato: vista mais de cima, com o comprimento do lote na vertical da tela (a faixa visível já desconta o HUD e o painel lateral: ver _resize)
       const target = new THREE.Vector3(9.5, 0, 31);
       const dir = new THREE.Vector3(0.45, 1.6, 1.0).normalize();
-      return { pos: target.clone().addScaledVector(dir, 66 * Math.sqrt(1 / Math.max(aspect, 0.3)) * (panel ? 0.9 : 1)), target };
+      return { pos: target.clone().addScaledVector(dir, 66 * Math.sqrt(1 / Math.max(aspect, 0.3))), target };
     }
     // paisagem: abaixo de 1,8 o limite é a largura → afasta
     // o palco fica na parede alta x = 0 virado para +x: a câmera vem um pouco da direita para ver o palco/telão em
@@ -8661,6 +8732,7 @@ export class Igreja3DCard extends HTMLElement {
     const box = this._gotoPanel; if (!box) return;
     const open = force != null ? force : box.hidden;
     if (open && !box.dataset.built) { this._buildGoto(); box.dataset.built = '1'; }
+    if (open) { this._menuSet(false); if (this._panelOpen && this._drawer) this._setPanel(false); }   // a lista não abre por baixo da gaveta do celular
     box.hidden = !open; this._gotoBtn.setAttribute('aria-pressed', open ? 'true' : 'false'); this._pegBtn.setAttribute('aria-pressed', open && !this._walkOn ? 'true' : 'false');
   }
   _closeGoto() { if (this._gotoPanel && !this._gotoPanel.hidden) this._toggleGoto(false); }
@@ -8685,7 +8757,7 @@ export class Igreja3DCard extends HTMLElement {
       // v1.5.5: na visão de Pessoa a Fachada liga sozinha (paredes altas, forro e telhado: por dentro some o céu sobre as salas);
       // ao sair volta como estava. O botão Fachada continua valendo durante o passeio. `fachada_pessoa: false` desliga isso.
       if (this._config.fachada_pessoa !== false && !this._roofOn) this._setRoof(true);
-      if (this._panelOpen) this._setPanel(false);   // o painel cobriria o joystick
+      if (this._panelOpen && this._drawer) this._setPanel(false);   // a gaveta do celular cobriria a cena; no desktop a coluna à direita fica
       this._airFocus = this._airTour = null;
       o.enabled = false; o.touched = true;
       if (!this._walk) { this._walk = new Walker(this, cam, cv); this._walk.reset(12.0, 52.0); }
@@ -8694,6 +8766,7 @@ export class Igreja3DCard extends HTMLElement {
       cv.classList.add('walk'); try { cv.focus({ preventScroll: true }); } catch (_) {}
       this._joy.hidden = false; this._showWalkHint();
       this._pegBtn.hidden = true; this._gotoBtn.hidden = false; this._closeGoto();
+      this._sideSync();
     } else {
       this._walk.disable(); this._walk.path = null; this._walkOn = false; o.enabled = true;
       this._doorsReset(); this._mkHide(true); this._closeGoto(); this._pegBtn.hidden = false; this._gotoBtn.hidden = true;
@@ -8703,7 +8776,8 @@ export class Igreja3DCard extends HTMLElement {
       // volta voando da altura dos olhos até onde a câmera estava antes
       o.sph.setFromVector3(cam.position.clone().sub(o.target)); o.goal.copy(o.sph);
       this._flyCam(sv.pos, sv.target, 3.2);
-      o.touched = sv.touched; if (sv.panel) this._setPanel(true);
+      o.touched = sv.touched; if (sv.panel && !this._panelOpen) this._setPanel(true);
+      this._sideSync();
       if (this._config.fachada_pessoa !== false && !!this._roofOn !== sv.roof) this._setRoof(sv.roof);
     }
     this._walkBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -8846,21 +8920,87 @@ export class Igreja3DCard extends HTMLElement {
     const t = this._timers[key]; if (!t) return '';
     const m = Math.max(1, Math.round((t.at - now) / 60000)); return ` · desliga em ${m} min`;
   }
-  _setPanel(open) {
+  // Painel lateral (v1.6.0): coluna à direita no desktop/tablet (a cena é enquadrada à esquerda dela, ver _resize); no celular (cartão ≤ 640 px)
+  // gaveta por cima da cena, com véu. Abre e recolhe pela direita com uma mola (_dockGo); `v` = velocidade do dedo ao soltar (px/s)
+  _setPanel(open, v = 0) {
     this._panelOpen = !!open;
-    clearTimeout(this._dockT); this._dock.classList.remove('closing');
-    if (!open && !this._dock.hidden && !this._reduced && this._wrap && this._wrap.isConnected) {   // recolhe deslizando (~0,2 s); o estado já vale na hora
-      this._dock.classList.add('closing'); this._dockT = setTimeout(() => { this._dock.classList.remove('closing'); this._dock.hidden = !this._panelOpen; }, 200);
-    } else this._dock.hidden = !open;
+    const d = this._dock;
+    if (open && d.hidden) { d.hidden = false; this._dockX = this._reduced ? 0 : this._dockW(); }
+    if (this._reduced || !this._wrap || !this._wrap.isConnected || (!open && d.hidden)) { this._dockGo(null); d.hidden = !open; this._dockSet(0); }
+    else this._dockGo(open ? 0 : this._dockW(), v, v ? 0.8 : 1);   // solto pelo dedo: mola com um tico de passada (0,8); pelo botão: sem passada
     this._reopen.hidden = !!open;
-    if (this._weatherEl) this._weatherEl.classList.toggle('out', !!open);
+    if (!open && d.contains(this.shadowRoot.activeElement)) this._reopen.focus();
     this._panelBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
+    this._sideSync();
     if (open) this._renderPanel();
     requestAnimationFrame(() => this._resize());
   }
+  // largura que tira a gaveta/coluna inteira da tela pela direita
+  _dockW() { return this._dock.offsetWidth + 16; }
+  // posição da gaveta (translateX, 0 = aberta) e o véu acompanhando
+  _dockSet(x) {
+    this._dockX = x; this._dock.style.transform = x ? `translateX(${x.toFixed(1)}px)` : '';
+    if (this._scrim) this._scrim.style.opacity = x ? String(clamp(1 - x / this._dockW(), 0, 1)) : '';
+  }
+  // mola feita à mão (resposta 0,3 s; amortecimento 1 ou 0,8), sempre a partir da posição atual — dá para agarrar no meio do caminho.
+  // Passo fixo de 1/240 s no tempo real: a mola termina no mesmo tempo mesmo com poucos quadros por segundo. null = para onde está.
+  _dockGo(target, v = 0, zeta = 1) {
+    cancelAnimationFrame(this._dockRaf); this._dockRaf = 0; if (target == null) return;
+    const k = (2 * Math.PI / 0.3) ** 2, c = 4 * Math.PI * zeta / 0.3;
+    let x = this._dockX || 0, t = performance.now();
+    const step = () => {
+      const now = performance.now(), n = Math.min(120, Math.ceil((now - t) / (1000 / 240))); t = now;
+      for (let i = 0; i < n; i++) { v += (-k * (x - target) - c * v) / 240; x += v / 240; }
+      if (Math.abs(x - target) < 0.5 && Math.abs(v) < 20) {
+        this._dockRaf = 0; this._dockSet(target);
+        if (!this._panelOpen) { this._dock.hidden = true; this._dockSet(0); }
+        return;
+      }
+      this._dockSet(x); this._dockRaf = requestAnimationFrame(step);
+    };
+    this._dockRaf = requestAnimationFrame(step);
+  }
+  // o que depende de painel × celular × Pessoa: véu da gaveta (só no celular) e o clima (some sob a gaveta e no lugar do joystick)
+  _sideSync() {
+    const cover = !!(this._panelOpen && this._drawer);
+    if (this._scrim) this._scrim.hidden = !cover;
+    if (this._weatherEl) this._weatherEl.classList.toggle('out', cover || !!this._walkOn);
+  }
+  _isDrawer() { return (this.clientWidth || window.innerWidth || 1024) <= 640; }
+  // ---- Menu de opções (v1.6.0) ----
+  // abre/fecha; `focus` (aberto pelo teclado) leva o foco ao 1º item; ao fechar com o foco dentro, ele volta ao botão ☰
+  _menuSet(open, focus = false) {
+    const m = this._menu; if (!m) return;
+    if (!!open !== !!this._menuOn) {
+      this._menuOn = !!open; m.hidden = !open; this._menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) this._closeGoto(); else if (m.contains(this.shadowRoot.activeElement)) this._menuBtn.focus();
+    }
+    if (open && focus) this._menuFocus(0);
+  }
+  _menuItems() { return [...this._menu.querySelectorAll('button')].filter((b) => !b.disabled); }
+  _menuFocus(i) { const it = this._menuItems(); if (it.length) it[((i % it.length) + it.length) % it.length].focus(); }
+  // teclado com o menu aberto (captura na janela: antes do Walker e da trilha da Vista de cima): Esc só fecha o menu, ↑/↓/Home/End andam, Tab sai
+  _menuKey(e) {
+    if (!this._menuOn) return;
+    const act = this.shadowRoot.activeElement, inside = !!act && (this._menu.contains(act) || act === this._menuBtn);
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this._menuSet(false); if (inside) this._menuBtn.focus(); return; }
+    if (!inside) return;
+    if (e.key === 'Tab') { this._menuSet(false); return; }
+    const it = this._menuItems(), i = it.indexOf(act), d = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+    const to = d ? (i < 0 ? (d > 0 ? 0 : -1) : i + d) : e.key === 'Home' ? 0 : e.key === 'End' ? -1 : null;
+    if (to == null) return;
+    e.preventDefault(); e.stopImmediatePropagation(); this._menuFocus(to);
+  }
   _buildPanel(wrap) {
     this._wrap = wrap;
-    const dock = document.createElement('div'); dock.className = 'panel dock'; dock.hidden = true; wrap.appendChild(dock); this._dock = dock;
+    this._scrim = document.createElement('div'); this._scrim.className = 'scrim'; this._scrim.hidden = true; wrap.appendChild(this._scrim);
+    this._scrim.addEventListener('click', () => this._setPanel(false));   // celular: tocar fora da gaveta fecha
+    const dock = document.createElement('div'); dock.className = 'panel dock'; dock.hidden = true; dock.setAttribute('role', 'complementary'); dock.setAttribute('aria-label', 'Painel da igreja'); wrap.appendChild(dock); this._dock = dock;
+    const head = document.createElement('div'); head.className = 'phead'; dock.appendChild(head);
+    this._countEl = document.createElement('span'); this._countEl.className = 'count'; this._countEl.setAttribute('role', 'status'); head.appendChild(this._countEl);
+    const spacer = document.createElement('div'); spacer.className = 'spacer'; head.appendChild(spacer);
+    const col = document.createElement('button'); col.className = 'collapse'; col.title = 'Recolher painel'; col.setAttribute('aria-label', 'Recolher painel');
+    col.innerHTML = iconSvg('chevr'); col.addEventListener('click', () => this._setPanel(false)); head.appendChild(col);
     const tabs = document.createElement('div'); tabs.className = 'tabs'; tabs.setAttribute('role', 'tablist'); dock.appendChild(tabs);
     this._panes = {};
     const panes = [];
@@ -8876,17 +9016,41 @@ export class Igreja3DCard extends HTMLElement {
       const pane = document.createElement('div'); pane.className = 'pane'; pane.dataset.pane = id; pane.setAttribute('role', 'tabpanel'); pane.setAttribute('aria-label', label); panes.push(pane);
       this._panes[id] = { btn: b, pane };
     }
-    let drag = null;   // no celular: arrastar a barra de abas para baixo recolhe o painel
-    tabs.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && !e.target.closest('button')) drag = { y: e.clientY, id: e.pointerId }; });
-    tabs.addEventListener('pointermove', (e) => { if (drag && e.pointerId === drag.id && e.clientY - drag.y > 48) { drag = null; this._setPanel(false); } });
-    const endDrag = () => { drag = null; }; tabs.addEventListener('pointerup', endDrag); tabs.addEventListener('pointercancel', endDrag);
-    const spacer = document.createElement('div'); spacer.className = 'spacer'; tabs.appendChild(spacer);
-    this._countEl = document.createElement('span'); this._countEl.className = 'count'; this._countEl.setAttribute('role', 'status'); tabs.appendChild(this._countEl);
-    const col = document.createElement('button'); col.className = 'collapse'; col.title = 'Recolher painel'; col.setAttribute('aria-label', 'Recolher painel');
-    col.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg>';
-    col.addEventListener('click', () => this._setPanel(false)); tabs.appendChild(col);
     for (const pane of panes) dock.appendChild(pane);
-    this._reopen = document.createElement('button'); this._reopen.className = 'panel btn reopen'; this._reopen.innerHTML = '<span>Painel ▴</span><span class="rn" title="luzes acesas"></span>'; this._reopen.hidden = true;
+    // Gaveta do celular: arrastar para a direita (toque/caneta). Depois de ~10 px na horizontal o gesto é dela: segue o dedo 1:1 (a partir de onde
+    // estava — agarrar no meio da mola interrompe sem pulo), além do aberto resiste (rubber band). Ao soltar decide pela velocidade projetada.
+    let g = null;
+    dock.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' || !this._drawer || g || e.target.closest('input')) return;
+      const was = this._dockRaf ? this._dockX : null; this._dockGo(null);   // interrompe a mola onde a gaveta está
+      g = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: this._dockX || 0, live: false, was, h: [] };
+    });
+    dock.addEventListener('pointermove', (e) => {
+      if (!g || e.pointerId !== g.id) return;
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if (!g.live) {
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        if (Math.abs(dy) >= Math.abs(dx)) { endG(e); return; }   // gesto vertical: é a rolagem da lista
+        g.live = true; g.x = e.clientX; g.h = []; try { dock.setPointerCapture(e.pointerId); } catch { /* ponteiro já solto */ }
+      }
+      const x = g.x0 + e.clientX - g.x, W = this._dockW();
+      this._dockSet(x < 0 ? -(-x * W * 0.55) / (W + 0.55 * -x) : x);   // rubberband(x, dim) = x·dim·0,55 / (dim + 0,55·|x|)
+      g.h.push([e.clientX, e.timeStamp]); if (g.h.length > 8) g.h.shift();   // hora do evento (não a do handler)
+    });
+    const endG = (e) => {
+      if (!g || e.pointerId !== g.id) return;
+      const s = g; g = null;
+      if (!s.live) { if (s.was != null) this._dockGo(this._panelOpen ? 0 : this._dockW()); return; }   // tocou sem arrastar: a mola interrompida continua
+      const b = s.h[s.h.length - 1], a = b && s.h.find((q) => q[1] >= b[1] - 100 && q !== b) || s.h[s.h.length - 2] || b;   // velocidade dos últimos ~100 ms
+      const v = b && b[1] - a[1] > 0 && e.timeStamp - b[1] < 150 ? (b[0] - a[0]) / (b[1] - a[1]) * 1000 : 0;   // px/s (dedo parado antes de soltar: 0)
+      const p = this._dockX + (v / 1000) * 0.998 / (1 - 0.998);   // projeção do movimento (desaceleração 0,998)
+      const close = v > 300 || (v > -300 && p > this._dockW() / 2);   // gesto rápido: vale o sentido; devagar: onde a projeção para
+      if (close) this._setPanel(false, v); else if (!this._panelOpen) this._setPanel(true, v); else this._dockGo(0, v, 0.8);   // agarrada fechando e devolvida: reabre
+    };
+    dock.addEventListener('pointerup', endG); dock.addEventListener('pointercancel', endG);
+    dock.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this._drawer && this._panelOpen) { e.preventDefault(); e.stopPropagation(); this._setPanel(false); } });
+    this._reopen = document.createElement('button'); this._reopen.className = 'panel btn reopen'; this._reopen.title = 'Abrir o painel (número de luzes acesas)';
+    this._reopen.innerHTML = `${iconSvg('chevl')}<span class="rl">Painel</span><span class="rn" title="luzes acesas"></span>`; this._reopen.hidden = true;
     this._reopen.addEventListener('click', () => this._setPanel(true)); wrap.appendChild(this._reopen);
     this._buildWeather(wrap);
 
@@ -9177,13 +9341,20 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._gov) this._govInit();
     this._renderer.setPixelRatio(Math.min(dpr * Math.min(this._gov.idleScale, this._govIdleMax()), 3));   // mantém a nitidez escolhida pelo governador
     this._renderer.setSize(w, h, false);
-    // Com o painel aberto, a cena é enquadrada na área visível acima dele
-    const P = this._panelOpen && this._dock && !this._dock.hidden ? Math.min(this._dock.offsetHeight + 12, h * 0.6) : 0;
-    // no celular o HUD de cima (título + botões em 2 linhas) cobre ~150 px: a cena é enquadrada entre ele e o painel
+    // v1.6.0: com o painel lateral aberto (desktop/tablet) a cena é enquadrada na faixa à ESQUERDA dele (P = coluna + margens); no celular a
+    // gaveta fica por cima (P = 0). --pw/--hud/--cw/--ch guiam o CSS (trilha, "Ir para…", aviso da Pessoa, gaveta abaixo do cabeçalho, menu)
+    const drawer = w <= 640, wr = this._wrap;
+    if (drawer !== this._drawer) { this._drawer = drawer; this._sideSync(); }
+    const P = !drawer && this._panelOpen && this._dock && !this._dock.hidden ? Math.min(this._dock.offsetWidth + 20, w * 0.5) : 0;
+    // HUD de cima alto (título + trilha da Vista de cima, ou título em 2 linhas): a cena é enquadrada abaixo dele
     const hudH = this._hudTop ? this._hudTop.offsetHeight : 0, U = hudH > 90 ? Math.min(hudH, h * 0.3) : 0;
-    const vh = Math.max(120, h - P - U); this._vh = vh;
-    this._camera.aspect = w / vh; if (this._walkOn) this._camera.fov = this._walkFov();
-    if (P > 0 || U > 0) this._camera.setViewOffset(w, vh, 0, -U, w, h); else this._camera.clearViewOffset();
+    if (wr) {
+      wr.classList.toggle('drawer', drawer); wr.classList.toggle('side', P > 0);
+      for (const [k, v] of [['--pw', P], ['--hud', hudH], ['--cw', w], ['--ch', h]]) wr.style.setProperty(k, v + 'px');
+    }
+    const vw = Math.max(160, w - P), vh = Math.max(120, h - U); this._vh = vh;
+    this._camera.aspect = vw / vh; if (this._walkOn) this._camera.fov = this._walkFov();
+    if (P > 0 || U > 0) this._camera.setViewOffset(vw, vh, 0, -U, w, h); else this._camera.clearViewOffset();
     this._camera.updateProjectionMatrix();
     if (!this._orbit.touched) this._resetView();
     this._orbit.dirty = true;

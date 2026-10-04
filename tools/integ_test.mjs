@@ -1,11 +1,16 @@
-// Convivência (v1.4): Pessoa × Vista de cima × Recentrar × Fachada × painel × voo do ar × governador.
+// Convivência (v1.4; v1.6.0: botões pelo menu ☰ Opções): Pessoa × Vista de cima × Recentrar × Fachada × painel × voo do ar × governador.
 // Uso: THREE_LOCAL=<three.module.min.js> node tools/integ_test.mjs <index.html>
 import { open, proj } from './lib.mjs';
 const [,, html] = process.argv;
 const t = await open(html); const { page, S, ev } = t; const R = {};
 const C = (f, a) => page.evaluate(`(${f})(document.querySelector('igreja3d-card'), ${JSON.stringify(a)})`);
 const st = () => C((c) => ({ top: !!c._topView, lvl: c.getTopNav().level, room: c.getTopNav().room, walk: !!c._walkOn, navVisible: !c._navRow.hidden, joy: !c._joy.hidden, panel: c._panelOpen, orbit: c._orbit.enabled, roof: !!c._roofOn }));
-const btn = (label) => page.locator('igreja3d-card').locator('.hud button', { hasText: new RegExp('^' + label + '$') }).first().click();
+// v1.6.0: os botões do topo moraram no menu ☰ Opções — abre o menu se o item não está à vista, clica e fecha o menu (como os botões de antes)
+const btn = async (label) => {
+  const card = page.locator('igreja3d-card'), it = card.locator('.hud button', { hasText: new RegExp('^' + label + '$') }).first();
+  if (!(await it.isVisible())) await card.locator('.menubtn').click();
+  await it.click(); await C((c) => c._menuSet(false));
+};
 // (h) painel aberto + Pessoa
 R.h0 = await st();
 await btn('Pessoa'); await S(); R.h1 = await st();
