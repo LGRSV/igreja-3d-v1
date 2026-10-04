@@ -9,6 +9,20 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.6.1 — painel do cômodo, Vista de cima de frente para o palco
+
+- **Abre na Vista de cima** (nível 0) na demo e no HA; **Recentrar** volta a ela; sair pelo menu (Vista de cima) ou entrar na Pessoa funciona como antes (com `fachada: true` no YAML abre na maquete de sempre).
+- **Vista de cima de frente para o palco**: o nível 0 olha o templo do lado da plateia (câmera em +x olhando para −x), alta e oblíqua (~38° acima do horizonte), com a largura do templo ocupando a tela (paisagem e retrato); bloco e cômodo continuam retos de cima, agora com o palco em cima também na paisagem (aproximar não dá meia-volta).
+- **Painel do cômodo à esquerda** (no celular, folha compacta embaixo) nos níveis bloco e cômodo: título, "N de M ligados", **Ligar tudo** (só as luzes) / **Desligar tudo** (luzes, ar, telão e som) em uma chamada `homeassistant.turn_on/turn_off`, os aparelhos com estado, "Entrar aqui" e as **automações do HA do cômodo** (casadas pelo nome, com ativar/desativar e executar); no bloco, os cômodos com "N de M ligados". A trilha do topo ficou só com Voltar + migalhas, e a cena é enquadrada ao lado do painel.
+- Na Vista de cima o **painel lateral direito recolhe** e volta ao sair (se estava aberto).
+- **Painel lateral mais estreito e enxuto**: `clamp(260px, 26%, 320px)`, blocos e espaçamentos menores.
+- **Clima minimalista**: no título, ao lado do relógio, só ícone + temperatura (condição no title/aria-label); os detalhes (cidade, condição, sensação, vento, atualizado) estão no topo do menu ☰. Sem rede: nada no título e "Clima indisponível" no menu. O cartão flutuante saiu.
+- **Gestos de toque na maquete** (o mouse continua igual): 1 dedo gira com sensibilidade pela largura da tela e trava o eixo depois de ~10 px; solto com velocidade, o giro continua e desacelera; 2 dedos como num mapa (pinça = zoom no ponto entre os dedos, torção = gira, arrasto = pan), cada gesto com seu limiar; zoom e inclinação resistem nos limites e voltam ao soltar.
+- **Selecionar antes de agir** na maquete: o 1º toque num ambiente/aparelho realça e mostra um balão com nome, estado e "Acender/Apagar" (ou Ligar/Desligar); o 2º toque no mesmo alvo em até 5 s ou o botão executa; Esc ou tocar no vazio limpa. Os blocos dos painéis continuam diretos; no modo Pessoa o toque no piso continua andando até lá.
+- **Bonequinho "Andar"** com o nome ao lado (no celular só o ícone) e, no primeiro acesso, uma dica apontando para ele que só some quando ele é usado ou a dica é fechada (lembrada em `localStorage`, chave `igreja3d.dica_pessoa`); as dicas do título e do modo Pessoa somem na primeira interação, não por tempo.
+- **Visão noturna** de dia: o item mostra "só à noite" (e o porquê no title).
+- Demo: tocar nos blocos de sensor (presença, temperatura, porta) mostra um aviso com nome e estado; as chamadas em lote funcionam no `hass` simulado.
+
 ## Novidades da v1.6.0 — painel lateral e menu de opções
 
 - **Painel lateral** no lugar do painel de baixo. Desktop/tablet: coluna à direita (abaixo dos botões do topo até o pé do cartão, largura ~34 %, entre 272 e 380 px), mesmo vidro escuro/âmbar, agora mais pesado (blur e sombra maiores). Cabeçalho com o contador "N de M luzes acesas" e o botão **→ recolher**; abas Ambientes · Automações · Atividade num segmentado; filtros por área (Todos, Templo, Entrada, Administração, Apoio) quebram em 2 linhas; blocos em grade de 2 colunas (ícone à esquerda); a folha de controle continua presa ao pé da coluna. Recolhido, sobra a aba **‹ Painel** na borda direita com o número de luzes acesas. A **cena é enquadrada à esquerda do painel** (deslocamento horizontal da câmera): a igreja e a Vista de cima não ficam escondidas atrás dele; a trilha da Vista de cima e a lista *Ir para…* também ficam à esquerda da coluna.

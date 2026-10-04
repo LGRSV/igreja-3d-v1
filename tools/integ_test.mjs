@@ -11,7 +11,8 @@ const btn = async (label) => {
   if (!(await it.isVisible())) await card.locator('.menubtn').click();
   await it.click(); await C((c) => c._menuSet(false));
 };
-// (h) painel aberto + Pessoa
+// (h) painel aberto + Pessoa (v1.6.1: o cartão abre na Vista de cima — sai dela antes)
+await C((c) => c._setTopView(false)); await S();
 R.h0 = await st();
 await btn('Pessoa'); await S(); R.h1 = await st();
 await page.keyboard.press('Escape'); await S(); R.h2 = await st();
@@ -32,7 +33,7 @@ await page.keyboard.press('Escape'); await S(); await C((c) => c.setTopNav('ala'
 const cam0 = await C((c) => c._orbit.targetGoal.toArray()); await C((c) => c._flyToAir('ac_midia')); await S(); R.g2 = { top: (await st()).top, moved: JSON.stringify(cam0) !== JSON.stringify(await C((c) => c._orbit.targetGoal.toArray())) };
 // (e) chips do ar em nível 2 (selo)
 await C((c) => c.setTopNav('ala', 'midia')); await S();
-const a0 = await C((c) => c._state.ac_midia.on); await page.locator('igreja3d-card').locator('.nav .chip[data-key=ac_midia]').click(); await page.waitForTimeout(1500); await S();
+const a0 = await C((c) => c._state.ac_midia.on); await page.locator('igreja3d-card').locator('.room .chip[data-key=ac_midia]').click(); await page.waitForTimeout(1500); await S();
 R.e = { before: a0, after: await C((c) => c._state.ac_midia.on), top: (await st()).top, badge: await C((c) => (c._items.get('ac_midia').badges || []).some((b) => b.visible)) };
 await C((c) => c._setTopView(false)); await S();
 // (d) andar em tempo real: governador reage; ao parar, exatamente 1 quadro nítido

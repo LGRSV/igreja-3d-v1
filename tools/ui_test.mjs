@@ -17,7 +17,7 @@ const near = (a, b, d) => Math.abs(a - b) <= d;
   const item = (label) => card.locator('.menu button', { hasText: new RegExp('^' + label + '[↺›]?$') }).first();   // ações de um disparo têm o atalho ↺/› à direita
   const st = () => C((c) => ({ open: !!c._menuOn, vis: !c._menu.hidden, exp: c._menuBtn.getAttribute('aria-expanded'), walk: !!c._walkOn, top: !!c._topView, lvl: c.getTopNav().level, panel: !!c._panelOpen, act: (c.shadowRoot.activeElement || {}).className || '' }));
   const settle = () => page.waitForFunction(() => { const c = document.querySelector('igreja3d-card'); return !c._dockRaf; }, null, { timeout: 30000 });
-  await C((c) => c._setPanel(true)); await settle(); await S(300);
+  await C((c) => { c._setTopView(false); c._setPanel(true); }); await settle(); await S(300);   // v1.6.1: o cartão abre na Vista de cima
   // (a) abre no clique, fecha no Esc, no clique fora (canvas) e de novo no botão; aria-haspopup/expanded
   R.a0 = { ...(await st()), haspopup: await C((c) => c._menuBtn.getAttribute('aria-haspopup')), controls: await C((c) => !!c.shadowRoot.getElementById(c._menuBtn.getAttribute('aria-controls'))) };
   await mbtn.click(); R.a1 = await st();
@@ -41,14 +41,15 @@ const near = (a, b, d) => Math.abs(a - b) <= d;
   const lb0 = await C((c) => c._labelsOn); await item('Rótulos').click(); R.c4 = { before: lb0, after: await C((c) => c._labelsOn), pr: await pr('_labelsBtn') }; await item('Rótulos').click();
   await item('Fachada').click(); R.c5 = { roof: await C((c) => !!c._roofOn), pr: await pr('_roofBtn') }; await item('Fachada').click();
   await item('Vista de cima').click(); await S(); R.c6 = { top: await C((c) => !!c._topView), pr: await pr('_topBtn'), menuOpen: (await st()).open };
-  await item('Recentrar').click(); await S(); R.c7 = { top: await C((c) => !!c._topView), menuOpen: (await st()).open };
+  await item('Recentrar').click(); await S(); R.c7 = { top: await C((c) => !!c._topView), lvl: (await st()).lvl, menuOpen: (await st()).open };   // v1.6.1: Recentrar = Vista de cima, nível 0
+  await C((c) => c._setTopView(false)); await settle();   // sair da Vista de cima devolve o painel lateral
   await mbtn.click(); await item('Painel lateral').click(); await settle(); R.c8 = { panel: await C((c) => c._panelOpen), pr: await pr('_panelBtn'), dockHidden: await C((c) => c._dock.hidden) };
   await item('Painel lateral').click(); await settle(); R.c8b = { panel: await C((c) => c._panelOpen), pr: await pr('_panelBtn'), dockHidden: await C((c) => c._dock.hidden) };
   await item('Ir para um ambiente…').click(); R.c9 = { goto: await C((c) => !c._gotoPanel.hidden), menuOpen: (await st()).open }; await C((c) => c._toggleGoto(false));
   await mbtn.click(); await item('Pessoa').click(); await S(); R.c10 = { ...(await st()), pr: await pr('_walkBtn'), gotoBtn: await C((c) => !c._gotoBtn.hidden), peg: await C((c) => !c._pegBtn.hidden) };
   ok.c = R.c1.mode === 'night' && R.c1.night.join() === 'true,true,false' && R.c2.before !== R.c2.after && R.c2.pr[0] === R.c2.pr[1] && R.c3.mode === 'day' && R.c3.nvDisabled
     && R.c4.before !== R.c4.after && R.c4.pr[0] === String(R.c4.after) && R.c4.pr[1] === R.c4.pr[0] && R.c5.roof && R.c5.pr.join() === 'true,true'
-    && R.c6.top && R.c6.pr.join() === 'true,true' && R.c6.menuOpen && !R.c7.top && !R.c7.menuOpen && !R.c8.panel && R.c8.pr.join() === 'false,false' && R.c8.dockHidden && R.c8b.panel && R.c8b.pr.join() === 'true,true' && !R.c8b.dockHidden
+    && R.c6.top && R.c6.pr.join() === 'true,true' && R.c6.menuOpen && R.c7.top && R.c7.lvl === 0 && !R.c7.menuOpen && !R.c8.panel && R.c8.pr.join() === 'false,false' && R.c8.dockHidden && R.c8b.panel && R.c8b.pr.join() === 'true,true' && !R.c8b.dockHidden
     && R.c9.goto && !R.c9.menuOpen && R.c10.walk && !R.c10.open && R.c10.pr.join() === 'true,true' && R.c10.gotoBtn && !R.c10.peg;
   // (d) Esc com o menu aberto: na Pessoa só fecha o menu (o 2º Esc sai); na Vista de cima (nível 2) só fecha o menu (o 2º Esc volta um nível)
   await C((c) => { c._canvas.focus(); c._menuSet(true); }); await page.keyboard.press('Escape'); R.d1 = await st();
@@ -66,24 +67,22 @@ const near = (a, b, d) => Math.abs(a - b) <= d;
   // (f) cena enquadrada à esquerda do painel: o centro da igreja e da planta caem fora da coluna (painel fechado: perto do meio da tela)
   const dock = await rect('.dock');
   R.f1 = { dockX: dock.x, center: (await proj(page, 10, 0, 30)).map(Math.round) };
-  await C((c) => c._setTopView(true)); await S(); R.f2 = (await proj(page, 10.05, 0, 25.8)).map(Math.round);
-  const planta = await Promise.all([[0, 0, 0], [20.1, 0, 51], [0, 0, 51], [20.1, 0, 0]].map((p) => proj(page, ...p)));
-  R.f3 = Math.round(Math.max(...planta.map((p) => p[0])));
+  await C((c) => c._setTopView(true)); await S(); R.f2 = (await proj(page, 7, 0, 28.2)).map(Math.round);
+  R.f3 = await C((c) => c._panelOpen);   // v1.6.1: na Vista de cima o painel lateral recolhe (o do cômodo fica à esquerda)
   await C((c) => c._setTopView(false)); await C((c) => c._setPanel(false)); await settle(); await S(); R.f4 = (await proj(page, 10, 0, 30)).map(Math.round);
-  ok.f = R.f1.center[0] < dock.x - 40 && R.f2[0] < dock.x - 40 && R.f3 < dock.x && Math.abs(R.f4[0] - 700) < 140 && R.f1.center[0] < R.f4[0] - 80;
+  ok.f = R.f1.center[0] < dock.x - 40 && near(R.f2[0], 700, 60) && !R.f3 && Math.abs(R.f4[0] - 700) < 140 && R.f1.center[0] < R.f4[0] - 80;
   await page.screenshot({ path: `${OUT}/ui_desk_fechado.png` });
-  // (g) sobreposições: botão ☰ × título × trilha; menu aberto × título; trilha × painel; "Ir para…" × painel; clima × joystick/painel; sem rolagem horizontal
+  // (g) sobreposições: botão ☰ × título × trilha; menu aberto × título; trilha × painel; "Ir para…" × painel; sem rolagem horizontal
   await C((c) => c._setPanel(true)); await settle(); await C((c) => c.setTopNav('ala', 'midia')); await S();
-  const G = { title: await rect('.title'), btns: await rect('.btns'), nav: await rect('.nav'), dock: await rect('.dock'), weather: await rect('.weather') };
+  const G = { title: await rect('.title'), btns: await rect('.btns'), nav: await rect('.nav'), dock: await rect('.dock'), room: await rect('.room') };
   await mbtn.click(); G.menu = await rect('.menu'); await page.screenshot({ path: `${OUT}/ui_desk_menu_planta.png` }); await page.keyboard.press('Escape');
   await C((c) => { c._setTopView(false); c.setWalk(true); c._toggleGoto(true); }); await S();
   await page.waitForTimeout(500);
   G.goto = await rect('.goto'); G.joy = await rect('.joy'); G.walkPanel = await C((c) => c._panelOpen);
-  G.weatherOut = await C((c) => { const s = getComputedStyle(c._weatherEl); return c._weatherEl.classList.contains('out') && s.opacity === '0' && s.pointerEvents === 'none'; });   // no modo Pessoa o canto é do joystick
   await page.screenshot({ path: `${OUT}/ui_desk_pessoa_goto.png` });
   G.scroll = await C((c) => ({ doc: document.documentElement.scrollWidth - window.innerWidth, panes: [...c.shadowRoot.querySelectorAll('.pane')].map((p) => p.scrollWidth - p.clientWidth), menu: c._menu.scrollWidth - c._menu.clientWidth }));
   R.g = G;
-  ok.g = !hit(G.btns, G.title) && !hit(G.btns, G.nav) && !hit(G.menu, G.title) && !hit(G.menu, G.nav) && !hit(G.nav, G.dock) && !hit(G.goto, G.dock) && !hit(G.weather, G.dock) && G.weatherOut && G.walkPanel
+  ok.g = !hit(G.btns, G.title) && !hit(G.btns, G.nav) && !hit(G.menu, G.title) && !hit(G.menu, G.nav) && !hit(G.nav, G.dock) && !hit(G.goto, G.dock) && G.room && !hit(G.room, G.nav) && G.walkPanel
     && G.joy && !hit(G.goto, G.joy) && G.scroll.doc <= 0 && G.scroll.panes.every((d) => d <= 0) && G.scroll.menu <= 0;
   await C((c) => { c._toggleGoto(false); c.setWalk(false); }); await S();
   R.errsDesk = t.errs; ok.errsDesk = !t.errs.length;
@@ -103,13 +102,13 @@ const near = (a, b, d) => Math.abs(a - b) <= d;
   // (h) começa recolhido (a gaveta cobriria a cena); a aba "Painel" abre; o véu cobre a cena e tocar nele fecha; câmera sem deslocamento lateral
   R.h0 = { panel: await C((c) => c._panelOpen), drawer: await C((c) => c._wrap.classList.contains('drawer')), reopen: await rect('.reopen') };
   await page.locator('igreja3d-card').locator('.reopen').tap(); await settle(); await S(300);
-  R.h1 = { panel: await C((c) => c._panelOpen), dock: await rect('.dock'), scrim: await rect('.scrim'), hud: await rect('.hud.top'), weatherOut: await C((c) => c._weatherEl.classList.contains('out')),
+  R.h1 = { panel: await C((c) => c._panelOpen), dock: await rect('.dock'), scrim: await rect('.scrim'), hud: await rect('.hud.top'),
     view: await C((c) => { const v = c._camera.view; return v && v.enabled ? [v.fullWidth, v.offsetX] : null; }) };
   await page.screenshot({ path: `${OUT}/ui_mob_gaveta.png` });
   await page.touchscreen.tap(20, 600); await settle();
   R.h2 = { panel: await C((c) => c._panelOpen), dockHidden: await C((c) => c._dock.hidden), scrimHidden: await C((c) => c._scrim.hidden) };
   ok.h = !R.h0.panel && R.h0.drawer && R.h0.reopen && R.h1.panel && R.h1.dock && R.h1.dock.w <= 360 && R.h1.dock.x + R.h1.dock.w <= 390 && R.h1.scrim && near(R.h1.dock.y, R.h1.hud.y + R.h1.hud.h, 2)
-    && R.h1.weatherOut && (!R.h1.view || R.h1.view[0] === 390) && !R.h2.panel && R.h2.dockHidden && R.h2.scrimHidden;
+    && (!R.h1.view || R.h1.view[0] === 390) && !R.h2.panel && R.h2.dockHidden && R.h2.scrimHidden;
   // o laço de quadros para (SwiftShader): o rAF da mola fica a 60 Hz e dá para pegar a gaveta no meio
   await C((c) => c._stop());
   // (i) arrastar para a direita segue o dedo 1:1 (depois dos ~10 px de limiar); devagar e soltando perto: volta aberta (mola)
@@ -147,11 +146,11 @@ const near = (a, b, d) => Math.abs(a - b) <= d;
   await page.screenshot({ path: `${OUT}/ui_mob_menu.png` });
   await page.touchscreen.tap(200, 600); R.m.closed = await C((c) => !c._menuOn);
   ok.m = near(R.m.menu.x, 10, 1) && near(R.m.menu.x + R.m.menu.w, 380, 1) && R.m.menu.y + R.m.menu.h <= 844 && R.m.over === 'auto' && !hit(R.m.btns, R.m.title) && R.m.scroll.doc <= 0 && R.m.scroll.menu <= 0 && R.m.scroll.panes.every((d) => d <= 0) && R.m.closed;
-  // (n) Pessoa no celular: a gaveta fecha, clima some (joystick), "Ir para…" à vista e a lista sem gaveta por cima
+  // (n) Pessoa no celular: a gaveta fecha, "Ir para…" à vista e a lista sem gaveta por cima
   await C((c) => c._setPanel(true)); await settle(); await C((c) => c.setWalk(true)); await S(); await C((c) => c._toggleGoto(true)); await page.waitForTimeout(300);
-  R.n = { panel: await C((c) => c._panelOpen), weatherOut: await C((c) => c._weatherEl.classList.contains('out')), gotoBtn: await rect('.btns > button:not(.peg):not(.menubtn)'), goto: await rect('.goto'), joy: await rect('.joy'), dock: await rect('.dock') };
+  R.n = { panel: await C((c) => c._panelOpen), gotoBtn: await rect('.btns > button:not(.peg):not(.menubtn)'), goto: await rect('.goto'), joy: await rect('.joy'), dock: await rect('.dock') };
   await page.screenshot({ path: `${OUT}/ui_mob_pessoa.png` });
-  ok.n = !R.n.panel && R.n.weatherOut && R.n.gotoBtn && R.n.goto && !R.n.dock && !hit(R.n.goto, R.n.joy);
+  ok.n = !R.n.panel && R.n.gotoBtn && R.n.goto && !R.n.dock && !hit(R.n.goto, R.n.joy);
   R.errsMob = t.errs; ok.errsMob = !t.errs.length;
   await t.close();
 }

@@ -136,6 +136,7 @@ const card = document.getElementById('card');
 const push = () => { card.hass = { states: { ...states }, language: 'pt', callService }; };
 // Simula os serviços que o cartão usa (com a latência de um interruptor Wi-Fi)
 function callService(domain, service, data) {
+  if (data && Array.isArray(data.entity_id)) return data.entity_id.forEach((e) => callService(domain, service, { ...data, entity_id: e }));   // em lote (Ligar/Desligar tudo)
   const id = data && data.entity_id; const s = states[id]; if (!s) return;
   const set = (state, attrs) => { s.state = state; if (attrs) Object.assign(s.attributes, attrs); s.last_changed = new Date().toISOString(); push(); };
   const later = (fn) => setTimeout(fn, 220);
@@ -174,8 +175,11 @@ card.addEventListener('hass-more-info', (e) => {
   const id = e.detail.entityId; const s = states[id]; if (!s) return;
   if (id.startsWith('climate.')) { s.state = s.state === 'off' ? 'cool' : 'off'; toast(`No Home Assistant isso abre o painel do ${s.attributes.friendly_name}. Na demo: ${s.state === 'off' ? 'desligado' : 'ligado (frio)'}.`); }
   else if (id.startsWith('media_player.')) { s.state = { playing: 'paused', paused: 'off', off: 'playing' }[s.state] || 'playing'; toast(`No Home Assistant isso abre o controle do telão. Na demo: ${s.state}.`); }
-  else if (id === 'binary_sensor.porta_principal') { s.state = s.state === 'on' ? 'off' : 'on'; toast(`No Home Assistant isso abre o sensor da porta. Na demo: porta ${s.state === 'on' ? 'aberta' : 'fechada'}.`); }
-  else if (id.startsWith('binary_sensor.') || id.startsWith('sensor.')) { toast(`No Home Assistant isso abre o painel de ${s.attributes.friendly_name}.`); return; }
+  else if (id === 'binary_sensor.porta_principal') { s.state = s.state === 'on' ? 'off' : 'on'; toast(`${s.attributes.friendly_name}: ${s.state === 'on' ? 'aberta' : 'fechada'} (na demo o toque abre/fecha)`); }
+  else if (id.startsWith('binary_sensor.') || id.startsWith('sensor.')) {   // sensor: nome e estado (no HA abre o painel dele)
+    const st = s.attributes.unit_of_measurement ? `${String(s.state).replace('.', ',')} ${s.attributes.unit_of_measurement}` : s.attributes.device_class === 'occupancy' ? (s.state === 'on' ? 'pessoas no templo' : 'vazio') : s.state;
+    toast(`${s.attributes.friendly_name}: ${st}`); return;
+  }
   s.last_changed = new Date().toISOString();
   push();
 });

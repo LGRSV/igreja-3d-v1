@@ -9,7 +9,7 @@
  */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
 
-export const VERSION = '1.6.0';
+export const VERSION = '1.6.1';
 
 // Única fonte de verdade para as opções do cartão — usada tanto no construtor (antes de
 // qualquer setConfig, caso do próprio elemento já presente no HTML ao carregar o módulo)
@@ -1230,7 +1230,13 @@ function mergeItems(holder, clickables, items) {
 // ---------------------------------------------------------------------------
 // Controle de órbita (mínimo, sem dependências): arrastar gira, roda/pinça
 // aproxima, botão direito / dois dedos / Shift arrasta o alvo.
+// v1.6.1 — toque (o mouse segue como antes): 1 dedo gira com sensibilidade pela largura do canvas e, passados ~10 px, trava o eixo
+// (de lado: só gira · em pé: só inclina · diagonal: os dois); solto com velocidade, o giro continua e desacelera (projeção 0,998).
+// 2 dedos estilo mapa: pinça = zoom no ponto entre os dedos, torção = gira, arrasto paralelo = pan — cada um só entra depois do seu limiar.
+// Zoom e inclinação resistem além dos limites (rubber band) e voltam ao soltar.
 // ---------------------------------------------------------------------------
+const rubber = (v, lo, hi, dl, dh) => v < lo ? lo - (lo - v) * dl * 0.55 / (dl + 0.55 * (lo - v)) : v > hi ? hi + (v - hi) * dh * 0.55 / (dh + 0.55 * (v - hi)) : v;
+const angWrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 class Orbit {
   constructor(camera, dom, target) {
     this.camera = camera; this.dom = dom;
@@ -1239,7 +1245,7 @@ class Orbit {
     this.goal = this.sph.clone();
     this.minDist = 3; this.maxDist = 150; this.minPolar = 0.02; this.maxPolar = 1.45;   // 0,02: dá para olhar reto de cima (Vista de cima)
     this.speed = 9; this.userAt = 0;   // speed: suavização (menor = voo mais lento); userAt: último gesto do usuário
-    this.pointers = new Map(); this.moved = 0; this.pinch = 0; this.touched = false;
+    this.pointers = new Map(); this.moved = 0; this.multi = false; this.two = null; this.spin = 0; this.touched = false;   // spin: inércia do giro (rad/s)
     this.onClick = null; this.onHover = null; this.enabled = true;   // enabled = false na visão de pessoa (o Walker assume os gestos)
     this._down = (e) => this.down(e); this._move = (e) => this.move(e);
     this._up = (e) => this.up(e); this._wheel = (e) => this.wheel(e);
@@ -1260,13 +1266,15 @@ class Orbit {
   down(e) {
     if (!this.enabled) return;
     this.dom.setPointerCapture(e.pointerId);
-    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, b: e.button, shift: e.shiftKey });
-    if (this.pointers.size === 2) this.pinch = this._dist();
-    this.moved = 0;
+    this.spin = 0;   // qualquer toque segura a inércia
+    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, b: e.button, shift: e.shiftKey, touch: e.pointerType !== 'mouse', axis: null, h: [] });
+    if (this.pointers.size === 1) { this.moved = 0; this.multi = false; } else this.multi = true;
+    this.two = this.pointers.size === 2 ? this._twoNow() : null;
   }
-  _dist() {
-    const [a, b] = [...this.pointers.values()];
-    return Math.hypot(a.x - b.x, a.y - b.y);
+  // dois dedos: distância, ângulo e ponto médio (os de partida ficam em d0/a0/mx0/my0 para os limiares)
+  _twoNow() {
+    const [a, b] = [...this.pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    return { d, a: ang, mx, my, d0: d, a0: ang, mx0: mx, my0: my, r: this.goal.radius, zoom: false, rot: false, pan: false };
   }
   move(e) {
     if (!this.enabled) return;
@@ -1275,11 +1283,9 @@ class Orbit {
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
     p.x = e.clientX; p.y = e.clientY; this.touched = true; this.userAt = performance.now(); this.speed = 9;
     this.moved += Math.abs(dx) + Math.abs(dy);
-    if (this.pointers.size === 2) {
-      const d = this._dist();
-      if (this.pinch) this.zoomBy(this.pinch / d);
-      this.pinch = d;
-      this.pan(dx * 0.5, dy * 0.5);
+    if (p.touch) {
+      if (this.pointers.size === 2 && this.two) this._twoMove();
+      else if (this.pointers.size === 1) this._oneMove(p, e, dx, dy);
     } else if (p.b === 2 || p.b === 1 || p.shift) {
       this.pan(dx, dy);
     } else {
@@ -1288,13 +1294,54 @@ class Orbit {
     }
     this.dirty = true;
   }
+  _oneMove(p, e, dx, dy) {
+    if (!p.axis) {
+      const ax = e.clientX - p.sx, ay = e.clientY - p.sy; if (Math.hypot(ax, ay) < 10) return;
+      const r = Math.abs(ay) / Math.max(Math.abs(ax), 1e-3);
+      p.axis = r < 0.5 ? 'x' : r > 2 ? 'y' : 'xy'; p.raw = this.goal.phi; return;   // daqui em diante segue o dedo 1:1
+    }
+    const k = 2 * Math.PI / (1.5 * (this.dom.clientWidth || 800));   // 1,5 largura de tela = uma volta
+    if (p.axis !== 'y') this.goal.theta -= dx * k;
+    if (p.axis !== 'x') { p.raw -= dy * k; this.goal.phi = rubber(p.raw, this.minPolar, this.maxPolar, this.minPolar * 0.9, 0.12); }
+    p.h.push([e.clientX, e.timeStamp]); if (p.h.length > 8) p.h.shift();   // hora do evento (não a do handler): velocidade ao soltar
+  }
+  _twoMove() {
+    const t = this.two, n = this._twoNow();
+    if (!t.zoom && Math.abs(n.d / t.d0 - 1) > 0.04) t.zoom = true;   // pinça > 4 %
+    if (!t.rot && Math.abs(angWrap(n.a - t.a0)) > 0.105) t.rot = true;   // torção > 6°
+    if (!t.pan && Math.hypot(n.mx - t.mx0, n.my - t.my0) > 12) t.pan = true;   // arrasto > 12 px
+    if (t.zoom && n.d > 0) {
+      const r0 = this.goal.radius; t.r *= t.d / n.d;
+      this.goal.radius = rubber(t.r, this.minDist, this.maxDist, this.minDist * 0.5, this.maxDist * 0.3);
+      const P = this._ground(n.mx, n.my);   // o ponto do piso entre os dedos fica parado na tela
+      if (P) { this.targetGoal.lerp(P, 1 - this.goal.radius / r0); this.pan(0, 0); }
+    }
+    if (t.rot) this.goal.theta += angWrap(n.a - t.a);
+    if (t.pan) this.pan(n.mx - t.mx, n.my - t.my);
+    Object.assign(t, { d: n.d, a: n.a, mx: n.mx, my: n.my });
+  }
+  // ponto do piso (y = 0) sob (cx, cy) na tela
+  _ground(cx, cy) {
+    const r = this.dom.getBoundingClientRect(), rc = this._rc || (this._rc = new THREE.Raycaster()), v = this._ndc || (this._ndc = new THREE.Vector2());
+    v.set((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1); rc.setFromCamera(v, this.camera);
+    const ray = rc.ray; if (ray.direction.y > -0.05) return null;
+    return ray.origin.clone().addScaledVector(ray.direction, -ray.origin.y / ray.direction.y);
+  }
   up(e) {
     if (!this.enabled) return;
     const p = this.pointers.get(e.pointerId);
     this.pointers.delete(e.pointerId);
     try { this.dom.releasePointerCapture(e.pointerId); } catch (_) {}
-    if (p && this.moved < 6 && p.b === 0 && this.onClick) this.onClick(e);
-    this.pinch = 0;
+    if (p && this.moved < 6 && p.b === 0 && !this.multi && this.onClick) this.onClick(e);
+    if (p && p.touch && this.pointers.size === 1) { const q = [...this.pointers.values()][0]; q.sx = q.x; q.sy = q.y; q.axis = null; q.h = []; }   // 2 → 1 dedo: recomeça o limiar (sem pulo)
+    if (p && p.touch && !this.pointers.size) {
+      const b = p.h[p.h.length - 1], a = b && (p.h.find((q) => q[1] >= b[1] - 100 && q !== b) || p.h[p.h.length - 2]);   // velocidade dos últimos ~100 ms
+      const v = a && b[1] > a[1] && e.timeStamp - b[1] < 150 ? (b[0] - a[0]) / (b[1] - a[1]) * 1000 : 0;   // px/s (dedo parado antes de soltar: 0)
+      if (!this.multi && p.axis && p.axis !== 'y' && Math.abs(v) > 60) this.spin = -v * 2 * Math.PI / (1.5 * (this.dom.clientWidth || 800));
+      this.goal.phi = clamp(this.goal.phi, this.minPolar, this.maxPolar); this.goal.radius = clamp(this.goal.radius, this.minDist, this.maxDist);   // além do limite: volta suave
+      this.dirty = true;
+    }
+    this.two = this.pointers.size === 2 ? this._twoNow() : null;
   }
   wheel(e) { e.preventDefault(); if (!this.enabled) return; this.touched = true; this.userAt = performance.now(); this.speed = 9; this.zoomBy(Math.exp(e.deltaY * 0.0012)); this.dirty = true; }
   zoomBy(f) { this.goal.radius = clamp(this.goal.radius * f, this.minDist, this.maxDist); }
@@ -1307,6 +1354,7 @@ class Orbit {
     this.targetGoal.z = clamp(this.targetGoal.z, LOT.z0 - 6, LOT.z1 + 6);
   }
   reset(pos, target) {
+    this.spin = 0;
     this.goal.setFromVector3(pos.clone().sub(target)); this.targetGoal.copy(target); this.dirty = true;
     // gira pelo lado mais curto (theta acumula voltas quando o usuário arrasta)
     const d = this.goal.theta - this.sph.theta; this.goal.theta = this.sph.theta + (((d + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
@@ -1314,13 +1362,17 @@ class Orbit {
   // voo suave até a pose (mais lento que o arrasto; qualquer gesto do usuário volta ao normal)
   fly(pos, target, speed = 2.6) { this.reset(pos, target); this.speed = speed; }
   update(dt) {
+    if (this.spin) {   // inércia do giro: decai como a rolagem (0,998 por ms); conta como gesto para o governador de qualidade
+      this.goal.theta += this.spin * dt; this.spin *= Math.pow(0.998, dt * 1000); this.userAt = performance.now();
+      if (Math.abs(this.spin) < 0.02) this.spin = 0;
+    }
     const k = 1 - Math.exp(-dt * this.speed);
     const s = this.sph;
     s.theta += (this.goal.theta - s.theta) * k;
     s.phi += (this.goal.phi - s.phi) * k;
     s.radius += (this.goal.radius - s.radius) * k;
     this.target.lerp(this.targetGoal, k);
-    const moving = Math.abs(this.goal.theta - s.theta) + Math.abs(this.goal.phi - s.phi) + Math.abs(this.goal.radius - s.radius) + this.target.distanceTo(this.targetGoal) > 1e-4;
+    const moving = Math.abs(this.goal.theta - s.theta) + Math.abs(this.goal.phi - s.phi) + Math.abs(this.goal.radius - s.radius) + this.target.distanceTo(this.targetGoal) > 1e-4 || !!this.spin;
     this.camera.position.setFromSpherical(s).add(this.target);
     this.camera.lookAt(this.target);
     const wasDirty = this.dirty; this.dirty = moving; this.moving = moving;
@@ -5972,6 +6024,7 @@ canvas:active { cursor: grabbing; }
 .menu .mi .mic { flex: none; width: 18px; display: grid; place-items: center; color: #8f9bb3; } .menu .mi .mic svg { width: 16px; height: 16px; }
 .menu .mi[aria-pressed="true"] .mic { color: #ffc46b; }
 .menu .mi .ml { flex: 1; min-width: 0; }
+.menu .mi .mnote { margin-left: 6px; font-size: 10.5px; font-weight: 500; color: #8f9bb3; }
 .menu .mi .mk { flex: none; font-size: 11px; color: #6b768f; font-weight: 500; }
 .menu .ms { flex: none; position: relative; width: 32px; height: 18px; box-sizing: border-box; border-radius: 999px; background: #2b3245; border: 1px solid rgba(255, 255, 255, .12); transition: background .2s, border-color .2s; }
 .menu .ms::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #aab3c5; transition: transform .22s cubic-bezier(.3, 1.4, .5, 1), background .2s; }
@@ -5993,7 +6046,7 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
 .hint { color: #8f9bb3; font-size: 11px; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transition: opacity .6s; }
 .hint.hide { opacity: 0; }
 .err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #ffb4b4; background: #0a0f1e; }
-/* Vista de cima navegável: trilha Planta › Bloco › Cômodo + aparelhos do cômodo */
+/* Vista de cima navegável: trilha Planta › Bloco › Cômodo (Voltar + migalhas); os aparelhos ficam no painel do cômodo (.room) */
 .navrow { flex: 1 0 100%; display: flex; pointer-events: none; min-width: 0; box-sizing: border-box; }
 .wrap.side .navrow { padding-right: calc(var(--pw, 0px) - 10px); }   /* painel lateral aberto: a trilha não passa por baixo dele */
 .navrow[hidden] { display: none; }
@@ -6005,18 +6058,34 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
 .nav .crumbs button[aria-current="page"] { color: #ffd48a; cursor: default; background: transparent; }
 .nav .sep { color: #6b768f; }
 .nav .navhint { color: #8f9bb3; font-size: 11px; padding: 0 4px; }
-.nav .chips { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; padding: 2px 4px 4px; }
-.nav .chips[hidden] { display: none; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; background: rgba(255, 255, 255, .06);
   border: 1px solid rgba(255, 255, 255, .12); font-size: 12px; white-space: nowrap; }
 .chip .ico { display: flex; color: #8f9bb3; } .chip .ico svg { width: 16px; height: 16px; }
 .chip small { color: #9aa6bd; font-size: 10.5px; font-weight: 500; }
 .chip[aria-pressed="true"] { border-color: rgba(255, 196, 107, .5); }
 .chip[aria-pressed="true"] .ico { color: var(--dot, #ffc46b); filter: drop-shadow(0 0 5px var(--dot, #ffc46b)); }
+@media (max-width: 640px) { .nav { font-size: 11.5px; } .nav .back { padding: 9px 12px; } .nav .crumbs button { padding: 8px 6px; font-size: 11.5px; } }
+/* Painel do cômodo (v1.6.1): vidro escuro como o painel lateral, à esquerda abaixo do HUD; no celular, folha compacta embaixo */
+.room { position: absolute; left: 10px; top: calc(var(--hud, 72px) + 2px); z-index: 3; width: 236px; max-height: calc(100% - var(--hud, 72px) - 14px); overflow: auto; overscroll-behavior: contain;
+  box-sizing: border-box; padding: 10px; display: flex; flex-direction: column; gap: 8px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, .1);
+  background: linear-gradient(180deg, rgba(17, 23, 40, .93), rgba(7, 10, 20, .95)); box-shadow: 0 18px 48px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .07) inset;
+  backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3); animation: paneIn .28s cubic-bezier(.2, .8, .2, 1); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
+.room[hidden], .room [hidden] { display: none; }
+.room .rhead b { display: block; font-size: 14px; letter-spacing: -.01em; } .room .rhead small { color: var(--mute); font-size: 11px; font-variant-numeric: tabular-nums; }
+.room .rall { display: flex; gap: 6px; }
+.room .rall button { flex: 1; padding: 7px 6px; border-radius: 9px; font-size: 11.5px; background: rgba(255, 255, 255, .06); border: 1px solid var(--line); }
+.room .rall .ron:not(:disabled) { color: var(--amber2); border-color: rgba(255, 196, 107, .35); }
+.room .rall button:disabled { opacity: .4; cursor: default; }
+.room .rlist { display: flex; flex-direction: column; gap: 5px; }
+.room .chip { width: 100%; border-radius: 10px; padding: 7px 9px; } .room .chip > span:not(.ico) { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+.room .empty { color: var(--mute); font-size: 11.5px; }
+.room .rsect { margin: 2px 0 6px; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; }
+.room .autos { gap: 6px; } .room .auto { grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 7px 8px; } .room .auto .ico { display: none; }
+.room .auto .sw { width: 40px; height: 22px; } .room .auto .sw::after { width: 16px; height: 16px; } .room .auto .sw[aria-checked="true"]::after { transform: translateX(18px); } .room .auto .run { width: 28px; height: 28px; }
 @media (max-width: 640px) {
-  .nav { font-size: 11.5px; } .nav .back { padding: 9px 12px; } .nav .crumbs button { padding: 8px 6px; font-size: 11.5px; }
-  .nav .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; } .nav .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: none; padding: 8px 11px 8px 9px; }
+  .room { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-height: 36%; padding: 8px 10px; gap: 6px; border-radius: 18px; }
+  .room .rhead { display: flex; align-items: baseline; gap: 8px; } .room .rlist { flex-direction: row; overflow-x: auto; scrollbar-width: none; } .room .rlist::-webkit-scrollbar { display: none; }
+  .room .chip { width: auto; flex: none; padding: 8px 11px 8px 9px; }
 }
 /* Visão de pessoa: joystick, aviso de comandos */
 .joy { position: absolute; left: 16px; bottom: 16px; width: 116px; height: 116px; border-radius: 50%; z-index: 4; touch-action: none; opacity: .85; cursor: grab;
@@ -6027,12 +6096,26 @@ button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: #ffd4
 .walkhint { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 4; padding: 7px 12px; font-size: 12px; color: #d5dcea; max-width: calc(100% - 32px);
   text-align: center; pointer-events: none; opacity: 0; transition: opacity .6s; }
 .walkhint.show { opacity: 1; }
+/* balão do aparelho selecionado na maquete: nome, estado e a ação (v1.6.1) */
+.sel { position: absolute; left: 0; top: 0; z-index: 4; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 12px; white-space: nowrap; animation: selIn .16s ease-out;
+  background: rgba(16, 22, 38, .9); box-shadow: 0 10px 28px rgba(0, 0, 0, .45); }
+.sel[hidden] { display: none; }
+.sel::after { content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: rgba(16, 22, 38, .9); }
+.sel b { display: block; font-size: 12.5px; } .sel small { display: block; color: #9aa6bd; font-size: 11px; }
+.sel button { padding: 7px 12px; border-radius: 9px; background: rgba(255, 196, 107, .18); color: #ffd48a; border: 1px solid rgba(255, 196, 107, .4); }
+@keyframes selIn { from { opacity: 0; } }
 .wrap.side .walkhint { left: calc((100% - var(--pw, 0px)) / 2); max-width: calc(100% - var(--pw, 0px) - 32px); }
 canvas.walk { cursor: crosshair; }
 canvas.walk.pick { cursor: pointer; }
 /* Bonequinho (arrastar até o ambiente), "Ir para…", "Entrar aqui" — v1.4.6 */
-.peg { display: inline-flex; align-items: center; justify-content: center; color: #ffc46b; touch-action: none; cursor: grab; padding: 8px 10px; }
-.peg[hidden], .btns > button[hidden], .nav .enter[hidden] { display: none; }
+.peg { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #ffc46b; touch-action: none; cursor: grab; padding: 8px 10px; }
+.peg .pgl { font-size: 12px; color: #ffd48a; }
+.pegdica { position: absolute; z-index: 7; display: flex; align-items: flex-start; gap: 6px; max-width: 220px; padding: 9px 6px 9px 12px; font-size: 12px; line-height: 1.35; color: #e6edf7;
+  border-color: rgba(255, 196, 107, .45); background: rgba(16, 22, 38, .92); box-shadow: 0 10px 28px rgba(0, 0, 0, .45); animation: selIn .25s ease-out; }
+.pegdica[hidden] { display: none; }
+.pegdica::before { content: ""; position: absolute; top: -6px; right: var(--ax, 20px); border: 6px solid transparent; border-top: 0; border-bottom-color: rgba(255, 196, 107, .6); }
+.pegdica button { flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 15px; line-height: 1; }
+.peg[hidden], .btns > button[hidden] { display: none; }
 .peg[aria-pressed="true"] { background: rgba(255, 196, 107, .18); }
 .pegghost { position: absolute; left: 0; top: 0; width: 44px; height: 44px; z-index: 7; pointer-events: none; display: grid; place-items: center; color: #ffc46b;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .55)); opacity: .85; }
@@ -6048,14 +6131,14 @@ canvas.walk.pick { cursor: pointer; }
 .goto .grow button { background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); border-radius: 999px; padding: 7px 11px; font-size: 12px; }
 .goto .grow button:hover { background: rgba(255, 196, 107, .18); color: #ffd48a; }
 .fade { position: absolute; inset: 0; background: #06090f; opacity: 0; pointer-events: none; z-index: 5; }
-.nav .enter { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; background: rgba(255, 196, 107, .18); color: #ffd48a; border: 1px solid rgba(255, 196, 107, .4); }
-.nav .enter:hover { background: rgba(255, 196, 107, .28); }
-@media (max-width: 640px) { .nav .enter { padding: 9px 12px; } .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
+.room .enter { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 11px; background: rgba(255, 196, 107, .18); color: #ffd48a; border: 1px solid rgba(255, 196, 107, .4); }
+.room .enter:hover { background: rgba(255, 196, 107, .28); }
+@media (max-width: 640px) { .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
 /* Painel lateral (v1.6.0) — coluna à direita no desktop/tablet, gaveta que entra pela direita no celular; vidro escuro + âmbar;
    luz acesa brilha quente, clima frio azulado */
-.dock, .reopen, .scrim { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #9aa6bd; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
-.dock { position: absolute; top: 60px; right: 10px; bottom: 10px; width: clamp(272px, 34%, 380px); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; z-index: 3;
+.dock, .reopen, .scrim, .room { --amber: #ffc46b; --amber2: #ffd48a; --ice: #67d3ff; --ink: #eef2f8; --mute: #9aa6bd; --line: rgba(255, 255, 255, .08); --ease: cubic-bezier(.2, .8, .2, 1); }
+.dock { position: absolute; top: 60px; right: 10px; bottom: 10px; width: clamp(260px, 26%, 320px); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; z-index: 3;
   border-radius: 18px; border: 1px solid rgba(255, 255, 255, .1); background: linear-gradient(180deg, rgba(17, 23, 40, .95), rgba(7, 10, 20, .97));
   box-shadow: 0 28px 72px rgba(0, 0, 0, .62), 0 1px 0 rgba(255, 255, 255, .07) inset; backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3);
   touch-action: pan-y; will-change: transform; }   /* material pesado (estrutura); abre/recolhe pela direita com mola em JS (_dockGo) */
@@ -6071,7 +6154,7 @@ canvas.walk.pick { cursor: pointer; }
 @keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @keyframes sheetIn { from { opacity: 0; transform: translateY(14px); } }
 @keyframes flashPulse { 0% { box-shadow: 0 0 0 0 rgba(255, 212, 138, .8); } 100% { box-shadow: 0 0 0 14px rgba(255, 212, 138, 0); } }
-.phead { display: flex; align-items: center; gap: 8px; padding: 10px 10px 8px 12px; flex: none; }
+.phead { display: flex; align-items: center; gap: 8px; padding: 8px 8px 6px 10px; flex: none; }
 .phead .spacer { flex: 1; }
 .phead .count { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); color: #b4bfd4; font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .phead .count svg { width: 14px; height: 14px; color: #6b768f; transition: color .3s, filter .3s; }
@@ -6079,17 +6162,17 @@ canvas.walk.pick { cursor: pointer; }
 .phead .count b { color: var(--ink); font-weight: 700; }
 .phead .collapse { width: 32px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: rgba(255, 255, 255, .05); }
 .phead .collapse:hover { background: rgba(255, 196, 107, .18); color: var(--amber2); }
-.tabs { display: flex; gap: 2px; margin: 0 10px 8px; padding: 3px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); flex: none; }
+.tabs { display: flex; gap: 2px; margin: 0 8px 6px; padding: 3px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); flex: none; }
 .tabs button[role="tab"] { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 4px; font-size: 12px; border-radius: 9px; color: #a9b4ca; white-space: nowrap; transition: background .22s, color .22s, box-shadow .22s; }
 .tabs button[role="tab"] svg { width: 14px; height: 14px; opacity: .8; flex: none; }
 .tabs button[role="tab"]:hover { color: #e6edf7; }
 .tabs button[aria-selected="true"] { background: linear-gradient(180deg, rgba(255, 196, 107, .26), rgba(255, 196, 107, .12)); color: var(--amber2); box-shadow: inset 0 0 0 1px rgba(255, 196, 107, .38); }
-.pane { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 4px 10px 12px; touch-action: pan-y;
+.pane { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 2px 8px 10px; touch-action: pan-y;
   -webkit-mask-image: linear-gradient(transparent, #000 10px); mask-image: linear-gradient(transparent, #000 10px); display: none; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .2) transparent; }
 .pane.active { display: block; animation: paneIn .28s var(--ease); }
-.zonebar { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 12px; }   /* quebra em 2 linhas em vez de rolar de lado (o gesto de lado fecha a gaveta) */
+.zonebar { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }   /* quebra em 2 linhas em vez de rolar de lado (o gesto de lado fecha a gaveta) */
 .zonebar::-webkit-scrollbar { display: none; }
-.zonebar button { flex: none; padding: 5px 11px; border-radius: 999px; font-size: 11.5px; color: #a9b4ca; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
+.zonebar button { flex: none; padding: 4px 9px; border-radius: 999px; font-size: 11.5px; color: #a9b4ca; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
 .zonebar button[aria-pressed="true"] { background: rgba(255, 196, 107, .18); color: var(--amber2); border-color: rgba(255, 196, 107, .4); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .zone { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 8px 2px 0; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #9aa6bd; font-weight: 700; }
@@ -6211,35 +6294,23 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
 .reopen .rn { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--amber); color: #2a1a00; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
 .reopen .rn:empty { display: none; }
 .reopen[hidden] { display: none; }
-/* Clima ao vivo — v1.6.0: canto inferior esquerdo (o direito agora é do painel lateral); some no modo Pessoa (lugar do joystick)
-   e com a gaveta do celular aberta por cima */
-.weather { position: absolute; left: 10px; bottom: 10px; width: 168px; box-sizing: border-box; padding: 10px 12px; z-index: 3;
-  display: flex; flex-direction: column; gap: 4px; transition: opacity .25s, transform .25s; }
-.weather[hidden] { display: none; }
-.weather.out { opacity: 0; transform: translateY(6px); pointer-events: none; }
-.weather .wtop { display: flex; align-items: center; gap: 8px; }
-.weather .wicon { width: 30px; height: 30px; color: #ffc46b; flex: none; display: flex; }
-.weather .wicon svg { width: 30px; height: 30px; }
-.weather .wtemp { font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.weather .wtemp sup { font-size: 15px; font-weight: 600; opacity: .8; }
-.weather .wcond { font-size: 12px; color: #c9d2e3; line-height: 1.25; }
-.weather .wcity { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #8f9bb3; font-weight: 700; }
-.weather .wmeta { display: flex; justify-content: space-between; font-size: 11px; color: #9aa6bd; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.weather .wupd { font-size: 10px; color: #6b768f; text-align: right; }
-@media (max-width: 640px) {
-  .weather { width: 140px; padding: 8px 10px; }
-  .weather .wtemp { font-size: 22px; } .weather .wicon, .weather .wicon svg { width: 24px; height: 24px; }
-}
+/* Clima (v1.6.1): no título só ícone + temperatura, ao lado do relógio; os detalhes ficam no topo do menu ☰ */
+.title .wx { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; color: #e6edf7; vertical-align: -2px; }
+.title .wx svg { width: 15px; height: 15px; color: #ffc46b; }
+.menu .mwx { display: flex; align-items: center; gap: 10px; padding: 2px 9px 6px; }
+.menu .mwx .mic { flex: none; width: 22px; color: #ffc46b; display: grid; place-items: center; } .menu .mwx .mic svg { width: 20px; height: 20px; }
+.menu .mwx b { display: block; font-size: 12.5px; color: #e6edf7; } .menu .mwx small { display: block; font-size: 11px; color: #9aa6bd; font-variant-numeric: tabular-nums; }
 /* coluna estreita (desktop e gaveta do celular): blocos compactos em 2 colunas — ícone à esquerda, nome e estado à direita */
-.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
-.tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 62px; padding: 8px 8px 8px 9px; border-radius: 14px; }
+.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 7px; min-height: 52px; padding: 6px 6px 6px 7px; border-radius: 12px; }
 .tile .top { display: contents; }
-.tile .ico { width: 32px; height: 32px; } .tile > span:not(.top) { min-width: 0; } .tile .more { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; }
+.tile .ico { width: 28px; height: 28px; border-radius: 9px; } .tile .ico svg { width: 16px; height: 16px; } .tile > span:not(.top) { min-width: 0; } .tile .more { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; }
 .tile .more::after { content: ""; position: absolute; inset: -4px; }
-.tile b { font-size: 12.5px; padding-right: 22px; letter-spacing: 0; } .tile small { font-size: 10.5px; }
+.tile b { font-size: 12px; padding-right: 20px; letter-spacing: 0; } .tile small { font-size: 10.5px; margin-top: 1px; }
 .tile.routine b { padding-right: 0; } .tile.routine small { -webkit-line-clamp: 2; }
 .tiles.routines { grid-template-columns: minmax(0, 1fr); }
-.tile.routine { min-height: 62px; grid-template-columns: auto minmax(0, 1fr); }
+.tile.routine { min-height: 52px; grid-template-columns: auto minmax(0, 1fr); }
+.zone { margin-top: 4px; } .sect { margin-bottom: 8px; } .tiles + .sect { margin-top: 14px; } .auto { grid-template-columns: 28px minmax(0, 1fr) auto auto; gap: 8px; padding: 7px 8px; } .auto .ico { width: 28px; height: 28px; border-radius: 9px; }
 .autos, .feed { grid-template-columns: minmax(0, 1fr); }
 .detail { padding: 11px 12px; gap: 10px; } .detail .rng { flex-basis: 100%; }
 @media (max-width: 640px) {
@@ -6251,6 +6322,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: #ffc46b; }
 }
 /* celular em retrato: o botão do menu vira só o ícone ☰ (o nome fica no aria-label) */
 @media (max-width: 400px) { .menubtn .mbl { display: none; } .menubtn { padding: 8px 11px; } }
+@media (max-width: 640px) { .peg .pgl { display: none; } }
 /* gaveta do celular: o menu ocupa a largura do cartão (10 px de cada lado) e rola se for alto */
 .wrap.drawer .menu { width: calc(var(--cw, 100vw) - 20px); max-height: calc(var(--ch, 100vh) - 68px); }
 /* menos transparência: vidro vira fundo quase sólido, sem blur · mais contraste: fundo sólido e borda clara */
@@ -6380,8 +6452,8 @@ export class Igreja3DCard extends HTMLElement {
     this._roofBtn.addEventListener('click', () => this._setRoof(!this._roofOn));
     this._topBtn = item(sVis, 'plan', 'Vista de cima', { toggle: true, title: 'Planta vista de cima, sem cobertura: confira luzes, ares e automações de todos os cômodos' });
     this._topBtn.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(!this._topView); });
-    const reset = item(sVis, 'recenter', 'Recentrar', { title: 'Volta à vista inicial da maquete', hint: '↺' });
-    reset.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(false); this._menuSet(false); });
+    const reset = item(sVis, 'recenter', 'Recentrar', { title: 'Volta à vista inicial (Vista de cima, de frente para o palco)', hint: '↺' });
+    reset.addEventListener('click', () => { this._airFocus = this._airTour = null; if (this._topView) this._navTo(0); else this._setTopView(true); this._menuSet(false); });   // v1.6.1: volta à vista inicial (Vista de cima, nível 0)
     const sNav = sec('Navegação');
     this._walkBtn = item(sNav, 'person', 'Pessoa', { toggle: true, title: 'Ande pela igreja na altura dos olhos: setas/WASD ou joystick; arraste para olhar' });
     this._walkBtn.addEventListener('click', () => { const on = !this._walkOn; this._setWalk(on); if (on) this._menuSet(false); });   // entrar na Pessoa fecha o menu (o foco vai para a cena)
@@ -6397,7 +6469,7 @@ export class Igreja3DCard extends HTMLElement {
 
     // Bonequinho (v1.4.6): arraste até um ambiente da maquete/planta e solte para entrar ali na visão de Pessoa; toque simples abre "Ir para…"
     const PERSON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.2" r="3"/><path d="M12 9.6c-2.9 0-4.6 1.5-4.8 4l-.2 3.2c0 .6.4 1 .9 1h.9l.4 4.2c0 .5.4.8.8.8h4c.4 0 .8-.3.8-.8l.4-4.2h.9c.5 0 .9-.4.9-1l-.2-3.2c-.2-2.5-1.9-4-4.8-4z"/></svg>';
-    this._pegBtn = document.createElement('button'); this._pegBtn.className = 'panel btn peg'; this._pegBtn.innerHTML = PERSON;
+    this._pegBtn = document.createElement('button'); this._pegBtn.className = 'panel btn peg'; this._pegBtn.innerHTML = PERSON + '<span class="pgl">Andar</span>';   // v1.6.1: o nome ao lado (no celular só o ícone)
     this._pegBtn.title = 'Arraste até um ambiente e solte para entrar nele (visão de Pessoa) · toque: lista de ambientes';
     this._pegBtn.setAttribute('aria-label', 'Bonequinho: arraste até um ambiente para entrar nele; Enter abre a lista de ambientes'); this._pegBtn.setAttribute('aria-pressed', 'false');
     this._pegBind(this._pegBtn);
@@ -6421,11 +6493,28 @@ export class Igreja3DCard extends HTMLElement {
     const joy = document.createElement('div'); joy.className = 'joy'; joy.hidden = true; joy.setAttribute('role', 'application'); joy.setAttribute('aria-label', 'Andar');
     const knob = document.createElement('div'); knob.className = 'knob'; joy.appendChild(knob); wrap.appendChild(joy); this._joy = joy;
     this._walkHint = document.createElement('div'); this._walkHint.className = 'panel walkhint'; wrap.appendChild(this._walkHint);
+    // balão do aparelho selecionado na maquete (v1.6.1)
+    this._selEl = document.createElement('div'); this._selEl.className = 'panel sel'; this._selEl.hidden = true; this._selEl.setAttribute('role', 'group'); this._selEl.setAttribute('aria-label', 'Selecionado');
+    this._selEl.innerHTML = '<span><b></b><small aria-live="polite"></small></span><button type="button"></button>'; wrap.appendChild(this._selEl);
+    [this._selName, this._selState, this._selBtn] = this._selEl.querySelectorAll('b, small, button'); this._selBtn.addEventListener('click', () => this._selAct());
 
     this._hint = document.createElement('div'); this._hint.className = 'hint';
     this._hint.textContent = 'Arraste para girar · roda/pinça para zoom · clique num ambiente para acender';
     title.appendChild(this._hint);
-    setTimeout(() => { if (!this._hint) return; this._hint.classList.add('hide'); setTimeout(() => { this._hint.hidden = true; }, 700); }, 9000);
+    // v1.6.1: as dicas somem na primeira interação (não por tempo): a do título e a do modo Pessoa
+    const used = () => {
+      if (!this._hint.hidden && !this._hint.classList.contains('hide')) { this._hint.classList.add('hide'); setTimeout(() => { this._hint.hidden = true; }, 700); }
+      if (this._walkOn && this._walkHint.classList.contains('show') && performance.now() - (this._walkHintAt || 0) > 400) this._walkHint.classList.remove('show');
+    };
+    wrap.addEventListener('pointerdown', used, true); canvas.addEventListener('wheel', used, { passive: true }); canvas.addEventListener('keydown', used);
+    // dica do bonequinho no primeiro acesso: aponta para ele e só some quando ele é usado ou a dica é fechada (lembrada neste navegador)
+    let seen = '1'; try { seen = window.localStorage.getItem('igreja3d.dica_pessoa'); } catch { /* sem armazenamento: não insiste */ }
+    if (!seen) {
+      const d = document.createElement('div'); d.className = 'panel pegdica'; d.setAttribute('role', 'note');
+      d.innerHTML = '<span>Arraste o bonequinho até um ambiente para andar por dentro dele</span><button type="button" aria-label="Fechar a dica">×</button>';
+      wrap.appendChild(d); this._pegDica = d; d.querySelector('button').addEventListener('click', () => this._dicaOff());
+      this._pegBtn.addEventListener('pointerdown', () => this._dicaOff()); this._pegBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') this._dicaOff(); });
+    }
 
     // trilha da Vista de cima (Planta › Bloco › Cômodo): filha do HUD de cima, numa linha própria; escondida fora da Vista de cima
     const navrow = document.createElement('div'); navrow.className = 'navrow'; navrow.hidden = true;
@@ -6433,14 +6522,24 @@ export class Igreja3DCard extends HTMLElement {
     const back = document.createElement('button'); back.className = 'back'; back.textContent = '‹ Voltar'; back.setAttribute('aria-label', 'Voltar um nível');
     back.addEventListener('click', () => this._navBack());
     const crumbs = document.createElement('nav'); crumbs.className = 'crumbs'; crumbs.setAttribute('aria-label', 'Trilha da planta');
-    const chips = document.createElement('div'); chips.className = 'chips'; chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Aparelhos do cômodo');
+    nav.append(back, crumbs); navrow.appendChild(nav); top.appendChild(navrow);
+    this._navRow = navrow; this._navCrumbs = crumbs;
+    // v1.6.1: painel do cômodo à esquerda (no celular, folha embaixo) — título, Ligar/Desligar tudo, aparelhos (ou os cômodos do bloco),
+    // "Entrar aqui" e as automações do HA que casam pelo nome; visível nos níveis bloco e cômodo da Vista de cima
+    const room = document.createElement('div'); room.className = 'room'; room.hidden = true; room.setAttribute('role', 'region'); room.setAttribute('aria-label', 'Cômodo');
+    room.innerHTML = '<div class="rhead"><b></b><small aria-live="polite"></small></div><div class="rall"><button class="ron">Ligar tudo</button><button class="roff">Desligar tudo</button></div><div class="rlist" role="group"></div>';
     const enter = document.createElement('button'); enter.className = 'enter'; enter.hidden = true; enter.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.2" r="3"/><path d="M12 9.6c-2.9 0-4.6 1.5-4.8 4l-.2 3.2c0 .6.4 1 .9 1h.9l.4 4.2c0 .5.4.8.8.8h4c.4 0 .8-.3.8-.8l.4-4.2h.9c.5 0 .9-.4.9-1l-.2-3.2c-.2-2.5-1.9-4-4.8-4z"/></svg><span>Entrar aqui</span>';
     enter.title = 'Entra neste cômodo na visão de Pessoa (num ponto livre, olhando para dentro)';
     enter.addEventListener('click', () => { if (this._nav.room) this._enterRoom(this._nav.room); });
-    nav.append(back, crumbs, enter, chips); navrow.appendChild(nav); top.appendChild(navrow);
-    this._navRow = navrow; this._navCrumbs = crumbs; this._navChipsEl = chips; this._enterBtn = enter;
+    const asec = document.createElement('div'); asec.hidden = true; asec.innerHTML = '<div class="rsect">Automações</div>';
+    this._roomAutoEl = document.createElement('div'); this._roomAutoEl.className = 'autos'; asec.appendChild(this._roomAutoEl);
+    room.append(enter, asec); wrap.appendChild(room);
+    this._roomEl = room; this._roomTitle = room.querySelector('.rhead b'); this._roomSub = room.querySelector('.rhead small'); this._roomList = room.querySelector('.rlist');
+    this._roomAll = room.querySelector('.rall'); this._roomOn = room.querySelector('.ron'); this._roomOff = room.querySelector('.roff'); this._enterBtn = enter; this._roomAutoSec = asec;
+    this._roomOn.title = 'Acende as luzes (ar, telão e som ficam como estão)'; this._roomOff.title = 'Apaga as luzes e desliga ar, telão e som';
+    this._roomOn.addEventListener('click', () => this._roomPower(true)); this._roomOff.addEventListener('click', () => this._roomPower(false));
     const navKey = (e) => { if ((e.key === 'Escape' || e.key === 'Backspace') && this._topView && !this._menuOn) { e.preventDefault(); this._navBack(); } };   // com o menu aberto o Esc só fecha o menu
-    canvas.addEventListener('keydown', navKey); nav.addEventListener('keydown', navKey);
+    canvas.addEventListener('keydown', navKey); nav.addEventListener('keydown', navKey); room.addEventListener('keydown', (e) => { if (e.key === 'Escape') navKey(e); });
 
     try {
       this._build3D(canvas);
@@ -6459,8 +6558,11 @@ export class Igreja3DCard extends HTMLElement {
     this._setLabels(!!this._config.labels);
     this._applyMode();
     this._drawer = this._isDrawer();
-    this._setPanel(this._config.panel !== false && !this._drawer);   // no celular a gaveta cobriria a cena: começa recolhida (aba "Painel" na borda)
     this._setRoof(!!(this._config.fachada != null ? this._config.fachada : this._config.roof));   // `fachada:` (ou `roof:`, como no casa3d)
+    // v1.6.1: abre na Vista de cima (nível 0, de frente para o palco) — com a Fachada ligada no YAML fica a maquete de sempre. O painel lateral
+    // fica recolhido enquanto isso e abre ao sair da Vista de cima (como `panel:` pedir); no celular a gaveta começa recolhida
+    const panel = this._config.panel !== false && !this._drawer;
+    if (this._roofOn) this._setPanel(panel); else { this._setPanel(false); this._setTopView(true, true); this._topPanel = panel; this._resetView(); const o = this._orbit; o.sph.copy(o.goal); o.target.copy(o.targetGoal); }
     if (this._hass) this._syncFromHass();
     else this._applyDemoDefaults();
   }
@@ -6643,6 +6745,7 @@ export class Igreja3DCard extends HTMLElement {
     this._ro.observe(this);
     if (this._dock) this._ro.observe(this._dock);
     if (this._hudTop) this._ro.observe(this._hudTop);
+    if (this._roomEl) this._ro.observe(this._roomEl);
     this._resize();
     renderer.shadowMap.needsUpdate = true;
     this._buildBlocks();
@@ -8050,7 +8153,7 @@ export class Igreja3DCard extends HTMLElement {
     }
     const stt = this._sunTimes || {};
     const sunTxt = stt.rise && stt.set ? ` · ☀ ${fmtClock(stt.rise, tz)}–${fmtClock(stt.set, tz)}` : '';   // no fuso da igreja, não no do navegador
-    if (this._clockEl) this._clockEl.innerHTML = `${txt} · <span class="per">${per}${this._simTime ? ' · simulado' : ''}</span><span class="suntimes">${sunTxt}</span>`;
+    if (this._clockEl) this._clockEl.innerHTML = `${txt} · <span class="per">${per}${this._simTime ? ' · simulado' : ''}</span><span class="suntimes">${sunTxt}</span>${this._wxHtml || ''}`;
   }
   setSimTime(date) { this._simTime = date ? new Date(date).getTime() : null; this._updateTime(true); this._orbit.dirty = true; }
   _applyMode() {
@@ -8060,10 +8163,16 @@ export class Igreja3DCard extends HTMLElement {
     this._night = night;
     for (const [m, b] of Object.entries(this._modeBtns)) b.setAttribute('aria-pressed', m === this._mode ? 'true' : 'false');
     this._nvBtn.setAttribute('aria-pressed', this._nightVision ? 'true' : 'false');
-    this._nvBtn.disabled = !night; this._nvBtn.style.opacity = night ? '' : '.55';
+    this._nvSync();
     this._needShadow = true;
   }
 
+  // Visão noturna só vale à noite: de dia o item fica desabilitado e diz por quê ("só à noite")
+  _nvSync() {
+    const b = this._nvBtn, day = !this._night; b.disabled = day; b.style.opacity = day ? '.55' : '';
+    b.querySelector('.ml').innerHTML = day ? 'Visão noturna <small class="mnote">só à noite</small>' : 'Visão noturna';
+    b.title = day ? 'Disponível só à noite (de dia a igreja já está iluminada)' : 'À noite, deixa a igreja inteira visível (luz de lua)';
+  }
   _setLabels(on) {
     this._labelsOn = on;
     // no modo Fachada os rótulos (desenhados por cima de tudo) ficariam soltos na frente das paredes altas
@@ -8123,18 +8232,20 @@ export class Igreja3DCard extends HTMLElement {
     this._roofBtn.setAttribute('aria-pressed', this._roofOn ? 'true' : 'false');
     this._needShadow = true; this._orbit.dirty = true;
   }
-  // Vista de cima: câmera quase a prumo (phi 0,035) com o prédio inteiro (x 0–20,1 · z 0–51) enquadrado; o comprimento
-  // do lote fica no lado maior da tela (paisagem: fachada à direita · retrato: fachada embaixo, como numa planta)
+  // Vista de cima, nível 0 (v1.6.1): de frente para o palco, como quem está na plateia — câmera do lado +x olhando para −x, alta e
+  // oblíqua (polar 0,9 ≈ 38° acima do horizonte), centrada no templo; a largura do templo (z 12,4–44) ocupa a largura da tela com pouca
+  // folga (em retrato também: a câmera só afasta). Ala direita, fundos e frente podem ficar cortados nas bordas.
   _topFor(aspect) {
-    const target = new THREE.Vector3(10.05, 0, 25.8), land = aspect >= 1;
-    const tanV = Math.tan(this._camera.fov * Math.PI / 360), hL = 27.5, hS = 11.8;   // meio comprimento (z) e meia largura (x) com folga
-    const d = land ? Math.max(hL / (tanV * aspect), hS / tanV) : Math.max(hS / (tanV * aspect), hL / tanV);
-    const pos = new THREE.Vector3().setFromSphericalCoords(d * 1.08 + 4, 0.035, land ? -Math.PI / 2 : 0).add(target);   // +4 m: paredes e cobertura mais perto da câmera
-    return { pos, target };
+    const target = new THREE.Vector3(7, 0, 28.2), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
+    return { pos: new THREE.Vector3().setFromSphericalCoords(16.4 / tanH, 0.9, Math.PI / 2).add(target), target };
   }
   _setTopView(on, keepCamera = false) {
     if (this._walkOn && this._setWalk) this._setWalk(false);   // sai da visão de pessoa
-    this._topView = !!on; this._nav = { level: 0, block: null, room: null }; this._clearHover();
+    // v1.6.1: o painel do cômodo (à esquerda) é o da Vista de cima — o lateral direito recolhe ao entrar e volta ao sair (se estava aberto)
+    if (!!on !== !!this._topView && this._dock) {
+      if (on) { this._topPanel = this._panelOpen; if (this._panelOpen) this._setPanel(false); } else if (this._topPanel) { this._topPanel = false; if (!this._walkOn) this._setPanel(true); }
+    }
+    this._topView = !!on; this._nav = { level: 0, block: null, room: null }; this._clearHover(); this._select(null);
     if (this._mezz) { this._mezz.visible = !this._topView; this._needShadow = true; }   // a planta enxerga os cômodos que ficam sob o mezanino
     if (this._navRow) this._renderNav();
     if (this._topBtn) this._topBtn.setAttribute('aria-pressed', this._topView ? 'true' : 'false');
@@ -8195,14 +8306,14 @@ export class Igreja3DCard extends HTMLElement {
     const n = this._nav;
     return n.level === 2 && n.room ? n.room.rects.map((r) => [r[0], r[1], r[0] + r[2], r[1] + r[3]]) : n.level === 1 && n.block ? [n.block.box] : null;
   }
-  // Enquadramento de cima de um retângulo (mesma orientação da planta: paisagem com a fachada à direita, retrato com a fachada embaixo)
+  // Enquadramento de cima de um retângulo (paisagem: palco em cima, como no nível 0 — aproximar não dá meia-volta · retrato: fachada embaixo)
   _frameRect(x0, z0, x1, z1, margin) {
     const A = this._camera.aspect, tanV = Math.tan(this._camera.fov * Math.PI / 360), land = A >= 1;
     const hx = (x1 - x0) / 2 + margin, hz = (z1 - z0) / 2 + margin;
     const d = land ? Math.max(hz / (tanV * A), hx / tanV) : Math.max(hx / (tanV * A), hz / tanV);
     const target = new THREE.Vector3((x0 + x1) / 2, 0, (z0 + z1) / 2), o = this._orbit;
     const dist = clamp(d * 1.08 + 3, o.minDist + 2, o.maxDist);   // +3 m: o topo das paredes (3 m) fica mais perto da câmera
-    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, 0.035, land ? -Math.PI / 2 : 0).add(target), target };
+    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, 0.035, land ? Math.PI / 2 : 0).add(target), target };
   }
   // cômodo (ou, na falta, o bloco) sob o ponto (x, z) do piso; folga de 0,8 m para as paredes
   _hit(x, z) {
@@ -8268,13 +8379,14 @@ export class Igreja3DCard extends HTMLElement {
     else if (it.kind === 'media') this._svc('media_player', on ? 'turn_off' : 'turn_on', this.entity(key));
   }
   _setNavHint(t) { if (this._navHint) this._navHint.textContent = t || this._navHintDefault || ''; }
-  // trilha + chips dos aparelhos do cômodo; reconstrói só quando o nível muda, senão só atualiza o estado dos chips
+  // trilha (Voltar + migalhas) e o painel do cômodo; reconstrói só quando o nível muda, senão só atualiza estados e contagens
   _renderNav() {
     const row = this._navRow; if (!row) return;
     row.hidden = !this._topView;
+    const n = this._nav, rp = this._roomEl, show = !!(this._topView && n.level >= 1 && n.block);
+    if (rp.hidden === show) { rp.hidden = !show; requestAnimationFrame(() => this._resize()); }   // a cena é enquadrada ao lado (ou acima) dele
     if (!this._topView) { this._navSig = ''; return; }
-    if (this._enterBtn) this._enterBtn.hidden = !(this._nav.level === 2 && this._nav.room);   // "Entrar aqui" só no nível do cômodo
-    const n = this._nav, sig = [n.level, n.block && n.block.id, n.room && n.room.id].join('|');
+    const sig = [n.level, n.block && n.block.id, n.room && n.room.id].join('|');
     if (sig !== this._navSig) {
       this._navSig = sig;
       const cr = this._navCrumbs; cr.innerHTML = '';
@@ -8289,28 +8401,59 @@ export class Igreja3DCard extends HTMLElement {
       });
       this._navHintDefault = n.level === 0 ? 'Clique num bloco para aproximar' : n.level === 1 ? 'Clique num cômodo para aproximar' : '';
       this._navHint = document.createElement('span'); this._navHint.className = 'navhint'; this._navHint.textContent = this._navHintDefault; this._navHint.setAttribute('aria-live', 'polite');
-      const ch = this._navChipsEl; ch.innerHTML = ''; this._navChips = {};
-      if (n.level < 2) { cr.appendChild(this._navHint); ch.hidden = true; }
-      else {
-        ch.hidden = false;
-        const keys = n.room.items;
-        if (!keys.length) { this._navHint.textContent = 'Sem aparelhos neste cômodo'; ch.appendChild(this._navHint); }
-        for (const k of keys) {
-          const it = ITEMS.find((i) => i.key === k);
-          const c = document.createElement('button'); c.className = 'chip'; c.dataset.key = k; c.setAttribute('aria-pressed', 'false');
-          const ico = document.createElement('span'); ico.className = 'ico'; ico.innerHTML = iconSvg(it.icon);
-          const lb = document.createElement('span'); lb.textContent = it.label; const sm = document.createElement('small');
-          c.append(ico, lb, sm); c.style.setProperty('--dot', this._dotColor(k));
-          c.addEventListener('click', () => { this._toggleItem(k); this._flashRow(k); });
-          ch.appendChild(c); this._navChips[k] = { c, sm, it };
-        }
+      cr.appendChild(this._navHint);
+      // painel do cômodo: aparelhos (nível 2) ou os cômodos do bloco com a contagem (nível 1)
+      const ch = this._roomList; ch.innerHTML = ''; this._navChips = {}; this._autoSig = null;
+      if (show) {
+        this._roomTitle.textContent = n.level === 2 ? n.room.label : n.block.label; this._enterBtn.hidden = n.level !== 2;
+        ch.setAttribute('aria-label', n.level === 2 ? 'Aparelhos do cômodo' : 'Cômodos do bloco');
+        const mk = (icon, label, go) => {
+          const c = document.createElement('button'); c.className = 'chip'; c.setAttribute('aria-pressed', 'false');
+          const ico = document.createElement('span'); ico.className = 'ico'; ico.innerHTML = iconSvg(icon);
+          const lb = document.createElement('span'); lb.textContent = label; const sm = document.createElement('small');
+          c.append(ico, lb, sm); c.addEventListener('click', go); ch.appendChild(c); return { c, sm };
+        };
+        if (n.level === 2) {
+          if (!n.room.items.length) { const e = document.createElement('span'); e.className = 'empty'; e.textContent = 'Sem aparelhos neste cômodo'; ch.appendChild(e); }
+          for (const k of n.room.items) {
+            const it = ITEMS.find((i) => i.key === k), r = mk(it.icon, it.label, () => { this._toggleItem(k); this._flashRow(k); });
+            r.c.dataset.key = k; r.c.style.setProperty('--dot', this._dotColor(k)); this._navChips[k] = { ...r, it };
+          }
+        } else for (const r of n.block.rooms) this._navChips['r:' + r.id] = { ...mk('bulb', r.label, () => this._navTo(2, n.block, r)), r };
       }
     }
-    for (const [k, { c, sm, it }] of Object.entries(this._navChips || {})) {
+    for (const [k, { c, sm, it, r }] of Object.entries(this._navChips || {})) {
+      if (r) { const [on, all] = this._onCount(r.items); sm.textContent = all ? `${on} de ${all} ligados` : 'sem aparelhos'; c.setAttribute('aria-pressed', on ? 'true' : 'false'); continue; }
       const st = this._state[k], on = !!(st && st.on);
       c.setAttribute('aria-pressed', on ? 'true' : 'false'); sm.textContent = this._stateText(it, st).split(' · ')[0];
       if (it.rgb && st && st.attrs && st.attrs.rgb_color) c.style.setProperty('--dot', `rgb(${st.attrs.rgb_color.join(',')})`);
     }
+    if (!show) return;
+    const keys = this._roomKeys(), [on, all] = this._onCount(keys);
+    this._roomSub.textContent = all ? `${on} de ${all} ligados` : '';
+    this._roomAll.hidden = !all;
+    this._roomOn.disabled = !keys.some((k) => ITEMS.find((i) => i.key === k).kind === 'light' && !(this._state[k] && this._state[k].on)); this._roomOff.disabled = !on;
+    const autos = n.level === 2 ? this._roomAutos(n.room) : [], asig = autos.map((a) => a.id + a.on + a.last).join();
+    if (asig !== this._autoSig) { this._autoSig = asig; this._roomAutoEl.innerHTML = ''; for (const a of autos) this._roomAutoEl.appendChild(this._autoRow(a)); this._roomAutoSec.hidden = !autos.length; }
+  }
+  // aparelhos do cômodo (ou de todos os cômodos do bloco) em foco · quantos dos liga/desliga estão ligados (sensores não contam)
+  _roomKeys() { const n = this._nav; return n.level === 2 && n.room ? n.room.items : n.block ? [...new Set(n.block.rooms.flatMap((r) => r.items))] : []; }
+  _onCount(keys) { const ks = keys.filter((k) => ITEMS.find((i) => i.key === k).kind !== 'sensor'); return [ks.filter((k) => this._state[k] && this._state[k].on).length, ks.length]; }
+  // Ligar tudo acende só as luzes (ligar ar, telão e som sem querer gasta e faz barulho); Desligar tudo apaga as luzes e desliga ar, telão
+  // e som (é o "fechar a sala"). Uma chamada em lote (homeassistant.turn_on/turn_off, como as rotinas); luzes/interruptores mudam na hora
+  _roomPower(on) {
+    const keys = this._roomKeys().filter((k) => { const it = ITEMS.find((i) => i.key === k), st = this._state[k]; return (on ? it.kind === 'light' : it.kind !== 'sensor') && !!(st && st.on) !== on; });
+    if (!keys.length) return;
+    for (const k of keys) { const it = ITEMS.find((i) => i.key === k), st = this._state[k]; if ((it.kind === 'light' || it.kind === 'switch') && st && !st.unavailable) this._setItemState(k, { state: on ? 'on' : 'off', attrs: st.attrs }); }
+    this._svc('homeassistant', on ? 'turn_on' : 'turn_off', keys.map((k) => this.entity(k)));
+    this._refreshSub();
+  }
+  // automações do HA ligadas ao cômodo: o estado não diz que entidades cada uma usa, então casa pelo nome — palavras (4+ letras) do nome
+  // do cômodo e dos aparelhos dele no nome/id da automação. ponytail: heurística por palavra; mapa explícito no YAML se um dia errar muito
+  _roomAutos(room) {
+    const words = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !['sala', 'area', 'tudo', 'principal'].includes(w));
+    const want = new Set(words([room.label, ...room.items.map((k) => ITEMS.find((i) => i.key === k).label)].join(' ')));
+    return (this._autos || []).filter((a) => words(a.name + ' ' + a.id.slice(11)).some((w) => want.has(w)));
   }
   // Selo redondo do modo do ar (textura 64 px, uma por modo, em cache): frio ❄ azul, quente chama laranja,
   // seco gota, ventilar hélice, auto "A"
@@ -8753,6 +8896,7 @@ export class Igreja3DCard extends HTMLElement {
     const o = this._orbit, cam = this._camera, cv = this._canvas;
     if (on) {
       if (this._topView) this._setTopView(false, true);
+      this._select(null);
       this._walkSaved = { pos: cam.position.clone(), target: o.target.clone(), panel: this._panelOpen, touched: o.touched, roof: !!this._roofOn };
       // v1.5.5: na visão de Pessoa a Fachada liga sozinha (paredes altas, forro e telhado: por dentro some o céu sobre as salas);
       // ao sair volta como estava. O botão Fachada continua valendo durante o passeio. `fachada_pessoa: false` desliga isso.
@@ -8788,7 +8932,7 @@ export class Igreja3DCard extends HTMLElement {
   _showWalkHint() {
     const h = this._walkHint, coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
     h.textContent = coarse ? 'Toque no piso para ir até lá · joystick anda · arraste para olhar' : 'Clique no piso para ir até lá · setas/WASD ou joystick andam · arraste para olhar · Shift corre · Enter/F abre a porta · Esc sai';
-    h.classList.add('show'); clearTimeout(this._walkHintT); this._walkHintT = setTimeout(() => h.classList.remove('show'), 6000);
+    h.classList.add('show'); this._walkHintAt = performance.now(); this._dicaOff();   // some na primeira interação (ver `used` em _build)
   }
 
   // ---- Ganchos públicos (depuração / demo) ----
@@ -8848,8 +8992,35 @@ export class Igreja3DCard extends HTMLElement {
     if (this._topView) return this._topClick(e, o);
     if (this._walkOn && this._doorClick(hit)) return;
     if (this._walkOn && this._walkClick(e, hit)) return;   // piso / escada / mezanino / parede: caminha até lá
-    if (o && o.userData.item) { this._activate(o.userData.item); this._flashRow(o.userData.item); }
+    // v1.6.1: 1º toque seleciona (realce + balão com nome, estado e o botão); 2º toque no mesmo alvo em até 5 s (ou o botão) executa; vazio limpa
+    const s = this._sel, k = o && o.userData.item;
+    if (k && s && s.key === k && performance.now() - s.at < 5000) this._selAct();
+    else this._select(k ? { key: k, p: hit.point.clone(), at: performance.now() } : null);
   }
+  _select(sel) {
+    const b = this._selEl; if (!b) return;
+    if (this._sel && !this._walkOn) this._hlShow(null);
+    this._sel = sel; b.hidden = !sel;
+    if (!sel) return;
+    const h = this._hit(sel.p.x, sel.p.z);
+    if (h && h.r && !this._walkOn) this._hlShow(h.r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]));   // na Pessoa o realce no piso cobriria a vista
+    this._selRender(); this._selPlace(); this._orbit.dirty = true;
+  }
+  _selRender() {
+    const s = this._sel; if (!s) return;
+    const it = ITEMS.find((i) => i.key === s.key), st = this._state[s.key], on = !!(st && st.on);
+    this._selName.textContent = it.label; this._selState.textContent = this._stateText(it, st);
+    this._selBtn.textContent = it.kind === 'sensor' ? 'Detalhes' : it.kind === 'light' ? (on ? 'Apagar' : 'Acender') : (on ? 'Desligar' : 'Ligar');
+  }
+  // balão preso ao ponto tocado (acompanha a câmera; some se o ponto sair por trás)
+  _selPlace() {
+    const s = this._sel; if (!s) return;
+    const v = s.p.clone().project(this._camera), W = this._canvas.clientWidth, H = this._canvas.clientHeight;
+    const x = clamp((v.x + 1) / 2 * W, 100, W - 100), y = Math.max((1 - v.y) / 2 * H, 70);
+    this._selEl.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, calc(-100% - 12px))`;
+    this._selEl.style.visibility = v.z > 1 ? 'hidden' : '';
+  }
+  _selAct() { const k = this._sel && this._sel.key; if (!k) return; this._select(null); this._toggleItem(k); this._flashRow(k); }
   // Vista de cima: planta → 1º clique aproxima o bloco → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
   _topClick(e, o) {
     const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
@@ -8960,11 +9131,10 @@ export class Igreja3DCard extends HTMLElement {
     };
     this._dockRaf = requestAnimationFrame(step);
   }
-  // o que depende de painel × celular × Pessoa: véu da gaveta (só no celular) e o clima (some sob a gaveta e no lugar do joystick)
+  // o que depende de painel × celular: o véu da gaveta (só no celular)
   _sideSync() {
     const cover = !!(this._panelOpen && this._drawer);
     if (this._scrim) this._scrim.hidden = !cover;
-    if (this._weatherEl) this._weatherEl.classList.toggle('out', cover || !!this._walkOn);
   }
   _isDrawer() { return (this.clientWidth || window.innerWidth || 1024) <= 640; }
   // ---- Menu de opções (v1.6.0) ----
@@ -8981,6 +9151,7 @@ export class Igreja3DCard extends HTMLElement {
   _menuFocus(i) { const it = this._menuItems(); if (it.length) it[((i % it.length) + it.length) % it.length].focus(); }
   // teclado com o menu aberto (captura na janela: antes do Walker e da trilha da Vista de cima): Esc só fecha o menu, ↑/↓/Home/End andam, Tab sai
   _menuKey(e) {
+    if (e.key === 'Escape' && this._sel && !this._menuOn) { this._select(null); return; }   // Esc limpa a seleção da maquete
     if (!this._menuOn) return;
     const act = this.shadowRoot.activeElement, inside = !!act && (this._menu.contains(act) || act === this._menuBtn);
     if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this._menuSet(false); if (inside) this._menuBtn.focus(); return; }
@@ -9052,7 +9223,7 @@ export class Igreja3DCard extends HTMLElement {
     this._reopen = document.createElement('button'); this._reopen.className = 'panel btn reopen'; this._reopen.title = 'Abrir o painel (número de luzes acesas)';
     this._reopen.innerHTML = `${iconSvg('chevl')}<span class="rl">Painel</span><span class="rn" title="luzes acesas"></span>`; this._reopen.hidden = true;
     this._reopen.addEventListener('click', () => this._setPanel(true)); wrap.appendChild(this._reopen);
-    this._buildWeather(wrap);
+    this._buildWeather();
 
     // Ambientes: blocos quadrados agrupados por área
     this._tiles = {};
@@ -9092,19 +9263,14 @@ export class Igreja3DCard extends HTMLElement {
     this._showTab('ctl');
   }
   // Clima ao vivo (Open-Meteo, sem chave) — atualiza a cada 15 min
-  _buildWeather(wrap) {
+  _buildWeather() {
     if (!this._config.weather) return;
-    const w = document.createElement('div'); w.className = 'panel weather'; wrap.appendChild(w); this._weatherEl = w;
-    const top = document.createElement('div'); top.className = 'wtop';
-    const ico = document.createElement('span'); ico.className = 'wicon'; ico.innerHTML = iconSvg('cloudsun');
-    const temp = document.createElement('span'); temp.className = 'wtemp'; temp.textContent = '—';
-    top.append(ico, temp); w.appendChild(top);
-    const city = document.createElement('div'); city.className = 'wcity'; city.textContent = this._config.weather_city || 'Local';
-    const cond = document.createElement('div'); cond.className = 'wcond'; cond.textContent = 'Carregando…';
-    const meta = document.createElement('div'); meta.className = 'wmeta';
-    const upd = document.createElement('div'); upd.className = 'wupd'; upd.textContent = '';
-    w.append(city, cond, meta, upd);
-    this._weatherUI = { ico, temp, cond, meta, upd };
+    // seção Clima no topo do menu ☰ (cidade, condição, sensação, vento, atualizado); no título fica só o ícone + temperatura (_wxHtml)
+    const d = document.createElement('div'); d.className = 'msec'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Clima');
+    d.innerHTML = `<div class="mh" aria-hidden="true">Clima</div><div class="mwx"><span class="mic">${iconSvg('cloudsun')}</span><span><b>Carregando…</b><small></small><small></small></span></div>`;
+    const [line, meta, upd] = d.querySelectorAll('.mwx b, .mwx small'); meta.textContent = this._config.weather_city || 'Local';
+    this._menu.prepend(d);
+    this._weatherUI = { ico: d.querySelector('.mic'), line, meta, upd };
     this._fetchWeather();
   }
   async _fetchWeather() {
@@ -9118,14 +9284,15 @@ export class Igreja3DCard extends HTMLElement {
       const j = await res.json(); const c = j.current; if (!c) throw new Error('sem dados');
       const [iconKey, desc] = WEATHER_CODE[c.weather_code] || ['cloud', '—'];
       const icon = !c.is_day && iconKey === 'sun' ? 'moon' : !c.is_day && iconKey === 'cloudsun' ? 'cloud' : iconKey;
+      const t = Math.round(c.temperature_2m), city = this._config.weather_city || 'Local';
       ui.ico.innerHTML = iconSvg(icon);
-      ui.temp.innerHTML = `${Math.round(c.temperature_2m)}<sup>°C</sup>`;
-      ui.cond.textContent = desc;
-      ui.meta.innerHTML = `<span>sensação ${Math.round(c.apparent_temperature)}°</span><span>${Math.round(c.wind_speed_10m)} km/h</span>`;
+      ui.line.textContent = `${t}° · ${desc}`;
+      ui.meta.textContent = `${city} · sensação ${Math.round(c.apparent_temperature)}° · vento ${Math.round(c.wind_speed_10m)} km/h`;
       ui.upd.textContent = `atualizado ${fmtClock(Date.now())}`;
+      this._wxHtml = `<span class="wx" role="img" title="${desc} · ${city}" aria-label="${t} graus, ${desc}">${iconSvg(icon)}${t}°</span>`; this._updateTime(true);
       this._weatherOk = true;
     } catch (err) {
-      if (!this._weatherOk) { ui.cond.textContent = 'Indisponível'; ui.upd.textContent = 'sem conexão'; }
+      if (!this._weatherOk) { ui.line.textContent = 'Clima indisponível'; ui.upd.textContent = 'sem conexão'; }   // no título: nada
       console.warn('[igreja3d-card] clima indisponível:', err && err.message);
     }
   }
@@ -9237,6 +9404,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   _renderPanel() {
     if (!this._tiles) return;
+    this._selRender();
     if (this._navRow) this._renderNav();
     const now = Date.now();
     for (const [k, t] of Object.entries(this._tiles)) {
@@ -9287,15 +9455,18 @@ export class Igreja3DCard extends HTMLElement {
     const el = this._autoList; if (!el) return;
     el.innerHTML = '';
     if (!this._autos.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = this._hass ? 'Nenhuma automação encontrada no Home Assistant.' : 'As automações do HA aparecem aqui quando o cartão está no Home Assistant.'; el.appendChild(e); return; }
-    for (const a of this._autos) {
-      const row = document.createElement('div'); row.className = 'auto ' + (a.on ? 'on' : 'off');
-      row.innerHTML = `<span class="ico">${iconSvg('auto')}</span><span><b>${a.name}</b><small>${a.last ? `última execução ${fmtClock(a.last)} · ${fmtRel(a.last, now)}` : 'nunca executou'}${a.on ? '' : ' · desativada'}</small></span>`;
-      const sw = document.createElement('button'); sw.className = 'sw'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', a.on ? 'true' : 'false'); sw.setAttribute('aria-label', `${a.name} ativa`);
-      sw.addEventListener('click', () => { a.on = !a.on; this._svc('automation', a.on ? 'turn_on' : 'turn_off', a.id); this._renderAutos(); });
-      const run = document.createElement('button'); run.className = 'run'; run.innerHTML = iconSvg('play'); run.title = 'Executar agora'; run.setAttribute('aria-label', `Executar ${a.name}`);
-      run.addEventListener('click', () => { this._svc('automation', 'trigger', a.id, { skip_condition: true }); row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 600); });
-      row.append(sw, run); el.appendChild(row);
-    }
+    for (const a of this._autos) el.appendChild(this._autoRow(a, now));
+  }
+  // linha de uma automação do HA: ativar/desativar + executar agora (painel lateral e painel do cômodo)
+  _autoRow(a, now = Date.now()) {
+    const row = document.createElement('div'); row.className = 'auto ' + (a.on ? 'on' : 'off');
+    row.innerHTML = `<span class="ico">${iconSvg('auto')}</span><span><b></b><small>${a.last ? `última execução ${fmtClock(a.last)} · ${fmtRel(a.last, now)}` : 'nunca executou'}${a.on ? '' : ' · desativada'}</small></span>`;
+    row.querySelector('b').textContent = a.name;
+    const sw = document.createElement('button'); sw.className = 'sw'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', a.on ? 'true' : 'false'); sw.setAttribute('aria-label', `${a.name} ativa`);
+    sw.addEventListener('click', () => { a.on = !a.on; this._svc('automation', a.on ? 'turn_on' : 'turn_off', a.id); this._renderPanel(); });
+    const run = document.createElement('button'); run.className = 'run'; run.innerHTML = iconSvg('play'); run.title = 'Executar agora'; run.setAttribute('aria-label', `Executar ${a.name}`);
+    run.addEventListener('click', () => { this._svc('automation', 'trigger', a.id, { skip_condition: true }); row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 600); });
+    row.append(sw, run); return row;
   }
   _renderFeed(now = Date.now()) {
     if (!this._feed) return;
@@ -9352,13 +9523,19 @@ export class Igreja3DCard extends HTMLElement {
       wr.classList.toggle('drawer', drawer); wr.classList.toggle('side', P > 0);
       for (const [k, v] of [['--pw', P], ['--hud', hudH], ['--cw', w], ['--ch', h]]) wr.style.setProperty(k, v + 'px');
     }
-    const vw = Math.max(160, w - P), vh = Math.max(120, h - U); this._vh = vh;
+    // v1.6.1: painel do cômodo da Vista de cima — à esquerda (L) no desktop, folha embaixo (B) no celular: a cena fica no que sobra
+    const rp = this._roomEl && !this._roomEl.hidden ? this._roomEl : null;
+    const L = rp && !drawer ? Math.min(rp.offsetWidth + 20, w * 0.4) : 0, B = rp && drawer ? Math.min(rp.offsetHeight + 16, h * 0.45) : 0;
+    const vw = Math.max(160, w - P - L), vh = Math.max(120, h - U - B); this._vh = vh;
     this._camera.aspect = vw / vh; if (this._walkOn) this._camera.fov = this._walkFov();
-    if (P > 0 || U > 0) this._camera.setViewOffset(vw, vh, 0, -U, w, h); else this._camera.clearViewOffset();
+    if (P > 0 || U > 0 || L > 0 || B > 0) this._camera.setViewOffset(vw, vh, -L, -U, w, h); else this._camera.clearViewOffset();
     this._camera.updateProjectionMatrix();
     if (!this._orbit.touched) this._resetView();
     this._orbit.dirty = true;
+    const dc = this._pegDica;   // dica do bonequinho: logo abaixo dele, a seta no meio do botão
+    if (dc && wr) { const r = this._pegBtn.getBoundingClientRect(), q = wr.getBoundingClientRect(); dc.hidden = !r.width; dc.style.top = `${r.bottom - q.top + 10}px`; dc.style.right = `${Math.max(8, q.right - r.right - 60)}px`; dc.style.setProperty('--ax', `${q.right - (r.left + r.right) / 2 - Math.max(8, q.right - r.right - 60) - 6}px`); }
   }
+  _dicaOff() { if (!this._pegDica) return; this._pegDica.remove(); this._pegDica = null; try { window.localStorage.setItem('igreja3d.dica_pessoa', '1'); } catch { /* só nesta sessão */ } }
   _start() {
     if (this._raf || !this._renderer) return;
     this._clock.start();
@@ -9508,7 +9685,7 @@ export class Igreja3DCard extends HTMLElement {
     this._updateTime();
     const elev = this._sunInfo ? this._sunInfo.elevation : -20;
     const nightGoal = this._mode === 'night' ? 1 : this._mode === 'day' ? 0 : clamp((6 - elev) / 10, 0, 1);
-    if (this._mode === 'auto' && this._night !== (nightGoal > 0.5)) { this._night = nightGoal > 0.5; this._nvBtn.disabled = !this._night; this._nvBtn.style.opacity = this._night ? '' : '.55'; }
+    if (this._mode === 'auto' && this._night !== (nightGoal > 0.5)) { this._night = nightGoal > 0.5; this._nvSync(); }
     if (this._nightLevel === undefined) this._nightLevel = nightGoal;
     if (Math.abs(this._nightLevel - nightGoal) > 0.002) { this._nightLevel += (nightGoal - this._nightLevel) * k; dirty = true; this._needShadow = true; }
     else if (this._nightLevel !== nightGoal) { this._nightLevel = nightGoal; dirty = true; this._needShadow = true; }
@@ -9623,7 +9800,7 @@ export class Igreja3DCard extends HTMLElement {
     if (this._roomLight && this._roomLightTick(dayScale)) dirty = true;
     if (this._airTick()) dirty = true;   // fluxo dos ares andando (~16 q/s, só em cena e por pouco tempo)
     if (this._needShadow) { this._renderer.shadowMap.needsUpdate = true; this._needShadow = false; dirty = true; }
-    if (dirty) this._updateLabels();
+    if (dirty) { this._updateLabels(); this._selPlace(); }
     // Só animação ociosa (telão pulsando): no máximo ~8 quadros/s, e nada com a aba ou o cartão fora da tela
     const now = performance.now();
     // Todos os níveis: girando/aproximando desenha na resolução que o tempo real de quadro permite; parou → um quadro nítido (governador)

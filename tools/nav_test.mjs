@@ -14,7 +14,7 @@ const on0 = await ev(() => document.querySelector('igreja3d-card')._state.midia.
 await clickAt(page, 17.5, 2.7, 25.6); await page.waitForTimeout(1500); await S();
 R.b3 = { before: on0, after: await ev(() => document.querySelector('igreja3d-card')._state.midia.on) }; await shot('04_aparelho');
 const ac0 = await ev(() => document.querySelector('igreja3d-card')._state.ac_midia.on);
-await page.click('igreja3d-card >> css=.nav .chip[data-key=ac_midia]'); await page.waitForTimeout(1500); await S();
+await page.click('igreja3d-card >> css=.room .chip[data-key=ac_midia]'); await page.waitForTimeout(1500); await S();
 R.b4 = { before: ac0, after: await ev(() => document.querySelector('igreja3d-card')._state.ac_midia.on), state: await ev(() => document.querySelector('igreja3d-card')._state.ac_midia.state) }; await shot('05_ar_ligado');
 // (d) redimensionar no nível 2
 const before = await nav();
