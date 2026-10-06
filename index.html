@@ -1475,6 +1475,7 @@ class Orbit {
 }
 
 const _dm1 = new THREE.Matrix4(), _dm2 = new THREE.Matrix4(), _dm3 = new THREE.Matrix4();   // temporários das portas (_doorApply)
+const _rsz = new THREE.Vector2();   // temporário do _resize
 // Acender/apagar das lâmpadas (sem alocar por quadro): up/dn = velocidade da subida/descida (1/s, exponencial), warm = quanto começa alaranjado
 // (filamento/HID esquentando: cor e halo crescem junto), tube = tremida de partida de tubo fluorescente/LED linear (só onde faz sentido)
 const _WARM = new THREE.Color(1.0, 0.5, 0.18);
@@ -7947,7 +7948,7 @@ export class Igreja3DCard extends HTMLElement {
     const ft = now - (this._lastT || now); this._lastT = now;
     if (o.moving) {
       this._lastMove = now; g.sharpPending = false;
-      if (!this._lowRes) { this._lowRes = true; g.ft = 0; this._govPR(this._dprFull * g.moveScale); }
+      if (!this._lowRes) { this._lowRes = true; g.ft = 0; if (this._govPR(this._dprFull * g.moveScale)) dirty = true; }
       else if (ft > 0) {
         g.ft = g.ft ? g.ft * 0.8 + ft * 0.2 : ft;
         if (now - g.lastAdj > 300) {
@@ -7955,11 +7956,11 @@ export class Igreja3DCard extends HTMLElement {
           g.slowWin = g.ft > 40 ? g.slowWin + 1 : 0; g.fastWin = g.ft < 22 ? g.fastWin + 1 : 0;
           if (g.slowWin >= 2) { g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); g.slowWin = 0; }
           if (g.fastWin >= 4) { g.moveScale = Math.min(g.moveMax, g.moveScale * 1.1); g.fastWin = 0; }
-          this._govPR(this._dprFull * g.moveScale);
           // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s — nunca nos 20 s após carregar
           // (compilação de shaders e texturas subindo dão picos que não dizem nada do aparelho)
           g.slow = g.moveScale <= g.moveMin + 0.01 && g.ft > 66 ? g.slow + 1 : 0;
-          if (g.slow >= 5 && now - g.lastStep > 4000 && this._govSettled(now)) this._govStepDown(now);
+          if (g.slow >= 5 && now - g.lastStep > 4000 && this._govSettled(now)) this._govStepDown(now);   // pode recompilar (_busy, sem desenhar): o canvas não muda neste quadro
+          else if (this._govPR(this._dprFull * g.moveScale)) dirty = true;
           // degrau 1 desfeito: ~6 s de movimento fluido na escala máxima → o entorno volta (a queda foi passageira)
           g.fastRun = g.rung === 1 && g.ft < 25 && g.moveScale >= g.moveMax - 0.01 ? (g.fastRun || 0) + 1 : 0;
           if (g.fastRun >= 20) this._govStepUp(now);
@@ -9601,10 +9602,15 @@ export class Igreja3DCard extends HTMLElement {
     const strong = this._q === 'alta' && Igreja3DCard._strongGPU();
     const [cap, px] = this._q === 'alta' ? (strong ? [2.5, 3.5e6] : [2, 2.8e6]) : this._q === 'media' ? [2, 2.4e6] : this._min ? [1.5, 1.4e6] : [2, 2.0e6];
     const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(px / (w * h))));
-    this._dprFull = dpr; this._lowRes = false;
-    if (!this._gov) this._govInit();
-    this._renderer.setPixelRatio(Math.min(dpr * Math.min(this._gov.idleScale, this._govIdleMax()), 3));   // mantém a nitidez escolhida pelo governador
-    this._renderer.setSize(w, h, false);
+    // mexer no tamanho do canvas o apaga (quadro preto até o próximo desenho): só quando muda de verdade — painel, trilha e cômodo
+    // chamam o _resize só para reenquadrar a câmera —, e aí redesenha na hora (fim da função)
+    const rd = this._renderer, sz = rd.getSize(_rsz), changed = dpr !== this._dprFull || sz.x !== w || sz.y !== h;
+    if (changed) {
+      this._dprFull = dpr; this._lowRes = false;   // o governador (movimento) escala a partir daqui
+      if (!this._gov) this._govInit();
+      rd.setPixelRatio(Math.min(dpr * Math.min(this._gov.idleScale, this._govIdleMax()), 3));   // mantém a nitidez escolhida pelo governador
+      rd.setSize(w, h, false);
+    }
     // v1.6.0: com o painel lateral aberto (desktop/tablet) a cena é enquadrada na faixa à ESQUERDA dele (P = coluna + margens); no celular a
     // gaveta fica por cima (P = 0). --pw/--hud/--cw/--ch guiam o CSS (trilha, "Ir para…", aviso da Pessoa, gaveta abaixo do cabeçalho, menu)
     const drawer = w <= 640, wr = this._wrap;
@@ -9627,6 +9633,7 @@ export class Igreja3DCard extends HTMLElement {
     this._orbit.dirty = true;
     const dc = this._pegDica;   // dica do bonequinho: logo abaixo dele, a seta no meio do botão
     if (dc && wr) { const r = this._pegBtn.getBoundingClientRect(), q = wr.getBoundingClientRect(); dc.hidden = !r.width; dc.style.top = `${r.bottom - q.top + 10}px`; dc.style.right = `${Math.max(8, q.right - r.right - 60)}px`; dc.style.setProperty('--ax', `${q.right - (r.left + r.right) / 2 - Math.max(8, q.right - r.right - 60) - 6}px`); }
+    if (changed && this._raf && !this._busy) rd.render(this._scene, this._camera);   // o ResizeObserver roda depois do quadro: sem isso a tela piscaria preta
   }
   _dicaOff() { if (!this._pegDica) return; this._pegDica.remove(); this._pegDica = null; try { window.localStorage.setItem('igreja3d.dica_pessoa', '1'); } catch { /* só nesta sessão */ } }
   _start() {
