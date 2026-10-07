@@ -13,9 +13,6 @@ function roomFachada(ctx) {
     mono: std({ color: 0x1b1b1e, roughness: 0.7 }), plate: std({ color: 0x121214, roughness: 0.4, metalness: 0.3 }),   // preto liso (totem, placas)
     alu: std({ color: 0x9a9da2, roughness: 0.35, metalness: 0.7 }),
     upLens: std({ color: 0xfff4dc, emissive: 0xffd9a8, emissiveIntensity: 0.1, roughness: 0.3 }),                    // embutidos no piso (ligados à 'fachada')
-    lampLens: std({ color: 0xf6f1e4, emissive: 0xffe6b8, emissiveIntensity: 0.55, roughness: 0.4 }),               // postes da rua (iluminação pública)
-    bark: std({ color: 0x5a4a3a, roughness: 1 }),
-    leafT1: std({ color: 0x55713a, roughness: 0.95 }), leafT2: std({ color: 0x415d2c, roughness: 0.95 }), leafT3: std({ color: 0x6f8a45, roughness: 0.95 }),
     black: M.wallDark || std({ color: 0x2b2b2e, roughness: 0.85 }), cap: M.wallDarkCap || std({ color: 0x232326, roughness: 0.8 }),
     frame: M.frameDark || std({ color: 0x18181a, roughness: 0.45, metalness: 0.3 }),
     vase: std({ color: 0x141416, roughness: 0.32, metalness: 0.15 }),
@@ -24,7 +21,6 @@ function roomFachada(ctx) {
     pebble: std({ color: 0xf1f0ec, roughness: 0.95 }), pebble2: std({ color: 0xcfccc4, roughness: 0.95 }), curbW: std({ color: 0xdedbd3, roughness: 0.9 }),
     paint: std({ color: 0xf3f3ef, roughness: 0.8 }), yellow: std({ color: 0xe2b633, roughness: 0.8 }),
     stop: std({ color: 0x9d9a93, roughness: 0.95 }), curb: std({ color: 0xbcb8b0, roughness: 0.95 }),
-    walk: std({ color: 0xa8a59d, roughness: 0.95 }), asphalt: std({ color: 0x38393c, roughness: 0.95 }),
     carSilver: std({ color: 0xb9bdc2, roughness: 0.35, metalness: 0.5 }),
     cream: std({ color: 0xe7dcc5, roughness: 0.55, metalness: 0.15 }),   // treliça, calha e tubos (como na foto)
     unit: std({ color: 0xe8e8e4, roughness: 0.5 }), grille: std({ color: 0x2a2b2e, roughness: 0.6, metalness: 0.2 }),
@@ -82,7 +78,7 @@ function roomFachada(ctx) {
   };
 
   // =================================================================================================
-  // (a) MODO NORMAL — frente térrea, jardins, estacionamento e ruas
+  // (a) MODO NORMAL — frente térrea, jardins e estacionamento
   // =================================================================================================
 
   // ---- Painel ripado de 0 a 8,5 m + letreiro BASE CHURCH: SEMPRE visíveis (a identidade do prédio vista da rua) ----
@@ -222,59 +218,10 @@ function roomFachada(ctx) {
   }
   // estacionamento frontal sem carros (vagas livres)
 
-  // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
+  // ---- Limites do estacionamento (o lote acaba em z 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));
   add(flat(box(26.0, 0.02, 0.2, P.curbW, 10.0, 0.01, 60.1)));                       // soleira rebaixada (entrada de carros)
-  // Entorno (ruas, calçadas públicas, árvores de rua, postes e vizinhos): grupo à parte que o cartão esconde
-  // no modo leve / `entorno: false` — pesa na GPU e não faz parte da igreja
-  const out = ctx.addOut || add;
-  const street = (zc, dir) => {
-    // calçada (2,2 m) + meio-fio + pista de 7 m com faixa central amarela tracejada e bordas brancas
-    const zw = zc - dir * 4.7;                                                       // centro da calçada
-    out(flat(box(140, 0.025, 2.2, P.walk, 10, 0.0125, zw)));
-    const zk = zw + dir * 1.18;
-    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zk, { cast: false }));
-    out(flat(box(140, 0.02, 7.0, P.asphalt, 10, 0.01, zc)));
-    for (const s of [-1, 1]) out(flat(box(140, 0.004, 0.1, P.paint, 10, 0.022, zc + s * 3.25)));
-    for (let x = -34; x <= 54; x += 6) out(flat(box(3.0, 0.004, 0.12, P.yellow, x, 0.022, zc)));
-    // calçada do outro lado
-    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zc + dir * 3.58, { cast: false }));
-    out(flat(box(140, 0.025, 2.4, P.walk, 10, 0.0125, zc + dir * 4.85)));
-  };
-  street(66.0, 1);     // rua da frente (pista z 62,5–69,5)
-  street(-6.0, -1);    // rua dos fundos (pista z −9,5…−2,5)
-  // guia rebaixada em frente ao portão dos fundos
-  out(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
-  // ---- Arborização: copa em cachos (várias esferas pequenas achatadas), tronco com galhos ----
-  const tree = (x, z, s, seed) => {
-    const g = G(), rr = mulberry(seed), H0 = 2.1 * s;
-    g.add(cyl(0.09 * s, 0.15 * s, H0, P.bark, 0, H0 / 2, 0, 8));
-    for (let i = 0; i < 3; i++) {
-      const a = i * 2.1 + rr(), r = 0.55 * s;
-      bar((m) => g.add(m), [0, H0 - 0.15, 0], [Math.cos(a) * r, H0 + 0.55 * s, Math.sin(a) * r], 0.06 * s, P.bark);
-    }
-    const mats = [P.leafT1, P.leafT2, P.leafT3];
-    for (let i = 0; i < 13; i++) {
-      const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * 1.0 * s, y = H0 + (0.45 + rr() * 0.75) * s - d * 0.25;
-      const m = sph((0.38 + rr() * 0.26) * s, mats[i % 3], Math.cos(a) * d, y, Math.sin(a) * d); m.scale.set(1, 0.72, 1); g.add(m);
-    }
-    place(g, x, z, rr() * Math.PI); out(g);
-  };
-  for (const [x, z, s] of [[-5.2, 55.0, 1.1], [25.2, 55.0, 1.1]]) tree(x, z, s, 70 + x | 0);          // laterais do estacionamento
-  for (const [x, s] of [[-12, 1.0], [1.5, 0.95], [19.6, 0.95], [32, 1.05]]) tree(x, 61.6, s, 80 + x | 0);   // calçada da frente (sem esconder o letreiro)
-  for (const [x, s] of [[4, 1.0], [16, 1.05]]) tree(x, -10.9, s, 90 + x | 0);                           // calçada dos fundos (lado oposto da rua)
-
-  // ---- Postes de iluminação pública na calçada da frente (braço sobre a rua) ----
-  for (const x of [-7.5, 27.5]) {
-    const z = 61.9;
-    out(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
-    out(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
-    bar(out, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
-    out(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
-    out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
-  }
-
-  // ---- Vizinhos e muros de divisa: retirados a pedido do cliente (v1.4.5) ----
+  // v1.8: sem entorno (ruas, calçadas públicas, árvores, postes e vizinhos) — pedido do dono: só o lote e o estacionamento
 
   // ---- Totem de entrada (monólito preto com face ripada e o logo em relevo), na calçada à esquerda ----
   {

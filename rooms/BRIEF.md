@@ -8,10 +8,10 @@ O cartão (`igreja3d-card.js`) é um fork do motor do `casa-chefe` (Three.js r17
 - **X** cresce para a direita (do muro esquerdo x=0 até o muro direito x=20,1).
 - **Z** cresce para a **frente** (fachada e estacionamento ficam em z ≈ 49,7+; os fundos, com o portão de correr, em z = 0).
 - **Y** para cima; piso em y = 0.
-- Paredes: espessura `T = 0,15` centrada nas linhas abaixo. **Bloco dos fundos (z 0–12,4, até a ala direita em z 11,0): `TF = 0,075`**
-  (pedido do cliente) — divisórias centradas na linha; nas de divisa (z = 0, x = 0 até z 12,4, x = 20,1 até z 11,0) a face externa
+- Paredes: espessura `T = 0,15` centrada nas linhas abaixo. **Bloco dos fundos (z 0–12,4, até a ala direita em z 11,0): `TF = 0,05`**
+  (v1.8, pedido do dono; antes 0,075 — o cartão encosta na face nova a decoração medida na antiga, ver `_snapThin`) — divisórias centradas na linha; nas de divisa (z = 0, x = 0 até z 12,4, x = 20,1 até z 11,0) a face externa
   fica no lugar e a face interna cai sobre a linha (revestimento claro a 0,012 m). A parede z = 12,4 (templo) continua com T. No modo normal (casinha de boneca, sem teto)
-  as paredes têm `H = 3,0 m`, **exceto a parede do palco** (divisa x = 0 no trecho do templo, z 12,4–44,0), que o cartão
+  as paredes têm `H = 3,0 m` (**no bloco dos fundos `ctx.HB = 2,4 m`** na maquete e na Vista de cima, v1.8 — com a Fachada e na Pessoa a parede continua até 3,0; decoração de parede abaixo de HB), **exceto a parede do palco** (divisa x = 0 no trecho do templo, z 12,4–44,0), que o cartão
   já cria com **8,5 m, preta por dentro** (é o fundo do palco). O botão **Fachada** mostra o grupo externo (`ctx.ext`):
   paredes altas, platibandas, telhados e revestimento da fachada.
 - **Referência máxima = fotos e vídeos do cliente** (`templo_foto.jpg`, v1–v8): acabamento, mobiliário, equipamentos e

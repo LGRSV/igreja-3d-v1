@@ -18,7 +18,9 @@ function roomAdministrativo(ctx) {
   // LEDs acompanham a luz do ambiente (ctx.bindEmissive).
   // Paleta: preto, madeira clara (ripado), branco e grafite, acentos âmbar/terracota.
   // Livres: giros das portas (recepção, pastoral, banheiro, Gilvan, Adm.), split da
-  // pastoral (14,9; 2,4; 0,125) e as luminárias do cartão (y ≈ 2,7).
+  // pastoral (14,9; ctx.HB − 0,18; 0,125) e as luminárias do cartão (y ≈ 2,7; nos fundos 2,25).
+  // v1.8: no bloco dos fundos as paredes têm ctx.HB de altura (2,4 m) e 5 cm de espessura; as faces abaixo são as de 7,5 cm —
+  // o cartão (_snapThin) encosta na face nova o que estiver a até 15 cm dela.
   // Faces internas — bloco dos fundos (paredes finas, 7,5 cm): x 9,4875 · 12,7125/12,7875 · 16,9625/17,0375
   // · 20,088 (muro revestido, z < 11) · z 0,012 · 3,0625/3,1375 · 4,8625/4,9375 · 5,9375 · 9,2125/9,2875.
   // Ala direita: x 17,175 · 20,013 · z 11,075 · 14,125/14,275 · 18,925.
@@ -532,7 +534,7 @@ function roomAdministrativo(ctx) {
     }
     pipe([17.6, 1.5, 0.95], [19.8, 1.5, 0.95], 0.025);                          // barrilete de entrada
     pipe([19.8, 1.5, 0.95], [19.8, 1.5, 0.125], 0.025);
-    pipe([19.8, 1.5, 0.125], [19.8, 2.6, 0.125], 0.025);
+    pipe([19.8, 1.5, 0.125], [19.8, (ctx.HB || 2.7) - 0.08, 0.125], 0.025);   // até logo abaixo do topo da parede (v1.8)
     pipe([17.7, 0.35, 2.45], [19.6, 0.35, 2.45], 0.03, pvcBrown);               // barrilete de saída
     for (const x of [17.98, 19.28]) put(sph(0.035, pvcBrown, x, 0.35, 2.45));
     // motobomba sobre base, recalque subindo pela parede z=3,1
@@ -541,7 +543,7 @@ function roomAdministrativo(ctx) {
     const cap = cyl(0.08, 0.08, 0.06, metalBk, 19.28, 0.2, 2.78, 12); cap.rotation.z = PI / 2; put(cap);
     put(cyl(0.09, 0.09, 0.12, pumpBlue, 19.68, 0.2, 2.78, 14));
     pipe([19.6, 0.35, 2.45], [19.6, 0.35, 2.62], 0.03, pvcBrown);
-    pipe([19.68, 0.28, 2.78], [19.68, 2.4, 2.78], 0.025);
+    pipe([19.68, 0.28, 2.78], [19.68, (ctx.HB || 2.48) - 0.08, 2.78], 0.025);
     // quadro elétrico na parede x=20,1
     put(box(0.12, 0.42, 0.32, panelGr, 20.025, 1.6, 2.5));
     put(box(0.012, 0.08, 0.1, M.red, 19.96, 1.72, 2.5, nc));
@@ -582,16 +584,17 @@ function roomAdministrativo(ctx) {
   // retroiluminadas — o halo e o brilho das letras acompanham a luz 'recepcao'.
   {
     const Z0 = 6.45, Z1 = 8.05, ZC = (Z0 + Z1) / 2, n = 16, pitch = (Z1 - Z0) / n;
-    put(box(0.012, 2.72, Z1 - Z0 + 0.04, blackM, 12.7025, 1.42, ZC, nc));          // fundo preto (sombra entre ripas)
-    for (let i = 0; i < n; i++) put(box(0.03, 2.62, pitch * 0.62, ripaB, 12.6775, 1.39, Z0 + pitch * (i + 0.5)));
+    const YT = (ctx.HB || 2.8) - 0.02;                                              // topo da sanca, abaixo do topo da parede (v1.8)
+    put(box(0.012, YT - 0.06, Z1 - Z0 + 0.04, blackM, 12.7025, (YT + 0.06) / 2, ZC, nc));   // fundo preto (sombra entre ripas)
+    for (let i = 0; i < n; i++) put(box(0.03, YT - 0.16, pitch * 0.62, ripaB, 12.6775, (YT - 0.08) / 2, Z0 + pitch * (i + 0.5)));
     put(box(0.05, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6875, 0.04, ZC));               // rodapé preto
-    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6675, 2.74, ZC));               // sanca preta
-    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6375, 2.697, ZC, nc));          // fita de LED lavando o ripado
+    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6675, YT - 0.04, ZC));          // sanca preta
+    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6375, YT - 0.083, ZC, nc));     // fita de LED lavando o ripado
     const L = ctx.logo.relief(0.7, { layout: 'full', depth: 0.045, layers: 4 });
-    L.rotation.y = FNX; L.position.set(12.6595, 1.66, ZC); put(L);
+    L.rotation.y = FNX; L.position.set(12.6595, YT - 0.96, ZC); put(L);
     ctx.bindEmissive('recepcao', L.userData.face, 0.45, { min: 0.25 });
     const halo = ctx.glowPlane(1.5, 1.6, 'recepcao', { color: 0xfff1dc, base: 0.32, day: 0.15 });
-    halo.rotation.y = FNX; halo.position.set(12.6605, 1.66, ZC); put(halo);
+    halo.rotation.y = FNX; halo.position.set(12.6605, YT - 0.96, ZC); put(halo);
   }
   // 3 poltronas de espera na parede x=9,45, mesinha, planta, bebedouro e quadro
   for (const z of [6.42, 7.22, 8.02]) place(armchair(caramel, caramel, 0.66, 0.7, metalBk), 9.9125, z, FX);

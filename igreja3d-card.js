@@ -17,8 +17,8 @@ export const VERSION = '1.7.0';
 const DEFAULT_CONFIG = {
   title: 'Base Church', labels: true, mode: 'auto', night_vision: true, panel: true, roof: false,
   quality: 'auto', entities: {},   // auto | alta | media | leve | min
-  entorno: 'auto',                 // ruas, vizinhos, árvores de rua e postes: auto (some só no leve) | true | false
-  latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 90,
+  entorno: 'auto',                 // gramado com textura: auto (chapado só no leve) | true | false (v1.8: sem ruas, árvores e postes)
+  latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 270,   // v1.8: fachada para o oeste (o dono viu o pôr do sol do lado oposto com 90)
   weather: true, weather_city: 'Palmas, TO',
   fachada_pessoa: true,            // v1.5.5: a visão de Pessoa liga a Fachada sozinha (e volta ao sair)
 };
@@ -56,8 +56,8 @@ export const DEFAULT_ENTITIES = {
 // ---------------------------------------------------------------------------
 // Itens controláveis: luminárias (posição em metros, X→direita, Z→frente)
 // i = intensidade (cd), d = alcance (m), shadow = projeta sombra nas paredes
-// Estilos: (padrão) pendente · spot = refletor de palco (com feixe) · moving = moving head de treliça (feixe para +x/baixo)
-// · highbay = pendente industrial grande (susp = redondo menor do templo, suspenso no ar, sem haste — o cliente pediu a cobertura sem as tesouras) · linear = pendente linear de LED 2,4 m (cabos até o trilho do teto, y 6,43) · pole = poste de 5,5 m · sconce = arandela · lamp = abajur.
+// Estilos: (padrão) pendente · spot = refletor de palco (com feixe; aim 'wall' = lava a fachada, 'out' = da fachada para o estacionamento) · moving = moving head de treliça (feixe para +x/baixo)
+// · highbay = pendente industrial grande (susp = redondo menor do templo, suspenso no ar, sem haste — o cliente pediu a cobertura sem as tesouras) · linear = pendente linear de LED 2,4 m (cabos até o trilho do teto, y 6,43) · sconce = arandela · lamp = abajur.
 // glowOnly = só lâmpada + halo + emissivo (sem PointLight — economiza luzes reais).
 // liteShadow = mantém a sombra em GPU com margem pequena (_tight). Em `quality: leve` nenhuma lâmpada projeta sombra (só o sol).
 // ext = a luminária só aparece no modo Fachada (a luz em si vale sempre).
@@ -116,18 +116,19 @@ export const ITEMS = [
     ] },
   { key: 'estacionamento', label: 'Estacionamento', short: 'Luz', kind: 'light', icon: 'car', color: 0xfff1dc,
     fixtures: [
-      { p: [4, 5.5, 55.5], i: 140, d: 16, pole: true },
-      { p: [16, 5.5, 55.5], i: 140, d: 16, pole: true },
-      { p: [0.085, 2.8, 6.2], sconce: true, glowOnly: true },   // arandela no muro x = 0 (face interna em x 0,012)
+      // v1.8: sem postes — 2 refletores discretos na fachada mirando o estacionamento (`l` = a luz fica sobre as vagas, não colada na parede)
+      { p: [1.6, 2.6, 49.97], l: [1.6, 3.4, 53.6], i: 120, d: 16, spot: true, aim: 'out' },
+      { p: [18.6, 2.6, 49.82], l: [18.6, 3.4, 53.6], i: 120, d: 16, spot: true, aim: 'out' },
+      { p: [0.085, 2.1, 6.2], sconce: true, glowOnly: true },   // arandela no muro x = 0 (face interna em x 0,012), abaixo do topo (HB)
     ] },
   { key: 'pastoral', label: 'Sala Pastoral', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe0b8,
     fixtures: [
-      { p: [14.9, 2.7, 4.6], i: 30, d: 8, shadow: true, liteShadow: true },
-      { p: [18.5, 2.7, 7.0], glowOnly: true },
+      { p: [14.9, 2.25, 4.6], i: 30, d: 8, shadow: true, liteShadow: true },   // fundos: pendentes baixos (as paredes têm HB)
+      { p: [18.5, 2.25, 7.0], glowOnly: true },
     ] },
   { key: 'ac_pastoral', label: 'Ar da pastoral', short: 'Ar', kind: 'climate', icon: 'ac' },
   { key: 'recepcao', label: 'Recepção', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff1dc,
-    fixtures: [{ p: [11.1, 2.7, 7.6], i: 20, d: 5.5 }] },
+    fixtures: [{ p: [11.1, 2.25, 7.6], i: 20, d: 5.5 }] },
   { key: 'administrativo', label: 'Administrativo', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff5e6,
     fixtures: [
       { p: [18.6, 2.7, 12.6], i: 18, d: 5 },
@@ -148,8 +149,8 @@ export const ITEMS = [
   { key: 'ac_voluntariado', label: 'Ar do voluntariado', short: 'Ar', kind: 'climate', icon: 'ac' },
   { key: 'cozinha', label: 'Cozinha / almox.', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff5e4,
     fixtures: [
-      { p: [10.7, 2.7, 1.95], i: 22, d: 6 },
-      { p: [6.75, 2.7, 1.95], glowOnly: true },
+      { p: [10.7, 2.25, 1.95], i: 22, d: 6 },
+      { p: [6.75, 2.25, 1.95], glowOnly: true },
     ] },
   { key: 'banheiros', label: 'Banheiros', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff7ea,
     fixtures: [
@@ -299,7 +300,8 @@ const iconSvg = (k) => `<svg viewBox="0 0 16 16" width="15" height="15" fill="no
 // ---------------------------------------------------------------------------
 const H = 3.0;      // pé-direito no modo "casinha de boneca" (todas as paredes)
 const T = 0.15;     // espessura das paredes
-const TF = T / 2;   // bloco dos fundos (z 0–12,4): paredes com metade da espessura (pedido do cliente)
+const TF = 0.05;   // bloco dos fundos (z 0–12,4, a Sala Pastoral): paredes finas (v1.8: 7,5 → 5 cm, pedido do dono)
+const HB = 2.4;    // e mais baixas na maquete e na Vista de cima (v1.8): acima das portas e dos vidros (2,25); com a Fachada (e na Pessoa) voltam a H
 const SPEC = { H_TEMPLO: 8.5, H_ALA: 4.5, H_FUNDOS: 3.6 };   // alturas externas (modo Fachada)
 // Pilares do templo (z): parede x = 0 e parede x = 16,05 (+ x 5,4 / 10,5 em z 12,4 e 44,0)
 const PILLARS_L = [12.4, 16.9, 21.4, 25.9, 30.4, 35.0, 39.5, 44.0];
@@ -1015,13 +1017,6 @@ function furniture(M) {
       g.add(cyl(0.03, 0.045, 0.5, M.trunk, 0, 0.56, 0, 8));
       for (let i = 0; i < 6; i++) { const a = rnd() * Math.PI * 2, r = 0.1 + rnd() * 0.16; g.add(sph(0.2 + rnd() * 0.1, i % 2 ? M.plant : M.leaf2, Math.cos(a) * r, 0.9 + rnd() * 0.25, Math.sin(a) * r)); }
       g.scale.setScalar(size); return g;
-    },
-    tree() {
-      const g = G();
-      g.add(cyl(0.09, 0.13, 2.0, M.trunk, 0, 1.0, 0, 10));
-      const rnd = mulberry32(8);
-      for (let i = 0; i < 7; i++) { const a = rnd() * Math.PI * 2, r = 0.15 + rnd() * 0.4; g.add(sph(0.5 + rnd() * 0.25, i % 2 ? M.plant : M.leaf2, Math.cos(a) * r, 2.2 + rnd() * 0.5, Math.sin(a) * r)); }
-      return g;
     },
     lounger(fabric) {
       const g = G();
@@ -4169,7 +4164,9 @@ function roomAdministrativo(ctx) {
   // LEDs acompanham a luz do ambiente (ctx.bindEmissive).
   // Paleta: preto, madeira clara (ripado), branco e grafite, acentos âmbar/terracota.
   // Livres: giros das portas (recepção, pastoral, banheiro, Gilvan, Adm.), split da
-  // pastoral (14,9; 2,4; 0,125) e as luminárias do cartão (y ≈ 2,7).
+  // pastoral (14,9; ctx.HB − 0,18; 0,125) e as luminárias do cartão (y ≈ 2,7; nos fundos 2,25).
+  // v1.8: no bloco dos fundos as paredes têm ctx.HB de altura (2,4 m) e 5 cm de espessura; as faces abaixo são as de 7,5 cm —
+  // o cartão (_snapThin) encosta na face nova o que estiver a até 15 cm dela.
   // Faces internas — bloco dos fundos (paredes finas, 7,5 cm): x 9,4875 · 12,7125/12,7875 · 16,9625/17,0375
   // · 20,088 (muro revestido, z < 11) · z 0,012 · 3,0625/3,1375 · 4,8625/4,9375 · 5,9375 · 9,2125/9,2875.
   // Ala direita: x 17,175 · 20,013 · z 11,075 · 14,125/14,275 · 18,925.
@@ -4683,7 +4680,7 @@ function roomAdministrativo(ctx) {
     }
     pipe([17.6, 1.5, 0.95], [19.8, 1.5, 0.95], 0.025);                          // barrilete de entrada
     pipe([19.8, 1.5, 0.95], [19.8, 1.5, 0.125], 0.025);
-    pipe([19.8, 1.5, 0.125], [19.8, 2.6, 0.125], 0.025);
+    pipe([19.8, 1.5, 0.125], [19.8, (ctx.HB || 2.7) - 0.08, 0.125], 0.025);   // até logo abaixo do topo da parede (v1.8)
     pipe([17.7, 0.35, 2.45], [19.6, 0.35, 2.45], 0.03, pvcBrown);               // barrilete de saída
     for (const x of [17.98, 19.28]) put(sph(0.035, pvcBrown, x, 0.35, 2.45));
     // motobomba sobre base, recalque subindo pela parede z=3,1
@@ -4692,7 +4689,7 @@ function roomAdministrativo(ctx) {
     const cap = cyl(0.08, 0.08, 0.06, metalBk, 19.28, 0.2, 2.78, 12); cap.rotation.z = PI / 2; put(cap);
     put(cyl(0.09, 0.09, 0.12, pumpBlue, 19.68, 0.2, 2.78, 14));
     pipe([19.6, 0.35, 2.45], [19.6, 0.35, 2.62], 0.03, pvcBrown);
-    pipe([19.68, 0.28, 2.78], [19.68, 2.4, 2.78], 0.025);
+    pipe([19.68, 0.28, 2.78], [19.68, (ctx.HB || 2.48) - 0.08, 2.78], 0.025);
     // quadro elétrico na parede x=20,1
     put(box(0.12, 0.42, 0.32, panelGr, 20.025, 1.6, 2.5));
     put(box(0.012, 0.08, 0.1, M.red, 19.96, 1.72, 2.5, nc));
@@ -4733,16 +4730,17 @@ function roomAdministrativo(ctx) {
   // retroiluminadas — o halo e o brilho das letras acompanham a luz 'recepcao'.
   {
     const Z0 = 6.45, Z1 = 8.05, ZC = (Z0 + Z1) / 2, n = 16, pitch = (Z1 - Z0) / n;
-    put(box(0.012, 2.72, Z1 - Z0 + 0.04, blackM, 12.7025, 1.42, ZC, nc));          // fundo preto (sombra entre ripas)
-    for (let i = 0; i < n; i++) put(box(0.03, 2.62, pitch * 0.62, ripaB, 12.6775, 1.39, Z0 + pitch * (i + 0.5)));
+    const YT = (ctx.HB || 2.8) - 0.02;                                              // topo da sanca, abaixo do topo da parede (v1.8)
+    put(box(0.012, YT - 0.06, Z1 - Z0 + 0.04, blackM, 12.7025, (YT + 0.06) / 2, ZC, nc));   // fundo preto (sombra entre ripas)
+    for (let i = 0; i < n; i++) put(box(0.03, YT - 0.16, pitch * 0.62, ripaB, 12.6775, (YT - 0.08) / 2, Z0 + pitch * (i + 0.5)));
     put(box(0.05, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6875, 0.04, ZC));               // rodapé preto
-    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6675, 2.74, ZC));               // sanca preta
-    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6375, 2.697, ZC, nc));          // fita de LED lavando o ripado
+    put(box(0.09, 0.08, Z1 - Z0 + 0.04, metalBk, 12.6675, YT - 0.04, ZC));          // sanca preta
+    put(box(0.012, 0.008, Z1 - Z0 - 0.04, ledRec, 12.6375, YT - 0.083, ZC, nc));     // fita de LED lavando o ripado
     const L = ctx.logo.relief(0.7, { layout: 'full', depth: 0.045, layers: 4 });
-    L.rotation.y = FNX; L.position.set(12.6595, 1.66, ZC); put(L);
+    L.rotation.y = FNX; L.position.set(12.6595, YT - 0.96, ZC); put(L);
     ctx.bindEmissive('recepcao', L.userData.face, 0.45, { min: 0.25 });
     const halo = ctx.glowPlane(1.5, 1.6, 'recepcao', { color: 0xfff1dc, base: 0.32, day: 0.15 });
-    halo.rotation.y = FNX; halo.position.set(12.6605, 1.66, ZC); put(halo);
+    halo.rotation.y = FNX; halo.position.set(12.6605, YT - 0.96, ZC); put(halo);
   }
   // 3 poltronas de espera na parede x=9,45, mesinha, planta, bebedouro e quadro
   for (const z of [6.42, 7.22, 8.02]) place(armchair(caramel, caramel, 0.66, 0.7, metalBk), 9.9125, z, FX);
@@ -4945,13 +4943,12 @@ function roomServicoPatio(ctx) {
   //  · Pátio: PAREDÃO DA MARCA na face externa do almoxarifado (z=3,9 · x 5,0–7,3): ripado de
   //    madeira clara como o da fachada, logo oficial em letras caixa (ctx.logo.relief), sanca
   //    com fita de LED, halo e floreira preta com uplights. Medalhão com o "B" no piso
-  //    (x 11,1 · z 10,85), no caminho recepção → templo. Ipê-amarelo florido (copa de tufos
-  //    pequenos, galhos e flores caídas no chão), banco ripado com LED sob o assento,
+  //    (x 11,1 · z 10,85), no caminho recepção → templo. Banco ripado com LED sob o assento,
   //    bicicletário com 2 bicicletas, abrigo de gás, cicas em vasos pretos na porta do templo.
-  //  · Jardim interno (x 7,5–9,45 · z 5,8–10,2): meio-fio, 2 palmeiras, cica, arbustos,
+  //  · Jardim interno (x 7,5–9,45 · z 5,8–10,2): meio-fio, cica, arbustos,
   //    forração, pedras brancas e spots de chão (só emissivo, sem luz real).
   //  · Jardim pastoral (x 12,75–20,1 · z 9,25–11,0): pisantes de concreto ligando a porta
-  //    da pastoral e o pátio à porta PM01, canteiros com forração, buxinhos, moreias e ráfis.
+  //    da pastoral e o pátio à porta PM01, canteiros com forração, buxinhos e moreias (v1.8: sem árvores).
   // Livres: rotas das portas (PM01, recepção, pastoral, vidro do templo, cozinha, almox.),
   // luminárias do cartão (cozinha 10,7/6,75 · y 2,7 · z 1,95) e a arandela do pátio.
   // Brilhos da decoração (spots, LEDs do paredão e do banco, logo) seguem 'estacionamento'
@@ -4988,7 +4985,6 @@ function roomServicoPatio(ctx) {
     bikeT: std({ color: 0xb85c38, roughness: 0.5, metalness: 0.3 }), bikeK: std({ color: 0x26282b, roughness: 0.5, metalness: 0.3 }),
     leafDk: std({ color: 0x24512a, roughness: 1 }), leafLt: std({ color: 0x6b9a3e, roughness: 1 }), palm: std({ color: 0x4d8a3c, roughness: 0.9 }),
     cyca: std({ color: 0x35612b, roughness: 0.9 }), forr: std({ color: 0x4f7d33, roughness: 1 }), strap: std({ color: 0x5f8f4a, roughness: 0.9 }),
-    ipe: std({ color: 0xe8b832, roughness: 0.95 }), ipe2: std({ color: 0xd49a24, roughness: 0.95 }),
     flowerY: std({ color: 0xf0c040, roughness: 0.9 }), flowerT: std({ color: 0xc8643c, roughness: 0.9 }),
     pebble: std({ color: 0xeceae4, roughness: 0.95 }), pebble2: std({ color: 0xd9d5cb, roughness: 0.95 }),
     rock: std({ color: 0x8f8b82, roughness: 0.95 }), slab: std({ color: 0xbdb9b0, roughness: 0.95 }),
@@ -4997,7 +4993,7 @@ function roomServicoPatio(ctx) {
     spotLens: std({ color: 0xfff3d6, emissive: 0xffd9a0, emissiveIntensity: 0.6, roughness: 0.39 }),
     led: std({ color: 0xfff0d8, emissive: 0xffd49a, emissiveIntensity: 0.1, roughness: 0.43 }),
     ripa: std({ color: 0xd9b8a0, roughness: 0.72 }), ripaFundo: std({ color: 0xa8876f, roughness: 0.85 }),
-    medal: std({ color: 0x2b2c30, roughness: 0.85 }), ipe3: std({ color: 0xf2c94a, roughness: 0.95 }),
+    medal: std({ color: 0x2b2c30, roughness: 0.85 }),
     gasDoor: std({ color: 0x9aa0a6, roughness: 0.6, metalness: 0.4 }), thermoR: std({ color: 0x8b2f2f, roughness: 0.5 }),
     fruitO: std({ color: 0xe08a2a, roughness: 0.7 }), fruitG: std({ color: 0x7ca23a, roughness: 0.7 }),
   };
@@ -5285,16 +5281,17 @@ function roomServicoPatio(ctx) {
     g2.fillText('COLETA SELETIVA', s / 2, (s * 0.1875) / 2); g2.restore();
     ['#2f5f9e', '#b23a2e', '#2f7a3e', '#d9a82a'].forEach((c, i) => { g2.fillStyle = c; g2.fillRect((i * s) / 4, s * 0.86, s / 4, s * 0.14); });
   });
-  // placa acima da janela do almoxarifado (verga em y 2,15), virada para −x
-  add(box(0.02, 0.32, 1.62, P.trim, 4.8515, 2.38, 1.75, nc));
-  const signM = new THREE.Mesh(new THREE.PlaneGeometry(1.58, 0.28), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.8 }));
-  signM.position.set(4.8395, 2.38, 1.75); signM.rotation.y = -PI / 2; add(signM);
+  // placa acima da janela do almoxarifado (verga em y 2,15), virada para −x — cabe abaixo do topo da parede (ctx.HB, v1.8)
+  const SY = (ctx.HB || 2.7) - 0.12;
+  add(box(0.02, 0.22, 1.16, P.trim, 4.8515, SY, 1.75, nc));
+  const signM = new THREE.Mesh(new THREE.PlaneGeometry(1.12, 0.2), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.8 }));
+  signM.position.set(4.8395, SY, 1.75); signM.rotation.y = -PI / 2; add(signM);
 
   // ---- PAREDÃO DA MARCA (face externa do almoxarifado, z = 3,9375, virado para o pátio) ----
   // Ripado de madeira clara igual ao da fachada + logo oficial em letras caixa prateadas.
   // Fica de frente para a câmera inicial (que olha de +z/+x) e vira o "ponto de foto" do pátio.
   {
-    const x0 = 5.02, x1 = 7.3, W = x1 - x0, cx = (x0 + x1) / 2, y0 = 0.02, y1 = 2.84, Hh = y1 - y0, ym = (y0 + y1) / 2;
+    const x0 = 5.02, x1 = 7.3, W = x1 - x0, cx = (x0 + x1) / 2, y0 = 0.02, y1 = (ctx.HB || 2.94) - 0.1, Hh = y1 - y0, ym = (y0 + y1) / 2;   // até logo abaixo do topo da parede
     add(box(W, Hh, 0.02, P.ripaFundo, cx, ym, 3.9495, nc));                                   // fundo
     const n = Math.floor((W - 0.03) / 0.075);
     for (let i = 0; i <= n; i++) add(box(0.046, Hh, 0.035, P.ripa, x0 + 0.03 + i * 0.075 + (W - 0.06 - n * 0.075) / 2, ym, 3.977));
@@ -5304,7 +5301,7 @@ function roomServicoPatio(ctx) {
     for (const sx of [-1, 1]) add(box(0.03, Hh + 0.06, 0.07, P.trim, cx + sx * (W / 2 + 0.015), ym + 0.03, 3.9725));   // perfis laterais
     // logo oficial (anel + B + BASE/CHURCH) em relevo, acende de leve à noite
     const L = logo.relief(1.08, { depth: 0.05, layers: 4 });
-    L.position.set(cx, 1.78, 3.9965); add(L);
+    L.position.set(cx, y1 - 0.75, 3.9965); add(L);
     if (ctx.bindEmissive) ctx.bindEmissive('estacionamento', L.userData.face, 0.6, { min: 0.3 });   // de dia fica branco-prata, à noite brilha
     if (ctx.glowPlane) { const h = ctx.glowPlane(W + 0.3, Hh + 0.3, 'estacionamento', { color: 0xffc98f, base: 0.55, day: 0.12 }); h.position.set(cx, ym + 0.1, 4.0625); add(h); }
     // floreira preta ao pé do painel: grama-preta (moreia/ráfis) e 2 uplights
@@ -5328,39 +5325,7 @@ function roomServicoPatio(ctx) {
     const mk2 = logo.mesh(1.12, 1.12, { layout: 'mark', color: '#e3dfd5', roughness: 0.8 }); mk2.rotation.x = -PI / 2; mk2.position.set(mx, 0.0175, mz); add(mk2);
   }
 
-  // Ipê-amarelo florido em floreira redonda preta (acento âmbar no pátio):
-  // tronco + 3 galhos saindo do topo (com ramos finos), copa em guarda-chuva de ~22 tufos pequenos
-  // achatados e flores caídas no chão em volta da floreira.
-  const ipe = () => {
-    const g = G();
-    g.add(cyl(0.62, 0.56, 0.45, P.potBlk, 0, 0.225, 0, 24));
-    g.add(cyl(0.645, 0.645, 0.04, P.potBlk, 0, 0.45, 0, 24));                  // borda
-    g.add(cyl(0.575, 0.575, 0.02, M.soil, 0, 0.462, 0, 22));
-    g.add(cyl(0.065, 0.12, 2.05, M.trunk, 0, 1.45, 0, 10));
-    const top = [0, 2.42, 0], tips = [[-0.62, 2.98, 0.28], [0.58, 3.02, -0.26], [0.06, 3.12, 0.64], [0.12, 3.0, -0.62]];
-    tips.forEach((t, i) => {
-      tube(g, i < 3 ? top : [0, 2.1, 0], t, i < 3 ? 0.04 : 0.028, M.trunk);
-      const d = V(t[0], 0, t[2]).normalize();
-      for (const s of [-1, 1]) {
-        const e = [t[0] + (d.x * 0.3 - d.z * 0.22 * s), t[1] + 0.18, t[2] + (d.z * 0.3 + d.x * 0.22 * s)];
-        tube(g, t, e, 0.016, M.trunk, 6);
-      }
-    });
-    const mats = [P.ipe, P.ipe3, P.ipe2, P.ipe, P.ipe3, P.ipe, P.ipe2, P.leafLt, P.ipe, P.ipe3, P.ipe];
-    for (let i = 0; i < 28; i++) {
-      const t = (i + 0.5) / 28, a = i * 2.39996 + j(0.3), rr = 1.08 * Math.sqrt(t);
-      const s = sph(0.14 + rnd() * 0.1, mats[i % mats.length], Math.cos(a) * rr + j(0.18), 3.0 + 0.45 * (1 - t) + j(0.12), Math.sin(a) * rr + j(0.18));
-      s.scale.set(1, 0.7, 1); s.rotation.y = rnd() * PI; g.add(s);
-    }
-    for (let i = 0; i < 5; i++) { const a = rnd() * PI * 2, r = 0.15 + rnd() * 0.35; g.add(flat(cyl(0.05, 0.05, 0.004, P.ipe, Math.cos(a) * r, 0.474, Math.sin(a) * r, 8))); }
-    return g;
-  };
-  place(ipe(), 6.1, 6.55);
-  // flores caídas no piso em volta da floreira
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * PI * 2 + j(0.25), r = 0.74 + rnd() * 0.55;
-    add(flat(cyl(0.05, 0.05, 0.004, i % 3 ? P.ipe : P.ipe2, 6.1 + Math.cos(a) * r, 0.008, 6.55 + Math.sin(a) * r, 8)));
-  }
+  // (v1.8: o ipê-amarelo saiu — pedido do dono: nenhuma árvore)
 
   // Banco ripado de madeira clara com pés pretos (de frente para o jardim interno)
   const bench = (L) => {
@@ -5441,7 +5406,7 @@ function roomServicoPatio(ctx) {
   add(box(1.83, 0.14, 0.1, M.concrete, 8.505, 0.07, 5.85));
   add(box(2.85, 0.14, 0.1, M.concrete, 8.875, 0.07, 10.15));
   add(box(0.1, 0.14, 0.81, M.concrete, 10.25, 0.07, 9.695));
-  // Pedras brancas: faixa junto ao meio-fio + rodas em volta das palmeiras + seixos soltos
+  // Pedras brancas: faixa junto ao meio-fio + rodas de pedra + seixos soltos
   add(box(0.32, 0.02, 4.2, P.pebble, 7.77, 0.012, 8.0, nc));
   add(box(2.45, 0.02, 0.32, P.pebble, 9.0, 0.013, 9.94, nc));
   add(flat(cyl(0.5, 0.5, 0.02, P.pebble, 8.45, 0.014, 6.75, 20)));
@@ -5452,22 +5417,7 @@ function roomServicoPatio(ctx) {
   }
   // Pedras ornamentais
   for (const [x, z, r] of [[8.0, 7.55, 0.16], [9.1, 7.3, 0.12], [9.75, 9.7, 0.14]]) { const s = sph(r, P.rock, x, r * 0.35, z); s.scale.set(1.3, 0.6, 1); add(s); }
-  // Palmeiras: tronco em anéis + folhas em leque
-  // folha arqueada: trecho interno subindo + trecho externo (mais estreito) caindo
-  const arcFrond = (g, y, len, w, a, droop, mat) => {
-    const L1 = len * 0.45, t1 = -0.35, c1 = Math.cos(t1);
-    frond(g, 0, y, 0, L1, w, a, t1, mat);
-    frond(g, L1 * c1 * Math.cos(a), y - L1 * Math.sin(t1), -L1 * c1 * Math.sin(a), len * 0.55, w * 0.7, a, droop, mat);
-  };
-  const palm = (h, n, len, w, segs) => {
-    const g = G(), sh = h / segs;
-    for (let i = 0; i < segs; i++) g.add(cyl(0.07 - i * 0.006, 0.085 - i * 0.006, sh, i % 2 ? M.trunk : M.woodDark, 0, sh * (i + 0.5), 0, 8));
-    for (let i = 0; i < n; i++) arcFrond(g, h, len, w, (i / n) * PI * 2 + j(0.15), 0.45 + rnd() * 0.35, i % 2 ? P.palm : M.leaf2);
-    g.add(sph(0.08, P.leafLt, 0, h + 0.03, 0));
-    return g;
-  };
-  place(palm(2.5, 8, 1.0, 0.16, 4), 8.45, 6.75);
-  place(palm(1.8, 7, 0.85, 0.15, 3), 8.35, 8.85);
+  // (v1.8: as 2 palmeiras saíram — nenhuma árvore; as rodas de pedra ficam como canteiro)
   place(cycaPot(0.6, false), 9.85, 9.8);
   // Arbustos (buxinhos) e forração baixa junto à parede da recepção
   const shrub = (x, z, s, m1, m2) => {
@@ -5501,8 +5451,7 @@ function roomServicoPatio(ctx) {
     add(sph(0.03, P.binW, x + 0.05, 0.42, z));
   };
   moreia(14.7, 9.72); moreia(16.15, 9.72);
-  // Canteiro leste: ráfis no canto, buxinhos e touceiras floridas terracota diante da janela J13
-  place(palm(1.3, 7, 0.6, 0.12, 2), 19.4, 10.15);
+  // Canteiro leste: buxinhos e touceiras floridas terracota diante da janela J13
   shrub(17.65, 10.3, 0.85, P.leafDk, M.leaf2); shrub(18.55, 9.8, 0.7, M.plant, P.leafDk); shrub(19.25, 10.45, 0.75, P.leafDk, M.plant);
   for (const [x, z] of [[18.1, 10.55], [18.95, 10.1]]) {
     add(sph(0.18, M.leaf2, x, 0.16, z));
@@ -5559,9 +5508,6 @@ function roomFachada(ctx) {
     mono: std({ color: 0x1b1b1e, roughness: 0.7 }), plate: std({ color: 0x121214, roughness: 0.4, metalness: 0.3 }),   // preto liso (totem, placas)
     alu: std({ color: 0x9a9da2, roughness: 0.35, metalness: 0.7 }),
     upLens: std({ color: 0xfff4dc, emissive: 0xffd9a8, emissiveIntensity: 0.1, roughness: 0.3 }),                    // embutidos no piso (ligados à 'fachada')
-    lampLens: std({ color: 0xf6f1e4, emissive: 0xffe6b8, emissiveIntensity: 0.55, roughness: 0.4 }),               // postes da rua (iluminação pública)
-    bark: std({ color: 0x5a4a3a, roughness: 1 }),
-    leafT1: std({ color: 0x55713a, roughness: 0.95 }), leafT2: std({ color: 0x415d2c, roughness: 0.95 }), leafT3: std({ color: 0x6f8a45, roughness: 0.95 }),
     black: M.wallDark || std({ color: 0x2b2b2e, roughness: 0.85 }), cap: M.wallDarkCap || std({ color: 0x232326, roughness: 0.8 }),
     frame: M.frameDark || std({ color: 0x18181a, roughness: 0.45, metalness: 0.3 }),
     vase: std({ color: 0x141416, roughness: 0.32, metalness: 0.15 }),
@@ -5570,7 +5516,6 @@ function roomFachada(ctx) {
     pebble: std({ color: 0xf1f0ec, roughness: 0.95 }), pebble2: std({ color: 0xcfccc4, roughness: 0.95 }), curbW: std({ color: 0xdedbd3, roughness: 0.9 }),
     paint: std({ color: 0xf3f3ef, roughness: 0.8 }), yellow: std({ color: 0xe2b633, roughness: 0.8 }),
     stop: std({ color: 0x9d9a93, roughness: 0.95 }), curb: std({ color: 0xbcb8b0, roughness: 0.95 }),
-    walk: std({ color: 0xa8a59d, roughness: 0.95 }), asphalt: std({ color: 0x38393c, roughness: 0.95 }),
     carSilver: std({ color: 0xb9bdc2, roughness: 0.35, metalness: 0.5 }),
     cream: std({ color: 0xe7dcc5, roughness: 0.55, metalness: 0.15 }),   // treliça, calha e tubos (como na foto)
     unit: std({ color: 0xe8e8e4, roughness: 0.5 }), grille: std({ color: 0x2a2b2e, roughness: 0.6, metalness: 0.2 }),
@@ -5628,7 +5573,7 @@ function roomFachada(ctx) {
   };
 
   // =================================================================================================
-  // (a) MODO NORMAL — frente térrea, jardins, estacionamento e ruas
+  // (a) MODO NORMAL — frente térrea, jardins e estacionamento
   // =================================================================================================
 
   // ---- Painel ripado de 0 a 8,5 m + letreiro BASE CHURCH: SEMPRE visíveis (a identidade do prédio vista da rua) ----
@@ -5768,59 +5713,10 @@ function roomFachada(ctx) {
   }
   // estacionamento frontal sem carros (vagas livres)
 
-  // ---- Limites do estacionamento, calçada pública e rua da frente (z > 60) ----
+  // ---- Limites do estacionamento (o lote acaba em z 60) ----
   for (const x of [-3.07, 23.07]) add(box(0.14, 0.12, 10.3, P.curb, x, 0.06, 54.85, { cast: false }));
   add(flat(box(26.0, 0.02, 0.2, P.curbW, 10.0, 0.01, 60.1)));                       // soleira rebaixada (entrada de carros)
-  // Entorno (ruas, calçadas públicas, árvores de rua, postes e vizinhos): grupo à parte que o cartão esconde
-  // no modo leve / `entorno: false` — pesa na GPU e não faz parte da igreja
-  const out = ctx.addOut || add;
-  const street = (zc, dir) => {
-    // calçada (2,2 m) + meio-fio + pista de 7 m com faixa central amarela tracejada e bordas brancas
-    const zw = zc - dir * 4.7;                                                       // centro da calçada
-    out(flat(box(140, 0.025, 2.2, P.walk, 10, 0.0125, zw)));
-    const zk = zw + dir * 1.18;
-    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zk, { cast: false }));
-    out(flat(box(140, 0.02, 7.0, P.asphalt, 10, 0.01, zc)));
-    for (const s of [-1, 1]) out(flat(box(140, 0.004, 0.1, P.paint, 10, 0.022, zc + s * 3.25)));
-    for (let x = -34; x <= 54; x += 6) out(flat(box(3.0, 0.004, 0.12, P.yellow, x, 0.022, zc)));
-    // calçada do outro lado
-    out(box(140, 0.12, 0.15, P.curb, 10, 0.06, zc + dir * 3.58, { cast: false }));
-    out(flat(box(140, 0.025, 2.4, P.walk, 10, 0.0125, zc + dir * 4.85)));
-  };
-  street(66.0, 1);     // rua da frente (pista z 62,5–69,5)
-  street(-6.0, -1);    // rua dos fundos (pista z −9,5…−2,5)
-  // guia rebaixada em frente ao portão dos fundos
-  out(flat(box(4.6, 0.02, 0.4, P.curbW, 2.5, 0.03, -2.38)));
-  // ---- Arborização: copa em cachos (várias esferas pequenas achatadas), tronco com galhos ----
-  const tree = (x, z, s, seed) => {
-    const g = G(), rr = mulberry(seed), H0 = 2.1 * s;
-    g.add(cyl(0.09 * s, 0.15 * s, H0, P.bark, 0, H0 / 2, 0, 8));
-    for (let i = 0; i < 3; i++) {
-      const a = i * 2.1 + rr(), r = 0.55 * s;
-      bar((m) => g.add(m), [0, H0 - 0.15, 0], [Math.cos(a) * r, H0 + 0.55 * s, Math.sin(a) * r], 0.06 * s, P.bark);
-    }
-    const mats = [P.leafT1, P.leafT2, P.leafT3];
-    for (let i = 0; i < 13; i++) {
-      const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * 1.0 * s, y = H0 + (0.45 + rr() * 0.75) * s - d * 0.25;
-      const m = sph((0.38 + rr() * 0.26) * s, mats[i % 3], Math.cos(a) * d, y, Math.sin(a) * d); m.scale.set(1, 0.72, 1); g.add(m);
-    }
-    place(g, x, z, rr() * Math.PI); out(g);
-  };
-  for (const [x, z, s] of [[-5.2, 55.0, 1.1], [25.2, 55.0, 1.1]]) tree(x, z, s, 70 + x | 0);          // laterais do estacionamento
-  for (const [x, s] of [[-12, 1.0], [1.5, 0.95], [19.6, 0.95], [32, 1.05]]) tree(x, 61.6, s, 80 + x | 0);   // calçada da frente (sem esconder o letreiro)
-  for (const [x, s] of [[4, 1.0], [16, 1.05]]) tree(x, -10.9, s, 90 + x | 0);                           // calçada dos fundos (lado oposto da rua)
-
-  // ---- Postes de iluminação pública na calçada da frente (braço sobre a rua) ----
-  for (const x of [-7.5, 27.5]) {
-    const z = 61.9;
-    out(cyl(0.17, 0.2, 0.35, P.curb, x, 0.175, z, 12));
-    out(cyl(0.06, 0.1, 8.0, P.grille, x, 4.2, z, 10));
-    bar(out, [x, 7.9, z], [x, 8.25, z + 1.7], 0.07, P.grille);
-    out(box(0.28, 0.12, 0.62, P.grille, x, 8.2, z + 1.95));
-    out(box(0.22, 0.02, 0.5, P.lampLens, x, 8.13, z + 1.95, { cast: false }));
-  }
-
-  // ---- Vizinhos e muros de divisa: retirados a pedido do cliente (v1.4.5) ----
+  // v1.8: sem entorno (ruas, calçadas públicas, árvores, postes e vizinhos) — pedido do dono: só o lote e o estacionamento
 
   // ---- Totem de entrada (monólito preto com face ripada e o logo em relevo), na calçada à esquerda ----
   {
@@ -6645,10 +6541,10 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._roofOn) { this._setTopView(true, true); this._resize(); const o = this._orbit; o.sph.copy(o.goal); o.target.copy(o.targetGoal); }
   }
 
-  // Entorno ligado: gramado texturizado + ruas/vizinhos. Desligado: só o lote, sobre um chão de cor chapada (MeshBasic,
-  // quase de graça na GPU) que acompanha dia/noite em _frame
+  // Entorno ligado: gramado texturizado. Desligado: chão de cor chapada (MeshBasic, quase de graça na GPU) que acompanha dia/noite
+  // em _frame. v1.8: as ruas, calçadas públicas, árvores, postes e vizinhos saíram (pedido do dono) — fica só o lote e o estacionamento
   _setEntorno(on) {
-    this._entornoOn = on; if (this._out) this._out.visible = on;
+    this._entornoOn = on;
     const g = this._ground; if (!g) return;
     if (!this._groundStd) { this._groundStd = g.material; this._groundFlat = new THREE.MeshBasicMaterial({ color: 0x6d705e }); }
     g.material = on ? this._groundStd : this._groundFlat; g.receiveShadow = on;
@@ -6795,13 +6691,13 @@ export class Igreja3DCard extends HTMLElement {
     // Grupo externo (modo Fachada): paredes altas, platibandas, telhados e revestimento da
     // fachada — preenchido pela decoração roomFachada via ctx.addExt; só aparece com o botão.
     this._ext = new THREE.Group(); this._ext.name = 'fachada'; this._ext.userData.keep = true; this._ext.visible = false; scene.add(this._ext);
-    // Entorno (ruas, vizinhos, árvores de rua, postes): fora da igreja; no leve some e o gramado vira cor chapada
-    this._out = new THREE.Group(); this._out.name = 'entorno'; this._out.userData.keep = true; scene.add(this._out);
+    for (const m of this._wallHi || []) this._ext.add(m);   // paredes do bloco dos fundos de HB até H: só no modo Fachada (v1.8)
     // Mezanino (v1.4.6): laje, guarda-corpo, paredes altas e mobília da "salinha" sobre os WCs/Sala da Família; some na Vista de cima
     this._mezz = new THREE.Group(); this._mezz.name = 'mezanino'; this._mezz.userData.keep = true; scene.add(this._mezz);
 
     this._nLights = 0; this._nShadows = 0;
     this._buildFurniture(scene, M);
+    this._snapThin(scene);
     this._buildFixtures(scene, M);
     this._buildPools(scene);
     mergeItems(scene, this._clickables, this._items); mergeItems(this._ext, this._clickables, this._items);
@@ -6810,7 +6706,6 @@ export class Igreja3DCard extends HTMLElement {
 
     const stats = mergeStatic(scene, true);
     const extStats = mergeStatic(this._ext, true);
-    mergeStatic(this._out, true);
     mergeStatic(this._mezz, true);
     if (this._q === 'media') this._midMaterials(scene);
     this._setEntorno(this._config.entorno === 'auto' || this._config.entorno == null ? !this._lite : !!this._config.entorno);
@@ -6830,10 +6725,10 @@ export class Igreja3DCard extends HTMLElement {
     this._precompile();
   }
   // Compila os shaders antes do primeiro quadro — em paralelo quando o navegador deixa (KHR_parallel_shader_compile),
-  // sem travar a página na carga — com a fachada e o entorno visíveis, para os botões não engasgarem depois.
+  // sem travar a página na carga — com a fachada visível, para os botões não engasgarem depois.
   // Enquanto isso _frame não desenha.
   _precompile() {
-    const r = this._renderer, hide = [this._ext, this._out, this._hl, this._mk].filter((g) => g && !g.visible);
+    const r = this._renderer, hide = [this._ext, this._hl, this._mk].filter((g) => g && !g.visible);
     this._busy = true;
     let p;
     try {
@@ -6845,23 +6740,31 @@ export class Igreja3DCard extends HTMLElement {
     p.catch(() => {}).then(() => { this._busy = false; if (this._orbit) this._orbit.dirty = true; });
   }
 
-  // media: o entorno perde o laço das lâmpadas (cópias dos materiais: alguns são os mesmos da igreja) e o environment
-  // map fica só nos materiais brilhantes — vidro, metal, porcelanato polido —, só com o reflexo (a sonda faz a luz difusa)
+  // media: o environment map fica só nos materiais brilhantes — vidro, metal, porcelanato polido —, só com o reflexo (a sonda faz a luz difusa)
   _midMaterials(scene) {
-    const cp = new Map(), out = new Set();
-    this._out.traverse((o) => {
-      out.add(o);
-      if (!o.isMesh || Array.isArray(o.material) || !(o.material.isMeshStandardMaterial || o.material.isMeshLambertMaterial)) return;
-      if (!cp.has(o.material)) cp.set(o.material, patchNoPoint(o.material.clone()));
-      o.material = cp.get(o.material);
-    });
     const env = new Set();
     scene.traverse((o) => {
-      if (!o.isMesh || out.has(o)) return;
+      if (!o.isMesh) return;
       for (const m of [].concat(o.material)) if (m.isMeshStandardMaterial && !m.envMap && (m.metalness >= 0.5 || m.roughness <= 0.3 || (m.transparent && m.opacity < 0.5))) env.add(m);
     });
     for (const m of env) patchEnvSpec(m);
     this._envMats = [...env];
+  }
+
+  // v1.8: as divisórias dos fundos afinaram (7,5 → 5 cm) e a decoração foi medida nas faces antigas: o que está junto de uma face
+  // antiga (até 15 cm dela, sem atravessar a parede: painel, ripas, logo e halo em camadas andam juntos) acompanha a face nova
+  _snapThin(scene) {
+    const f0 = 0.0375, d = f0 - TF / 2, bb = new THREE.Box3();
+    for (const o of scene.children) {
+      if (o.userData.arch || o === this._ext || o === this._mezz) continue;
+      bb.setFromObject(o); if (bb.isEmpty()) continue;
+      for (const w of this._thin || []) {
+        const n = w.axis === 'x' ? 'z' : 'x', u = w.axis === 'x' ? 'x' : 'z';   // n = normal da parede · u = ao longo dela
+        if (bb.max[u] < w.a0 - 0.05 || bb.min[u] > w.a1 + 0.05) continue;
+        if (bb.min[n] >= w.c + f0 - 0.02 && bb.min[n] <= w.c + f0 + 0.15) o.position[n] -= d;
+        else if (bb.max[n] <= w.c - f0 + 0.02 && bb.max[n] >= w.c - f0 - 0.15) o.position[n] += d;
+      }
+    }
   }
 
   // Luminárias + luzes de cada item (PointLight só onde não é `glowOnly`)
@@ -6902,7 +6805,7 @@ export class Igreja3DCard extends HTMLElement {
         const holder = f.ext ? this._ext : scene;
         // GPU apertada (uniforms/samplers no limite): as luzes fracas das salas viram só halo + emissivo
         const glowOnly = !keep.has(fk);
-        const lp = new THREE.Vector3(px, f.pole ? py - 0.2 : f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);
+        const lp = f.l ? new THREE.Vector3(...f.l) : new THREE.Vector3(px, f.highbay ? py - 0.25 : f.linear ? py - 0.1 : py, pz);   // l: luz longe da lente (refletor da fachada)
         // moving head: a luz sai 1,2 m à frente da lente (ilumina o palco, não a parede atrás da treliça)
         if (f.moving) lp.addScaledVector(MOVE_DIR, 1.2);
         if (mid && realIdx.includes(fk)) (rt.cands = rt.cands || []).push({ p: lp, i: f.i, d: f.d, shadow: !!f.shadow && (!this._tight || !!f.liteShadow) });
@@ -6928,16 +6831,17 @@ export class Igreja3DCard extends HTMLElement {
         let mesh, gs = 1.5, gb = 0.8;
         if (f.spot) {
           // refletor: lata preta curta com lente, presa por uma forquilha
-          const dir = (f.aim === 'wall' ? new THREE.Vector3(0, -1, -0.2) : new THREE.Vector3(0, -0.85, -0.5)).normalize();
+          const dir = (f.aim === 'wall' ? new THREE.Vector3(0, -1, -0.2) : f.aim === 'out' ? new THREE.Vector3(0, -0.5, 1) : new THREE.Vector3(0, -0.85, -0.5)).normalize();
           const q = new THREE.Quaternion().setFromUnitVectors(up, dir);
           const can = cyl(0.11, 0.13, 0.28, M.dark, px, py, pz, 16); can.quaternion.copy(q); can.castShadow = false; holder.add(can);
           const back = cyl(0.07, 0.07, 0.06, M.graphite, 0, 0, 0, 12); back.quaternion.copy(q); back.position.set(px, py, pz).addScaledVector(dir, -0.16); back.castShadow = false; holder.add(back);
           holder.add(box(0.03, 0.26, 0.03, M.dark, px - 0.16, py + 0.06, pz, { cast: false }));
           holder.add(box(0.03, 0.26, 0.03, M.dark, px + 0.16, py + 0.06, pz, { cast: false }));
           holder.add(box(0.35, 0.03, 0.04, M.dark, px, py + 0.19, pz, { cast: false }));
-          holder.add(cyl(0.012, 0.012, f.aim === 'wall' ? 0.12 : 0.4, M.dark, px, py + (f.aim === 'wall' ? 0.26 : 0.39), pz, 6));
+          holder.add(cyl(0.012, 0.012, f.aim ? 0.12 : 0.4, M.dark, px, py + (f.aim ? 0.26 : 0.39), pz, 6));
           // refletor de fachada: braço curto até a parede (abaixo do topo da platibanda)
           if (f.aim === 'wall') holder.add(box(0.05, 0.05, 0.66, M.dark, px, py + 0.33, pz - 0.3, { cast: false }));
+          else if (f.aim === 'out') holder.add(box(0.05, 0.05, 0.3, M.dark, px, py + 0.33, pz - 0.15, { cast: false }));   // braço até a parede da fachada
           mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.02, 18), emis());
           mesh.quaternion.copy(q); mesh.position.set(px, py, pz).addScaledVector(dir, 0.145);
           gs = 1.3; gb = 0.85;
@@ -6970,15 +6874,6 @@ export class Igreja3DCard extends HTMLElement {
           mesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.01, 2.3), emis()); mesh.position.set(px, py - 0.004, pz);
           (linRails[px] = linRails[px] || []).push(pz);
           gs = 1.6; gb = 0.55;
-        } else if (f.pole) {
-          // poste de 5,5 m: base de concreto, haste, braço e luminária pública
-          const bz = pz + 1.0;
-          holder.add(cyl(0.2, 0.24, 0.5, M.concrete, px, 0.25, bz, 14));
-          holder.add(cyl(0.055, 0.075, 5.45, M.graphite, px, 0.5 + 5.45 / 2, bz, 10));
-          holder.add(box(0.06, 0.06, 1.05, M.graphite, px, py + 0.12, pz + 0.5));
-          holder.add(box(0.5, 0.1, 0.34, M.graphite, px, py + 0.07, pz));
-          mesh = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.02, 0.28), emis()); mesh.position.set(px, py + 0.01, pz);
-          gs = 2.4; gb = 0.9;
         } else if (f.lamp) {
           mesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), emis()); mesh.position.set(px, py, pz);
           holder.add(box(0.18, 0.22, 0.18, M.dark, px, py - 0.2, pz));
@@ -7153,8 +7048,8 @@ export class Igreja3DCard extends HTMLElement {
     const wallZ = (x, za, zb, ops = [], o = {}) => this._wallSeg(scene, M, 'z', x, za, zb, ops, o);
     // Externas (pretas por fora, revestidas de branco por dentro): `inner` = lado de dentro
     const DK = { mat: M.wallDark, cap: M.wallDarkCap, frame: M.frameDark, ext: true };
-    // Bloco dos fundos (z 0–12,4): paredes com espessura TF. Nas de divisa a face externa fica onde estava (eixo recuado TF/2).
-    const F = { t: TF };
+    // Bloco dos fundos (z 0–12,4): paredes com espessura TF e altura HB. Nas de divisa a face externa fica onde estava (eixo recuado TF/2).
+    const F = { t: TF, h: HB, hx: H };
     wallX(-TF / 2, 0, 20.1, [{ a: 0.3, b: 4.7, t: 'gate' }], Object.assign({ inner: 1 }, DK, F));
     // divisa esquerda (x = 0) em 3 trechos: o do templo (z 12,4–44,0) é a PAREDE DO PALCO — sobe a 8,5 m
     // já no modo normal e é preta por dentro (correção do cliente: o palco fica nesta parede lateral longa)
@@ -7225,36 +7120,41 @@ export class Igreja3DCard extends HTMLElement {
   }
 
   // Segmento de parede ao longo de X (z fixo) ou Z (x fixo) com aberturas.
-  // o = { h, mat, cap, frame (caixilho; padrão preto), doorFrame (batente/guarnição; padrão madeira), inner (±1: lado do
+  // o = { h, hx (a parede continua de h até hx só no modo Fachada — o que também vale na Pessoa: grupo ext), mat, cap, frame (caixilho; padrão preto), doorFrame (batente/guarnição; padrão madeira), inner (±1: lado do
   //   revestimento claro), ext (estende T/2 nas pontas; ext0/ext1 só no início/fim), clad: [{ side ±1, mat, a, b }] (revestimento
   //   de 12 mm num lado, entre a e b — ex.: face preta do templo) }
   // Aberturas: door (style 'black' = preta de correr, side = lado do trilho) · window (sill/top opcionais) · glass ·
   //   glassdoor (2 folhas, item) · open · gate
   _wallSeg(scene, M, axis, c, a0, a1, ops, o = {}) {
     const W = this._walls || (this._walls = []);   // segmentos sólidos ao nível dos pés, para a colisão da visão de pessoa
+    if (o.t === TF && !o.ext) (this._thin || (this._thin = [])).push({ axis, c, a0, a1 });   // divisória fina dos fundos (ver _snapThin)
     const h = o.h || H, t = o.t || T, mat = o.mat || M.wall, capMat = o.cap || M.wallCap, fr = o.frame || M.frameDark, inner = o.inner || 0;
     const e0 = o.ext0 != null ? o.ext0 : !!o.ext, e1 = o.ext1 != null ? o.ext1 : !!o.ext;
     if (e0) a0 -= T / 2;   // até a face externa da parede perpendicular (fica no lugar mesmo nas finas)
     if (e1) a1 += T / 2;
     const glassMat = o.ext ? M.glass : M.glassSmoke;   // visores/janelas internas: vidro levemente fumê
-    const put = (len, hh, thick, m, mid, y, opts, off = 0) => {
+    const put = (len, hh, thick, m, mid, y, opts, off = 0, hi = false) => {
       const mesh = axis === 'x' ? box(len, hh, thick, m, mid, y, c + off, opts) : box(thick, hh, len, m, c + off, y, mid, opts);
-      scene.add(mesh); return mesh;
+      if (hi) (this._wallHi || (this._wallHi = [])).push(mesh); else scene.add(mesh);   // hi: parte de cima (h → hx), vai para o grupo da Fachada
+      return mesh;
     };
-    const seg = (a, b, y0, y1) => {
+    const seg = (a, b, y0, y1, hi = false) => {
       if (b - a <= 0.001 || y1 - y0 <= 0.001) return;
       if (y0 <= 0.5 && y1 >= 0.9) W.push({ axis, c, a0: a, a1: b, t, h });   // parede cheia ou sob o peitoril; vergas de porta (y0 2,1) não bloqueiam
-      put(b - a, y1 - y0, t, mat, (a + b) / 2, (y0 + y1) / 2);
+      put(b - a, y1 - y0, t, mat, (a + b) / 2, (y0 + y1) / 2, undefined, 0, hi);
       // revestimento interno: só entre as faces internas das paredes vizinhas (nas pontas
       // estendidas ele apareceria como um filete branco do lado de fora)
       const la = e0 ? Math.max(a, a0 + t) : a, lb = e1 ? Math.min(b, a1 - t) : b;
-      if (inner && lb - la > 0.001) put(lb - la, y1 - y0, 0.012, M.wall, (la + lb) / 2, (y0 + y1) / 2, { cast: false }, inner * (t / 2 + 0.006));
+      if (inner && lb - la > 0.001) put(lb - la, y1 - y0, 0.012, M.wall, (la + lb) / 2, (y0 + y1) / 2, { cast: false }, inner * (t / 2 + 0.006), hi);
       for (const cl of o.clad || []) {
         const ca = Math.max(a, cl.a), cb = Math.min(b, cl.b);
-        if (cb - ca > 0.001) put(cb - ca, y1 - y0, 0.012, cl.mat, (ca + cb) / 2, (y0 + y1) / 2, { cast: false }, cl.side * (t / 2 + 0.006));
+        if (cb - ca > 0.001) put(cb - ca, y1 - y0, 0.012, cl.mat, (ca + cb) / 2, (y0 + y1) / 2, { cast: false }, cl.side * (t / 2 + 0.006), hi);
       }
-      // tampa ligeiramente acima do topo (e com altura diferente por eixo) → sem faces coplanares
-      if (Math.abs(y1 - h) < 0.001) put(b - a, 0.03, t + 0.03, capMat, (a + b) / 2, h + (axis === 'x' ? 0.02 : 0.018), { cast: false });
+      // tampa ligeiramente acima do topo (e com altura diferente por eixo) → sem faces coplanares; com hx, a de baixo fica dentro da
+      // espessura (some sob a parte de cima no modo Fachada) e a parede continua até hx
+      const top = hi ? o.hx : h;
+      if (Math.abs(y1 - top) < 0.001) put(b - a, 0.03, hi || !o.hx ? t + 0.03 : t - 0.004, capMat, (a + b) / 2, top + (axis === 'x' ? 0.02 : 0.018), { cast: false }, 0, hi);
+      if (!hi && o.hx > h && Math.abs(y1 - h) < 0.001) seg(a, b, h, o.hx, true);
     };
     const pane = (a, b, y0, y1) => { if (y0 <= 0.5) W.push({ axis, c, a0: a, a1: b, t: 0.02 }); return put(b - a, y1 - y0, 0.02, glassMat, (a + b) / 2, (y0 + y1) / 2, { cast: false, receive: false }); };   // vidro fixo do chão bloqueia
     // caixilho: ombreiras + verga (e peitoril se y0 > 0)
@@ -7291,10 +7191,11 @@ export class Igreja3DCard extends HTMLElement {
         }
       } else if (op.t === 'gate') {
         W.push({ axis, c, a0: op.a, a1: op.b, t });   // portão de correr fechado bloqueia
-        // portão de correr: sem verga, réguas horizontais escuras até 2,5 m
-        frame(op.a, op.b, 0, 2.6, false);
-        for (let y = 0.12; y < 2.5; y += 0.2) put(op.b - op.a - 0.12, 0.13, 0.04, M.frameDark, (op.a + op.b) / 2, y + 0.065, { cast: false });
-        put(op.b - op.a - 0.12, 0.05, 0.06, M.frameDark, (op.a + op.b) / 2, 2.55);
+        // portão de correr: sem verga, réguas horizontais escuras até o topo do muro (2,6 m no máximo)
+        const gt = Math.min(2.6, h);
+        frame(op.a, op.b, 0, gt, false);
+        for (let y = 0.12; y < gt - 0.1; y += 0.2) put(op.b - op.a - 0.12, 0.13, 0.04, M.frameDark, (op.a + op.b) / 2, y + 0.065, { cast: false });
+        put(op.b - op.a - 0.12, 0.05, 0.06, M.frameDark, (op.a + op.b) / 2, gt - 0.05);
       } else if (op.t === 'window') {
         const y0 = op.sill != null ? op.sill : 1.0, y1 = op.top != null ? op.top : 2.15;
         seg(op.a, op.b, 0, y0); seg(op.a, op.b, y1, h); frame(op.a, op.b, y0, y1); pane(op.a, op.b, y0, y1); mullion(op.a, op.b, y0, y1);
@@ -7383,7 +7284,7 @@ export class Igreja3DCard extends HTMLElement {
     // obstáculos = mobiliário/decoração entre 0,12 e 2,0 m de altura (o "arquitetônico" foi marcado com userData.arch); paredes vêm de _walls
     const obs = [], bb = new THREE.Box3();
     for (const top of scene.children) {
-      if (top.userData.arch || top === this._out || top === this._ext || top === this._mezz) continue;
+      if (top.userData.arch || top === this._ext || top === this._mezz) continue;
       top.traverseVisible((o) => {
         if (!o.isMesh || o.isInstancedMesh || o.material.isShaderMaterial || o.material.transparent || o.material.blending === THREE.AdditiveBlending) return;
         bb.setFromObject(o);
@@ -7648,7 +7549,7 @@ export class Igreja3DCard extends HTMLElement {
     // Logo oficial compartilhado (mesma função de desenho em todo o cartão) — ver rooms/BRIEF.md
     const logo = { draw: drawLogo, aspect: logoAspect, tex: logoTex, mesh: logoMesh, relief: logoRelief, font: LOGO_FONT };
     const ctx = (seed) => ({ THREE, M, F, box, cyl, sph, std, place, add: (m) => { scene.add(m); return m; }, rnd: mulberry32(seed),
-      ZONES, H, T, TF, LOT, ext, addExt, addOut: (m) => { this._out.add(m); return m; }, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures(),
+      ZONES, H, T, TF, HB, LOT, ext, addExt, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures(),
       STAIR, MEZZ, addMezz: (m) => { this._mezz.add(m); return m; } });   // mezanino: grupo próprio (some na Vista de cima, que enxerga os cômodos de baixo)
     const click = (m, key) => { m.userData = { item: key }; scene.add(m); this._clickables.push(m); get(key).fixtures.push(m); return m; };
 
@@ -7765,7 +7666,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const z of [15.3, 30.9, 37.6]) split('ac_templo', 16.05 - acIn, 2.6, z, 'z', -1, ACT);
     split('ac_templo', 7.95, 2.6, 12.4 + acIn, 'x', 1, ACT);
     split('ac_templo', 7.95, 2.6, 44.0 - acIn, 'x', -1, ACT);
-    split('ac_pastoral', 14.9, 2.4, 0.125, 'x', 1);   // encostado na parede fina z = 0 (face em 0,012)
+    split('ac_pastoral', 14.9, HB - 0.18, 0.125, 'x', 1);   // encostado na parede fina z = 0 (face em 0,012), abaixo do topo (HB)
     // ala direita (vídeos v4 e v2): mídia no fundo z = 28 (sobre as placas acústicas) e voluntariado na parede de marmorato x = 20,1
     split('ac_midia', 17.55, 2.56, 27.785, 'x', -1, [0.85, 0.28, 0.2]);
     split('ac_voluntariado', 19.9, 2.58, 29.5, 'z', -1);
@@ -8309,12 +8210,12 @@ export class Igreja3DCard extends HTMLElement {
     this._roofBtn.setAttribute('aria-pressed', this._roofOn ? 'true' : 'false');
     this._needShadow = true; this._orbit.dirty = true;
   }
-  // Vista de cima, nível 0 (v1.6.1): de frente para o palco, como quem está na plateia — câmera do lado +x olhando para −x, alta e
-  // oblíqua (polar 0,9 ≈ 38° acima do horizonte). v1.7: a igreja inteira na largura (z 0–52, dos Fundos à Entrada; em retrato também: a
-  // câmera só afasta) — os blocos à vista para o 1º toque (antes era só o templo, e os dos fundos e da entrada ficavam fora da tela)
+  // Vista de cima, nível 0 (v1.6.1): de frente para o palco, como quem está na plateia — câmera do lado +x olhando para −x. v1.7: a igreja
+  // inteira na largura (z 0–52, dos Fundos à Entrada; em retrato também: a câmera só afasta). v1.8: mais alta, inclinada para o palco
+  // (polar 0,62 ≈ 54° acima do horizonte, antes 38°): os blocos aparecem como áreas e não como uma faixa fina
   _topFor(aspect) {
-    const target = new THREE.Vector3(8, 0, 26), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
-    return { pos: new THREE.Vector3().setFromSphericalCoords(26 / tanH, 0.9, Math.PI / 2).add(target), target };
+    const target = new THREE.Vector3(9.5, 0, 26), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
+    return { pos: new THREE.Vector3().setFromSphericalCoords(26 / tanH, 0.62, Math.PI / 2).add(target), target };
   }
   // O painel fica como está (v1.7, como na Casa): o cômodo tocado aparece nele
   _setTopView(on, keepCamera = false) {
@@ -8359,7 +8260,7 @@ export class Igreja3DCard extends HTMLElement {
     const near = (rs, x, z, m) => rs.some(([rx, rz, w, d]) => x >= rx - m && x <= rx + w + m && z >= rz - m && z <= rz + d + m);
     const pts = ITEMS.map((it) => {
       const rt = this._items.get(it.key);
-      return { key: it.key, p: (it.fixtures || []).filter((f) => !f.ext).map((f) => [f.p[0], f.p[2]]).concat(((rt && rt.airUnits) || []).map((u) => [u.p.x, u.p.z])) };
+      return { key: it.key, p: (it.fixtures || []).filter((f) => !f.ext).map((f) => [(f.l || f.p)[0], (f.l || f.p)[2]]).concat(((rt && rt.airUnits) || []).map((u) => [u.p.x, u.p.z])) };
     });
     this._blocks = Object.entries(BLOCKS).map(([id, b]) => {
       const rooms = b.rooms.map((r) => {
@@ -8398,14 +8299,15 @@ export class Igreja3DCard extends HTMLElement {
     return q ? q.rects.map((r) => [r[0], r[1], r[0] + r[2], r[1] + r[3]]) : null;
   }
   // Enquadramento de cima de um retângulo, sempre com o palco em cima, como a planta (v1.7: em qualquer faixa — a altura da folha muda o
-  // formato dela, e a planta girava 90° entre um bloco e outro)
+  // formato dela, e a planta girava 90° entre um bloco e outro). v1.8: centrado no retângulo e inclinado para o palco como a planta,
+  // mais quanto maior ele é (Templo ≈ 23°; um cômodo de 3 m quase reto, para a parede da frente não cobrir o piso)
   _frameRect(x0, z0, x1, z1, margin) {
     const A = this._camera.aspect, tanV = Math.tan(this._camera.fov * Math.PI / 360);
-    const hx = (x1 - x0) / 2 + margin, hz = (z1 - z0) / 2 + margin;
-    const d = Math.max(hz / (tanV * A), hx / tanV);   // z na largura, x na altura
+    const hx = (x1 - x0) / 2 + margin, hz = (z1 - z0) / 2 + margin, phi = clamp(Math.min(x1 - x0, z1 - z0) * 0.025, 0.035, 0.4);
+    const d = Math.max(hz / (tanV * A), (hx * Math.cos(phi) + H * Math.sin(phi)) / tanV);   // z na largura, x (encurtado pela inclinação) na altura
     const target = new THREE.Vector3((x0 + x1) / 2, 0, (z0 + z1) / 2), o = this._orbit;
     const dist = clamp(d * 1.08 + 3, o.minDist + 2, o.maxDist);   // +3 m: o topo das paredes (3 m) fica mais perto da câmera
-    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, 0.035, Math.PI / 2).add(target), target };
+    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, phi, Math.PI / 2).add(target), target };
   }
   // cômodo (ou, na falta, o bloco) sob o ponto (x, z) do piso; folga de 0,8 m para as paredes
   _hit(x, z) {
