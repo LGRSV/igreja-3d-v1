@@ -170,52 +170,74 @@ export const ITEMS = [
 ];
 
 
-// Ícones dos chips (SVG inline, 16px, traço)
+/* Ícones: Phosphor Icons 2.1.1 (@phosphor-icons/core), viewBox 0 0 256 256, path data embutido.
+ * MIT License
+ *
+ * Copyright (c) 2023 Phosphor Icons
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+// Ícones (Phosphor 2.1.1, viewBox 256): r = regular (desligado, navegação), f = fill (ligado; o CSS troca)
 const ICONS = {
-  bulb: '<path d="M8 1.6a4.4 4.4 0 0 0-2.5 8c.4.3.6.7.6 1.2v.9h3.8v-.9c0-.5.2-.9.6-1.2a4.4 4.4 0 0 0-2.5-8z"/><path d="M6.4 13.6h3.2M7 15.2h2"/>',
-  led:  '<rect x="1.5" y="5.5" width="13" height="5" rx="2.5"/><circle cx="4.5" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="11.5" cy="8" r=".9" fill="currentColor" stroke="none"/>',
-  ac:   '<rect x="1.5" y="3.2" width="13" height="6" rx="1.4"/><path d="M4 6.2h8M4.2 12v1.6M8 12v2.6M11.8 12v1.6"/>',
-  tv:   '<rect x="1.5" y="2.6" width="13" height="8.8" rx="1.2"/><path d="M5.6 14h4.8M8 11.4V14"/>',
-  home: '<path d="M2.5 8.2 8 3.2l5.5 5M4 7v6.3h8V7"/>',
-  moon: '<path d="M13 9.6A5.2 5.2 0 0 1 6.4 3a5.4 5.4 0 1 0 6.6 6.6z"/>',
-  film: '<rect x="2" y="3" width="12" height="10" rx="1.2"/><path d="M5 3v10M11 3v10M2 6h3M2 10h3M11 6h3M11 10h3"/>',
-  power: '<path d="M8 2.5v5.5"/><path d="M4.6 4.6a4.8 4.8 0 1 0 6.8 0"/>',
-  panel: '<rect x="1.5" y="2.5" width="13" height="11" rx="1.4"/><path d="M9.5 2.5v11M11 6h2M11 8.5h2"/>',
-  play: '<path d="M5 3.5v9l7-4.5z" fill="currentColor" stroke="none"/>',
-  motion: '<circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/><path d="M4.6 4.6a4.8 4.8 0 0 0 0 6.8M11.4 4.6a4.8 4.8 0 0 1 0 6.8M2.4 2.4a8 8 0 0 0 0 11.2M13.6 2.4a8 8 0 0 1 0 11.2"/>',
-  lux: '<circle cx="8" cy="8" r="2.6"/><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"/>',
-  person: '<circle cx="8" cy="5" r="2.6"/><path d="M2.8 14a5.2 5.2 0 0 1 10.4 0"/>',
-  auto: '<path d="M8.8 1.8 4.2 9h3.4l-.9 5.2L11.8 7H8.4z"/>',
-  timer: '<circle cx="8" cy="9" r="5"/><path d="M8 6.5V9l1.8 1.2M6 1.8h4"/>',
-  pause: '<path d="M5.5 3.5v9M10.5 3.5v9" stroke-width="2"/>',
-  sun: '<circle cx="8" cy="8" r="3"/><path d="M8 1.6v1.6M8 12.8v1.6M1.6 8h1.6M12.8 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>',
-  cloudsun: '<circle cx="4.6" cy="4.6" r="2" /><path d="M4.6 1v1M4.6 8.2v1M1 4.6h1M8.2 4.6h1M1.9 1.9l.8.8M6.5 6.5l.8.8M1.9 7.3l.8-.8"/><path d="M5.6 13.4h5.9a2.5 2.5 0 0 0 .5-4.95 3.4 3.4 0 0 0-6.3-1.6A2.7 2.7 0 0 0 3 9.2a2.5 2.5 0 0 0 .3 5.0h.1"/>',
-  cloud: '<path d="M4.4 13h7.3a2.6 2.6 0 0 0 .5-5.15 3.5 3.5 0 0 0-6.6-1.5A2.8 2.8 0 0 0 2 9.1 2.7 2.7 0 0 0 4.4 13z"/>',
-  fog: '<path d="M4 6.6h7.3a2.4 2.4 0 0 0 .5-4.75A3.2 3.2 0 0 0 5.7 .95 2.6 2.6 0 0 0 1.9 3.3 2.5 2.5 0 0 0 4 6.6z"/><path d="M2 9.4h12M2 12h12"/>',
-  rain: '<path d="M4.4 8.3h7.3a2.6 2.6 0 0 0 .5-5.15 3.5 3.5 0 0 0-6.6-1.5A2.8 2.8 0 0 0 2 4.4a2.7 2.7 0 0 0 2.4 3.9z"/><path d="M4.6 10.4 3.6 13M8 10.4 7 13M11.4 10.4l-1 2.6"/>',
-  storm: '<path d="M4.4 7.3h7.3a2.6 2.6 0 0 0 .5-5.15 3.5 3.5 0 0 0-6.6-1.5A2.8 2.8 0 0 0 2 3.4a2.7 2.7 0 0 0 2.4 3.9z"/><path d="M8.6 9.2 6.4 12.4h2.3L7 15"/>',
-  snow: '<path d="M4.4 8.3h7.3a2.6 2.6 0 0 0 .5-5.15 3.5 3.5 0 0 0-6.6-1.5A2.8 2.8 0 0 0 2 4.4a2.7 2.7 0 0 0 2.4 3.9z"/><path d="M5 10.6v3M3.6 12.1h2.8M10.6 10.6v3M9.2 12.1h2.8"/>',
-  spot: '<path d="M2.2 4.6 7.6 2l2.3 4.8-5.4 2.6z"/><path d="M9.2 5.4l2.6-1.2M6.4 9.2 8.6 14M4.4 14h6.4"/><path d="M10.6 8.2l3.2 1.4M10.2 10.4l2.4 2.2"/>',
-  speaker: '<rect x="3.5" y="1.5" width="9" height="13" rx="1.6"/><circle cx="8" cy="10" r="2.4"/><circle cx="8" cy="4.8" r="1"/>',
-  door: '<path d="M3.5 14.5V2.2h9v12.3M1.5 14.5h13"/><circle cx="10.2" cy="8.4" r=".7" fill="currentColor" stroke="none"/>',
-  thermo: '<path d="M6.5 9.6V3a1.5 1.5 0 0 1 3 0v6.6a3 3 0 1 1-3 0z"/><path d="M8 6.5v5"/>',
-  cross: '<path d="M8 1.5v13M4 5.5h8"/>',
-  church: '<path d="M8 1.2v3.2M6.6 2.6h2.8M3 14.5V8.2L8 4.8l5 3.4v6.3M6.6 14.5v-3a1.4 1.4 0 0 1 2.8 0v3"/>',
-  car: '<path d="M2 11.5V8.6l1.6-3.6h8.8L14 8.6v2.9M2 11.5h12M2 8.6h12"/><circle cx="4.6" cy="11.8" r="1.2"/><circle cx="11.4" cy="11.8" r="1.2"/>',
-  music: '<path d="M6 12.5V3.5l7-1.5v9"/><circle cx="4.5" cy="12.5" r="1.6"/><circle cx="11.5" cy="11" r="1.6"/>',
-  sign: '<rect x="1.5" y="3" width="13" height="7.5" rx="1"/><path d="M5 13.8h6M8 10.5v3.3M5.5 6.8h5"/>',
-  key: '<circle cx="5" cy="8" r="2.8"/><path d="M7.8 8h6.7M12.5 8v2.4M10.5 8v1.8"/>',
-  mic: '<rect x="6" y="1.5" width="4" height="7.5" rx="2"/><path d="M3.8 7.5a4.2 4.2 0 0 0 8.4 0M8 11.7v2.8M5.6 14.5h4.8"/>',
-  // v1.6.0: menu de opções do topo e painel lateral
-  menu: '<path d="M2.5 4h11M2.5 8h11M2.5 12h11"/>',
-  tag: '<path d="M2 2.6h5.3l6.6 6.6-4.7 4.7L2.6 7.3z"/><circle cx="5.2" cy="5.6" r=".9" fill="currentColor"/>',
-  plan: '<rect x="2" y="2" width="12" height="12" rx="1.2"/><path d="M2 7.5h5.5V14M7.5 2v2.6M10.6 7.5H14"/>',
-  recenter: '<circle cx="8" cy="8" r="2.3"/><path d="M8 1.5v2.6M8 11.9v2.6M1.5 8h2.6M11.9 8h2.6"/>',
-  pin: '<path d="M8 14.5s4.6-4.3 4.6-8a4.6 4.6 0 0 0-9.2 0c0 3.7 4.6 8 4.6 8z"/><circle cx="8" cy="6.5" r="1.6"/>',
-  side: '<rect x="1.5" y="2.5" width="13" height="11" rx="1.6"/><path d="M6 2.5v11"/>',   // painel à esquerda
-  chevr: '<path d="M6 3l5 5-5 5"/>',
-  chevl: '<path d="M10 3 5 8l5 5"/>',
-  briefcase: '<rect x="1.5" y="5" width="13" height="8.5" rx="1.2"/><path d="M5.8 5V3.3h4.4V5M1.5 9h13"/>',
+  bulb: { r: 'M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Zm-16.11-9.34a57.6,57.6,0,0,0-46.56-46.55,8,8,0,0,0-2.66,15.78c16.57,2.79,30.63,16.85,33.44,33.45A8,8,0,0,0,176,104a9,9,0,0,0,1.35-.11A8,8,0,0,0,183.89,94.66Z', f: 'M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-32.11-9.34a57.6,57.6,0,0,0-46.56-46.55,8,8,0,0,0-2.66,15.78c16.57,2.79,30.63,16.85,33.44,33.45A8,8,0,0,0,176,104a9,9,0,0,0,1.35-.11A8,8,0,0,0,183.89,94.66Z' },
+  ac: { r: 'M223.77,150.09a8,8,0,0,1-5.86,9.68l-24.64,6,6.46,24.11a8,8,0,0,1-5.66,9.8A8.25,8.25,0,0,1,192,200a8,8,0,0,1-7.72-5.93l-7.72-28.8L136,141.86v46.83l21.66,21.65a8,8,0,0,1-11.32,11.32L128,203.31l-18.34,18.35a8,8,0,0,1-11.32-11.32L120,188.69V141.86L79.45,165.27l-7.72,28.8A8,8,0,0,1,64,200a8.25,8.25,0,0,1-2.08-.27,8,8,0,0,1-5.66-9.8l6.46-24.11-24.64-6a8,8,0,0,1,3.82-15.54l29.45,7.23L112,128,71.36,104.54l-29.45,7.23A7.85,7.85,0,0,1,40,112a8,8,0,0,1-1.91-15.77l24.64-6L56.27,66.07a8,8,0,0,1,15.46-4.14l7.72,28.8L120,114.14V67.31L98.34,45.66a8,8,0,0,1,11.32-11.32L128,52.69l18.34-18.35a8,8,0,0,1,11.32,11.32L136,67.31v46.83l40.55-23.41,7.72-28.8a8,8,0,0,1,15.46,4.14l-6.46,24.11,24.64,6A8,8,0,0,1,216,112a7.85,7.85,0,0,1-1.91-.23l-29.45-7.23L144,128l40.64,23.46,29.45-7.23A8,8,0,0,1,223.77,150.09Z', f: 'M227.65,149.14a12,12,0,0,1-8.79,14.51l-20.67,5.08,5.4,20.16a12,12,0,0,1-23.18,6.22l-7.29-27.2L140,148.78V187l20.48,20.48a12,12,0,0,1-17,17L128,209l-15.51,15.52a12,12,0,0,1-17-17L116,187V148.78L82.88,167.91l-7.29,27.2a12,12,0,0,1-23.18-6.22l5.4-20.16-20.67-5.08a12,12,0,1,1,5.72-23.3l27.89,6.85L104,128,70.75,108.8l-27.89,6.85A11.8,11.8,0,0,1,40,116a12,12,0,0,1-2.85-23.65l20.67-5.08-5.4-20.16a12,12,0,0,1,23.18-6.22l7.29,27.2L116,107.21V69L95.52,48.48a12,12,0,0,1,17-17L128,47l15.51-15.52a12,12,0,1,1,17,17L140,69v38.24l33.12-19.12,7.29-27.2a12,12,0,0,1,23.18,6.22l-5.4,20.16,20.67,5.08A12,12,0,0,1,216,116a11.8,11.8,0,0,1-2.87-.35l-27.89-6.85L152,128l33.25,19.2,27.89-6.85A12,12,0,0,1,227.65,149.14Z' },
+  tv: { r: 'M216,64H147.31l34.35-34.34a8,8,0,1,0-11.32-11.32L128,60.69,85.66,18.34A8,8,0,0,0,74.34,29.66L108.69,64H40A16,16,0,0,0,24,80V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,136H40V80H216V200Z', f: 'M216,64H147.31l34.35-34.34a8,8,0,1,0-11.32-11.32L128,60.69,85.66,18.34A8,8,0,0,0,74.34,29.66L108.69,64H40A16,16,0,0,0,24,80V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,136H40V80H216V200ZM200,100v80a4,4,0,0,1-4,4H60a4,4,0,0,1-4-4V100a4,4,0,0,1,4-4H196A4,4,0,0,1,200,100Z' },
+  speaker: { r: 'M192,24H64A16,16,0,0,0,48,40V216a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V40A16,16,0,0,0,192,24Zm0,192H64V40H192ZM116,76a12,12,0,1,1,12,12A12,12,0,0,1,116,76Zm12,116a40,40,0,1,0-40-40A40,40,0,0,0,128,192Zm0-64a24,24,0,1,1-24,24A24,24,0,0,1,128,128Z', f: 'M152,160a24,24,0,1,1-24-24A24,24,0,0,1,152,160ZM208,40V216a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V40A16,16,0,0,1,64,24H192A16,16,0,0,1,208,40ZM116,68a12,12,0,1,0,12-12A12,12,0,0,0,116,68Zm52,92a40,40,0,1,0-40,40A40,40,0,0,0,168,160Z' },
+  spot: { r: 'M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z', f: 'M208,144a15.78,15.78,0,0,1-10.42,14.94L146,178l-19,51.62a15.92,15.92,0,0,1-29.88,0L78,178l-51.62-19a15.92,15.92,0,0,1,0-29.88L78,110l19-51.62a15.92,15.92,0,0,1,29.88,0L146,110l51.62,19A15.78,15.78,0,0,1,208,144ZM152,48h16V64a8,8,0,0,0,16,0V48h16a8,8,0,0,0,0-16H184V16a8,8,0,0,0-16,0V32H152a8,8,0,0,0,0,16Zm88,32h-8V72a8,8,0,0,0-16,0v8h-8a8,8,0,0,0,0,16h8v8a8,8,0,0,0,16,0V96h8a8,8,0,0,0,0-16Z' },
+  sign: { r: 'M232,96a7.89,7.89,0,0,0-.3-2.2L217.35,43.6A16.07,16.07,0,0,0,202,32H54A16.07,16.07,0,0,0,38.65,43.6L24.31,93.8A7.89,7.89,0,0,0,24,96h0v16a40,40,0,0,0,16,32v72a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8V144a40,40,0,0,0,16-32V96ZM54,48H202l11.42,40H42.61Zm50,56h48v8a24,24,0,0,1-48,0Zm-16,0v8a24,24,0,0,1-35.12,21.26,7.88,7.88,0,0,0-1.82-1.06A24,24,0,0,1,40,112v-8ZM200,208H56V151.2a40.57,40.57,0,0,0,8,.8,40,40,0,0,0,32-16,40,40,0,0,0,64,0,40,40,0,0,0,32,16,40.57,40.57,0,0,0,8-.8Zm4.93-75.8a8.08,8.08,0,0,0-1.8,1.05A24,24,0,0,1,168,112v-8h48v8A24,24,0,0,1,204.93,132.2Z', f: 'M231.69,93.81,217.35,43.6A16.07,16.07,0,0,0,202,32H54A16.07,16.07,0,0,0,38.65,43.6L24.31,93.81A7.94,7.94,0,0,0,24,96v16a40,40,0,0,0,16,32v72a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8V144a40,40,0,0,0,16-32V96A7.94,7.94,0,0,0,231.69,93.81ZM88,112a24,24,0,0,1-35.12,21.26,7.88,7.88,0,0,0-1.82-1.06A24,24,0,0,1,40,112v-8H88Zm64,0a24,24,0,0,1-48,0v-8h48Zm64,0a24,24,0,0,1-11.07,20.2,8.08,8.08,0,0,0-1.8,1.05A24,24,0,0,1,168,112v-8h48Z' },
+  car: { r: 'M240,104H229.2L201.42,41.5A16,16,0,0,0,186.8,32H69.2a16,16,0,0,0-14.62,9.5L26.8,104H16a8,8,0,0,0,0,16h8v80a16,16,0,0,0,16,16H64a16,16,0,0,0,16-16V184h96v16a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16V120h8a8,8,0,0,0,0-16ZM69.2,48H186.8l24.89,56H44.31ZM64,200H40V184H64Zm128,0V184h24v16Zm24-32H40V120H216ZM56,144a8,8,0,0,1,8-8H80a8,8,0,0,1,0,16H64A8,8,0,0,1,56,144Zm112,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H176A8,8,0,0,1,168,144Z', f: 'M240,104H229.2L201.42,41.5A16,16,0,0,0,186.8,32H69.2a16,16,0,0,0-14.62,9.5L26.8,104H16a8,8,0,0,0,0,16h8v80a16,16,0,0,0,16,16H64a16,16,0,0,0,16-16v-8h96v8a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16V120h8a8,8,0,0,0,0-16ZM80,152H56a8,8,0,0,1,0-16H80a8,8,0,0,1,0,16Zm120,0H176a8,8,0,0,1,0-16h24a8,8,0,0,1,0,16ZM44.31,104,69.2,48H186.8l24.89,56Z' },
+  motion: { r: 'M128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Zm73.71,7.14a80,80,0,0,1-14.08,22.2,8,8,0,0,1-11.92-10.67,63.95,63.95,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67,80.08,80.08,0,0,1,14.08,84.47ZM69,103.09a64,64,0,0,0,11.26,67.58,8,8,0,0,1-11.92,10.67,79.93,79.93,0,0,1,0-106.67A8,8,0,1,1,80.29,85.34,63.77,63.77,0,0,0,69,103.09ZM248,128a119.58,119.58,0,0,1-34.29,84,8,8,0,1,1-11.42-11.2,103.9,103.9,0,0,0,0-145.56A8,8,0,1,1,213.71,44,119.58,119.58,0,0,1,248,128ZM53.71,200.78A8,8,0,1,1,42.29,212a119.87,119.87,0,0,1,0-168,8,8,0,1,1,11.42,11.2,103.9,103.9,0,0,0,0,145.56Z', f: 'M168,128a40,40,0,1,1-40-40A40,40,0,0,1,168,128Zm40,0a79.74,79.74,0,0,0-20.37-53.33,8,8,0,1,0-11.92,10.67,64,64,0,0,1,0,85.33,8,8,0,0,0,11.92,10.67A79.79,79.79,0,0,0,208,128ZM80.29,85.34A8,8,0,1,0,68.37,74.67a79.94,79.94,0,0,0,0,106.67,8,8,0,0,0,11.92-10.67,63.95,63.95,0,0,1,0-85.33Zm158.28-4A119.48,119.48,0,0,0,213.71,44a8,8,0,1,0-11.42,11.2,103.9,103.9,0,0,1,0,145.56A8,8,0,1,0,213.71,212,120.12,120.12,0,0,0,238.57,81.29ZM32.17,168.48A103.9,103.9,0,0,1,53.71,55.22,8,8,0,1,0,42.29,44a119.87,119.87,0,0,0,0,168,8,8,0,1,0,11.42-11.2A103.61,103.61,0,0,1,32.17,168.48Z' },
+  door: { r: 'M232,216H208V40a16,16,0,0,0-16-16H64A16,16,0,0,0,48,40V216H24a8,8,0,0,0,0,16H232a8,8,0,0,0,0-16ZM64,40H192V216H64Zm104,92a12,12,0,1,1-12-12A12,12,0,0,1,168,132Z', f: 'M232,216H208V40a16,16,0,0,0-16-16H64A16,16,0,0,0,48,40V216H24a8,8,0,0,0,0,16H232a8,8,0,0,0,0-16Zm-64,0H64V40H168Zm-40-84a12,12,0,1,1,12,12A12,12,0,0,1,128,132Z' },
+  thermo: { r: 'M136,153V88a8,8,0,0,0-16,0v65a32,32,0,1,0,16,0Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,128,200Zm40-66V48a40,40,0,0,0-80,0v86a64,64,0,1,0,80,0Zm-40,98a48,48,0,0,1-27.42-87.4A8,8,0,0,0,104,138V48a24,24,0,0,1,48,0v90a8,8,0,0,0,3.42,6.56A48,48,0,0,1,128,232Z', f: 'M160,146.08V40a32,32,0,0,0-64,0V146.08a56,56,0,1,0,64,0ZM128,24a16,16,0,0,1,16,16v64H112V40A16,16,0,0,1,128,24Z' },
+  auto: { r: 'M215.79,118.17a8,8,0,0,0-5-5.66L153.18,90.9l14.66-73.33a8,8,0,0,0-13.69-7l-112,120a8,8,0,0,0,3,13l57.63,21.61L88.16,238.43a8,8,0,0,0,13.69,7l112-120A8,8,0,0,0,215.79,118.17ZM109.37,214l10.47-52.38a8,8,0,0,0-5-9.06L62,132.71l84.62-90.66L136.16,94.43a8,8,0,0,0,5,9.06l52.8,19.8Z', f: 'M213.85,125.46l-112,120a8,8,0,0,1-13.69-7l14.66-73.33L45.19,143.49a8,8,0,0,1-3-13l112-120a8,8,0,0,1,13.69,7L153.18,90.9l57.63,21.61a8,8,0,0,1,3,12.95Z' },
+  home: { r: 'M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z' },
+  moon: { r: 'M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z' },
+  power: { r: 'M120,128V48a8,8,0,0,1,16,0v80a8,8,0,0,1-16,0Zm60.37-78.7a8,8,0,0,0-8.74,13.4C194.74,77.77,208,101.57,208,128a80,80,0,0,1-160,0c0-26.43,13.26-50.23,36.37-65.3a8,8,0,0,0-8.74-13.4C47.9,67.38,32,96.06,32,128a96,96,0,0,0,192,0C224,96.06,208.1,67.38,180.37,49.3Z' },
+  church: { r: 'M228.12,145.14,192,123.47V104a8,8,0,0,0-4-7L136,67.36V48h16a8,8,0,0,0,0-16H136V16a8,8,0,0,0-16,0V32H104a8,8,0,0,0,0,16h16V67.36L68,97.05a8,8,0,0,0-4,7v19.47L27.88,145.14A8,8,0,0,0,24,152v64a8,8,0,0,0,8,8h80a8,8,0,0,0,8-8V168a8,8,0,0,1,16,0v48a8,8,0,0,0,8,8h80a8,8,0,0,0,8-8V152A8,8,0,0,0,228.12,145.14ZM40,156.53l24-14.4V208H40ZM128,144a24,24,0,0,0-24,24v40H80V108.64l48-27.43,48,27.43V208H152V168A24,24,0,0,0,128,144Zm88,64H192V142.13l24,14.4Z' },
+  music: { r: 'M212.92,17.69a8,8,0,0,0-6.86-1.45l-128,32A8,8,0,0,0,72,56V166.08A36,36,0,1,0,88,196V110.25l112-28v51.83A36,36,0,1,0,216,164V24A8,8,0,0,0,212.92,17.69ZM52,216a20,20,0,1,1,20-20A20,20,0,0,1,52,216ZM88,93.75V62.25l112-28v31.5ZM180,184a20,20,0,1,1,20-20A20,20,0,0,1,180,184Z' },
+  mic: { r: 'M128,176a48.05,48.05,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48.05,48.05,0,0,0,128,176ZM96,64a32,32,0,0,1,64,0v64a32,32,0,0,1-64,0Zm40,143.6V240a8,8,0,0,1-16,0V207.6A80.11,80.11,0,0,1,48,128a8,8,0,0,1,16,0,64,64,0,0,0,128,0,8,8,0,0,1,16,0A80.11,80.11,0,0,1,136,207.6Z' },
+  key: { r: 'M216.57,39.43A80,80,0,0,0,83.91,120.78L28.69,176A15.86,15.86,0,0,0,24,187.31V216a16,16,0,0,0,16,16H72a8,8,0,0,0,8-8V208H96a8,8,0,0,0,8-8V184h16a8,8,0,0,0,5.66-2.34l9.56-9.57A79.73,79.73,0,0,0,160,176h.1A80,80,0,0,0,216.57,39.43ZM224,98.1c-1.09,34.09-29.75,61.86-63.89,61.9H160a63.7,63.7,0,0,1-23.65-4.51,8,8,0,0,0-8.84,1.68L116.69,168H96a8,8,0,0,0-8,8v16H72a8,8,0,0,0-8,8v16H40V187.31l58.83-58.82a8,8,0,0,0,1.68-8.84A63.72,63.72,0,0,1,96,95.92c0-34.14,27.81-62.8,61.9-63.89A64,64,0,0,1,224,98.1ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z' },
+  briefcase: { r: 'M216,56H176V48a24,24,0,0,0-24-24H104A24,24,0,0,0,80,48v8H40A16,16,0,0,0,24,72V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V72A16,16,0,0,0,216,56ZM96,48a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96ZM216,72v41.61A184,184,0,0,1,128,136a184.07,184.07,0,0,1-88-22.38V72Zm0,128H40V131.64A200.19,200.19,0,0,0,128,152a200.25,200.25,0,0,0,88-20.37V200ZM104,112a8,8,0,0,1,8-8h32a8,8,0,0,1,0,16H112A8,8,0,0,1,104,112Z' },
+  timer: { r: 'M128,40a96,96,0,1,0,96,96A96.11,96.11,0,0,0,128,40Zm0,176a80,80,0,1,1,80-80A80.09,80.09,0,0,1,128,216ZM173.66,90.34a8,8,0,0,1,0,11.32l-40,40a8,8,0,0,1-11.32-11.32l40-40A8,8,0,0,1,173.66,90.34ZM96,16a8,8,0,0,1,8-8h48a8,8,0,0,1,0,16H104A8,8,0,0,1,96,16Z' },
+  tag: { r: 'M243.31,136,144,36.69A15.86,15.86,0,0,0,132.69,32H40a8,8,0,0,0-8,8v92.69A15.86,15.86,0,0,0,36.69,144L136,243.31a16,16,0,0,0,22.63,0l84.68-84.68a16,16,0,0,0,0-22.63Zm-96,96L48,132.69V48h84.69L232,147.31ZM96,84A12,12,0,1,1,84,72,12,12,0,0,1,96,84Z' },
+  plan: { r: 'M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V96H40V56ZM40,112H96v88H40Zm176,88H112V112H216v88Z' },
+  recenter: { r: 'M232,120h-8.34A96.14,96.14,0,0,0,136,32.34V24a8,8,0,0,0-16,0v8.34A96.14,96.14,0,0,0,32.34,120H24a8,8,0,0,0,0,16h8.34A96.14,96.14,0,0,0,120,223.66V232a8,8,0,0,0,16,0v-8.34A96.14,96.14,0,0,0,223.66,136H232a8,8,0,0,0,0-16Zm-96,87.6V200a8,8,0,0,0-16,0v7.6A80.15,80.15,0,0,1,48.4,136H56a8,8,0,0,0,0-16H48.4A80.15,80.15,0,0,1,120,48.4V56a8,8,0,0,0,16,0V48.4A80.15,80.15,0,0,1,207.6,120H200a8,8,0,0,0,0,16h7.6A80.15,80.15,0,0,1,136,207.6ZM128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Z' },
+  pin: { r: 'M128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Zm0-112a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.23,144.53,209,128,222Z' },
+  side: { r: 'M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,56H80V200H40ZM216,200H96V56H216V200Z' },
+  walk: { r: 'M152,80a32,32,0,1,0-32-32A32,32,0,0,0,152,80Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,152,32Zm64,112a8,8,0,0,1-8,8c-35.31,0-52.95-17.81-67.12-32.12-2.74-2.77-5.36-5.4-8-7.84l-13.43,30.88,37.2,26.57A8,8,0,0,1,160,176v56a8,8,0,0,1-16,0V180.12l-31.07-22.2L79.34,235.19A8,8,0,0,1,72,240a7.84,7.84,0,0,1-3.19-.67,8,8,0,0,1-4.15-10.52l54.08-124.37c-9.31-1.65-20.92,1.2-34.7,8.58a163.88,163.88,0,0,0-30.57,21.77,8,8,0,0,1-10.95-11.66c2.5-2.35,61.69-57.23,98.72-25.08,3.83,3.32,7.48,7,11,10.57C166.19,122.7,179.36,136,208,136A8,8,0,0,1,216,144Z' },
+  person: { r: 'M100,36a28,28,0,1,1,28,28A28,28,0,0,1,100,36ZM215.42,140.78l-45.25-51.3a28,28,0,0,0-21-9.48H106.83a28,28,0,0,0-21,9.48l-45.25,51.3a16,16,0,0,0,22.56,22.69L89,142.7l-19.7,74.88a16,16,0,0,0,29.08,13.35L128,180l29.58,51a16,16,0,0,0,29.08-13.35L167,142.7l25.9,20.77a16,16,0,0,0,22.56-22.69Z' },   // person-fill: o bonequinho da Pessoa
+  chevl: { r: 'M168.49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z' },
+  chevr: { r: 'M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z' },
+  play: { r: 'M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z' },
+  pause: { r: 'M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Z' },
+  more: { r: 'M144,128a16,16,0,1,1-16-16A16,16,0,0,1,144,128ZM60,112a16,16,0,1,0,16,16A16,16,0,0,0,60,112Zm136,0a16,16,0,1,0,16,16A16,16,0,0,0,196,112Z' },
+  close: { r: 'M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z' },
+  sun: { r: 'M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm8,24a64,64,0,1,0,64,64A64.07,64.07,0,0,0,128,64ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z' },
+  cloudsun: { r: 'M164,72a76.2,76.2,0,0,0-20.26,2.73,55.63,55.63,0,0,0-9.41-11.54l9.51-13.57a8,8,0,1,0-13.11-9.18L121.22,54A55.9,55.9,0,0,0,96,48c-.59,0-1.16,0-1.74,0L91.37,31.71a8,8,0,1,0-15.75,2.77L78.5,50.82A56.1,56.1,0,0,0,55.23,65.67L41.61,56.14a8,8,0,1,0-9.17,13.11L46,78.77A55.55,55.55,0,0,0,40,104c0,.57,0,1.15,0,1.72L23.71,108.6a8,8,0,0,0,1.38,15.88,8.24,8.24,0,0,0,1.39-.12l16.32-2.88a55.74,55.74,0,0,0,5.86,12.42A52,52,0,0,0,84,224h80a76,76,0,0,0,0-152ZM92.92,120.76a52.14,52.14,0,0,0-31,4.17,40,40,0,0,1,66.62-44.17A76.26,76.26,0,0,0,92.92,120.76Z' },
+  cloud: { r: 'M160.06,40A88.1,88.1,0,0,0,81.29,88.67h0A87.48,87.48,0,0,0,72,127.73,8.18,8.18,0,0,1,64.57,136,8,8,0,0,1,56,128a103.66,103.66,0,0,1,5.34-32.92,4,4,0,0,0-4.75-5.18A64.09,64.09,0,0,0,8,152c0,35.19,29.75,64,65,64H160a88.09,88.09,0,0,0,87.93-91.48C246.11,77.54,207.07,40,160.06,40Z' },
+  fog: { r: 'M168,232a8,8,0,0,1-8,8H104a8,8,0,0,1,0-16h56A8,8,0,0,1,168,232Zm-40-32a8,8,0,0,0-8-8H72a8,8,0,0,0,0,16h48A8,8,0,0,0,128,200Zm56-8H160a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Zm47.87-96.45a76,76,0,0,0-151.78.73A8.18,8.18,0,0,1,72,104l-.6,0A8.14,8.14,0,0,1,64,95.39a92.48,92.48,0,0,1,2.33-16.51,4,4,0,0,0-5-4.78A52.09,52.09,0,0,0,24,124.36C24.2,153.07,48.12,176,76.84,176H156A76.08,76.08,0,0,0,231.87,95.55Z' },
+  rain: { r: 'M158.66,196.44l-32,48a8,8,0,1,1-13.32-8.88l32-48a8,8,0,0,1,13.32,8.88ZM231.87,87.55a76,76,0,0,0-151.78.73A8.18,8.18,0,0,1,72,96l-.6,0A8.14,8.14,0,0,1,64,87.39a92.48,92.48,0,0,1,2.33-16.51,4,4,0,0,0-5-4.78A52.09,52.09,0,0,0,24,116.36C24.2,145.07,48.12,168,76.84,168h36.21L89.34,203.56a8,8,0,0,0,13.32,8.88L132.28,168H156A76.08,76.08,0,0,0,231.87,87.55Z' },
+  storm: { r: 'M156,168H132.53l-14.4,24H144a8,8,0,0,1,6.86,12.12l-24,40a8,8,0,0,1-13.72-8.24L129.87,208H104a8,8,0,0,1-6.86-12.12L113.87,168h-37C48.12,168,24.2,145.07,24,116.36A52.09,52.09,0,0,1,61.35,66.1a4,4,0,0,1,5,4.78A92.48,92.48,0,0,0,64,87.39,8.14,8.14,0,0,0,71.41,96l.6,0a8.18,8.18,0,0,0,8.08-7.72A76,76,0,1,1,156,168Z' },
+  snow: { r: 'M88,196a12,12,0,1,1-12-12A12,12,0,0,1,88,196Zm28,4a12,12,0,1,0,12,12A12,12,0,0,0,116,200Zm48-16a12,12,0,1,0,12,12A12,12,0,0,0,164,184ZM68,224a12,12,0,1,0,12,12A12,12,0,0,0,68,224Zm88,0a12,12,0,1,0,12,12A12,12,0,0,0,156,224ZM231.87,87.55a76,76,0,0,0-151.78.73A8.18,8.18,0,0,1,72,96l-.6,0A8.14,8.14,0,0,1,64,87.39a92.48,92.48,0,0,1,2.33-16.51,4,4,0,0,0-5-4.78A52.09,52.09,0,0,0,24,116.36C24.2,145.07,48.12,168,76.84,168H156A76.08,76.08,0,0,0,231.87,87.55Z' },
+  night: { r: 'M240,96a8,8,0,0,1-8,8H216v16a8,8,0,0,1-16,0V104H184a8,8,0,0,1,0-16h16V72a8,8,0,0,1,16,0V88h16A8,8,0,0,1,240,96ZM144,56h8v8a8,8,0,0,0,16,0V56h8a8,8,0,0,0,0-16h-8V32a8,8,0,0,0-16,0v8h-8a8,8,0,0,0,0,16Zm65.14,94.33A88.07,88.07,0,0,1,105.67,46.86a8,8,0,0,0-10.6-9.06A96,96,0,1,0,218.2,160.93a8,8,0,0,0-9.06-10.6Z' },
+  cloudnight: { r: 'M172,72a76.35,76.35,0,0,0-12.36,1A71.93,71.93,0,0,0,104.17,9.83a8,8,0,0,0-9.59,9.58A56.05,56.05,0,0,1,40,88a56.45,56.45,0,0,1-12.59-1.42,8,8,0,0,0-9.59,9.59,72.22,72.22,0,0,0,32.29,45.06A52,52,0,0,0,92,224h80a76,76,0,0,0,0-152ZM37.37,104c.87,0,1.75,0,2.63,0a72.08,72.08,0,0,0,72-72c0-.89,0-1.78,0-2.67a55.64,55.64,0,0,1,32,48.05A76.4,76.4,0,0,0,101,120.78a52.38,52.38,0,0,0-9-.78,51.69,51.69,0,0,0-30,9.59A56.22,56.22,0,0,1,37.37,104Z' },
 };
 
 // Códigos WMO (Open-Meteo) → ícone + descrição em pt-BR
@@ -282,12 +304,12 @@ function fmtClock(ts, tz) {
   try { return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: tz || undefined }); }
   catch (_) { try { return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); } catch (__) { return ''; } }
 }
-function fmtRel(ts, now = Date.now()) {
+function fmtRel(ts, now = Date.now()) {   // espaços inseparáveis: "há 3 d" nunca quebra no meio
   const d = Math.max(0, (now - new Date(ts).getTime()) / 1000);
-  if (d < 45) return 'agora'; if (d < 3600) return `há ${Math.round(d / 60)} min`; if (d < 86400) return `há ${Math.round(d / 3600)} h`;
-  const days = Math.round(d / 86400); return days === 1 ? 'ontem' : `há ${days} d`;
+  if (d < 45) return 'agora'; if (d < 3600) return `há\u00a0${Math.round(d / 60)}\u00a0min`; if (d < 86400) return `há\u00a0${Math.round(d / 3600)}\u00a0h`;
+  const days = Math.round(d / 86400); return days === 1 ? 'ontem' : `há\u00a0${days}\u00a0d`;
 }
-const iconSvg = (k) => `<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k] || ICONS.bulb}</svg>`;
+const iconSvg = (k, i = ICONS[k] || ICONS.bulb) => `<svg viewBox="0 0 256 256" width="15" height="15" fill="currentColor" aria-hidden="true"><path${i.f ? ' class="r"' : ''} d="${i.r}"/>${i.f ? `<path class="f" d="${i.f}"/>` : ''}</svg>`;   // r = regular (desligado), f = fill (ligado; o CSS troca)
 
 // ---------------------------------------------------------------------------
 // Planta (metros) — medida na planta de layout do térreo (Uõma Arquitetura,
@@ -5891,154 +5913,177 @@ function roomFachada(ctx) {
 const CSS = `
 :host { display: block; position: relative; height: var(--igreja3d-height, calc(100vh - 100px)); min-height: 360px;
   border-radius: var(--ha-card-border-radius, 12px); overflow: hidden; overflow: clip; background: #0a0f1e;   /* clip: foco e scrollIntoView não rolam o cartão */
-  font: 13px/1.35 var(--primary-font-family, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif); color: var(--ink);
-  /* Paleta "âmbar + grafite" (v1.7, a da Casa v1.8): ligado = âmbar · desligado e estrutura = grafite · ajuste = azul suave · foco = azul-claro · indisponível = coral.
-     Contraste no pior fundo (vidro sobre a cena clara): texto ≥ 4,5:1, ícone e borda de controle ≥ 3:1 */
-  --glass: rgba(30, 30, 33, .96);        /* vidro do painel, sem blur (a .96 o blur não aparece e o compositor o refaz a cada quadro do WebGL) */
-  --glass-solid: #1c1c1f;                 /* menos transparência */
-  --raised: #2a2a2e;                      /* bloco desligado, folha de ajustes */
-  --fill: rgba(255, 255, 255, .07);       /* trilho de abas/segmentos, chip neutro */
-  --fill-2: rgba(255, 255, 255, .12);     /* botão neutro, chip do ícone */
-  --fill-3: rgba(255, 255, 255, .18);     /* segmento escolhido, trilho do interruptor desligado */
-  --line: rgba(255, 255, 255, .09);       /* fio de borda */
-  --line-2: rgba(255, 255, 255, .16);     /* borda sob o mouse / de controle */
-  --ink: #f5f5f7; --ink-2: #b6b6bd; --ink-3: #a3a3ab;   /* texto 1º 13,9:1 · 2º 7,5:1 · 3º 4,6:1 */
+  font: 13px/1.35 var(--igreja3d-font, -apple-system, BlinkMacSystemFont, var(--primary-font-family, "Segoe UI", Roboto, system-ui, sans-serif)); color: var(--ink);   /* SF nos aparelhos Apple; nos outros, a fonte do tema do HA */
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  /* Paleta v1.8 (a da Casa v1.9): cores de sistema do iOS escuro (referência: app Casa do iOS 17/18, sem Liquid Glass). Ligado = âmbar · estrutura = grafite ·
+     foco e seleção = azul · indisponível = vermelho. Contraste no pior fundo: texto ≥ 4,5:1, ícone e controle ≥ 3:1 */
+  --glass: #1c1c1e;                       /* coluna e folha (secondarySystemBackground), opaca; vidro só no .wrap.glass */
+  --glass-solid: #1c1c1e;                 /* menos transparência */
+  --raised: #2c2c2e;                      /* bloco desligado, lista agrupada, ajustes (tertiarySystemBackground) */
+  --fill: rgba(118, 118, 128, .24);       /* trilho do segmentado, círculo do ícone, cápsulas */
+  --fill-2: rgba(120, 120, 128, .32);     /* botão neutro */
+  --fill-3: rgba(120, 120, 128, .36);     /* interruptor desligado, trilho do slider */
+  --line: rgba(84, 84, 88, .65);          /* separator */
+  --line-2: rgba(235, 235, 245, .18);     /* quaternaryLabel */
+  --ink: #fff; --ink-2: rgba(235, 235, 245, .6); --ink-3: rgba(235, 235, 245, .6);   /* label · secondaryLabel 5,95:1 no #1c1c1e e 5,27:1 no #2c2c2e (o tertiaryLabel não chega a 4,5:1) */
   --on: #ffb547; --on-ink: #2b1800; --on-bg: rgba(255, 181, 71, .16); --on-line: rgba(255, 181, 71, .5);
   --off: var(--ink-3); --off-bg: var(--raised); --off-ink: var(--ink-2);
-  --adj: #8cbcff; --adj-ink: #c4dcff; --adj-bg: rgba(140, 188, 255, .16); --adj-line: rgba(140, 188, 255, .5);
-  --alert: #ff8f7e;                       /* indisponível */
-  --focus: #a6cfff;                       /* anel de foco e seleção: azul, porque âmbar quer dizer "ligado" */
-  --ease: cubic-bezier(.2, .8, .2, 1);
+  --alert: #ff6961;                       /* indisponível: systemRed de alto contraste (4,9:1 no #2c2c2e) */
+  --focus: #409cff;                       /* foco e seleção: systemBlue de alto contraste (âmbar quer dizer "ligado") */
+  --ease: cubic-bezier(.32, .72, 0, 1);   /* curva da folha do iOS */
+  --seg: #636366; --seg-line: rgba(255, 255, 255, .3);   /* polegar do segmentado e o fio dele */
+  --tile-on: #e5e5ea; --tile-on-ink: #000; --tile-on-ink-2: #545458;   /* bloco ligado: claro; nome 16,7:1 · estado 6,0:1 */
+  --mat-chrome: #1c1c1e; --mat-pop: #2c2c2e;   /* botão do topo e trilha · lista suspensa, balão, "Ir para…" (opacos fora do vidro) */
+  --blur: none; --blur-s: none;
+  --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z'/%3E%3C/svg%3E");   /* Phosphor check (bold) */
   -webkit-tap-highlight-color: transparent; color-scheme: dark; }   /* sem o flash de toque do Android (o retorno é o :active) · controles nativos escuros */
 .wrap { position: absolute; inset: 0; }
+.wrap:not(.sf) * { letter-spacing: 0 !important; }   /* tracking calibrado para o SF: na Roboto, na Segoe e na fonte do tema fica o desenho dela */
+.wrap.glass { --glass: rgba(28, 28, 30, .78); --mat-chrome: rgba(28, 28, 30, .78); --mat-pop: rgba(44, 44, 46, .84); --blur: blur(30px) saturate(180%); --blur-s: blur(20px) saturate(180%);
+  --ink-2: rgba(235, 235, 245, .8); --ink-3: rgba(235, 235, 245, .8); --seg-line: rgba(255, 255, 255, .5); }   /* vidro (nível alta, GPU dedicada; o governador o tira primeiro): o cinza sobe ("vibrancy"), 4,5:1 com a cena branca atrás */
+.wrap.glass :is(button, .tile, input):focus-visible { box-shadow: 0 0 0 2px #000; }   /* sobre o vidro o azul sozinho dá 2,9:1: anel duplo, como sobre a cena */
 canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; cursor: grab; }
 canvas.pick { cursor: pointer; }
 canvas:active { cursor: grabbing; }
 .hud { position: absolute; left: 0; right: 0; display: flex; gap: 8px; padding: 10px; pointer-events: none; box-sizing: border-box; }
 .hud > * { pointer-events: auto; }
-.hud.top { top: 0; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
-.panel { background: rgba(30, 30, 33, .72); border: 1px solid var(--line); border-radius: 10px;
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.title { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
-.title b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
-.title .sub { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
-.title .clock { color: var(--ink); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-.title .clock .per { color: var(--on); font-weight: 700; }
-.title .clock .suntimes { color: var(--ink-2); font-weight: 500; white-space: nowrap; }   /* "☀ 06:00–18:10" quebra inteiro */
-/* v1.6.0: as opções do topo ficam num menu suspenso (☰ Opções); fora dele só o bonequinho e, no modo Pessoa, "Ir para…" */
-.btns { position: relative; display: flex; gap: 6px; flex: none; align-items: flex-start; justify-content: flex-end; margin-left: auto; }
-.menubtn { display: inline-flex; align-items: center; gap: 7px; }
-.menubtn svg { width: 16px; height: 16px; }
-.menubtn[aria-expanded="true"] { background: var(--fill-3); color: var(--ink); border-color: var(--line-2); }
-.menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 8; width: 292px; max-height: calc(var(--ch, 640px) - 74px); overflow: auto; overscroll-behavior: contain; box-sizing: border-box;
-  padding: 4px 6px 6px; border-radius: 14px; border: 1px solid var(--line-2); background: rgba(44, 44, 48, .98);   /* material mais leve que a coluna; sem blur (a .98 ele não aparece) */
-  box-shadow: 0 12px 32px rgba(0, 0, 0, .45), 0 1px 0 rgba(255, 255, 255, .1) inset;
-  scrollbar-width: thin; scrollbar-color: var(--fill-3) transparent; animation: menuIn .18s var(--ease); transform-origin: top right; }   /* nasce do botão ☰ */
+.hud.top { top: 0; justify-content: space-between; align-items: flex-start; }
+.panel { background: var(--mat-chrome); border: 0; border-radius: 14px; backdrop-filter: var(--blur-s); -webkit-backdrop-filter: var(--blur-s);
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .12), 0 4px 16px rgba(0, 0, 0, .22); }   /* material de barra, fio claro de 0,5 px por dentro */
+/* v1.8: o cartão do título saiu; o topo é a trilha da Vista de cima (à esquerda) e UM botão (⋯) à direita que abre a lista suspensa
+   (pull-down do iOS, 260 pt): marca de verificação à esquerda, ícone à direita, linhas de 44 no toque e 36 com mouse, seções separadas por
+   faixa de 8; nasce do botão e volta para ele */
+.btns { position: relative; display: flex; flex: none; margin-left: auto; }
+.btn.menubtn { width: 44px; height: 44px; min-height: 0; padding: 0; display: grid; place-items: center; border-radius: 50%; }
+.menubtn svg { width: 24px; height: 24px; }
+.menubtn[aria-expanded="true"] { background: #3a3a3c; color: var(--ink); }
+.menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 8; width: 260px; max-width: calc(var(--cw, 100vw) - 20px); max-height: calc(var(--ch, 640px) - 74px); overflow: auto; overscroll-behavior: contain; box-sizing: border-box; padding: 0;
+  border-radius: 14px; background: var(--mat-pop); border: 0; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .12), 0 10px 40px rgba(0, 0, 0, .45);
+  transform-origin: top right; animation: menuIn .32s var(--ease); scrollbar-width: thin; scrollbar-color: var(--fill-3) transparent; }   /* nasce do botão ⋯ */
 .menu[hidden] { display: none; }
-@keyframes menuIn { from { opacity: 0; transform: scale(.96); } }
-.btn:active, .menu .mi:active, .menu .mseg button:active, .phead .collapse:active { transform: scale(.97); transition: transform .1s ease-out; }   /* retorno no toque, não no soltar */
+@keyframes menuIn { from { opacity: 0; scale: .9; } }   /* sem overshoot */
+.menu.out, .sel.out { animation: popOut .15s ease-in forwards; pointer-events: none; }   /* sai pelo mesmo caminho: de volta ao botão / à ponta */
+@keyframes popOut { to { opacity: 0; scale: .9; } }
+.btn:active, .menu .mseg button:active, .phead .collapse:active { transform: scale(.97); transition: transform .1s ease-out; }   /* retorno no toque, não no soltar */
 .reopen:active { transform: scale(.97); }
 .wrap.sheet .reopen:active { transform: translateX(-50%) scale(.97); }   /* a pílula da folha mora centrada: não pula ao tocar */
-.menu .msec { padding: 2px 0 4px; } .menu .msec + .msec { border-top: 1px solid var(--line); }
-.menu .mh { padding: 8px 8px 4px; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
-.menu .mi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 9px; border-radius: 9px; text-align: left; font-size: 12.5px; color: var(--ink); }
-.menu .mi[aria-pressed="true"] { background: transparent; color: var(--ink); }   /* ligado: o ícone e o interruptor dizem, não o texto */
-.menu .mi:hover, .menu .mi:focus-visible { background: var(--fill); }
+.menu .msec { padding: 0; } .menu .msec + .msec { border-top: 8px solid rgba(0, 0, 0, .22); }
+.menu .mh { padding: 10px 16px 4px; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); }
+.menu .mi { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 11px 16px 11px 12px; border-radius: 0; text-align: left; font-size: 17px; line-height: 22px; font-weight: 400; letter-spacing: -.025em; color: var(--ink); }
+.menu .mi + .mi { box-shadow: inset 0 1px 0 var(--line); }
+.menu .mi::before { content: ""; flex: none; width: 16px; height: 16px; background: currentColor; -webkit-mask: var(--check) center / 16px no-repeat; mask: var(--check) center / 16px no-repeat; visibility: hidden; }   /* o lugar da marca fica reservado */
+.menu .mi[aria-pressed="true"]::before { visibility: visible; }
+.menu .mi:hover, .menu .mi[aria-pressed]:hover { background: var(--fill); }
+.menu .mi:active { background: var(--fill-3); }   /* realce da linha, sem encolher */
+.menu .mi[aria-pressed="true"] { background: transparent; color: var(--ink); }   /* ligado: a marca diz, não o fundo */
+.menu .mi:focus-visible, .menu .mhr :focus-visible { outline-offset: -3px; }   /* a lista rola: o anel por dentro */
 .menu .mi:disabled { cursor: default; } .menu .mi:disabled:hover { background: transparent; }
-.menu .mi .mic { flex: none; width: 18px; display: grid; place-items: center; color: var(--ink-3); transition: color .2s; } .menu .mi .mic svg { width: 16px; height: 16px; }
-.menu .mi[aria-pressed="true"] .mic { color: var(--on); }
-.menu .mi .ml { flex: 1; min-width: 0; }
-.menu .mi .mnote { margin-left: 6px; font-size: 10.5px; font-weight: 500; color: var(--ink-3); }
-.menu .mi .mk { flex: none; font-size: 11px; color: var(--ink-3); font-weight: 500; }
-/* interruptor do item (o mesmo do painel): trilho grafite, polegar branco, ligado em âmbar sem brilho */
-.menu .ms { flex: none; position: relative; width: 30px; height: 18px; box-sizing: border-box; border-radius: 999px; background: var(--fill-3); border: 1px solid var(--line-2); transition: background .2s, border-color .2s; }
-.menu .ms::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .22s var(--ease); }
-.menu .mi[aria-pressed="true"] .ms { background: var(--on); border-color: var(--on); }
-.menu .mi[aria-pressed="true"] .ms::after { transform: translateX(12px); }
-.menu .mseg { display: flex; gap: 2px; margin: 2px 4px 6px; padding: 3px; border-radius: 10px; background: var(--fill); border: 1px solid var(--line); }
-.menu .mseg button { flex: 1; padding: 7px 6px; border-radius: 7px; color: var(--ink-2); }
-.menu .mseg button[aria-pressed="true"] { background: var(--fill-3); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
-.seg { display: inline-flex; padding: 3px; gap: 2px; }
+.menu .mi .mic { order: 2; flex: none; width: 20px; display: grid; place-items: center; color: var(--ink); } .menu .mi .mic svg { width: 20px; height: 20px; }   /* ícone à direita; o estado é a marca */
+.menu .mi .ml { flex: 1; min-width: 0; } .menu .mi .ml small, .menu .mi .mnote { display: block; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); }
+.menu .mi.peg { touch-action: none; cursor: grab; } .menu .mi.peg .mic { color: var(--on); }   /* o bonequinho continua âmbar: arraste até um ambiente */
+@media (pointer: fine) { .menu .mi { min-height: 36px; padding-block: 8px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; } .menu .mi .ml small, .menu .mi .mnote { font-size: 12px; line-height: 16px; letter-spacing: 0; } }
+.menu .mseg { display: flex; margin: 4px 16px 10px; }
+.menu .mseg button { flex: 1; }
+/* Hora (v1.8: era o título e, na demo, a faixa da hora): agora ou simulada — arrastar simula o sol, "Ao vivo" volta ao relógio */
+.menu .mtime { padding: 0 16px; } .menu .mtime b { display: block; font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.menu .mtime small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); font-variant-numeric: tabular-nums; } .menu .mtime small svg { width: 13px; height: 13px; vertical-align: -2px; }
+.menu .mhr { display: flex; align-items: center; gap: 12px; padding: 6px 16px 12px; }
+.menu .mhr input { flex: 1; min-width: 0; height: 28px; margin: 0; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; touch-action: pan-y; }
+.menu .mhr input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--sky, var(--fill-3)); }
+.menu .mhr input::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .15), 0 3px 1px rgba(0, 0, 0, .06), 0 0 0 .5px rgba(0, 0, 0, .04); }
+.menu .mhr input::-moz-range-track { height: 6px; border-radius: 3px; background: var(--sky, var(--fill-3)); }
+.menu .mhr input::-moz-range-thumb { width: 24px; height: 24px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .15), 0 3px 1px rgba(0, 0, 0, .06); }
+.menu .mhr button { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 6px 12px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: 15px; line-height: 20px; letter-spacing: -.015em; }
+.menu .mhr button i { width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 2px solid var(--ink-2); }
+.menu .mhr button[aria-pressed="true"] { background: var(--fill-2); color: var(--ink); } .menu .mhr button[aria-pressed="true"] i { border: 0; background: #30d158; }   /* ao vivo: o ponto verde do iOS */
+.menu .mwx { display: flex; align-items: center; gap: 10px; padding: 4px 16px 10px; }
+.menu .mwx .mic { flex: none; width: 22px; color: var(--ink); display: grid; place-items: center; } .menu .mwx .mic svg { width: 22px; height: 22px; }
+.menu .mwx b { display: block; font-size: 15px; line-height: 20px; color: var(--ink); } .menu .mwx small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 button { appearance: none; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: 600; font-size: 12px;
-  padding: 6px 10px; border-radius: 7px; cursor: pointer; letter-spacing: .01em; }
+  padding: 6px 10px; border-radius: 7px; cursor: pointer; letter-spacing: -.006em; }
 button:hover { background: var(--fill); }
-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.hud .btn:focus-visible, .nav button:focus-visible, .reopen:focus-visible, .pegdica button:focus-visible { box-shadow: 0 0 0 2px #000; }   /* sobre a cena: anel duplo (o azul encosta no preto, 7,4:1) */
 button[aria-pressed="true"] { background: var(--on-bg); color: var(--on); }
-.btn { padding: 9px 12px; }
+.btn { min-height: 36px; padding: 7px 14px; border-radius: 999px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; }   /* cápsula, como os botões de barra do HIG */
+@media (pointer: coarse) { .btn { min-height: 44px; } }
+.btn:hover { background: var(--raised); }   /* opaco: o fill translúcido mostraria a cena por baixo */
 .wrap::before, .wrap::after { content: ""; position: absolute; left: 0; right: 0; height: 120px; pointer-events: none; }
 .wrap::before { top: 0; background: linear-gradient(rgba(6, 9, 18, .55), transparent); }
 .wrap::after { bottom: 0; background: linear-gradient(transparent, rgba(6, 9, 18, .6)); }
-.hint { color: var(--ink-3); font-size: 11px; max-height: 30px; overflow: hidden; transition: opacity .3s, max-height .3s var(--ease) .2s, margin .3s var(--ease) .2s; }
-.hint.hide { opacity: 0; max-height: 0; margin-top: -2px; }   /* some e recolhe: o título encolhe e a coluna sobe junto (ResizeObserver), sem pulo */
 .err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #ffb4b4; background: #0a0f1e; }
-/* Vista de cima navegável: trilha Planta › Bloco › Cômodo (Voltar + migalhas); o cômodo aparece no próprio painel */
-.navrow { flex: 1 0 100%; display: flex; pointer-events: none; min-width: 0; box-sizing: border-box; }
+/* Vista de cima navegável: trilha Planta › Bloco › Cômodo (Voltar + migalhas) à esquerda do botão; o cômodo aparece no próprio painel */
+.navrow { flex: 1 1 0; display: flex; pointer-events: none; min-width: 0; box-sizing: border-box; }
 .wrap.side:not(.sheet) .navrow { padding-left: calc(var(--side-w, 320px) + 10px); }   /* coluna aberta: a trilha fica na faixa da cena, à direita dela */
+.wrap:not(.side):not(.sheet) .navrow { padding-left: 36px; }   /* coluna recolhida: a pílula de reabrir mora no canto de cima */
 .navrow[hidden] { display: none; }
 .navrow > * { pointer-events: auto; }
-.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 8px 4px 4px; max-width: 100%; box-sizing: border-box; }
-.nav .back { padding: 6px 10px; }
-.nav .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1px; font-size: 12px; min-width: 0; }
-.nav .crumbs button { padding: 5px 6px; }
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-height: 44px; padding: 4px 10px 4px 4px; max-width: 100%; box-sizing: border-box; border-radius: 22px; }
+.nav .back { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px 6px 8px; border-radius: 999px; background: var(--fill-2); font-size: 15px; line-height: 20px; letter-spacing: -.015em; }
+.nav .back svg { width: 16px; height: 16px; margin-right: 2px; }
+.nav .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1px; font-size: 13px; min-width: 0; }
+.nav .crumbs button { padding: 5px 6px; font-size: 13px; line-height: 18px; }
 .nav .crumbs button[aria-current="page"] { color: var(--ink); cursor: default; background: transparent; }   /* página atual não é "ligado" */
-.nav .sep { color: var(--ink-3); }
-.nav .navhint { color: var(--ink-3); font-size: 11px; padding: 0 4px; }
-@media (max-width: 640px) { .nav { font-size: 11.5px; } .nav .back { padding: 9px 12px; } .nav .crumbs button { padding: 8px 6px; font-size: 11.5px; } }
+.nav .sep { color: var(--ink-2); }
+.nav .navhint { color: var(--ink-2); font-size: 13px; padding: 0 4px; }
+@media (max-width: 640px) { .nav .back { min-height: 44px; } .nav .crumbs button { padding: 8px 6px; } .nav .navhint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }   /* celular: a trilha numa linha ao lado do ⋯; a dica fica só para o leitor de tela
 /* Visão de pessoa: joystick, aviso de comandos */
 .joy { position: absolute; left: 16px; bottom: 16px; width: 116px; height: 116px; border-radius: 50%; z-index: 4; touch-action: none; opacity: .85; cursor: grab;
-  background: radial-gradient(circle, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04)); border: 1px solid rgba(255, 255, 255, .24); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  background: radial-gradient(circle, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04)); border: 1px solid rgba(255, 255, 255, .24); backdrop-filter: var(--blur-s); -webkit-backdrop-filter: var(--blur-s); }
 .joy[hidden] { display: none; }
 .joy .knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; pointer-events: none;
   background: var(--on-line); border: 1px solid var(--on); box-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
-.walkhint { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 4; padding: 7px 12px; font-size: 12px; color: var(--ink); max-width: calc(100% - 32px);
+.walkhint { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 4; padding: 7px 12px; font-size: 13px; line-height: 18px; color: var(--ink); max-width: calc(100% - 32px);
   text-align: center; pointer-events: none; opacity: 0; transition: opacity .6s; }
 .walkhint.show { opacity: 1; }
-/* balão do aparelho selecionado na maquete (v1.6.1): nome, estado e a ação — vidro grafite opaco, sem blur; Acender/Ligar em âmbar cheio */
-.sel { position: absolute; left: 0; top: 0; z-index: 4; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 12px; white-space: nowrap; animation: selIn .16s ease-out;
-  background: var(--glass); box-shadow: 0 10px 28px rgba(0, 0, 0, .45); backdrop-filter: none; -webkit-backdrop-filter: none; }
-.sel[hidden] { display: none; }
-.sel::after { content: ""; position: absolute; left: calc(50% + var(--ax, 0px)); bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--glass); }
-.sel.below::after { bottom: auto; top: -6px; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--glass); }   /* perto do cabeçalho: abre embaixo do ponto */
-.sel b { display: block; font-size: 12.5px; color: var(--ink); } .sel small { display: block; color: var(--ink-2); font-size: 11px; }
-.sel button { min-height: 44px; padding: 7px 14px; border-radius: 10px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }   /* Apagar/Desligar/Detalhes: grafite */
-.sel button:hover { background: var(--fill-3); }
-.sel button.go { background: var(--on); color: var(--on-ink); border-color: var(--on); }   /* Acender/Ligar: âmbar cheio */
+/* balão do aparelho selecionado na maquete (v1.6.1; popover do iOS na v1.8): nome, estado e a ação; Acender/Ligar âmbar cheio, Apagar/Desligar/Detalhes grafite.
+   A posição vem do _selPlace na propriedade translate: a escala da entrada e da saída nasce da ponta */
+.sel { position: absolute; left: 0; top: 0; z-index: 4; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 16px); box-sizing: border-box; padding: 8px 8px 8px 14px; border-radius: 14px; white-space: nowrap;
+  background: var(--mat-pop); border: 0; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .12), 0 10px 28px rgba(0, 0, 0, .45);
+  transform-origin: calc(50% + var(--ax, 0px)) calc(100% + 8px); animation: selIn .3s var(--ease); }   /* sólido fora do vidro: os rótulos da maquete não transparecem */
+.sel.below { transform-origin: calc(50% + var(--ax, 0px)) -8px; }
+@keyframes selIn { from { opacity: 0; scale: .9; } }
+.sel[hidden] { display: none; } .sel > span { min-width: 0; } .sel b, .sel small { overflow: hidden; text-overflow: ellipsis; }   /* texto longo: reticências; o botão fica inteiro */
+.sel::after { content: ""; position: absolute; left: calc(50% + var(--ax, 0px)); bottom: -5.5px; width: 12px; height: 12px; margin-left: -6px; background: var(--mat-pop); transform: rotate(45deg);
+  clip-path: polygon(0 100%, 100% 100%, 100% 0); box-shadow: inset -.5px -.5px 0 rgba(255, 255, 255, .12); }   /* ponta: metade de fora de um quadrado girado, com o mesmo fio de 0,5 px do corpo */
+.sel.below::after { top: -5.5px; bottom: auto; clip-path: polygon(0 100%, 0 0, 100% 0); box-shadow: inset .5px .5px 0 rgba(255, 255, 255, .12); }   /* perto do cabeçalho: abre embaixo do ponto */
+.sel b { display: block; font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -.015em; color: var(--ink); } .sel small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.sel button { flex: none; min-height: 32px; padding: 6px 14px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: 15px; line-height: 20px; letter-spacing: -.015em; transition: transform .1s ease-out, background-color .2s; }   /* Apagar/Desligar/Detalhes: grafite */
+.sel button:hover { background: var(--fill-3); } .sel button.go { background: var(--on); color: var(--on-ink); }   /* Acender/Ligar: âmbar cheio */
 .sel button:active { transform: scale(.97); }
-@keyframes selIn { from { opacity: 0; } }
+@media (pointer: coarse) { .sel button { min-height: 44px; } }
 .wrap.side:not(.sheet) .walkhint { left: calc(50% + var(--side-w, 320px) / 2 + 10px); max-width: calc(100% - var(--side-w, 320px) - 52px); }   /* centrada na faixa livre */
 canvas.walk { cursor: crosshair; }
 canvas.walk.pick { cursor: pointer; }
-/* Bonequinho (arrastar até o ambiente), "Ir para…" — v1.4.6 */
-.peg { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--on); touch-action: none; cursor: grab; padding: 8px 10px; }   /* o bonequinho continua âmbar (o mesmo --on) */
-.peg .pgl { font-size: 12px; }
-.pegdica { position: absolute; z-index: 7; display: flex; align-items: flex-start; gap: 6px; max-width: 220px; padding: 9px 6px 9px 12px; font-size: 12px; line-height: 1.35; color: var(--ink);
-  border-color: var(--line); background: rgba(44, 44, 48, .96); box-shadow: 0 10px 28px rgba(0, 0, 0, .45); backdrop-filter: none; -webkit-backdrop-filter: none; animation: selIn .25s ease-out; }
+/* Bonequinho (arrastar do item Pessoa da lista até o ambiente), "Ir para…" — v1.4.6 */
+.pegdica { position: absolute; z-index: 7; display: flex; align-items: flex-start; gap: 6px; max-width: 240px; padding: 9px 6px 9px 12px; font-size: 13px; line-height: 18px; color: var(--ink); text-wrap: pretty;
+  background: var(--mat-pop); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .12), 0 10px 28px rgba(0, 0, 0, .45); animation: fadeIn .25s ease-out; }
 .pegdica[hidden] { display: none; }
-.pegdica::before { content: ""; position: absolute; top: -6px; right: calc(var(--ax, 20px) + 1px); width: 10px; height: 10px; background: inherit; border: solid var(--line); border-width: 1px 0 0 1px; transform: rotate(45deg); }
+.pegdica::before { content: ""; position: absolute; top: -6px; right: calc(var(--ax, 20px) + 1px); width: 10px; height: 10px; background: inherit; transform: rotate(45deg); }
 .pegdica button { flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 15px; line-height: 1; color: var(--ink-2); }
-.peg[hidden], .btns > button[hidden] { display: none; }
-.peg[aria-pressed="true"] { background: var(--on-bg); }
 .pegghost { position: absolute; left: 0; top: 0; width: 44px; height: 44px; z-index: 7; pointer-events: none; display: grid; place-items: center; color: var(--on);
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .55)); opacity: .85; }
 .pegghost svg { width: 40px; height: 40px; } .pegghost.ok { opacity: 1; } .pegghost[hidden] { display: none; }
-.pegtip { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; padding: 5px 9px; font-size: 12px; font-weight: 600; color: var(--on); white-space: nowrap; }
+.pegtip { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; padding: 5px 9px; font-size: 13px; font-weight: 600; color: var(--on); white-space: nowrap; }
 .pegtip[hidden] { display: none; }
-.goto { position: absolute; right: 10px; top: var(--side-top, 58px); z-index: 6; width: min(340px, calc(100% - 20px)); max-height: calc(100% - 150px); overflow: auto; padding: 8px 10px 10px; overscroll-behavior: contain; box-sizing: border-box; }
+.goto { position: absolute; right: 10px; top: var(--hud-h, 62px); z-index: 6; width: min(340px, calc(100% - 20px)); max-height: calc(100% - 150px); overflow: auto; padding: 8px 10px 10px; overscroll-behavior: contain; box-sizing: border-box;
+  background: var(--mat-pop); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
 .goto[hidden] { display: none; }
 .wrap.side .goto { width: min(340px, calc(100% - var(--side-w, 340px) - 30px)); }   /* coluna aberta à esquerda: a lista fica à direita, sem cruzar */
-.goto .gh { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; padding: 2px 2px 6px; }
-.goto .gt { font-size: 11px; color: var(--ink-2); font-weight: 700; margin: 8px 2px 4px; }
-.goto .grow { display: flex; flex-wrap: wrap; gap: 5px; }
-.goto .grow button { background: var(--fill); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 11px; font-size: 12px; }
-.goto .grow button:hover { background: var(--fill-2); color: var(--ink); }
+.goto .gh { font-size: 13px; line-height: 18px; color: var(--ink-2); padding: 2px 2px 6px; }
+.goto .gt { font-size: 13px; color: var(--ink-2); font-weight: 600; margin: 10px 2px 6px; }
+.goto .grow { display: flex; flex-wrap: wrap; gap: 6px; }
+.goto .grow button { background: var(--fill-2); border-radius: 999px; padding: 7px 14px; font-size: 15px; line-height: 20px; }
+.goto .grow button:hover { background: var(--fill-3); color: var(--ink); }
 .fade { position: absolute; inset: 0; background: #06090f; opacity: 0; pointer-events: none; z-index: 5; }
-@media (max-width: 640px) { .peg { padding: 9px 11px; min-width: 44px; min-height: 40px; } .goto, .wrap.side .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
+@media (max-width: 640px) { .goto, .wrap.side .goto { top: auto; bottom: 138px; right: 10px; left: 10px; width: auto; max-height: 50%; } }
 @media (max-width: 640px) { .joy { width: 104px; height: 104px; left: 14px; bottom: 14px; } .walkhint { bottom: 130px; } }
-/* Painel (v1.7, o da Casa v1.8) — coluna de vidro grafite à esquerda; âmbar só no que está ligado, azul suave nos ajustes (tokens no :host).
-   --side-w / --side-top vêm do _layoutHud (largura da coluna e topo logo abaixo do título, ou dos botões se eles invadirem a faixa) */
+/* Painel (v1.7, o da Casa; v1.8 com o visual da Casa v1.9) — coluna grafite à esquerda (barra lateral flutuante do iPadOS); âmbar só no que está ligado (tokens no :host).
+   --side-w / --side-top vêm do _layoutHud (largura da coluna e topo: no alto, ou abaixo do botão ⋯ se ele invadir a faixa) */
 .dock { position: absolute; top: var(--side-top, 58px); left: 10px; bottom: auto; max-height: calc(100% - var(--side-top, 58px) - 10px); width: var(--side-w, 340px); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; z-index: 4; touch-action: pan-y;
-  border-radius: 22px; border: 1px solid var(--line); background: var(--glass);   /* vidro grafite opaco: sem backdrop-filter (o none vence o blur do .panel) */
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .06) inset; backdrop-filter: none; -webkit-backdrop-filter: none;
+  border-radius: 28px; border: 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);   /* raio 28: concêntrico com o bloco (18 + 12 de margem) */
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .1), 0 8px 40px rgba(0, 0, 0, .38);
   animation: dockIn .3s var(--ease) backwards; }
 .dock[hidden] { display: none; }
 .dock.closing { animation: dockOut .2s ease-in forwards; pointer-events: none; }
@@ -6049,219 +6094,227 @@ canvas.walk.pick { cursor: pointer; }
 @keyframes paneIn { from { opacity: 0; } }   /* troca de aba: só esmaece */
 @keyframes sheetIn { from { opacity: 0; transform: translateY(14px); } }
 @keyframes flashPulse { 0% { box-shadow: 0 0 0 0 var(--focus); } 100% { box-shadow: 0 0 0 14px transparent; } }
-/* cabeçalho da coluna: resumo do que está ligado + recolher; abaixo, as abas em segmento de largura igual */
-.phead { display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px; flex: none; }
+/* cabeçalho da coluna: cápsula do que está ligado (como "Luzes · 4 acesas" do Home) + recolher; abaixo, as abas em segmento de largura igual */
+.phead { display: flex; align-items: center; gap: 8px; padding: 12px; flex: none; }
 .phead .spacer { flex: 1; }
-.phead .count { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 5px 11px 5px 9px; border-radius: 999px; background: var(--fill); border: 1px solid var(--line); color: var(--ink-2); font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.phead .count { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 6px 12px 6px 10px; border-radius: 999px; background: var(--fill); color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .phead .count svg { width: 14px; height: 14px; color: var(--off); transition: color .2s; }
 .phead .count.lit svg { color: var(--on); }   /* a lâmpada acende; sem brilho */
-.phead .count b { color: var(--ink); font-weight: 700; }
+.phead .count b { color: var(--ink); font-weight: 600; }
 .phead .count:not(.lit):not(.any) { color: var(--ink-3); }   /* "Tudo desligado" em cinza */
-.phead .count:hover { border-color: var(--line-2); }
+.phead .count:hover { background: var(--fill-2); }
 .phead .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* só leitor de tela */
-.phead .collapse { position: relative; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--fill); color: var(--ink-2); flex: none; }
+.phead .collapse { position: relative; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--fill); color: var(--ink-2); flex: none; }
 .phead .collapse:hover { background: var(--fill-2); color: var(--ink); }
-.tabs { display: flex; gap: 3px; margin: 0 12px 10px; padding: 3px; border-radius: 12px; background: var(--fill); border: 1px solid var(--line); flex: none; }
-.tabs button[role="tab"] { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 6px; font-size: 12px; border-radius: 9px; color: var(--ink-2); transition: background-color .2s, color .2s; }
+/* UISegmentedControl (abas, Ligados/Todos, modo do ar, "desligar em", Auto/Dia/Noite): trilho raio 9, polegar #636366 raio 7 com 2 px de folga, 13 pt.
+   O escolhido em semibold, com um fio claro (3,4:1 contra o trilho: a cor sozinha não chega a 3:1) */
+.tabs, .zonebar, .seg2, .menu .mseg { gap: 0; padding: 2px; border: 0; border-radius: 9px; background: var(--fill); }
+.tabs button[role="tab"], .zonebar button, .seg2 button, .menu .mseg button { min-height: 28px; padding: 4px 10px; border-radius: 7px; font-size: 13px; line-height: 20px; font-weight: 500; letter-spacing: -.006em; color: var(--ink); transition: background-color .2s, box-shadow .2s; }
+.tabs button[aria-selected="true"], .zonebar button[aria-pressed="true"], .seg2 button[aria-pressed="true"], .menu .mseg button[aria-pressed="true"] {
+  background: var(--seg); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--seg-line), 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04); }
+.tabs { display: flex; margin: 0 12px 12px; flex: none; }
+.tabs button[role="tab"] { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding-inline: 4px; }
 .tabs button[role="tab"] span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tabs button[role="tab"] svg { display: none; }   /* coluna estreita: só o texto */
-.tabs button[role="tab"]:hover { color: var(--ink); }
-.tabs button[aria-selected="true"] { background: var(--fill-3); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
 .pane { flex: 0 1 auto; min-height: 0; overflow: auto; padding: 12px 12px 14px; display: none; touch-action: pan-y; overscroll-behavior: contain;
   -webkit-mask-image: linear-gradient(transparent, #000 12px); mask-image: linear-gradient(transparent, #000 12px);   /* degradê na borda de cima em vez de linha de 1 px */ scrollbar-width: thin; scrollbar-color: var(--fill-3) transparent; }
 .pane.active { display: block; animation: paneIn .2s var(--ease); }
 .pane.top { -webkit-mask-image: none; mask-image: none; }   /* degradê só depois de rolar: sem camada de máscara parada */
-/* Ligados · Todos: filtro compacto à esquerda, menor que as abas, com selo âmbar (a planta é o filtro por cômodo) */
-.zonebar { display: flex; width: max-content; max-width: 100%; box-sizing: border-box; gap: 2px; margin: 0 0 12px; padding: 2px; border-radius: 10px; background: var(--fill); }
-.zonebar button { position: relative; min-width: 76px; padding: 5px 12px; font-size: 12px; border-radius: 8px; color: var(--ink-2); font-variant-numeric: tabular-nums; transition: background-color .2s, color .2s; }
-.zonebar button[aria-pressed="true"] { background: var(--fill-3); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
-.zonebar .n { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--on); color: var(--on-ink); font-size: 11px; font-weight: 800; line-height: 18px; }   /* selo: quantos estão ligados */
-.zempty { margin: 0 0 8px; padding: 12px; border-radius: 14px; border: 1px dashed var(--line-2); font-size: 12px; color: var(--ink-3); } .zempty[hidden] { display: none; }
-.zempty button { padding: 6px 4px; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 7px; }   /* 1 coluna a 272 px, 2 a 320, 3 a 470 */
-.zone { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 8px 2px 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+/* Ligados · Todos: filtro compacto à esquerda, segmentos de largura igual, com selo âmbar (a planta é o filtro por cômodo) */
+.zonebar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; width: max-content; max-width: 100%; box-sizing: border-box; margin: 0 0 16px; }
+.zonebar button { position: relative; min-width: 84px; font-variant-numeric: tabular-nums; }
+.zonebar .n { display: inline-block; min-width: 20px; height: 20px; margin-left: 6px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: var(--on); color: var(--on-ink); font-size: 12px; font-weight: 600; line-height: 20px; vertical-align: 1px; }   /* selo: quantos estão ligados */
+.zempty { margin: 0 0 8px; padding: 12px; border-radius: 12px; background: var(--raised); font-size: 15px; line-height: 20px; color: var(--ink-2); } .zempty[hidden] { display: none; }
+.zempty button { padding: 6px 4px; color: var(--ink); font-size: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }   /* 1 coluna a 272 px, 2 a 320, 3 a 470 */
+/* cômodo como no Home: "Mídia ›" em 17 semibold, contagem em 13 cinza, sem fio */
+.zone { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 24px 2px 0; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.025em; color: var(--ink); }
 .zone:first-child { margin-top: 0; }
-.zone::after { content: ""; order: 2; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-2), transparent); }
-.zone button { display: inline-flex; align-items: center; gap: 4px; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
-.zone button i { font-style: normal; font-size: 13px; letter-spacing: 0; color: var(--ink-3); }   /* "›": leva ao cômodo */
+.zone::after { content: ""; order: 2; flex: 1; }
+.zone button { display: inline-flex; align-items: center; gap: 4px; padding: 0; font: inherit; letter-spacing: inherit; color: inherit; }
+.zone button i, .blk .bn i { display: inline-grid; color: var(--ink-2); } .zone button i svg { width: 14px; height: 14px; } .blk .bn i svg { width: 16px; height: 16px; }   /* "›": leva ao cômodo / ao bloco */
 .zone button:not(:disabled):hover, .zone button:not(:disabled):hover i { color: var(--ink); } .zone button:disabled { cursor: default; }
-.zone .zn { order: 3; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }   /* contagem em texto: neutra */
+.zone .zn { order: 3; font-weight: 400; font-size: 13px; letter-spacing: -.006em; color: var(--ink-2); font-variant-numeric: tabular-nums; }   /* contagem em texto: neutra */
 .zone[hidden], .tile[hidden], .blk[hidden], .sect[hidden] { display: none; }
-/* bloco (v1.7, como a Casa 1.8.1; v1.8: Templo · Operacional · Banheiro · Sala Pastoral · Hall de entrada) — numa linha, nome › (abre o
-   bloco), "N de M ligados" e uma ação (a mesma do cômodo); os cômodos dele embaixo, sem vão */
+/* bloco (v1.7, como a Casa; v1.8: Templo · Operacional · Banheiro · Sala Pastoral · Hall de entrada) — numa linha, nome › (abre o bloco),
+   "N de M ligados" e o interruptor de tudo dele (o da Casa v1.9); os cômodos dele embaixo */
 .blk { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 0 2px; color: var(--ink); }
-:not([hidden]) ~ .blk { margin-top: 14px; } .blk + .zone { margin-top: 0; }   /* vão só entre blocos à vista */
+:not([hidden]) ~ .blk { margin-top: 32px; } .blk + .zone { margin-top: 12px; }   /* vão só entre blocos à vista */
 .blk .bt { flex: 1; min-width: 0; display: flex; flex-direction: column; }   /* nome e, embaixo, a contagem — como no cabeçalho do cômodo, em qualquer largura */
-.blk b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; } .blk .bn { position: relative; display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; padding: 0; font: inherit; color: inherit; text-align: left; }
-.blk .bn i { font-style: normal; font-weight: 600; color: var(--ink-3); } .blk .bn:hover i { color: var(--ink); } .blk .bn::after { content: ""; position: absolute; inset: -8px -6px; }   /* alvo maior que o texto */
-.blk small { white-space: nowrap; font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.blk .all button { position: relative; min-height: 30px; padding: 0 12px; } .blk .all button::after { content: ""; position: absolute; inset: -7px 0; }   /* 30 px à vista, alvo de 44 */
-.tile.wide { grid-column: 1 / -1; } .dock.room:not(.bv) .tile.wide { grid-column: auto; } .tile small .sv { font-weight: 500; }   /* aparelho de mais de um cômodo: linha inteira, cabe o "também …" */
+.blk b { font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -.02em; } .blk .bn { position: relative; display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 0; font: inherit; color: inherit; text-align: left; }
+.blk .bn:hover i { color: var(--ink); } .blk .bn::after { content: ""; position: absolute; inset: -8px -6px; }   /* alvo maior que o texto */
+.blk small { white-space: nowrap; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.autos > .blk:not(:first-child) { margin-top: 24px; } .autos > .blk + .zone { margin-top: 4px; } .autos .zone { margin-bottom: 8px; } .autos > .blk { margin-bottom: 8px; }   /* Automações · bloco → cômodo */
+.tile.wide { grid-column: 1 / -1; } .dock.room:not(.bv) .tile.wide { grid-column: auto; } .tile small .sv { font-weight: 400; }   /* aparelho de mais de um cômodo: linha inteira, cabe o "também …" */
 .wrap.sheet:not(.narrow) .dock:not(.room) .tile.wide, .wrap.sheet:not(.narrow) .dock.bv .tile.wide { grid-column: span 2; }   /* folha do tablet (4+ colunas): 2 colunas bastam */
 .tile.wide small { white-space: normal; }   /* "também Depósito, WC Masc., WC Fem. e WCs": quebra a linha em vez de cortar */
-/* bloco compacto (ícone à esquerda, nome e estado à direita) */
-.tile { position: relative; overflow: hidden; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 64px; padding: 9px 9px 9px 10px; border-radius: 14px; text-align: left; color: var(--ink);
-  background: var(--off-bg); border: 1px solid var(--line);
-  transition: background-color .2s, border-color .2s, transform .14s var(--ease); }
+/* bloco do Home (ícone num círculo à esquerda, nome e estado à direita, sem borda): desligado grafite; ligado claro com o círculo âmbar; sensor nunca acende */
+.tile { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 8px; min-height: 64px; padding: 12px 8px 12px 12px; border-radius: 18px; text-align: left; color: var(--ink);
+  background: var(--raised); border: 0;
+  transition: background-color .2s, transform .14s var(--ease); }
 .tile > * { position: relative; }
-.tile:hover { background: var(--off-bg); border-color: var(--line-2); }   /* sob o mouse: só a borda acende (o fundo continua dizendo o estado) */
-.tile:active { transform: scale(.975); }
-.tile:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tile:hover { background: #363638; }
+.tile:active { transform: scale(.97); }
+.tile:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .tile .top { display: contents; }
 .tile > span:not(.top) { min-width: 0; }
 .tile .eyebrow { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* área/cômodo: só leitor de tela */
-.tile .ico { width: 32px; height: 32px; border-radius: 11px; display: grid; place-items: center; background: var(--fill-2); color: var(--off); transition: background-color .2s, color .2s; }
-.tile .ico svg { width: 19px; height: 19px; }
-.tile b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; font-weight: 600; line-height: 1.2; letter-spacing: -.005em; color: var(--ink); overflow: hidden; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }   /* nome em até 2 linhas: inteiro na coluna estreita (palavra longa: hifeniza onde o sistema sabe) */
-.tile small { display: block; margin-top: 2px; font-size: 11px; line-height: 1.3; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile small .st { color: var(--off-ink); font-weight: 500; }
+.tile .ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--ink-2); transition: background-color .2s, color .2s; }
+.tile .ico svg { width: 20px; height: 20px; }
+svg .f, :is(.on, .lit) svg .r { display: none; } :is(.on, .lit) svg .f { display: inline; }   /* Phosphor: desligado = regular, ligado = fill (só CSS, sem refazer o bloco) */
+.tile b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }   /* até 2 linhas, como no Home (palavra longa: hifeniza onde o sistema sabe) */
+.tile small { display: block; font-size: 13px; line-height: 18px; font-weight: 400; letter-spacing: -.006em; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile small .st { color: var(--ink-2); }
 .tile small .tm, .tile small .sep { display: none; }   /* o horário fica na aba Atividade */
-.tile .lvl { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--fill); opacity: 0; transition: opacity .2s; }
-.tile .lvl::after { content: ""; display: block; height: 100%; width: var(--lvl, 0%); background: var(--adj); transition: width .35s var(--ease); }   /* brilho é ajuste: azul */
-.tile.on { background: var(--on-bg); border-color: var(--on-line); }   /* ligado: vidro âmbar + a lâmpada acesa no ícone (depois do :hover) */
-.tile.on:hover { border-color: var(--on); }
-.tile.on .ico { background: var(--on); color: var(--on-ink); box-shadow: 0 0 16px -4px var(--on); }   /* o único brilho do painel */
-.tile.on small .st { color: var(--on); }
-.tile[data-kind="sensor"].on { background: var(--off-bg); border-color: var(--line); } .tile[data-kind="sensor"].on .ico { background: var(--fill-2); color: var(--ink-2); box-shadow: none; }   /* sensor é só leitura: nunca âmbar */
-.tile.on.hasl .lvl { opacity: 1; }
-.tile[data-kind="sensor"] small { white-space: normal; } .tile[data-kind="sensor"] small .st { font-size: 12px; color: var(--ink); }   /* leitura: pode quebrar a linha */
-.tile.unavailable { background: transparent; border-style: dashed; border-color: var(--line-2); } .tile.unavailable b { color: var(--ink-2); }
-.tile.unavailable .ico { background: transparent; color: var(--ink-3); box-shadow: none; } .tile.unavailable small .st { color: var(--alert); }   /* sem opacidade nem filtro: continua legível */
+.tile.on:not([data-kind="sensor"]) { background: var(--tile-on); }   /* ligado: claro (depois do :hover) */
+.tile.on:not([data-kind="sensor"]):hover { background: #f2f2f7; }
+.tile.on:not([data-kind="sensor"]) b { color: var(--tile-on-ink); }
+.tile.on:not([data-kind="sensor"]) small, .tile.on:not([data-kind="sensor"]) small .st { color: var(--tile-on-ink-2); }
+.tile.on .ico { background: var(--on); color: var(--on-ink); }   /* desenho cheio no círculo âmbar, sem halo */
+.tile[data-kind="sensor"].on { background: var(--raised); } .tile[data-kind="sensor"].on .ico { background: var(--fill-2); color: var(--ink-2); }   /* sensor é só leitura: nunca acende */
+.tile[data-kind="sensor"] small { white-space: normal; } .tile[data-kind="sensor"] small .st { color: var(--ink); }   /* leitura: pode quebrar a linha */
+.tile.unavailable:hover { background: #323234; } .tile.unavailable b { color: var(--ink-2); } .tile.unavailable .ico { color: var(--ink-3); } .tile.unavailable small .st { color: var(--alert); }   /* sem opacidade nem filtro: continua legível */
 .tile.flash { box-shadow: 0 0 0 3px var(--focus); }   /* "olha aqui" */
-.tile .more { position: absolute; top: 4px; right: 4px; z-index: 1; width: 26px; height: 26px; padding: 0; border-radius: 9px; background: transparent; color: var(--ink-3); font-size: 15px; line-height: 26px; text-align: center; letter-spacing: .04em; cursor: pointer; opacity: 0; transition: background-color .2s, opacity .2s; }   /* z-index: por cima do nome, que senão pega o toque */
+.tile .more { position: absolute; top: 4px; right: 4px; z-index: 1; width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; opacity: 0; transition: background-color .2s, opacity .2s; }   /* z-index: por cima do nome, que senão pega o toque */
+.tile .more svg { width: 16px; height: 16px; }
 .tile:hover .more, .tile:focus-within .more { opacity: 1; } @media (hover: none) { .tile .more { opacity: 1; } }   /* "⋯" só aparece quando serve (no toque, sempre) */
 .tile .more:hover, .tile .more:focus-visible { background: var(--fill-2); color: var(--ink); opacity: 1; }
-.tile .more:focus-visible { outline: 2px solid var(--focus); }
+.tile.on .more { color: var(--tile-on-ink-2); } .tile.on .more:hover, .tile.on .more:focus-visible { background: rgba(60, 60, 67, .14); color: #000; }
+.tile .more:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; } .tile.on .more:focus-visible { outline-color: #0040dd; }   /* por dentro do círculo; no bloco claro, o azul escuro do iOS (6:1) */
 .tile .more::after { content: ""; position: absolute; inset: -4px; }   /* área de toque maior */
-.tile[data-kind]:not([data-kind="sensor"]):is(:hover, :focus-within) b { padding-right: 22px; } @media (hover: none) { .tile[data-kind]:not([data-kind="sensor"]) b { padding-right: 22px; } }   /* onde o "⋯" aparece, o nome acaba antes dele (reticências), não embaixo */
+.tile[data-kind]:not([data-kind="sensor"]):is(:hover, :focus-within) b { padding-right: 22px; } @media (hover: none) { .tile[data-kind]:not([data-kind="sensor"]) b { padding-right: 22px; } }   /* onde o "⋯" aparece, o nome acaba antes dele, não embaixo */
 .tiles.routines { grid-template-columns: minmax(0, 1fr); }
-.tile.routine { min-height: 62px; }
-.tile.routine .ico { background: var(--fill-2); color: var(--ink-2); }
+.tile.routine .ico { background: var(--fill); color: var(--ink-2); }
 .tile.routine small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }   /* descrição em até 2 linhas (o .tile small é de 1) */
-.tile.routine:hover { background: var(--off-bg); border-color: var(--line-2); transform: translateY(-1px); }
-.tile.routine:active { transform: scale(.975); }
-/* folha de controles do aparelho: fica colada no fim da área rolável */
-.detail { grid-column: 1 / -1; position: sticky; bottom: 4px; z-index: 4; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 12px 14px; border-radius: 16px; margin-top: 4px;
-  background: var(--raised); border: 1px solid var(--line-2); box-shadow: 0 -12px 32px rgba(0, 0, 0, .45); animation: sheetIn .28s var(--ease); }
+/* folha de controles do aparelho: cartão #2c2c2e colado no fim da área rolável */
+.detail { grid-column: 1 / -1; position: sticky; bottom: 4px; z-index: 4; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 18px; margin-top: 4px;
+  background: var(--raised); box-shadow: 0 -8px 32px rgba(0, 0, 0, .4); animation: sheetIn .28s var(--ease); }
 .detail[hidden] { display: none; }
 .detail .dhead { display: flex; align-items: center; gap: 12px; }
 .detail .dbody { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .detail .dtitle { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
-.detail .dtitle .ico { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: var(--off); background: var(--fill-2); flex: none; transition: background-color .2s, color .2s; }
+.detail .dtitle .ico { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-2); background: var(--fill); flex: none; transition: background-color .2s, color .2s; }
 .detail.on .dtitle .ico { background: var(--on); color: var(--on-ink); }   /* o mesmo ícone aceso do bloco */
 .detail .dtitle .ico svg { width: 20px; height: 20px; }
-.detail .dtitle b { font-size: 14px; } .detail .dtitle small { color: var(--ink-2); font-size: 11.5px; display: block; margin-top: 1px; }
-.detail .close { width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--fill-2); color: var(--ink-2); font-size: 16px; line-height: 1; }
-.sw { width: 46px; height: 26px; border-radius: 999px; background: var(--fill-3); position: relative; padding: 0; border: 1px solid var(--line-2); transition: background-color .2s, border-color .2s; flex: none; }   /* um interruptor só: luz, ar, automação */
-.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: transform .22s var(--ease); }   /* polegar branco, sem quique */
-.sw[aria-checked="true"] { background: var(--on); border-color: var(--on); } .sw[aria-checked="true"]::after { transform: translateX(20px); }
-.sw:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.seg2 { display: inline-flex; gap: 2px; padding: 3px; background: var(--fill); border: 1px solid var(--line); border-radius: 11px; }
-.seg2 button { padding: 6px 11px; font-size: 11.5px; border-radius: 8px; color: var(--ink-2); transition: background-color .2s, color .2s; }
-.seg2 button[aria-pressed="true"] { background: var(--adj-bg); color: var(--adj-ink); box-shadow: inset 0 0 0 1px var(--adj-line); }   /* valor escolhido (modo do ar, "desligar em"): azul de ajuste */
-.timerseg .tlab { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; font-size: 11px; color: var(--ink-3); }
-.step { display: inline-flex; align-items: center; gap: 6px; padding: 3px; border-radius: 999px; background: var(--fill); border: 1px solid var(--line); }
-.step button { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: var(--fill-2); color: var(--ink); font-size: 18px; line-height: 1; }
-.step button:hover { background: var(--adj-bg); color: var(--adj-ink); }
-.step output { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 18px; letter-spacing: -.01em; color: var(--adj-ink); }
-.mbtn { width: 36px; height: 32px; padding: 0; border-radius: 10px; background: var(--fill-2); display: inline-grid; place-items: center; font-size: 16px; }
+.detail .dtitle b { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.025em; } .detail .dtitle small { color: var(--ink-2); font-size: 13px; line-height: 18px; display: block; }
+.detail .close { position: relative; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--fill-2); color: var(--ink-2); } .detail .close svg { width: 13px; height: 13px; }
+/* linhas de ajuste do ar (v1.8): nome à esquerda (com a leitura embaixo), controle à direita — Temperatura (alvo no − / +, atual embaixo) e Oscilar */
+.detail .drow { flex: 1 1 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; }
+.detail .drow small { display: block; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.detail .drow .sw:disabled { opacity: .45; cursor: default; }   /* o ar não informa oscilar ao HA: a nota diz por quê */
+/* UISwitch 51×31 (luz, ar, automação, oscilar e o "tudo" do bloco e do cômodo): polegar 27 branco com a sombra do iOS; ligado em âmbar; estica sob o dedo */
+.sw, .sw:hover { position: relative; flex: none; width: 51px; height: 31px; padding: 0; border-radius: 999px; background: var(--fill-3); transition: background-color .25s var(--ease); }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 14px; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .15), 0 3px 1px rgba(0, 0, 0, .06); transition: transform .3s var(--ease), width .2s var(--ease); }
+.sw[aria-checked="true"] { background: var(--on); } .sw[aria-checked="true"]::after { transform: translateX(20px); }
+.sw:active::after { width: 34px; } .sw[aria-checked="true"]:active::after { transform: translateX(13px); }
+.sw.still, .sw.still::after { transition: none; }   /* 1º desenho: já na posição, sem deslizar */
+.sw:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sw[hidden] { display: none; }
+.swl { flex: none; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); } .swl[hidden] { display: none; }   /* "Tudo" à vista: o interruptor do grupo não se confunde com o de uma automação */
+.seg2 { display: inline-flex; }
+.timerseg .tlab { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; font-size: 13px; color: var(--ink-2); }
+.step { display: inline-flex; align-items: center; gap: 6px; padding: 2px; border-radius: 999px; background: var(--fill); }
+.step button { position: relative; width: 40px; height: 32px; padding: 0; border-radius: 999px; background: transparent; color: var(--ink); font-size: 22px; font-weight: 400; line-height: 1; }
+.step button:hover { background: var(--fill-2); color: var(--ink); }
+.step output { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 17px; letter-spacing: -.01em; color: var(--ink); }
+.mbtn { position: relative; width: 36px; height: 32px; padding: 0; border-radius: 999px; background: var(--fill-2); display: inline-grid; place-items: center; font-size: 16px; }
 .mbtn:hover { background: var(--fill-3); }
-input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
+input[type="range"] { flex: 1; min-width: 110px; }
 .detail .rng { flex: 1 1 200px; min-width: 150px; display: flex; align-items: center; gap: 10px; }
-.detail .rng output { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; color: var(--adj-ink); }
-.detail input[type="range"] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 28px; margin: 0; background: transparent; cursor: pointer; --v: 100%; --c: var(--adj); }
-.detail input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 6px; background: linear-gradient(90deg, var(--c) var(--v), var(--fill-3) var(--v)); }
-.detail input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); transition: transform .15s; }
-.detail input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
-.detail input[type="range"]::-moz-range-track { height: 6px; border-radius: 6px; background: var(--fill-3); }
-.detail input[type="range"]::-moz-range-progress { height: 6px; border-radius: 6px; background: var(--c); }
-.detail input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); }
-.detail input[type="range"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
-.swatches { display: flex; gap: 8px; } .swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line-2); padding: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); transition: transform .15s, border-color .15s; }
-.swatch:hover { transform: scale(1.15); border-color: var(--ink); }
-.sect { margin: 2px 2px 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.sect::before { content: ""; width: 3px; height: 12px; border-radius: 2px; background: var(--line-2); }
-.sect small { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 11px; color: var(--ink-3); }
-.tiles + .sect { margin-top: 18px; }
-.autos { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.auto { display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 13px; background: var(--off-bg); border: 1px solid var(--line); transition: border-color .2s; }
-.auto:hover { border-color: var(--line-2); }
-.auto .ico { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: var(--fill-2); color: var(--off); transition: background-color .2s, color .2s; }
-.auto.on .ico { background: var(--on-bg); color: var(--on); }   /* automação ativa: âmbar */
-.auto b { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink); } .auto small { display: block; margin-top: 2px; color: var(--ink-3); font-size: 11px; line-height: 1.3; }
+.detail .rng output { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; color: var(--ink); }
+/* slider grosso do Controle Central: trilho de 36 px, preenchimento branco, sem polegar (a borda do preenchimento é o valor) */
+.detail input[type="range"] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 36px; margin: 0; background: transparent; cursor: pointer; --v: 100%; --c: #fff; }
+.detail input[type="range"]::-webkit-slider-runnable-track { height: 36px; border-radius: 12px; background: linear-gradient(90deg, var(--c) var(--v), var(--fill-3) var(--v)); }
+.detail input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 0; height: 36px; margin-top: 0; border: 0; background: transparent; box-shadow: none; }
+.detail input[type="range"]::-moz-range-track { height: 36px; border-radius: 12px; background: var(--fill-3); }
+.detail input[type="range"]::-moz-range-progress { height: 36px; border-radius: 12px; background: var(--c); }
+.detail input[type="range"]::-moz-range-thumb { width: 0; height: 36px; border: 0; background: transparent; box-shadow: none; }
+.detail input[type="range"]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 14px; }
+.swatches { display: flex; gap: 8px; } .swatch { position: relative; width: 26px; height: 26px; border-radius: 50%; padding: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); transition: transform .15s; }
+.swatch:hover { transform: scale(1.15); }
+/* rótulo de seção (lista agrupada do iOS): a única caixa alta do painel; a nota desce para uma linha própria */
+.sect { margin: 0 12px 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; font-size: 13px; line-height: 18px; font-weight: 400; letter-spacing: -.006em; text-transform: uppercase; color: var(--ink-2); }
+.sect small { flex-basis: 100%; text-transform: none; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.tiles + .sect { margin-top: 24px; }
+/* listas agrupadas (Automações, Atividade e as automações do cômodo): cada sequência de linhas é um cartão #2c2c2e de raio 12, linhas de 44+ com fio inset */
+.autos { display: grid; grid-template-columns: minmax(0, 1fr); }
+.auto { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 10px 12px; background: var(--raised); transition: background-color .2s; }
+.autos > .auto:first-child, .autos > :not(.auto) + .auto { border-radius: 12px 12px 0 0; }
+.autos > .auto:last-child, .autos > .auto:has(+ :not(.auto)) { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }   /* sem :has, só os cantos de baixo ficam retos */
+.auto + .auto::before, .feed li + li::before { content: ""; position: absolute; top: 0; right: 0; left: 52px; border-top: 1px solid var(--line); }
+.auto:hover { background: #363638; }
+.auto .ico { width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; background: var(--fill-2); color: var(--ink-2); transition: background-color .2s, color .2s; }   /* ícone de Ajustes: quadrado arredondado */
+.auto.on .ico { background: var(--on); color: var(--on-ink); }   /* automação ativa: âmbar */
+.auto b { display: block; font-size: 15px; line-height: 20px; font-weight: 400; letter-spacing: -.015em; color: var(--ink); } .auto small { display: block; color: var(--ink-2); font-size: 13px; line-height: 18px; letter-spacing: -.006em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* legenda numa linha, como no Casa */
 .auto.off b { color: var(--ink-2); }
 .auto.flash { animation: flashPulse .7s var(--ease); }
-.auto .run { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: var(--fill-2); display: inline-grid; place-items: center; transition: background-color .2s; }
+.auto .run { position: relative; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--fill); display: inline-grid; place-items: center; transition: background-color .2s; }
 .auto .run:hover { background: var(--fill-3); }
-.autos .empty { color: var(--ink-3); font-size: 12px; padding: 12px; border-radius: 12px; border: 1px dashed var(--line-2); grid-column: 1 / -1; }
-.feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.feed li { display: grid; grid-template-columns: 28px 1fr auto; gap: 11px; align-items: center; padding: 9px 12px; border-radius: 12px; background: var(--fill); border: 1px solid var(--line); font-size: 12.5px; }
-.feed .d { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--fill-2); color: var(--off); }
+.autos .empty { color: var(--ink-2); font-size: 15px; padding: 12px; border-radius: 12px; background: var(--raised); grid-column: 1 / -1; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 12px; background: var(--raised); overflow: hidden; }
+.feed li { position: relative; display: grid; grid-template-columns: 28px 1fr auto; gap: 11px; align-items: center; min-height: 44px; box-sizing: border-box; padding: 10px 12px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; }
+.feed .d { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; background: var(--fill); color: var(--ink-2); }
 .feed .d svg { width: 15px; height: 15px; }
-.feed li.on .d { background: var(--on-bg); color: var(--on); }   /* o que acendeu, ligou ou começou a tocar */
-.feed b { font-weight: 700; color: var(--ink); } .feed time { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 11px; text-align: right; white-space: nowrap; }
-.feed .empty { color: var(--ink-3); padding: 14px 12px; font-size: 12px; grid-column: 1 / -1; display: block; border-style: dashed; }
+.feed li.on .d { background: var(--on); color: var(--on-ink); }   /* o que acendeu, ligou ou começou a tocar */
+.feed b { font-weight: 600; color: var(--ink); } .feed time { color: var(--ink-2); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; white-space: nowrap; }
+.feed .empty { color: var(--ink-2); padding: 14px 12px; font-size: 15px; grid-column: 1 / -1; display: block; }
+@media (min-resolution: 2dppx) { .auto + .auto::before, .feed li + li::before { border-top-width: .5px; } .menu .mi + .mi { box-shadow: inset 0 .5px 0 var(--line); } }   /* fio de 0,5 pt, como na Apple */
+:is(.auto .ico, .feed .d, .phead .count, .tlab, .rfoot .enter, .reopen) svg path:not(.f) { stroke: currentColor; stroke-width: 8; stroke-linejoin: round; }   /* desenhos de até 16 px: o traço do Phosphor (16/256 ≈ 0,9 px) engrossa até o do bold */
 /* aba de reabrir presa à borda esquerda, na altura do topo da coluna: seta, "Painel" (ou o cômodo) na vertical e o nº de luzes acesas */
 .reopen { position: absolute; left: 0; top: var(--side-top, 58px); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px 12px 7px; z-index: 3;
-  border-radius: 0 14px 14px 0; border: 1px solid var(--line-2); border-left: 0; font-size: 12px; color: var(--ink); letter-spacing: .04em;
-  background: var(--glass); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); backdrop-filter: none; -webkit-backdrop-filter: none; animation: reopenIn .3s var(--ease) backwards; }
+  border-radius: 0 14px 14px 0; font-size: 13px; color: var(--ink); letter-spacing: .04em;
+  background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .12), 0 8px 30px rgba(0, 0, 0, .4); animation: reopenIn .3s var(--ease) backwards; }
 .reopen .rl { writing-mode: vertical-rl; line-height: 1; }
 .reopen svg { width: 14px; height: 14px; color: var(--ink-2); }
 .reopen svg, .phead .collapse svg { transform: scaleX(-1); }   /* setas espelhadas: o painel mora à esquerda (na folha giram 90°) */
 @keyframes reopenIn { from { opacity: 0; transform: translateX(-14px); } }
 .reopen:hover { background: var(--raised); }
-.reopen .rn { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--on); color: var(--on-ink); font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.reopen .rn { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--on); color: var(--on-ink); font-size: 12px; font-weight: 600; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .reopen .rn:empty { display: none; }
 .reopen[hidden] { display: none; }
-/* cômodo tocado (v1.7): o painel focado nele — no lugar das abas e do filtro, "‹", nome, "N de M ligados" e Ligar/Desligar tudo;
-   embaixo dos blocos, as automações do cômodo e "Entrar aqui" */
+/* cômodo ou bloco tocado (v1.7): o painel focado nele — no lugar das abas e do filtro, "‹", nome, "N de M ligados" e o interruptor de tudo
+   (v1.8, o da Casa v1.9); embaixo dos blocos, as automações e "Entrar aqui" */
 .rhead { flex: none; margin: 0 12px 10px; }
 .dock:not(.room) .rhead, .dock:not(.room) .rfoot, .dock.room .tabs, .dock.room .zonebar, .dock.room .blk, .dock.room:not(.bv) .tile .sv { display: none; }   /* bloco aberto (.bv): os subtítulos e o "também" ficam */
-.dock.room .rhead { display: flex; align-items: center; gap: 6px; }   /* [‹] [nome + N de M] [uma ação] */
-.rhead .rback { flex: none; width: 32px; height: 32px; margin-left: -8px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--ink-2); } .rhead .rback svg { width: 18px; height: 18px; }
-.rhead .rback:hover { color: var(--ink); background: var(--fill-2); }
-.rhead .rtitle { flex: 1; min-width: 0; } .rhead .rtitle b { display: block; font-size: 16px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rhead .rtitle small { display: block; margin-top: 1px; color: var(--ink-2); font-size: 11.5px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wrap:not(.sheet) .rhead .rtitle small { white-space: normal; }   /* coluna: a leitura dos sensores quebra a linha em vez de sumir (na folha, a 1ª linha é a espiada) */
-.all { display: flex; flex: none; } .all[hidden], .all button[hidden] { display: none; }
-.all button { padding: 8px 12px; white-space: nowrap; border-radius: 10px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }   /* Desligar tudo: grafite */
-.all button:hover { background: var(--fill-3); }
-.all button:first-child { background: var(--on); color: var(--on-ink); border-color: var(--on); }   /* Ligar tudo: âmbar cheio (vem depois do :hover) */
-.rfoot { margin-top: 14px; } .rfoot .autos { margin-bottom: 12px; }
-.rfoot .enter { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px; border-radius: 12px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }
+.dock.room .rhead { display: flex; align-items: center; gap: 8px; }   /* [‹] [nome + N de M] [Tudo ◯] */
+.rhead .rback { flex: none; width: 32px; height: 32px; margin-left: -8px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--ink); } .rhead .rback svg { width: 20px; height: 20px; }
+.rhead .rback:hover { background: var(--fill-2); }
+.rhead .rtitle { flex: 1; min-width: 0; } .rhead .rtitle b { display: block; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rhead .rtitle small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--ink-2); font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.wrap:not(.sheet) .rhead .rtitle b, .wrap:not(.sheet) .rhead .rtitle small { white-space: normal; }   /* coluna: o nome e a leitura quebram a linha em vez de sumir (na folha, a 1ª linha é a espiada) */
+.rfoot { margin-top: 24px; } .rfoot .autos { margin-bottom: 12px; }
+.rfoot .enter { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: 15px; line-height: 20px; letter-spacing: -.015em; transition: transform .1s ease-out, background-color .2s; }
 .rfoot .enter:hover { background: var(--fill-3); }
-.rfoot .enter svg { width: 16px; height: 16px; color: var(--ink-2); }
-.all button:active, .rfoot .enter:active { transform: scale(.97); }   /* retorno já no toque */
+.rfoot .enter svg { width: 16px; height: 16px; color: var(--ink); }
+.rfoot .enter:active { transform: scale(.97); }   /* retorno já no toque */
 /* folha de baixo (celular e tablet em pé, ver _layoutHud): altura do conteúdo e três alturas — espiada, média, cheia — por translateY.
    Fora da cheia a lista não rola: o dedo em qualquer ponto move a folha; na cheia, puxar com a lista no topo desce a folha */
-.wrap.sheet .dock { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: calc(100% - var(--side-top, 58px)); border-radius: 22px 22px 0 0; border-width: 1px 0 0; animation-name: drawerIn; touch-action: none; --sab: env(safe-area-inset-bottom, 0px); }
+.wrap.sheet .dock { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: calc(100% - var(--side-top, 58px)); border-radius: 28px 28px 0 0; animation-name: drawerIn; touch-action: none; --sab: env(safe-area-inset-bottom, 0px); }
 .wrap.sheet .dock.closing { animation-name: drawerOut; }
 @keyframes drawerIn { from { transform: translateY(100%); } }
 @keyframes drawerOut { to { transform: translateY(100%); } }
 .wrap.sheet .dock:not([data-snap="full"]) .pane { overflow: clip; touch-action: none; }   /* clip: nem o foco nem o _flashRow rolam a lista escondida */
 .wrap.sheet .dock[data-snap="full"] .pane.top { touch-action: pan-down; }   /* no topo: subir rola a lista, descer é da folha */
 .wrap.sheet .grab { display: block; position: absolute; left: 50%; top: 0; width: 64px; height: 22px; margin-left: -32px; padding: 0; z-index: 1; background: none; }
-.wrap.sheet .grab::before { content: ""; position: absolute; left: 14px; right: 14px; top: 6px; height: 4px; border-radius: 4px; background: var(--ink-3); opacity: .7; }
+.wrap.sheet .grab::before { content: ""; position: absolute; left: 14px; right: 14px; top: 5px; height: 5px; border-radius: 2.5px; background: rgba(235, 235, 245, .4); }   /* alça 36×5 do iOS (3,2:1) */
 .wrap.sheet .grab::after { content: ""; position: absolute; inset: 0 0 -22px; }   /* alvo de 44 px */
 .wrap.sheet .phead .collapse svg { transform: rotate(90deg); }
 .wrap.sheet .dock.room .phead { display: none; } .wrap.sheet .dock.room .rhead { margin-top: 16px; }   /* no cômodo a 1ª linha é a dele */
-.wrap.sheet .reopen { top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); flex-direction: row; padding: 9px 14px calc(9px + env(safe-area-inset-bottom)); border-radius: 14px 14px 0 0; border-left: 1px solid var(--line-2); border-bottom: 0; animation-name: fadeIn; }
+.wrap.sheet .reopen { top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); flex-direction: row; padding: 9px 14px calc(9px + env(safe-area-inset-bottom)); border-radius: 14px 14px 0 0; animation-name: fadeIn; }
 .wrap.sheet .reopen .rl { writing-mode: horizontal-tb; } .wrap.sheet .reopen svg { transform: rotate(90deg); }   /* a aba de reabrir fica onde a folha mora: embaixo */
-.wrap.sheet .phead { padding: 14px 12px 6px; } .wrap.sheet .tabs, .wrap.sheet .rhead { margin: 0 12px 8px; } .wrap.sheet .pane { padding: 10px 12px calc(14px + env(safe-area-inset-bottom)); }
+.wrap.sheet .phead { padding: 16px 16px 8px; } .wrap.sheet .tabs, .wrap.sheet .rhead { margin: 0 16px 12px; } .wrap.sheet .pane { padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); }
 @media (min-width: 641px) {   /* tablet em pé: folha flutuante, blocos em 4 colunas */
-  .wrap.sheet .dock { left: 12px; right: 12px; bottom: 12px; max-height: calc(100% - var(--side-top, 58px) - 12px); border-radius: 22px; border-width: 1px; --sab: 0px; box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset; }   /* a sombra fica no .dshadow: o clip-path a cortaria */
-  .wrap.sheet .dock:not([hidden]) + .dshadow { display: block; position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; border-radius: 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .5); pointer-events: none; animation: drawerIn .3s var(--ease) backwards; }   /* altura do pedaço à vista (_sideX) */
+  .wrap.sheet .dock { left: 12px; right: 12px; bottom: 12px; max-height: calc(100% - var(--side-top, 58px) - 12px); border-radius: 28px; --sab: 0px; box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .1); }   /* a sombra fica no .dshadow: o clip-path a cortaria */
+  .wrap.sheet .dock:not([hidden]) + .dshadow { display: block; position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; border-radius: 28px; box-shadow: 0 8px 40px rgba(0, 0, 0, .38); pointer-events: none; animation: drawerIn .3s var(--ease) backwards; }   /* altura do pedaço à vista (_sideX) */
   .wrap.sheet .dock.closing + .dshadow { animation: drawerOut .2s ease-in forwards; }   /* entra e sai junto com a folha */
-  .wrap.sheet .reopen { bottom: 12px; border-radius: 999px; border-bottom: 1px solid var(--line-2); padding-bottom: 9px; }
+  .wrap.sheet .reopen { bottom: 12px; border-radius: 999px; padding-bottom: 9px; }
   .wrap.sheet .tiles:not(.routines) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-/* coluna à esquerda (v1.7): título em cima com a mesma largura (máxima também: o da Igreja tem relógio, sol e clima); borda direita arrastável (.sizer) */
-.hud.top > .title { box-sizing: border-box; min-width: 0; transition: min-width .2s ease-in; } .wrap.sizing .hud.top > .title { transition: none; }   /* min-width 0 (auto não anima): fecha junto com o dockOut */
-.wrap.side:not(.sheet) .hud.top > .title { min-width: var(--side-w, 320px); max-width: var(--side-w, 320px); transition-duration: .3s; transition-timing-function: var(--ease); }   /* título e painel formam uma coluna só; abre junto com o dockIn */
+/* coluna à esquerda (v1.7): no alto (v1.8, sem o título); borda direita arrastável (.sizer) */
 .wrap.side:not(.sheet) .joy { left: calc(var(--side-w, 320px) + 26px); }
-.wrap:not(.sheet) .dock { overflow: visible; } .wrap:not(.sheet) .pane { border-radius: 0 0 21px 21px; }   /* a alça sai 10 px da borda: o .pane recorta os cantos de baixo */
+.wrap:not(.sheet) .dock { overflow: visible; } .wrap:not(.sheet) .pane { border-radius: 0 0 27px 27px; }   /* a alça sai 10 px da borda: o .pane recorta os cantos de baixo */
 .dock { container-type: inline-size; }   /* consultas pela largura do PAINEL (coluna ajustável e folha); sem contain: paint, que cortaria a alça */
-@container (max-width: 300px) { .tabs button[role="tab"] { padding-inline: 3px; font-size: 11.5px; letter-spacing: 0; } }   /* "Automações" inteira a 272 px */
+@container (max-width: 300px) { .tabs button[role="tab"] { padding-inline: 3px; font-size: 12px; letter-spacing: 0; } }   /* "Automações" inteira a 272 px */
 @container (max-width: 400px) { .timerseg { display: flex; flex-wrap: wrap; flex: 1 1 100%; } .timerseg .tlab { flex-basis: 100%; padding: 3px 6px 4px; } .timerseg button { flex: 1 1 auto; padding-inline: 4px; white-space: nowrap; } }   /* "desligar em" em cima, os 4 tempos embaixo */
 .sizer { position: absolute; top: 0; bottom: 0; right: -10px; width: 12px; z-index: 2; cursor: col-resize; touch-action: none; outline: none; }
 .sizer::after { content: ""; position: absolute; top: 50%; left: .5px; width: 4px; height: 36px; margin-top: -18px; border-radius: 2px; background: var(--ink-3); box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); opacity: 0; transition: opacity .15s, background-color .15s; }   /* a mesma pílula da alça da folha: neutra */
@@ -6276,48 +6329,55 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
 @media (prefers-contrast: more) { .wrap .dock .sizer::after { opacity: 1; background: var(--ink); } }   /* acima do hover e do foco: sempre no máximo */
 /* toque: alvos de 44 px sem mudar o desenho */
 @media (pointer: coarse) {
-  .phead .collapse::after { content: ""; position: absolute; inset: -6px; } .phead .count { min-height: 36px; }   /* círculo de 32 px, alvo de 44 */
-  .tabs button[role="tab"] { position: relative; min-height: 40px; } .tabs button[role="tab"]::after { content: ""; position: absolute; inset: -2px 0; }   /* alvo de 44 px (o vão do trilho) */
-  .zonebar button { min-height: 34px; } .zonebar button::after { content: ""; position: absolute; inset: -6px 0; }   /* alvo de 46 px sem cobrir o vizinho */
-  .rhead .rback, .all button, .rfoot .enter { min-height: 44px; } .rhead .rback { width: 44px; }
+  .phead .collapse::after { content: ""; position: absolute; inset: -9px -7px -5px; } .phead .count { min-height: 44px; border-block: 4px solid transparent; margin-block: -4px; background-clip: padding-box; } .phead .count:focus-visible { outline-offset: -2px; }   /* círculo de 30 px, alvo de 44 · cápsula: 36 de desenho, 44 de alvo */
+  .tabs button[role="tab"], .seg2 button, .menu .mseg button { position: relative; }
+  .tabs button[role="tab"]::after, .zonebar button::after, .seg2 button::after, .menu .mseg button::after { content: ""; position: absolute; inset: -8px 0; }   /* segmentado: 28 de desenho, 44 de alvo */
+  .detail .close::after, .auto .run::after { content: ""; position: absolute; inset: -7px; } .step button::after { content: ""; position: absolute; inset: -6px -2px; } .mbtn::after { content: ""; position: absolute; inset: -6px -4px; }
+  .swatches { gap: 12px; } .swatch { width: 32px; height: 32px; } .swatch::after { content: ""; position: absolute; inset: -6px; }
+  .sw::before { content: ""; position: absolute; inset: -7px 0; }   /* interruptor: 31 de desenho, 45 de alvo */
+  .detail input[type="range"], .menu .mhr input { height: 44px; } .menu .mhr button { min-height: 44px; }
+  .rhead .rback, .rfoot .enter, .goto .grow button { min-height: 44px; } .rhead .rback { width: 44px; }
   .zone button { min-height: 44px; margin: -12px 0; } .blk .bn::after { inset: -13px -6px; }   /* nome do bloco: alvo de 44 px */
   .tile .more::after { inset: -10px; }
 }
-/* Clima (v1.6.1): no título só ícone + temperatura, ao lado do relógio; os detalhes ficam no topo do menu ☰ */
-.title .wx { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; color: var(--ink); vertical-align: -2px; }
-.title .wx svg { width: 15px; height: 15px; color: var(--on); }
-.menu .mwx { display: flex; align-items: center; gap: 10px; padding: 2px 9px 6px; }
-.menu .mwx .mic { flex: none; width: 22px; color: var(--on); display: grid; place-items: center; } .menu .mwx .mic svg { width: 20px; height: 20px; }
-.menu .mwx b { display: block; font-size: 12.5px; color: var(--ink); } .menu .mwx small { display: block; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) {
-  .detail { padding: 11px 12px; gap: 10px; } .detail .rng { flex-basis: 100%; }
+  .detail .rng { flex-basis: 100%; }
   .hud.top { gap: 6px; }
-  .title { flex: 1 1 0; min-width: 0; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 0; padding: 6px 10px; }
-  .title b { font-size: 14px; }
-  .btn { padding: 8px 10px; }
-  .hint { display: none; }
 }
-/* celular em retrato: o botão do menu vira só o ícone ☰ (o nome fica no aria-label) */
-@media (max-width: 400px) { .menubtn .mbl { display: none; } .menubtn { padding: 8px 11px; } }
-@media (max-width: 640px) { .peg .pgl { display: none; } }
-/* cartão estreito: o menu ocupa a largura do cartão (10 px de cada lado) e rola se for alto */
-.wrap.narrow .menu { width: calc(var(--cw, 100vw) - 20px); max-height: calc(var(--ch, 100vh) - 68px); }
-@media (prefers-reduced-motion: reduce) { .hud.top > .title, .hint, .pane.active, .tile, .tile .ico, .tile .lvl::after, .detail, .feed li, .auto, .sw, .seg2 button, .swatch, .menu .ms, .menubtn, .menu .mi, .menu .mseg button, .detail input[type="range"]::-webkit-slider-thumb, .all button, .rfoot .enter, .sel button { animation: none !important; transition: none !important; transform: none !important; }
-  .sw::after, .menu .ms::after, .btn { transition: none !important; }   /* sem o transform: none: o polegar ligado fica à direita e a pílula da folha, centrada */
-  .dock, .dshadow, .reopen, .menu { animation: fadeIn .15s linear !important; } }   /* sem deslize nem mola: fade curto */
+@media (max-width: 340px) { .tile b { font-size: 14px; line-height: 19px; } .rhead .swl { display: none; } }   /* celular de 320: o nome do cômodo antes do rótulo "Tudo" */
+/* cantos contínuos (Chrome/Edge ≥ 139), raio ~1,4×; só com o vidro: em aparelho fraco, recorte que não é retângulo arredondado pode virar máscara.
+   Os botões são cápsulas (o HIG prefere) e ficam fora */
+@supports (corner-shape: squircle) {
+  .wrap.glass :is(.tile, .detail, .menu, .sel, .panel:not(.dock, .btn, .nav), .auto, .autos .empty, .feed, .zempty, .dock, .pane, .dshadow) { corner-shape: squircle; }
+  .wrap.glass .tile, .wrap.glass .detail { border-radius: 26px; }
+  .wrap.glass :is(.menu, .sel, .panel:not(.dock, .btn, .nav)) { border-radius: 20px; }
+  .wrap.glass :is(.feed, .zempty, .autos .empty) { border-radius: 17px; }
+  .wrap.glass .autos > :is(.auto:first-child, :not(.auto) + .auto) { border-radius: 17px 17px 0 0; }
+  .wrap.glass .autos > :is(.auto:last-child, .auto:has(+ :not(.auto))) { border-bottom-left-radius: 17px; border-bottom-right-radius: 17px; }
+  .wrap.glass .dock { border-radius: 40px; } .wrap.glass:not(.sheet) .pane { border-radius: 0 0 39px 39px; } .wrap.glass.sheet .dock { border-radius: 40px 40px 0 0; }   /* depois do .panel: a coluna não cai para 20 */
+  .wrap.glass .detail input[type="range"]::-webkit-slider-runnable-track { corner-shape: squircle; border-radius: 17px; }
+  @media (min-width: 641px) { .wrap.glass.sheet .dock, .wrap.glass.sheet .dock:not([hidden]) + .dshadow { border-radius: 40px; } }
+}
+@media (prefers-reduced-motion: reduce) { .pane.active, .tile, .tile .ico, .detail, .feed li, .auto, .sw, .seg2 button, .swatch, .menubtn, .menu .mi, .menu .mseg button, .rfoot .enter, .sel button { animation: none !important; transition: none !important; transform: none !important; }
+  .sw::after, .btn { transition: none !important; }   /* sem o transform: none: o polegar ligado fica à direita e a pílula da folha, centrada */
+  .dock, .dshadow, .reopen, .menu, .sel { animation: fadeIn .15s linear !important; }   /* sem deslize nem escala: fade curto (o .sel fica fora da lista de cima: a posição dele é translate) */
+  .menu.out, .sel.out { animation: fadeOut .15s linear forwards !important; } }
 @keyframes fadeIn { from { opacity: 0; } }
-/* menos transparência: superfícies sólidas, sem blur */
+@keyframes fadeOut { to { opacity: 0; } }
+/* menos transparência: o vidro volta a opaco */
 @media (prefers-reduced-transparency: reduce) {
-  :host { --glass: var(--glass-solid); }
-  .panel, .menu, .joy { backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .panel { background: var(--glass-solid); } .menu { background: var(--raised); }
+  .wrap.glass { --glass: var(--glass-solid); --mat-chrome: #1c1c1e; --mat-pop: #2c2c2e; --blur: none; --blur-s: none; --ink-2: rgba(235, 235, 245, .6); --ink-3: rgba(235, 235, 245, .6); }
+  .joy { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
-/* mais contraste: fundo sólido, bordas e textos mais claros (só os tokens mudam) */
+/* mais contraste: fundo sólido, linhas e textos mais claros e um contorno definido (sem bordas no visual da v1.8) */
 @media (prefers-contrast: more) {
   :host { --glass: #0e0e10; --glass-solid: #0e0e10; --raised: #1c1c1f; --fill: rgba(255, 255, 255, .1); --fill-2: rgba(255, 255, 255, .16); --fill-3: rgba(255, 255, 255, .28);
-    --line: rgba(255, 255, 255, .55); --line-2: rgba(255, 255, 255, .8); --ink-2: #dcdce2; --ink-3: #c8c8d0; --on-bg: rgba(255, 181, 71, .24); --on-line: var(--on); --adj-line: var(--adj); }
-  .panel, .dock, .menu { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--glass); border-color: var(--line); }
-  .zonebar button, .tabs button[role="tab"], .seg2 button { border: 1px solid transparent; } .zonebar button[aria-pressed="true"], .tabs button[aria-selected="true"] { border-color: var(--line-2); }
+    --line: rgba(255, 255, 255, .55); --line-2: rgba(255, 255, 255, .8); --ink-2: #dcdce2; --ink-3: #c8c8d0; --on-bg: rgba(255, 181, 71, .24); --on-line: var(--on); --mat-chrome: var(--glass); --mat-pop: var(--raised); }
+  .wrap.glass { --glass: #0e0e10; --mat-chrome: #0e0e10; --mat-pop: #1c1c1f; --ink-2: #dcdce2; --ink-3: #c8c8d0; --blur: none; --blur-s: none; }
+  .panel, .dock, .reopen, .menu, .sel, .detail, .tile, .auto, .feed, .zempty { outline: 1px solid var(--line); outline-offset: -1px; }   /* o :focus-visible vence pela especificidade */
+  .panel, .dock, .menu { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--glass); }
+  .zonebar button, .tabs button[role="tab"], .seg2 button, .menu .mseg button { border: 1px solid transparent; }
+  .zonebar button[aria-pressed="true"], .tabs button[aria-selected="true"], .seg2 button[aria-pressed="true"], .menu .mseg button[aria-pressed="true"] { border-color: var(--line-2); }
 }
 `;
 
@@ -6397,39 +6457,49 @@ export class Igreja3DCard extends HTMLElement {
     root.innerHTML = '';
     const style = document.createElement('style'); style.textContent = CSS; root.appendChild(style);
     const wrap = document.createElement('div'); wrap.className = 'wrap'; wrap.lang = 'pt-BR'; root.appendChild(wrap);   // o texto do cartão é pt-BR (hifenização e leitor de tela), em qualquer idioma do HA
+    wrap.classList.toggle('sf', /Macintosh|iPhone|iPad|iPod/.test(navigator.userAgent));   // aparelho Apple: a pilha cai no SF, e o tracking do CSS é o dele
+    wrap.classList.toggle('glass', this._q === 'alta' && Igreja3DCard._gpuInfo().glass);   // vidro (backdrop-filter) só no nível alta com GPU dedicada; o governador o tira antes de tudo
     const canvas = document.createElement('canvas'); canvas.tabIndex = 0; canvas.setAttribute('aria-label', 'Modelo 3D da igreja'); wrap.appendChild(canvas);
     this._canvas = canvas;
     canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && this._mk) { this._hoverDest = null; this._mkHide(); } });   // sai do quadro: some o anel do destino
 
     const top = document.createElement('div'); top.className = 'hud top'; wrap.appendChild(top); this._hudTop = top; this._wrap = wrap;
-    const title = document.createElement('div'); title.className = 'panel title'; this._titleCard = title;   // coluna à esquerda: a mesma largura do painel
-    this._titleEl = document.createElement('b'); this._titleEl.textContent = this._config.title || 'Base Church';
-    this._clockEl = document.createElement('span'); this._clockEl.className = 'clock'; this._clockEl.textContent = '—';
-    this._subEl = document.createElement('span'); this._subEl.className = 'sub'; this._subEl.textContent = '—';
-    title.append(this._titleEl, this._clockEl, this._subEl); top.appendChild(title);
-
-    // v1.6.0: as opções do topo ficam num menu suspenso (☰ Opções) organizado em seções — Ambiente · Vista · Navegação · Painel. As referências
-    // (_modeBtns, _nvBtn, _labelsBtn, _roofBtn, _topBtn, _walkBtn, _panelBtn) são as mesmas de antes e o estado continua em aria-pressed
-    // (espelhado em aria-checked para os leitores de tela). Fora do menu: o bonequinho (arrasta até a maquete/planta) e, no modo Pessoa, "Ir para…".
+    // v1.8: o cartão do título saiu (pedido do dono). O topo é a trilha da Vista de cima à esquerda e UM botão (⋯) à direita, que abre a
+    // lista suspensa (pull-down do iOS) por seções — Hora (e simular) · Clima · Andar · Ambiente · Vista · Painel. As referências (_modeBtns,
+    // _nvBtn, _labelsBtn, _roofBtn, _topBtn, _walkBtn, _panelBtn) são as de antes e o estado continua em aria-pressed
     const btns = document.createElement('div'); btns.className = 'btns'; top.appendChild(btns); this._btnsEl = btns;
     const menu = document.createElement('div'); menu.className = 'menu'; menu.id = 'igreja3d-menu'; menu.hidden = true;
-    menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'Opções'); this._menu = menu;
-    const sec = (title) => {
-      const d = document.createElement('div'); d.className = 'msec'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', title);
+    menu.setAttribute('role', 'dialog'); menu.setAttribute('aria-label', 'Opções'); this._menu = menu;   // dialog: tem a hora, o clima e um slider, não só itens
+    const sec = (title, label = title) => {
+      const d = document.createElement('div'); d.className = 'msec'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', label);
       const h = document.createElement('div'); h.className = 'mh'; h.setAttribute('aria-hidden', 'true'); h.textContent = title; d.appendChild(h); menu.appendChild(d); return d;
     };
-    // item: ícone + nome + interruptor (liga/desliga, estado em aria-pressed) ou, nas ações de um disparo, um atalho à direita
-    const item = (parent, icon, label, { toggle = false, title = '', hint = '' } = {}) => {
-      const b = document.createElement('button'); b.className = 'mi'; b.tabIndex = -1; b.setAttribute('role', toggle ? 'menuitemcheckbox' : 'menuitem');
-      b.innerHTML = `<span class="mic">${iconSvg(icon)}</span><span class="ml"></span>` + (toggle ? '<span class="ms" aria-hidden="true"></span>' : hint ? `<span class="mk" aria-hidden="true">${hint}</span>` : '');
-      b.querySelector('.ml').textContent = label; if (title) b.title = title; if (toggle) b.setAttribute('aria-pressed', 'false');
+    // item (pull-down do iOS): marca de verificação à esquerda, nome (+ nota), ícone à direita; `toggle` = estado no aria-pressed
+    const item = (parent, icon, label, { toggle = false, title = '', note = '' } = {}) => {
+      const b = document.createElement('button'); b.className = 'mi';
+      b.innerHTML = `<span class="mic">${iconSvg(icon)}</span><span class="ml"></span>`;
+      const ml = b.querySelector('.ml'); ml.textContent = label; if (note) ml.insertAdjacentHTML('beforeend', `<small>${note}</small>`);
+      if (title) b.title = title; if (toggle) b.setAttribute('aria-pressed', 'false');
       parent.appendChild(b); return b;
     };
+    // Hora: o nome da igreja encabeça a lista; a hora agora (ou simulada), o período e o sol; arrastar simula o sol, "Ao vivo" volta ao relógio
+    const sHr = sec(this._config.title || 'Base Church', 'Hora'); this._titleEl = sHr.firstChild; this._hrSec = sHr;
+    sHr.insertAdjacentHTML('beforeend', '<div class="mtime"><b>--:--</b><small></small><small></small></div><div class="mhr"><input type="range" min="0" max="1439" step="5" aria-label="Hora do dia (arraste para simular o sol)"><button type="button" aria-pressed="true"><i aria-hidden="true"></i>Ao vivo</button></div>');
+    [this._clockEl, this._clockSub, this._clockSun, this._hrRange, this._hrLive] = sHr.querySelectorAll('.mtime b, .mtime small, .mhr input, .mhr button');
+    this._hrRange.addEventListener('input', () => this.setSimTime(Date.now() + (+this._hrRange.value - this._dayMin(Date.now())) * 60000));   // a hora do dia escolhida, hoje
+    this._hrLive.addEventListener('click', () => this.setSimTime(null));
+    const sNav = sec('Andar');
+    // Pessoa = o bonequinho (v1.4.6): arraste até um ambiente da maquete/planta e solte para entrar ali; toque: anda daqui, na altura dos olhos
+    this._walkBtn = this._pegBtn = item(sNav, 'person', 'Pessoa', { toggle: true, note: 'arraste até um ambiente', title: 'Arraste o bonequinho até um ambiente para andar por dentro dele · toque: anda daqui (setas/WASD ou joystick; arraste para olhar)' });
+    this._pegBtn.classList.add('peg'); this._pegBind(this._pegBtn);
+    this._walkBtn.addEventListener('click', () => { if (performance.now() - (this._pegT || 0) < 400) return; const on = !this._walkOn; this._setWalk(on); if (on) this._menuSet(false); });   // o clique que sobra do arrasto não conta
+    const gotoMi = item(sNav, 'pin', 'Ir para…', { note: 'um ambiente, como Pessoa', title: 'Vai direto a um ambiente na visão de Pessoa (inclui a salinha do mezanino)' });
+    gotoMi.addEventListener('click', () => { this._menuSet(false); this._toggleGoto(true); });
     const sAmb = sec('Ambiente');
     const seg = document.createElement('div'); seg.className = 'mseg'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Iluminação ambiente');
     this._modeBtns = {};
     for (const [m, lbl] of [['auto', 'Auto'], ['day', 'Dia'], ['night', 'Noite']]) {
-      const b = document.createElement('button'); b.textContent = lbl; b.dataset.mode = m; b.tabIndex = -1; b.setAttribute('role', 'menuitemradio');
+      const b = document.createElement('button'); b.textContent = lbl; b.dataset.mode = m;
       b.addEventListener('click', () => { this._mode = m; this._applyMode(); });
       seg.appendChild(b); this._modeBtns[m] = b;
     }
@@ -6443,39 +6513,23 @@ export class Igreja3DCard extends HTMLElement {
     this._roofBtn.addEventListener('click', () => this._setRoof(!this._roofOn));
     this._topBtn = item(sVis, 'plan', 'Vista de cima', { toggle: true, title: 'Planta vista de cima, sem cobertura: confira luzes, ares e automações de todos os cômodos' });
     this._topBtn.addEventListener('click', () => { this._airFocus = this._airTour = null; this._setTopView(!this._topView); });
-    const reset = item(sVis, 'recenter', 'Recentrar', { title: 'Volta à vista inicial (Vista de cima, de frente para o palco)', hint: '↺' });
+    const reset = item(sVis, 'recenter', 'Recentrar', { title: 'Volta à vista inicial (Vista de cima, de frente para o palco)' });
     reset.addEventListener('click', () => { this._airFocus = this._airTour = null; if (this._topView) this._navTo(0); else this._setTopView(true); this._menuSet(false); });   // v1.6.1: volta à vista inicial (Vista de cima, nível 0)
-    const sNav = sec('Navegação');
-    this._walkBtn = item(sNav, 'person', 'Pessoa', { toggle: true, title: 'Ande pela igreja na altura dos olhos: setas/WASD ou joystick; arraste para olhar' });
-    this._walkBtn.addEventListener('click', () => { const on = !this._walkOn; this._setWalk(on); if (on) this._menuSet(false); });   // entrar na Pessoa fecha o menu (o foco vai para a cena)
-    const gotoMi = item(sNav, 'pin', 'Ir para um ambiente…', { title: 'Vai direto a um ambiente na visão de Pessoa (inclui a salinha do mezanino)', hint: '›' });
-    gotoMi.addEventListener('click', () => { this._menuSet(false); this._toggleGoto(true); });
     const sPan = sec('Painel');
     this._panelBtn = item(sPan, 'side', 'Painel', { toggle: true, title: 'Ambientes, automações e atividade (coluna à esquerda; no celular e no tablet em pé, folha embaixo)' });
     this._panelBtn.addEventListener('click', () => this._setPanel(!this._panelOpen));
-    // leitores de tela: menuitemcheckbox/menuitemradio leem aria-checked — acompanha o aria-pressed que a lógica do cartão já mantém
-    const mirror = (b) => b.setAttribute('aria-checked', b.getAttribute('aria-pressed') === 'true' ? 'true' : 'false');
-    for (const b of menu.querySelectorAll('[aria-pressed], [role="menuitemradio"]')) mirror(b);
-    try { new window.MutationObserver((rs) => { for (const r of rs) if (r.target.getAttribute('role') !== 'menuitem') mirror(r.target); }).observe(menu, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] }); } catch { /* sem MutationObserver: só o aria-pressed */ }
 
-    // Bonequinho (v1.4.6): arraste até um ambiente da maquete/planta e solte para entrar ali na visão de Pessoa; toque simples abre "Ir para…"
-    const PERSON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.2" r="3"/><path d="M12 9.6c-2.9 0-4.6 1.5-4.8 4l-.2 3.2c0 .6.4 1 .9 1h.9l.4 4.2c0 .5.4.8.8.8h4c.4 0 .8-.3.8-.8l.4-4.2h.9c.5 0 .9-.4.9-1l-.2-3.2c-.2-2.5-1.9-4-4.8-4z"/></svg>';
-    this._pegBtn = document.createElement('button'); this._pegBtn.className = 'panel btn peg'; this._pegBtn.innerHTML = PERSON + '<span class="pgl">Andar</span>';   // v1.6.1: o nome ao lado (no celular só o ícone)
-    this._pegBtn.title = 'Arraste até um ambiente e solte para entrar nele (visão de Pessoa) · toque: lista de ambientes';
-    this._pegBtn.setAttribute('aria-label', 'Bonequinho: arraste até um ambiente para entrar nele; Enter abre a lista de ambientes'); this._pegBtn.setAttribute('aria-pressed', 'false');
-    this._pegBind(this._pegBtn);
-    this._gotoBtn = document.createElement('button'); this._gotoBtn.className = 'panel btn'; this._gotoBtn.textContent = 'Ir para…'; this._gotoBtn.hidden = true;
-    this._gotoBtn.title = 'Vai direto a um ambiente (inclui a salinha do mezanino)'; this._gotoBtn.setAttribute('aria-pressed', 'false');
-    this._gotoBtn.addEventListener('click', () => this._toggleGoto());
-    this._menuBtn = document.createElement('button'); this._menuBtn.className = 'panel btn menubtn'; this._menuBtn.innerHTML = `${iconSvg('menu')}<span class="mbl">Opções</span>`;
-    this._menuBtn.setAttribute('aria-haspopup', 'true'); this._menuBtn.setAttribute('aria-expanded', 'false'); this._menuBtn.setAttribute('aria-controls', menu.id); this._menuBtn.setAttribute('aria-label', 'Opções');
-    this._menuBtn.title = 'Opções: ambiente (Auto/Dia/Noite), rótulos, fachada, Vista de cima, Pessoa, painel';
+    this._menuBtn = document.createElement('button'); this._menuBtn.className = 'panel btn menubtn'; this._menuBtn.innerHTML = iconSvg('more');
+    this._menuBtn.setAttribute('aria-haspopup', 'dialog'); this._menuBtn.setAttribute('aria-expanded', 'false'); this._menuBtn.setAttribute('aria-controls', menu.id); this._menuBtn.setAttribute('aria-label', 'Opções');
+    this._menuBtn.title = 'Hora e clima, Pessoa e as opções (ambiente, vista, painel)';
     this._menuBtn.addEventListener('click', (e) => this._menuSet(!this._menuOn, e.detail === 0));   // detail 0 = Enter/Espaço: o foco vai para o 1º item
     this._menuBtn.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); this._menuSet(true); this._menuFocus(e.key === 'ArrowDown' ? 0 : -1); } });
-    btns.append(this._gotoBtn, this._pegBtn, this._menuBtn, menu);
+    btns.append(this._menuBtn, menu);
     // teclado e clique fora com o menu aberto: escutados na janela, em captura (antes do Walker e da trilha da Vista de cima); presos à conexão (_timersOn)
     this._menuKeyH = (e) => this._menuKey(e);
     this._menuOut = (e) => { if (!this._menuOn) return; const path = e.composedPath(); if (!path.includes(menu) && !path.includes(this._menuBtn)) this._menuSet(false); };
+    menu.addEventListener('focusout', (e) => { const t = e.relatedTarget; if (this._menuOn && t && !menu.contains(t) && t !== this._menuBtn) this._menuSet(false); });   // Tab saiu da lista: ela fecha
+    const PERSON = iconSvg('person');
     this._pegGhost = document.createElement('div'); this._pegGhost.className = 'pegghost'; this._pegGhost.innerHTML = PERSON; this._pegGhost.hidden = true; wrap.appendChild(this._pegGhost);
     this._pegTip = document.createElement('div'); this._pegTip.className = 'panel pegtip'; this._pegTip.hidden = true; wrap.appendChild(this._pegTip);
     this._gotoPanel = document.createElement('div'); this._gotoPanel.className = 'panel goto'; this._gotoPanel.hidden = true; this._gotoPanel.setAttribute('role', 'dialog'); this._gotoPanel.setAttribute('aria-label', 'Ir para um ambiente'); wrap.appendChild(this._gotoPanel);
@@ -6488,31 +6542,25 @@ export class Igreja3DCard extends HTMLElement {
     this._selEl.innerHTML = '<span><b></b><small aria-live="polite"></small></span><button type="button"></button>'; wrap.appendChild(this._selEl);
     [this._selName, this._selState, this._selBtn] = this._selEl.querySelectorAll('b, small, button'); this._selBtn.addEventListener('click', () => this._selAct());
 
-    this._hint = document.createElement('div'); this._hint.className = 'hint';
-    this._hint.textContent = 'Arraste para girar · clique para escolher';   // planta: bloco → cômodo · maquete: o aparelho (balão); uma linha até na coluna de 272 px
-    title.appendChild(this._hint);
-    // v1.6.1: as dicas somem na primeira interação (não por tempo): a do título e a do modo Pessoa
-    const used = () => {
-      if (!this._hint.hidden && !this._hint.classList.contains('hide')) { this._hint.classList.add('hide'); setTimeout(() => { this._hint.hidden = true; }, 700); }
-      if (this._walkOn && this._walkHint.classList.contains('show') && performance.now() - (this._walkHintAt || 0) > 400) this._walkHint.classList.remove('show');
-    };
+    // a dica do modo Pessoa some na primeira interação (não por tempo)
+    const used = () => { if (this._walkOn && this._walkHint.classList.contains('show') && performance.now() - (this._walkHintAt || 0) > 400) this._walkHint.classList.remove('show'); };
     wrap.addEventListener('pointerdown', used, true); canvas.addEventListener('wheel', used, { passive: true }); canvas.addEventListener('keydown', used);
-    // dica do bonequinho no primeiro acesso: aponta para ele e só some quando ele é usado ou a dica é fechada (lembrada neste navegador)
+    // dica do bonequinho no primeiro acesso: aponta para o ⋯ e só some quando ele é usado ou a dica é fechada (lembrada neste navegador)
     let seen = '1'; try { seen = window.localStorage.getItem('igreja3d.dica_pessoa'); } catch { /* sem armazenamento: não insiste */ }
     if (!seen) {
       const d = document.createElement('div'); d.className = 'panel pegdica'; d.setAttribute('role', 'note');
-      d.innerHTML = '<span>Arraste o bonequinho até um ambiente para andar por dentro dele</span><button type="button" aria-label="Fechar a dica">×</button>';
+      d.innerHTML = '<span>Para andar por dentro, abra ⋯ e arraste o bonequinho até um ambiente</span><button type="button" aria-label="Fechar a dica">×</button>';
       wrap.appendChild(d); this._pegDica = d; d.querySelector('button').addEventListener('click', () => this._dicaOff());
       this._pegBtn.addEventListener('pointerdown', () => this._dicaOff()); this._pegBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') this._dicaOff(); });
     }
 
-    // trilha da Vista de cima (Planta › Bloco › Cômodo): filha do HUD de cima, numa linha própria; escondida fora da Vista de cima
+    // trilha da Vista de cima (Planta › Bloco › Cômodo): à esquerda no topo, ao lado do ⋯; escondida fora da Vista de cima
     const navrow = document.createElement('div'); navrow.className = 'navrow'; navrow.hidden = true;
     const nav = document.createElement('div'); nav.className = 'panel nav';
-    const back = document.createElement('button'); back.className = 'back'; back.textContent = '‹ Voltar'; back.setAttribute('aria-label', 'Voltar um nível');
+    const back = document.createElement('button'); back.className = 'back'; back.innerHTML = `${iconSvg('chevl')}Voltar`; back.setAttribute('aria-label', 'Voltar um nível');
     back.addEventListener('click', () => this._navBack());
     const crumbs = document.createElement('nav'); crumbs.className = 'crumbs'; crumbs.setAttribute('aria-label', 'Trilha da planta');
-    nav.append(back, crumbs); navrow.appendChild(nav); top.appendChild(navrow);
+    nav.append(back, crumbs); navrow.appendChild(nav); top.prepend(navrow);
     this._navRow = navrow; this._navCrumbs = crumbs;
     // Esc/Backspace na Vista de cima sobem um nível; fora dela o Esc volta o painel do cômodo à visão geral (com o menu aberto, o Esc só fecha ele)
     const navKey = (e) => {
@@ -6560,7 +6608,7 @@ export class Igreja3DCard extends HTMLElement {
   // leve em celular/tablet (toque + tela < 900 px) ou com ≤ 4 GB; no PC, alta com GPU dedicada e media com vídeo integrado (Intel, AMD APU) ou desconhecido
   static _gpuInfo() {
     if (Igreja3DCard.__gpu !== undefined) return Igreja3DCard.__gpu;
-    let strong = false, soft = false;
+    let strong = false, soft = false, glass = false;
     try {
       const cv = document.createElement('canvas');
       const gl = cv.getContext('webgl2') || cv.getContext('webgl');
@@ -6569,10 +6617,11 @@ export class Igreja3DCard extends HTMLElement {
         const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '');
         strong = /nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|apple m\d|apple gpu/i.test(name) && !/intel|swiftshader|llvmpipe|mali|adreno|powervr/i.test(name);
         soft = /swiftshader|llvmpipe|softpipe|mesa offscreen|basic render/i.test(name);   // desenho por software (sem GPU)
+        glass = strong && !/apple gpu/i.test(name);   // "Apple GPU" é o nome mascarado do WebKit (até Mac Intel e iPad): forte para a cena, mas sem vidro
         const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
       }
-    } catch (_) { strong = soft = false; }
-    return (Igreja3DCard.__gpu = { strong, soft });
+    } catch (_) { strong = soft = glass = false; }
+    return (Igreja3DCard.__gpu = { strong, soft, glass });
   }
   static _strongGPU() { return Igreja3DCard._gpuInfo().strong; }
   _qualityFor(q) {
@@ -7849,7 +7898,7 @@ export class Igreja3DCard extends HTMLElement {
         if (now - g.lastAdj > 300) {
           g.lastAdj = now;
           g.slowWin = g.ft > 40 ? g.slowWin + 1 : 0; g.fastWin = g.ft < 22 ? g.fastWin + 1 : 0;
-          if (g.slowWin >= 2) { g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); g.slowWin = 0; }
+          if (g.slowWin >= 2) { if (!this._wrap.classList.contains('glass')) g.moveScale = Math.max(g.moveMin, g.moveScale * 0.85); else if (this._govSettled(now)) this._wrap.classList.remove('glass'); g.slowWin = 0; }   // lento: 1º sai o vidro (também com quality fixo), depois a resolução; nos 20 s da entrada nenhum dos dois
           if (g.fastWin >= 4) { g.moveScale = Math.min(g.moveMax, g.moveScale * 1.1); g.fastWin = 0; }
           // escada (só auto): na escala mínima e ainda < 15 quadros/s por ~1,5 s — nunca nos 20 s após carregar
           // (compilação de shaders e texturas subindo dão picos que não dizem nada do aparelho)
@@ -7877,7 +7926,8 @@ export class Igreja3DCard extends HTMLElement {
     const g = this._gov;
     if (ms > 250) {
       g.sharpFast = 0;
-      if (g.idleScale > g.idleMin + 0.01) g.idleScale = Math.max(g.idleMin, g.idleScale * 0.85);   // o próximo quadro nítido é mais leve: sem travar a página
+      if (this._wrap.classList.contains('glass')) { if (this._govSettled(performance.now())) this._wrap.classList.remove('glass'); }   // quadro nítido lento: o vidro sai antes da resolução (passados os picos da entrada)
+      else if (g.idleScale > g.idleMin + 0.01) g.idleScale = Math.max(g.idleMin, g.idleScale * 0.85);   // o próximo quadro nítido é mais leve: sem travar a página
       else if (g.auto && ms > 400 && ++g.slowIdle >= 3 && performance.now() - g.lastStep > 4000 && this._govSettled(performance.now())) this._govStepDown(performance.now());
     } else if (ms < 30) {
       g.slowIdle = 0;
@@ -7898,7 +7948,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   _govStepDown(now) {
     const g = this._gov; if (!g.auto || g.rung >= 3) return;
-    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0; g.fastRun = 0;
+    g.rung++; g.lastStep = now; g.slow = g.slowIdle = 0; g.fastRun = 0; this._wrap.classList.remove('glass');
     if (g.rung === 1) {
       g.entornoAuto = this._entornoOn && (this._config.entorno === 'auto' || this._config.entorno == null);
       if (g.entornoAuto) this._setEntorno(false);
@@ -8001,7 +8051,7 @@ export class Igreja3DCard extends HTMLElement {
   _makeLabel(text, scale = 1, main = false) {
     const c = document.createElement('canvas'); const s = 2; c.width = 320 * s; c.height = 72 * s;
     const g = c.getContext('2d'); g.scale(s, s);
-    g.font = '600 24px -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif';
+    g.font = '600 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif';
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     g.lineWidth = 7; g.strokeStyle = 'rgba(6,10,20,.9)'; g.strokeText(text, 160, 36, 300);
     g.fillStyle = '#ffffff'; g.fillText(text, 160, 36, 300); const tw = Math.min(300, g.measureText(text).width) + 7;   // largura do texto (com o contorno), em px do canvas
@@ -8014,7 +8064,7 @@ export class Igreja3DCard extends HTMLElement {
   // ---- Estado ----
   _applyDemoDefaults() {
     for (const it of ITEMS) this._setItemState(it.key, { state: 'off', attrs: {} });
-    this._refreshSub(); this._renderPanel();
+    this._renderPanel();
   }
 
   _syncFromHass() {
@@ -8022,7 +8072,7 @@ export class Igreja3DCard extends HTMLElement {
     const sig = ITEMS.map((it) => {
       const s = hass.states[this.entity(it.key)]; if (!s) return 'x';
       const a = s.attributes || {};
-      return s.state + '|' + JSON.stringify([a.rgb_color, a.brightness, a.temperature, a.current_temperature, a.hvac_action, a.media_title, a.volume_level]);
+      return s.state + '|' + JSON.stringify([a.rgb_color, a.brightness, a.temperature, a.current_temperature, a.hvac_action, a.swing_mode, a.media_title, a.volume_level]);
     }).join(';') + '|' + (hass.states[this.entity('sun')] || {}).state
       + '|' + Object.keys(hass.states).filter((id) => id.startsWith('automation.')).map((id) => { const a = hass.states[id]; return id + ':' + a.state + ':' + ((a.attributes || {}).last_triggered || ''); }).join(',');
     if (sig === this._lastSig) return;
@@ -8063,7 +8113,6 @@ export class Igreja3DCard extends HTMLElement {
     this._renderPanel();
     this._timeAt = 0;
     this._applyMode();
-    this._refreshSub();
     if (turnedOn.length) this._airStart(turnedOn);
   }
 
@@ -8105,12 +8154,6 @@ export class Igreja3DCard extends HTMLElement {
     if (this._orbit) this._orbit.dirty = true;   // luz acende/apaga: um quadro novo, sem refazer as sombras (cada luz marca a sua: _refreshPointShadows, _assignPool)
   }
 
-  _refreshSub() {   // só o título: o painel quem desenha é quem chama (_syncFromHass, _activate, _applyDemoDefaults, _roomPower), um render por atualização
-    const lights = ITEMS.filter((i) => i.kind === 'light' && !i.nolist);   // as do painel (a da Sala da Família não conta)
-    const n = lights.filter((i) => this._state[i.key] && this._state[i.key].on).length;
-    const hasHass = !!this._hass;
-    this._subEl.textContent = `${n} de ${lights.length} luzes acesas` + (hasHass ? '' : ' · demo');
-  }
 
   // Relógio + sol: hora local (ou simulada), elevação/azimute (do HA quando houver)
   _updateTime(force = false) {
@@ -8130,20 +8173,28 @@ export class Igreja3DCard extends HTMLElement {
     let hour = date.getHours();
     try { hour = +new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(date); } catch (_) {}
     if (el > 6) per = hour < 12 ? 'Manhã' : 'Tarde'; else if (el > -4) per = hour < 12 ? 'Amanhecer' : 'Entardecer'; else per = hour < 5 || hour >= 22 ? 'Noite' : hour < 12 ? 'Madrugada' : 'Noite';
-    let txt = '';
-    try { txt = new Intl.DateTimeFormat('pt-BR', { timeZone: tz, weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date); } catch (_) { txt = date.toLocaleString('pt-BR'); }
-    txt = txt.replace(/\.,?/g, '').replace(/, /g, ' · ');
-    // nascer/pôr do sol do dia (varredura de 5 em 5 min; recalcula uma vez por dia)
+    let dt = '';
+    try { dt = new Intl.DateTimeFormat('pt-BR', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(date).replace(/\./g, ''); } catch { dt = date.toLocaleDateString('pt-BR'); }
+    this._tzNow = tz;
+    // nascer/pôr do sol do dia (varredura de 5 em 5 min; recalcula uma vez por dia) e o céu do trilho da hora (noite · nascer · dia · pôr · noite)
     const dayKey = Math.floor((date.getTime() - 3 * 3600000) / 86400000);
     if (this._sunDay !== dayKey) {
       this._sunDay = dayKey; let rise = null, set = null, prev = null;
       const d0 = new Date(date); d0.setHours(0, 0, 0, 0);
       for (let m = 0; m <= 1440; m += 5) { const el2 = solarPosition(new Date(d0.getTime() + m * 60000), lat, lon).elevation; if (prev !== null) { if (prev < -0.83 && el2 >= -0.83) rise = d0.getTime() + m * 60000; if (prev >= -0.83 && el2 < -0.83) set = d0.getTime() + m * 60000; } prev = el2; }
       this._sunTimes = { rise, set };
+      const r = rise ? this._dayMin(rise) : 360, s = set ? this._dayMin(set) : 1090, f = (m) => `${clamp(m / 14.39, 0, 100).toFixed(1)}%`;
+      if (this._hrRange) this._hrRange.style.setProperty('--sky', `linear-gradient(90deg, #1c2758 ${f(r - 60)}, #ff9a4d ${f(r)}, #8cc8f0 ${f(r + 90)}, #5aa9e6 ${f((r + s) / 2)}, #8cc8f0 ${f(s - 90)}, #ff7f3a ${f(s)}, #1c2758 ${f(s + 60)})`);
     }
-    const stt = this._sunTimes || {};
-    const sunTxt = stt.rise && stt.set ? ` <span class="suntimes">☀ ${fmtClock(stt.rise, tz)}–${fmtClock(stt.set, tz)}</span>` : '';   // no fuso da igreja, não no do navegador; o ☀ separa (sem "·" sobrando no fim da linha)
-    if (this._clockEl) this._clockEl.innerHTML = `${txt} · <span class="per">${per}${this._simTime ? ' · simulado' : ''}</span>${sunTxt}${this._wxHtml || ''}`;
+    if (!this._clockEl || !this._menuOn) return;   // a hora mora na lista suspensa: fechada, nada a escrever
+    const stt = this._sunTimes || {}, live = !this._simTime, hm = fmtClock(date, tz);
+    this._clockEl.textContent = hm; this._clockSub.textContent = `${dt} · ${per}${live ? '' : ' · simulado'}`;
+    this._clockSun.innerHTML = stt.rise && stt.set ? `${iconSvg('sun')} nasce ${fmtClock(stt.rise, tz)} · põe ${fmtClock(stt.set, tz)}` : '';   // no fuso da igreja, não no do navegador
+    this._hrRange.value = this._dayMin(date); this._hrRange.setAttribute('aria-valuetext', `${hm}, ${per}${live ? ', agora' : ', simulado'}`);
+    this._hrLive.setAttribute('aria-pressed', String(live)); this._hrLive.title = live ? 'Hora real (relógio)' : 'Voltar para a hora real';
+  }
+  _dayMin(ts) {   // minuto do dia no fuso da igreja
+    try { const [h, m] = new Intl.DateTimeFormat('en-GB', { timeZone: this._tzNow, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ts).split(':'); return h * 60 + +m; } catch { const d = new Date(ts); return d.getHours() * 60 + d.getMinutes(); }
   }
   setSimTime(date) { this._simTime = date ? new Date(date).getTime() : null; this._updateTime(true); this._orbit.dirty = true; }
   _applyMode() {
@@ -8276,7 +8327,7 @@ export class Igreja3DCard extends HTMLElement {
   // BLOCKS resolvido com ZONES (retângulos) e os aparelhos de cada cômodo (chaves de ITEMS, mais o que tem luminária/ar dentro dele).
   _buildBlocks() {
     this._hlGeo = new THREE.PlaneGeometry(1, 1);
-    this._hlMat = new THREE.MeshBasicMaterial({ color: 0xa6cfff, transparent: true, opacity: 0.34, depthTest: false, depthWrite: false, toneMapped: false });   // cômodo escolhido: azul de seleção (o --focus), não luz acesa
+    this._hlMat = new THREE.MeshBasicMaterial({ color: 0x409cff, transparent: true, opacity: 0.34, depthTest: false, depthWrite: false, toneMapped: false });   // cômodo escolhido: o mesmo azul do --focus (foco e seleção), não luz acesa
     this._hl = new THREE.Group(); this._hl.visible = false; this._hl.userData.keep = true; this._scene.add(this._hl);
     this._hlShow([[0, 0, 1, 1]]); this._hl.visible = false;   // uma peça pronta (o material entra no _precompile)
     // marcador do destino da caminhada (visão de Pessoa): anel âmbar + ponto no piso
@@ -8433,7 +8484,7 @@ export class Igreja3DCard extends HTMLElement {
     if (!keys.length) return;
     for (const k of keys) { const it = ITEMS.find((i) => i.key === k), st = this._state[k]; if ((it.kind === 'light' || it.kind === 'switch') && st && !st.unavailable) this._setItemState(k, { state: on ? 'on' : 'off', attrs: st.attrs }); }
     this._svc('homeassistant', on ? 'turn_on' : 'turn_off', keys.map((k) => this.entity(k)));
-    this._refreshSub(); this._renderPanel();
+    this._renderPanel();
   }
   // automações do HA ligadas ao cômodo: o estado não diz que entidades cada uma usa, então casa pelo nome — palavras (4+ letras, mais "ar"
   // e "som") do nome do cômodo e dos aparelhos dele no nome/id da automação. Cada automação fica no cômodo que mais casa (cada palavra em
@@ -8820,16 +8871,16 @@ export class Igreja3DCard extends HTMLElement {
     btn.addEventListener('pointermove', (e) => {
       if (!st || e.pointerId !== st.id) return;
       if (!st.live && Math.hypot(e.clientX - st.x0, e.clientY - st.y0) < 6) return;
+      if (!st.live) this._menuSet(false);   // v1.8: o bonequinho sai da lista suspensa; ela fecha e a cena fica livre
       st.live = true; this._pegMove(pt(e));
     });
     const end = (e) => {
       if (!st || e.pointerId !== st.id) return;
       const s = st; st = null; try { btn.releasePointerCapture(e.pointerId); } catch (_) {}
-      if (!s.live) { if (e.type === 'pointerup') this._toggleGoto(); return; }
-      this._pegDrop(e.type === 'pointerup' ? pt(e) : null);
+      if (!s.live) return;   // toque: o clique do item (Pessoa liga/desliga)
+      this._pegT = performance.now(); this._pegDrop(e.type === 'pointerup' ? pt(e) : null);
     };
     btn.addEventListener('pointerup', end); btn.addEventListener('pointercancel', end);
-    btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this._toggleGoto(); } });
   }
   _pegAt(p) {
     const el = this.shadowRoot.elementFromPoint(p.x, p.y);
@@ -8874,7 +8925,7 @@ export class Igreja3DCard extends HTMLElement {
     const open = force != null ? force : box.hidden;
     if (open && !box.dataset.built) { this._buildGoto(); box.dataset.built = '1'; }
     if (open) { this._menuSet(false); if (this._panelOpen && this._sideOverlay) this._setPanel(false); }   // a lista não abre por baixo da folha do celular
-    box.hidden = !open; this._gotoBtn.setAttribute('aria-pressed', open ? 'true' : 'false'); this._pegBtn.setAttribute('aria-pressed', open && !this._walkOn ? 'true' : 'false');
+    box.hidden = !open;
   }
   _closeGoto() { if (this._gotoPanel && !this._gotoPanel.hidden) this._toggleGoto(false); }
 
@@ -8908,10 +8959,10 @@ export class Igreja3DCard extends HTMLElement {
       cam.near = 0.15; cam.fov = this._walkFov(); cam.updateProjectionMatrix();
       cv.classList.add('walk'); try { cv.focus({ preventScroll: true }); } catch (_) {}
       this._joy.hidden = false; this._showWalkHint();
-      this._pegBtn.hidden = true; this._gotoBtn.hidden = false; this._closeGoto();
+      this._closeGoto();
     } else {
       this._walk.disable(); this._walk.path = null; this._walkOn = false; o.enabled = true;
-      this._doorsReset(); this._mkHide(true); this._closeGoto(); this._pegBtn.hidden = false; this._gotoBtn.hidden = true;
+      this._doorsReset(); this._mkHide(true); this._closeGoto();
       cam.near = 0.3; cam.fov = 42; cam.updateProjectionMatrix();
       cv.classList.remove('walk'); this._joy.hidden = true; this._walkHint.classList.remove('show');
       const sv = this._walkSaved;
@@ -8971,7 +9022,7 @@ export class Igreja3DCard extends HTMLElement {
       // Otimista: acende já, o HA confirma em seguida
       const st = this._state[key] || { on: false, attrs: {} };
       if (!st.unavailable) this._setItemState(key, { state: st.on ? 'off' : 'on', attrs: st.attrs });
-      this._refreshSub(); this._renderPanel();
+      this._renderPanel();
       if (hass && hass.callService) hass.callService('homeassistant', 'toggle', { entity_id: eid });
     } else {
       this.dispatchEvent(new CustomEvent('hass-more-info', { detail: { entityId: eid }, bubbles: true, composed: true }));
@@ -9009,7 +9060,8 @@ export class Igreja3DCard extends HTMLElement {
     const b = this._selEl; if (!b) return;
     if (!sel && b.contains(this.shadowRoot.activeElement)) this._canvas.focus({ preventScroll: true });   // o foco no botão do balão volta à maquete
     if (this._sel) this._roomHl(this._room);   // volta o realce do cômodo do painel
-    const band = this._selBand; this._sel = sel; b.hidden = !sel; this._selTxt = '';
+    const band = this._selBand; this._selGone = sel ? null : this._sel || this._selGone; this._sel = sel; this._selTxt = ''; clearTimeout(this._selT); b.classList.toggle('out', !sel);   // _selGone: saindo, o balão segue preso ao ponto
+    if (sel) b.hidden = false; else if (!b.hidden) this._selT = setTimeout(() => { b.hidden = true; this._selGone = null; }, this._reduced ? 0 : 150);   // sai encolhendo para a ponta
     this._selBand = sel ? band || (this._vb && [this._pNow || 0, ...this._vb]) : null;   // balão aberto: a faixa da cena fica parada (_resize) e o 2º toque cai no mesmo aparelho
     if (sel) { this._selRender(); this._orbit.dirty = true; } else if (band) this._resize(true);   // fechou: a cena volta à faixa de verdade, deslizando
   }
@@ -9025,12 +9077,12 @@ export class Igreja3DCard extends HTMLElement {
   // balão preso ao ponto tocado (acompanha a câmera): dentro da faixa da cena (à direita da coluna, acima da folha); encostado na borda, a
   // ponta continua no ponto; perto do cabeçalho abre embaixo dele; some se o ponto sair por trás ou da faixa
   _selPlace() {
-    const s = this._sel; if (!s) return;
+    const s = this._sel || this._selGone; if (!s) return;
     const el = this._selEl, v = s.p.clone().project(this._camera), W = this._canvas.clientWidth, H = this._canvas.clientHeight, P = this._pNow || 0, B = this._vb ? this._vb[0] : 0;
     const [bw, bh] = this._selWH || [200, 56], px = (v.x + 1) / 2 * W, py = (1 - v.y) / 2 * H, below = py - 14 - bh < (this._hudH || 0);
     const x = clamp(px, Math.min(P + 8 + bw / 2, W / 2), Math.max(W - 8 - bw / 2, W / 2));
     el.classList.toggle('below', below);
-    el.style.transform = `translate(${x.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, ${below ? '12px' : 'calc(-100% - 12px)'})`;
+    el.style.translate = `calc(${x.toFixed(1)}px - 50%) calc(${py.toFixed(1)}px ${below ? '+ 12px' : '- 100% - 12px'})`;   // posição em translate: a escala da entrada nasce da ponta (transform-origin)
     el.style.setProperty('--ax', `${clamp(px - x, 18 - bw / 2, bw / 2 - 18).toFixed(1)}px`);   // a ponta segue o ponto
     el.style.visibility = v.z > 1 || px < P || px > W || py < 0 || py > H - B ? 'hidden' : '';
   }
@@ -9266,8 +9318,8 @@ export class Igreja3DCard extends HTMLElement {
   // mede o topo e posiciona a coluna (à esquerda): largura (--side-w) e topo (--side-top) logo abaixo do título — ou dos botões, se eles
   // invadirem a faixa da coluna; na folha, abaixo do cabeçalho inteiro (com a trilha da Vista de cima)
   _layoutHud(w) {
-    if (!this._titleCard || !this._wrap) return;
-    const wr = this._wrap.getBoundingClientRect(), tr = this._titleCard.getBoundingClientRect(), br = this._btnsEl.getBoundingClientRect();
+    if (!this._btnsEl || !this._wrap) return;
+    const wr = this._wrap.getBoundingClientRect(), br = this._btnsEl.getBoundingClientRect();
     this._narrow = typeof matchMedia === 'function' && matchMedia('(max-width: 640px)').matches;   // mesmo corte do CSS
     const sheet = this._narrow || (w < 1024 && this.clientHeight > w * 1.1);   // folha de baixo: celular e tablet em pé (tamanho do cartão, não da janela)
     if (sheet !== this._sheet) {   // girou o tablet: troca folha ↔ coluna sem herdar o deslocamento do outro eixo
@@ -9282,11 +9334,11 @@ export class Igreja3DCard extends HTMLElement {
     this._sideMin = lo; this._sideMax = hi;
     if (this._sizer) { const z = this._sizer; z.setAttribute('aria-valuemin', lo); z.setAttribute('aria-valuemax', hi); z.setAttribute('aria-valuenow', sw); z.dataset.edge = sw <= lo ? 'min' : sw >= hi ? 'max' : ''; }
     this._sideOverlay = sheet || sw + 20 > w * 0.6;   // folha, ou coluna larga demais para dividir a tela: fica por cima, sem reenquadrar
-    const hit = this._sideOverlay || br.left - wr.left < 10 + sw + 8;   // coluna à esquerda: abaixo do título (e dos botões, se invadirem a faixa)
+    const hit = this._sideOverlay || br.left - wr.left < 10 + sw + 8;   // coluna à esquerda: no alto (v1.8, sem o título); abaixo do ⋯ se ele invadir a faixa
     const nb = this._navRow && !this._navRow.hidden ? this._navRow.getBoundingClientRect().bottom : 0;   // folha: também abaixo da trilha da Vista de cima
-    const top = Math.round((sheet ? Math.max(tr.bottom, br.bottom, nb) : hit ? Math.max(tr.bottom, br.bottom) : tr.bottom) - wr.top + 8);
-    this._sideW = sw; this._wrap.style.setProperty('--side-w', `${sw}px`); this._wrap.style.setProperty('--side-top', `${top}px`);
-    this._hudH = top;   // altura do cabeçalho (o _resize desconta na folha aberta)
+    const hb = Math.round(Math.max(br.bottom, nb) - wr.top + 8), top = sheet ? hb : hit ? Math.round(br.bottom - wr.top + 8) : 10;
+    this._sideW = sw; this._wrap.style.setProperty('--side-w', `${sw}px`); this._wrap.style.setProperty('--side-top', `${top}px`); this._wrap.style.setProperty('--hud-h', `${hb}px`);
+    this._hudH = hb;   // altura do cabeçalho (o _resize desconta na folha aberta; o balão abre embaixo dele)
   }
   // Painel contextual (v1.7, o da Casa): o painel focado no cômodo r (null = visão geral, com abas e filtros; um bloco = o resumo dele, nível 1
   // da Vista de cima). Abre o painel recolhido — menos na Pessoa com o painel por cima da vista (a folha cobriria o joystick); o cômodo fica
@@ -9299,7 +9351,7 @@ export class Igreja3DCard extends HTMLElement {
       this._reopen.querySelector('.rl').textContent = r ? r.label : 'Painel';
       const f = this._rFoot; f.replaceChildren();
       if (r) {   // v1.8: o bloco (r.rooms) mostra os aparelhos dele, como o cômodo — com os cômodos de subtítulo, salvo na lista única — e as automações de todos
-        this._rTitle.textContent = r.label; this._showTab('ctl');
+        this._rTitle.textContent = r.label; this._showTab('ctl'); this._rSw.setAttribute('aria-label', `Tudo em ${r.label}`); this._rSw.classList.add('still'); delete this._rSw.dataset.hold;   // outro cômodo: o interruptor já nasce na posição dele
         const autos = r.rooms ? [...new Set(r.rooms.flatMap((q) => this._roomAutos(q)))] : this._roomAutos(r);
         if (autos.length) { const h = document.createElement('div'), al = document.createElement('div'); h.className = 'sect'; h.textContent = 'Automações'; al.className = 'autos'; for (const a of autos) al.appendChild(this._autoRow(a, Date.now())); f.append(h, al); }
         if (!r.rooms) f.appendChild(this._rEnter);
@@ -9321,26 +9373,28 @@ export class Igreja3DCard extends HTMLElement {
   }
   // realce azul do cômodo do painel (na Pessoa não: desenhado por cima de tudo, atravessaria as paredes)
   _roomHl(r) { this._hlShow(r && !this._walkOn ? r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]) : null); this._orbit.dirty = true; }
-  // ---- Menu de opções (v1.6.0) ----
-  // abre/fecha; `focus` (aberto pelo teclado) leva o foco ao 1º item; ao fechar com o foco dentro, ele volta ao botão ☰
+  // ---- Lista suspensa (v1.6.0; v1.8: o único botão do topo) ----
+  // abre/fecha; `focus` (aberto pelo teclado) leva o foco ao 1º item; ao fechar com o foco dentro, ele volta ao ⋯. Sai encolhendo para o botão
   _menuSet(open, focus = false) {
     const m = this._menu; if (!m) return;
     if (!!open !== !!this._menuOn) {
-      this._menuOn = !!open; m.hidden = !open; this._menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (open) this._closeGoto(); else if (m.contains(this.shadowRoot.activeElement)) this._menuBtn.focus();
+      this._menuOn = !!open; this._menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      clearTimeout(this._menuT); m.classList.toggle('out', !open);
+      if (open) { m.hidden = false; this._closeGoto(); this._updateTime(true); }
+      else { this._menuT = setTimeout(() => { m.hidden = true; }, this._reduced ? 0 : 150); if (m.contains(this.shadowRoot.activeElement)) this._menuBtn.focus(); }
     }
     if (open && focus) this._menuFocus(0);
   }
-  _menuItems() { return [...this._menu.querySelectorAll('button')].filter((b) => !b.disabled); }
+  _menuItems() { return [...this._menu.querySelectorAll('button, input')].filter((b) => !b.disabled); }
   _menuFocus(i) { const it = this._menuItems(); if (it.length) it[((i % it.length) + it.length) % it.length].focus(); }
-  // teclado com o menu aberto (captura na janela: antes do Walker e da trilha da Vista de cima): Esc só fecha o menu, ↑/↓/Home/End andam, Tab sai
+  // teclado com o menu aberto (captura na janela: antes do Walker e da trilha da Vista de cima): Esc só fecha o menu, ↑/↓/Home/End andam
+  // (←/→ mexem na hora), Tab segue e, saindo da lista, ela fecha (focusout)
   _menuKey(e) {
     if (e.key === 'Escape' && this._sel && !this._menuOn) { e.stopPropagation(); this._select(null); return; }   // 1º Esc: só o balão (o cômodo do painel e a Pessoa ficam)
     if (!this._menuOn) return;
     const act = this.shadowRoot.activeElement, inside = !!act && (this._menu.contains(act) || act === this._menuBtn);
     if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); this._menuSet(false); if (inside) this._menuBtn.focus(); return; }
     if (!inside) return;
-    if (e.key === 'Tab') { this._menuSet(false); return; }
     const it = this._menuItems(), i = it.indexOf(act), d = { ArrowDown: 1, ArrowUp: -1 }[e.key];
     const to = d ? (i < 0 ? (d > 0 ? 0 : -1) : i + d) : e.key === 'Home' ? 0 : e.key === 'End' ? -1 : null;
     if (to == null) return;
@@ -9365,17 +9419,16 @@ export class Igreja3DCard extends HTMLElement {
     });
     const spacer = document.createElement('div'); spacer.className = 'spacer'; head.appendChild(spacer);
     const col = document.createElement('button'); col.className = 'collapse'; col.title = 'Recolher painel'; col.setAttribute('aria-label', 'Recolher painel');
-    col.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4"/></svg>'; col.addEventListener('click', () => { if (this._sheet && this._dock.dataset.snap !== 'peek') this._snapTo('peek'); else this._setPanel(false); }); head.appendChild(col);   // folha: desce até a espiada; dela, fecha
-    // cômodo tocado (ver _showRoom), numa linha: [‹ voltar] [nome + "N de M ligados"] [Ligar ou Desligar tudo]
+    col.innerHTML = iconSvg('chevr'); col.addEventListener('click', () => { if (this._sheet && this._dock.dataset.snap !== 'peek') this._snapTo('peek'); else this._setPanel(false); }); head.appendChild(col);   // folha: desce até a espiada; dela, fecha
+    // cômodo tocado (ver _showRoom), numa linha: [‹ voltar] [nome + "N de M ligados"] [Tudo: o interruptor do cômodo/bloco (v1.8, o da Casa v1.9)]
     const rh = document.createElement('div'); rh.className = 'rhead'; dock.appendChild(rh);
-    rh.innerHTML = `<button class="rback" aria-label="Todos os ambientes">${iconSvg('chevl')}</button><div class="rtitle" role="status"><b></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>`;
+    rh.innerHTML = `<button class="rback" aria-label="Todos os ambientes">${iconSvg('chevl')}</button><div class="rtitle" role="status"><b></b><small></small></div><span class="swl" aria-hidden="true">Tudo</span><button class="sw still" role="switch"></button>`;
     this._rBack = rh.firstChild; this._rBack.addEventListener('click', () => {
       const f = this.shadowRoot.activeElement === this._rBack; if (this._topView) this._navBack(); else this._showRoom(this._rUp);   // cômodo aberto do bloco: volta ao bloco
       if (f && !this._room) this._countEl.focus({ preventScroll: true });   // o ‹ some com o cômodo: o foco vai ao resumo (como ao reabrir), não ao body
     });
-    this._rTitle = rh.querySelector('b'); this._rCount = rh.querySelector('small'); this._rAll = rh.querySelector('.all');
-    this._rAll.firstChild.title = 'Acende as luzes (ar, telão e som ficam como estão)'; this._rAll.lastChild.title = 'Apaga as luzes e desliga ar, telão e som';
-    this._rAll.firstChild.addEventListener('click', () => this._roomPower(true)); this._rAll.lastChild.addEventListener('click', () => this._roomPower(false));
+    this._rTitle = rh.querySelector('b'); this._rCount = rh.querySelector('small'); this._rSw = rh.lastChild;
+    this._rSw.addEventListener('click', () => this._swFlip(this._rSw, this._roomKeys(this._room)));
     const tabs = document.createElement('div'); tabs.className = 'tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Seções do painel'); dock.appendChild(tabs);
     this._panes = {};
     const panes = [];
@@ -9434,14 +9487,13 @@ export class Igreja3DCard extends HTMLElement {
     // aparelho ("Ar do templo", não "Ar"); o nome do bloco abre ele (na Vista de cima, aproxima)
     this._groups = []; this._zone = ''; this._onKeep = new Set(); const list = new Intl.ListFormat('pt-BR');
     for (const b of this._blocks) {
-      const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome ›  N de M ligados] [Ligar tudo ou Desligar tudo do bloco]
-      bh.innerHTML = '<div class="bt"><b role="heading" aria-level="2"><button class="bn"><span></span><i aria-hidden="true">›</i></button></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>';
-      const ba = bh.querySelector('.all'), bn = bh.querySelector('.bn'); bn.firstChild.textContent = b.label; bn.title = `Abrir ${b.label}`; ba.setAttribute('aria-label', b.label);
+      const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome ›  N de M ligados] [Tudo: o interruptor do bloco]
+      bh.innerHTML = `<div class="bt"><b role="heading" aria-level="2"><button class="bn"><span></span><i aria-hidden="true">${iconSvg('chevr')}</i></button></b><small></small></div><span class="swl" aria-hidden="true">Tudo</span><button class="sw still" role="switch"></button>`;
+      const bs = bh.lastChild, bn = bh.querySelector('.bn'); bn.firstChild.textContent = b.label; bn.title = `Abrir ${b.label}`; bs.setAttribute('aria-label', `Tudo em ${b.label}`);
       bn.addEventListener('click', () => this._openFrom(bn, b));
-      ba.firstChild.title = this._rAll.firstChild.title; ba.lastChild.title = this._rAll.lastChild.title;   // a política do cômodo (ligar acende só as luzes)
       const keys = b.items;   // só os listados embaixo (os mesmos do nível 1 da Vista de cima): a soma dos blocos não repete aparelho
-      ba.firstChild.addEventListener('click', () => this._roomPower(true, keys)); ba.lastChild.addEventListener('click', () => this._roomPower(false, keys));
-      this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, all: ba, b });
+      bs.addEventListener('click', () => this._swFlip(bs, keys));
+      this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, sw: bs, b });
       for (const r of b.rooms) {
         if (!b.flat) { const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own, via: r.via, b }); }
         const cp = b.flat ? r.items.filter((k) => !b.rooms.some((q) => q.own.includes(k))) : [];   // lista única: o aparelho de outro bloco que serve a este cômodo entra como cópia, com o nome do cômodo ("Pátio")
@@ -9455,7 +9507,7 @@ export class Igreja3DCard extends HTMLElement {
     }
     grid.appendChild(this._detail);
     this._rFoot = document.createElement('div'); this._rFoot.className = 'rfoot'; this._panes.ctl.pane.appendChild(this._rFoot);   // automações do cômodo + Entrar aqui
-    this._rEnter = document.createElement('button'); this._rEnter.className = 'enter'; this._rEnter.innerHTML = `${iconSvg('person')}<span>Entrar aqui</span>`;
+    this._rEnter = document.createElement('button'); this._rEnter.className = 'enter'; this._rEnter.innerHTML = `${iconSvg('walk')}<span>Entrar aqui</span>`;
     this._rEnter.title = 'Entra neste cômodo na visão de Pessoa (num ponto livre, olhando para dentro)'; this._rEnter.addEventListener('click', () => this._enterRoom(this._room));
     this._timers = {};
     // Automações: rotinas rápidas do cartão + automações do HA (descobertas sozinhas)
@@ -9476,11 +9528,11 @@ export class Igreja3DCard extends HTMLElement {
   // Clima ao vivo (Open-Meteo, sem chave) — atualiza a cada 15 min (busca e intervalo presos à conexão: _timersOn)
   _buildWeather() {
     if (!this._config.weather) return;
-    // seção Clima no topo do menu ☰ (cidade, condição, sensação, vento, atualizado); no título fica só o ícone + temperatura (_wxHtml)
+    // seção Clima da lista suspensa, logo depois da hora (v1.8: o título saiu): condição, cidade, sensação, vento e a hora da leitura
     const d = document.createElement('div'); d.className = 'msec'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Clima');
     d.innerHTML = `<div class="mh" aria-hidden="true">Clima</div><div class="mwx"><span class="mic">${iconSvg('cloudsun')}</span><span><b>Carregando…</b><small></small><small></small></span></div>`;
     const [line, meta, upd] = d.querySelectorAll('.mwx b, .mwx small'); meta.textContent = this._config.weather_city || 'Local';
-    this._menu.prepend(d);
+    this._hrSec.after(d);
     this._weatherUI = { ico: d.querySelector('.mic'), line, meta, upd };
   }
   async _fetchWeather() {
@@ -9493,16 +9545,15 @@ export class Igreja3DCard extends HTMLElement {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const j = await res.json(); const c = j.current; if (!c) throw new Error('sem dados');
       const [iconKey, desc] = WEATHER_CODE[c.weather_code] || ['cloud', '—'];
-      const icon = !c.is_day && iconKey === 'sun' ? 'moon' : !c.is_day && iconKey === 'cloudsun' ? 'cloud' : iconKey;
+      const icon = !c.is_day && iconKey === 'sun' ? 'night' : !c.is_day && iconKey === 'cloudsun' ? 'cloudnight' : iconKey;
       const t = Math.round(c.temperature_2m), city = this._config.weather_city || 'Local';
       ui.ico.innerHTML = iconSvg(icon);
       ui.line.textContent = `${t}° · ${desc}`;
       ui.meta.textContent = `${city} · sensação ${Math.round(c.apparent_temperature)}° · vento ${Math.round(c.wind_speed_10m)} km/h`;
       ui.upd.textContent = `atualizado ${fmtClock(Date.now())}`;
-      this._wxHtml = `<span class="wx" role="img" title="${desc} · ${city}" aria-label="${t} graus, ${desc}">${iconSvg(icon)}${t}°</span>`; this._updateTime(true);
       this._weatherOk = Date.now();   // hora da última leitura boa (de volta à vista, só busca de novo depois de 10 min)
     } catch (err) {
-      if (!this._weatherOk) { ui.line.textContent = 'Clima indisponível'; ui.upd.textContent = 'sem conexão'; }   // no título: nada
+      if (!this._weatherOk) { ui.line.textContent = 'Clima indisponível'; ui.upd.textContent = 'sem conexão'; }
       console.warn('[igreja3d-card] clima indisponível:', err && err.message);
     }
   }
@@ -9524,11 +9575,16 @@ export class Igreja3DCard extends HTMLElement {
     for (const t of this._tileList) t.tile.hidden = ks ? !ks.includes(t.it.key) || !mine(t) : on && !keep.has(t.it.key);   // bloco ou cômodo aberto: todos os aparelhos dele (sensores também), ligados e desligados
     this._zEmpty.hidden = !(on && !keep.size);
   }
-  // Ligar tudo / Desligar tudo: só a ação que muda algo; o foco do teclado passa ao botão que aparece (não cai no body)
-  _allShow(all, n, act) {
-    const f = this.shadowRoot.activeElement, [on, off] = all.children;
-    all.hidden = !n; on.hidden = act > 0; off.hidden = act === 0;
-    if (f && f.hidden && all.contains(f) && n) (on.hidden ? off : on).focus({ preventScroll: true });
+  // interruptor "Tudo" (v1.8, o da Casa v1.9; bloco e cômodo): ligado se algum aparelho controlável do grupo está; tocar ligado desliga tudo,
+  // desligado acende as luzes (_roomPower). Vira na hora (como o UISwitch) e segura a posição pedida até o HA concordar (no máx. 2 s)
+  _swFlip(sw, keys) {
+    const on = sw.getAttribute('aria-checked') !== 'true'; sw.setAttribute('aria-checked', String(on)); sw.dataset.hold = performance.now() + 2000;
+    clearTimeout(this._swT); this._swT = setTimeout(() => this._renderPanel(), 2050); this._roomPower(on, keys);   // o HA não confirmou (aparelho fora do ar): volta ao real
+  }
+  _swSet(sw, n, on) {
+    sw.hidden = sw.previousSibling.hidden = !n; if (+sw.dataset.hold > performance.now() && (sw.getAttribute('aria-checked') === 'true') !== on) return;
+    delete sw.dataset.hold; sw.setAttribute('aria-checked', String(on)); sw.title = on ? 'Desligar tudo (luzes, ar, telão e som)' : 'Acender as luzes (ar, telão e som ficam como estão)';
+    if (sw.classList.contains('still')) requestAnimationFrame(() => sw.classList.remove('still'));   // 1º desenho (e troca de cômodo) sem deslize
   }
   // aparelhos ligados agora (sensor não conta)
   _onKeys() { return ITEMS.filter((i) => i.kind !== 'sensor' && !i.nolist && this._state[i.key] && this._state[i.key].on).map((i) => i.key); }
@@ -9536,7 +9592,7 @@ export class Igreja3DCard extends HTMLElement {
   // "Mídia ›  1 de 2 ligados": abre o cômodo (na Vista de cima, aproxima ele) — na aba Ambientes e na Automações
   _zoneHead(r) {
     const zh = document.createElement('div'); zh.className = 'zone'; zh.dataset.room = r.label; zh.setAttribute('role', 'heading'); zh.setAttribute('aria-level', '3');
-    const zt = document.createElement('button'); zt.className = 'zt'; zt.textContent = r.label; zt.insertAdjacentHTML('beforeend', '<i aria-hidden="true">›</i>'); zt.title = `Abrir ${r.label}`;
+    const zt = document.createElement('button'); zt.className = 'zt'; zt.textContent = r.label; zt.insertAdjacentHTML('beforeend', `<i aria-hidden="true">${iconSvg('chevr')}</i>`); zt.title = `Abrir ${r.label}`;
     zt.addEventListener('click', () => this._openFrom(zt, r));
     const zn = document.createElement('span'); zn.className = 'zn'; zh.append(zt, zn); return zh;
   }
@@ -9551,10 +9607,9 @@ export class Igreja3DCard extends HTMLElement {
     const sSt = document.createElement('span'); sSt.className = 'st'; const sSep = document.createElement('span'); sSep.className = 'sep'; const sTm = document.createElement('span'); sTm.className = 'tm';
     small.append(sSt, sSep, sTm);
     tile.append(top, txt);
-    if (it.dim || it.rgb) { tile.classList.add('hasl'); const lv = document.createElement('i'); lv.className = 'lvl'; lv.setAttribute('aria-hidden', 'true'); tile.appendChild(lv); }
     const t = { tile, small, it, room, sSt, sSep, sTm, b: blk, r: rm, copy: !!copy };
     if (this._hasDetail(it)) {
-      const more = document.createElement('span'); more.className = 'more'; more.textContent = '⋯'; more.title = 'Mais controles'; more.setAttribute('role', 'button'); more.tabIndex = 0;
+      const more = document.createElement('span'); more.className = 'more'; more.innerHTML = iconSvg('more'); more.title = 'Mais controles'; more.setAttribute('role', 'button'); more.tabIndex = 0;
       more.addEventListener('click', (e) => { e.stopPropagation(); this._openDetail(it.key); });
       more.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); this._openDetail(it.key); } });
       top.appendChild(more);
@@ -9569,7 +9624,7 @@ export class Igreja3DCard extends HTMLElement {
     const it = ITEMS.find((i) => i.key === key); if (!it) return;
     const d = this._detail; d.innerHTML = ''; d.hidden = false; d.dataset.key = key; d.dataset.kind = it.kind; this._detailKey = key;
     d.setAttribute('role', 'group'); d.setAttribute('aria-label', `Controles: ${it.label}`);
-    this._dSw = this._dSmall = this._dModes = this._dOut = this._dPP = this._dVol = this._dTimer = this._dRange = null;
+    this._dSw = this._dSmall = this._dModes = this._dOut = this._dCur = this._dSwing = this._dPP = this._dVol = this._dTimer = this._dRange = null;
     const head = document.createElement('div'); head.className = 'dhead'; d.appendChild(head);
     const body = document.createElement('div'); body.className = 'dbody'; d.appendChild(body);
     const title = document.createElement('div'); title.className = 'dtitle';
@@ -9594,13 +9649,26 @@ export class Igreja3DCard extends HTMLElement {
       sw.addEventListener('click', () => this._svc('climate', 'set_hvac_mode', this.entity(key), { hvac_mode: this._state[key] && this._state[key].on ? 'off' : 'cool' }));
       const seg = document.createElement('div'); seg.className = 'seg2'; this._dModes = {};
       for (const m of ['cool', 'fan_only', 'dry', 'heat_cool']) { const mb = document.createElement('button'); mb.textContent = HVAC_PT[m]; mb.addEventListener('click', () => this._svc('climate', 'set_hvac_mode', this.entity(key), { hvac_mode: m })); seg.appendChild(mb); this._dModes[m] = mb; }
-      const step = document.createElement('div'); step.className = 'step';
-      const minus = document.createElement('button'); minus.textContent = '−'; minus.setAttribute('aria-label', 'Diminuir temperatura');
-      const out = document.createElement('output'); out.textContent = '—';
-      const plus = document.createElement('button'); plus.textContent = '+'; plus.setAttribute('aria-label', 'Aumentar temperatura');
-      const bump = (dd) => { const st = this._state[key]; const a = (st && st.attrs) || {}; const cur = a.temperature != null ? a.temperature : 23; const tt = clamp(cur + dd, a.min_temp || 16, a.max_temp || 31); out.textContent = `${tt}°`; this._svc('climate', 'set_temperature', this.entity(key), { temperature: tt }); };
+      // v1.8: uma linha por ajuste, como no iOS — Temperatura (o alvo no − / +, a atual embaixo) e Oscilar (climate.set_swing_mode); os 4 ares
+      const tr = document.createElement('div'); tr.className = 'drow';
+      tr.innerHTML = '<span>Temperatura<small></small></span><div class="step"><button aria-label="Diminuir a temperatura">−</button><output aria-live="polite">—</output><button aria-label="Aumentar a temperatura">+</button></div>';
+      const [minus, out, plus] = tr.querySelectorAll('.step > *'); this._dOut = out; this._dCur = tr.querySelector('small');
+      const bump = (dd) => {
+        const a = (this._state[key] && this._state[key].attrs) || {}, p = this._tPend;
+        const base = p && p.k === key && performance.now() - p.t < 3000 ? p.v : a.temperature != null ? a.temperature : 23;   // toques seguidos somam (o HA ainda não respondeu o anterior)
+        const tt = Math.round(clamp(base + dd * (a.target_temp_step || 1), a.min_temp || 16, a.max_temp || 31) * 10) / 10;
+        this._tPend = { k: key, v: tt, t: performance.now() }; out.textContent = `${String(tt).replace('.', ',')}°`; this._svc('climate', 'set_temperature', this.entity(key), { temperature: tt });
+      };
       minus.addEventListener('click', () => bump(-1)); plus.addEventListener('click', () => bump(1));
-      step.append(minus, out, plus); body.append(seg, step); this._dOut = out;
+      const wr = document.createElement('div'); wr.className = 'drow';
+      wr.innerHTML = '<span>Oscilar<small></small></span><button class="sw" role="switch" aria-checked="false" aria-label="Oscilar"></button>';
+      const sg = this._dSwing = wr.lastChild;
+      sg.addEventListener('click', () => {   // liga no modo de oscilar que o ar oferece (on, both, vertical…); a posição fica segura até o HA confirmar
+        const ms = ((this._state[key] && this._state[key].attrs) || {}).swing_modes || [], on = sg.getAttribute('aria-checked') !== 'true';
+        const m = on ? ['on', 'both', 'vertical', 'horizontal'].find((x) => ms.includes(x)) || ms.find((x) => x !== 'off') : ms.includes('off') ? 'off' : ms[0];
+        sg.setAttribute('aria-checked', String(on)); sg.dataset.hold = performance.now() + 2000; this._svc('climate', 'set_swing_mode', this.entity(key), { swing_mode: m });
+      });
+      body.append(seg, tr, wr);
     } else if (it.kind === 'media') {
       sw.addEventListener('click', () => this._svc('media_player', this._state[key] && this._state[key].on ? 'turn_off' : 'turn_on', this.entity(key)));
       const mk = (html, label, fn) => { const x = document.createElement('button'); x.className = 'mbtn'; x.innerHTML = html; x.setAttribute('aria-label', label); x.addEventListener('click', fn); body.appendChild(x); return x; };
@@ -9614,11 +9682,11 @@ export class Igreja3DCard extends HTMLElement {
       const tm = document.createElement('div'); tm.className = 'seg2 timerseg'; tm.setAttribute('aria-label', 'Desligar em');
       const lab = document.createElement('span'); lab.className = 'tlab'; lab.innerHTML = `${iconSvg('timer')} desligar em`; tm.appendChild(lab);
       for (const m of [15, 30, 60]) { const b = document.createElement('button'); b.textContent = `${m} min`; b.addEventListener('click', () => this._setTimer(key, m)); tm.appendChild(b); }
-      const cancel = document.createElement('button'); cancel.textContent = 'cancelar'; cancel.addEventListener('click', () => this._setTimer(key, 0)); tm.appendChild(cancel);
+      const cancel = document.createElement('button'); cancel.textContent = 'Nunca'; cancel.addEventListener('click', () => this._setTimer(key, 0)); tm.appendChild(cancel);
       body.appendChild(tm); this._dTimer = tm;
     }
     d.onkeydown = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); d.hidden = true; this._detailKey = null; const t = this._tileFor(key); const mo = t && t.tile.querySelector('.more'); if (mo) mo.focus(); } };
-    const close = document.createElement('button'); close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', 'Fechar');
+    const close = document.createElement('button'); close.className = 'close'; close.innerHTML = iconSvg('close'); close.setAttribute('aria-label', 'Fechar');
     close.addEventListener('click', () => { d.hidden = true; this._detailKey = null; }); head.appendChild(close);
     this._showTab('ctl'); this._renderPanel(); this._snapTo('full');   // folha: os controles pedem a altura cheia (a lista rola)
     if (!this._sheet) d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });   // coluna: a página do HA mostra os controles; na folha a cheia já mostra
@@ -9626,7 +9694,8 @@ export class Igreja3DCard extends HTMLElement {
   _stateText(it, st, short = false) {   // short: no bloco (o ar sem a temperatura atual, numa linha)
     if (!st || st.unavailable) return 'indisponível';
     const a = st.attrs || {};
-    if (it.kind === 'climate') return st.on ? `${HVAC_PT[st.state] || st.state}${a.temperature != null ? ` · ${a.temperature}°` : ''}${!short && a.current_temperature != null ? ` · ${a.current_temperature}° atual` : ''}` : `Desligado${!short && a.current_temperature != null ? ` · ${a.current_temperature}° atual` : ''}`;
+    const n = (v) => String(v).replace('.', ',');   // 24,5°, como o resto do painel
+    if (it.kind === 'climate') return st.on ? `${HVAC_PT[st.state] || st.state}${a.temperature != null ? ` · ${n(a.temperature)}°` : ''}${!short && a.current_temperature != null ? ` · ${n(a.current_temperature)}° atual` : ''}` : `Desligado${!short && a.current_temperature != null ? ` · ${n(a.current_temperature)}° atual` : ''}`;
     if (it.kind === 'media') return st.state === 'playing' && a.media_title ? `${a.media_title}` : (MEDIA_PT[st.state] || st.state);
     if (it.kind === 'sensor') return st.text || st.state;
     if (it.kind === 'switch') return st.on ? 'ligado' : 'desligado';
@@ -9641,7 +9710,7 @@ export class Igreja3DCard extends HTMLElement {
       const ks = this._roomKeys(this._room), ctl = ks.filter((k) => kind(k) !== 'sensor');
       const on = ctl.filter((k) => this._state[k] && this._state[k].on).length;
       this._rCount.textContent = !ks.length ? 'Nenhum aparelho' : ctl.length ? `${on} de ${ctl.length} ligados` : '';
-      this._allShow(this._rAll, ctl.length, on);   // só a ação que muda algo
+      this._swSet(this._rSw, ctl.length, on > 0);
     }
     const now = Date.now();
     for (const t of this._tileList) {
@@ -9653,12 +9722,11 @@ export class Igreja3DCard extends HTMLElement {
       const stx = this._stateText(t.it, st, true);
       if (t.sSt.textContent !== stx) t.sSt.textContent = stx;
       t.sSep.textContent = tm ? ' · ' : ''; if (t.sTm.textContent !== tm) t.sTm.textContent = tm;
-      if (st && st.attrs && st.attrs.brightness != null && (t.it.dim || t.it.rgb)) t.tile.style.setProperty('--lvl', `${Math.round(st.attrs.brightness / 2.55)}%`);
     }
     for (const z of this._groups || []) {
       const ks = z.keys.filter((k) => kind(k) !== 'sensor'), act = ks.filter((k) => this._state[k] && this._state[k].on).length;
       z.zn.textContent = ks.length ? `${act} de ${ks.length} ligados` : z.via || '';   // sensor não conta; cômodo sem aparelho próprio: de onde vem a luz
-      if (z.all) this._allShow(z.all, ks.length, act);   // bloco: só a ação que muda algo (como no cômodo)
+      if (z.sw) this._swSet(z.sw, ks.length, act > 0);
     }
     // resumo do que está ligado ("4 luzes · Telão · Som · 2 ares", +N depois de 3 partes) e o filtro "Ligados · N"
     const onK = this._onKeys(), n = onK.filter((k) => kind(k) === 'light').length, ac = onK.filter((k) => kind(k) === 'climate').length;
@@ -9684,12 +9752,18 @@ export class Igreja3DCard extends HTMLElement {
       if (this._dSw) this._dSw.setAttribute('aria-checked', on ? 'true' : 'false');
       this._detail.classList.toggle('on', on);   // ícone do detalhe aceso como o do bloco
       if (this._dSmall) this._dSmall.textContent = this._stateText(it, st) + this._timerText(key, now);
-      if (this._dTimer) for (const b of this._dTimer.querySelectorAll('button')) b.setAttribute('aria-pressed', this._timers[key] && b.textContent === `${this._timers[key].min} min` ? 'true' : 'false');
+      if (this._dTimer) for (const b of this._dTimer.querySelectorAll('button')) b.setAttribute('aria-pressed', b.textContent === (this._timers[key] ? `${this._timers[key].min} min` : 'Nunca') ? 'true' : 'false');
       if (this._dModes) for (const [m, mb] of Object.entries(this._dModes)) mb.setAttribute('aria-pressed', st && st.state === m ? 'true' : 'false');
       if (this._dRange && st && st.attrs && st.attrs.brightness != null && this._dRange.range.getRootNode().activeElement !== this._dRange.range) {
         const r = this._dRange.range; r.value = Math.max(1, Math.round(st.attrs.brightness / 2.55)); r.dispatchEvent(new Event('input'));
       }
-      if (this._dOut && st && st.attrs && st.attrs.temperature != null) this._dOut.textContent = `${st.attrs.temperature}°`;
+      if (this._dOut && st && st.attrs) {   // ar: o alvo (o pedido ainda sem resposta fica à vista), a atual e o oscilar
+        const a = st.attrs, p = this._tPend, ms = Array.isArray(a.swing_modes) && a.swing_modes.length > 1 ? a.swing_modes : null, sw = !!a.swing_mode && a.swing_mode !== 'off', sg = this._dSwing;
+        if (a.temperature != null && !(p && p.k === key && performance.now() - p.t < 3000 && p.v !== a.temperature)) this._dOut.textContent = `${String(a.temperature).replace('.', ',')}°`;
+        this._dCur.textContent = a.current_temperature != null ? `atual ${String(a.current_temperature).replace('.', ',')}°` : 'alvo';
+        if (!(+sg.dataset.hold > performance.now()) || (sg.getAttribute('aria-checked') === 'true') === sw) { delete sg.dataset.hold; sg.setAttribute('aria-checked', String(sw)); }
+        sg.disabled = !ms; sg.previousSibling.lastChild.textContent = !ms ? 'este ar não informa ao HA' : sw ? 'ligado' : 'desligado';
+      }
       if (this._dPP) this._dPP.innerHTML = iconSvg(st && st.state === 'playing' ? 'pause' : 'play');
       if (this._dVol && st && st.attrs) this._dVol.textContent = st.attrs.volume_level != null ? `vol ${Math.round(st.attrs.volume_level * 100)}%` : '';
     }
@@ -9727,7 +9801,7 @@ export class Igreja3DCard extends HTMLElement {
     const sw = document.createElement('button'); sw.className = 'sw'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-label', `${a.name} ativa`);
     const paint = () => {   // a própria linha muda na hora (no cômodo e na aba), sem redesenhar o painel
       row.className = 'auto ' + (a.on ? 'on' : 'off'); sw.setAttribute('aria-checked', a.on ? 'true' : 'false');
-      sm.textContent = `${a.last ? `última execução ${fmtClock(a.last)} · ${fmtRel(a.last, now)}` : 'nunca executou'}${a.on ? '' : ' · desativada'}`;
+      sm.textContent = `${a.last ? `executou ${fmtRel(a.last, now)} · ${fmtClock(a.last)}` : 'nunca executou'}${a.on ? '' : ' · desativada'}`;   // curto e o "há …" antes da hora: na coluna estreita as reticências cortam só a hora
     };
     paint();
     sw.addEventListener('click', () => { a.on = !a.on; this._svc('automation', a.on ? 'turn_on' : 'turn_off', a.id); paint(); this._renderAutos(); });
@@ -9789,10 +9863,10 @@ export class Igreja3DCard extends HTMLElement {
       rd.setSize(w, h, false);
     }
     const wr = this._wrap;
-    if (wr) { wr.classList.toggle('narrow', w <= 640); wr.style.setProperty('--cw', w + 'px'); wr.style.setProperty('--ch', h + 'px'); }   // menu do celular: a largura do cartão
+    if (wr) { wr.classList.toggle('narrow', w <= 640); wr.style.setProperty('--cw', w + 'px'); wr.style.setProperty('--ch', h + 'px'); }   // a lista suspensa cabe no cartão
     this._layoutHud(w);
     // v1.7: com o painel aberto (desktop/tablet deitado) a cena é enquadrada na faixa à DIREITA da coluna (P); na folha de baixo (celular/tablet
-    // em pé), entre o cabeçalho (T) e a parte VISÍVEL dela (B). Fora da folha, o HUD de cima alto (título + trilha da Vista de cima) empurra a cena (U)
+    // em pé), entre o cabeçalho (T) e a parte VISÍVEL dela (B). Fora da folha, o HUD de cima alto (a trilha da Vista de cima quebrada) empurra a cena (U)
     const open = this._panelOpen && this._dock && !this._dock.hidden;
     if (open && this._sheet && !this._sprRaf && !this._dragging && this._dock.dataset.snap) this._sideX(this._snaps()[this._dock.dataset.snap]);   // conteúdo mudou de altura: fica no mesmo detente
     const hudH = this._hudTop ? this._hudTop.offsetHeight : 0, U = hudH > 90 ? Math.min(hudH, h * 0.3) : 0;
@@ -9803,8 +9877,8 @@ export class Igreja3DCard extends HTMLElement {
     this._pA = fly && !this._reduced && p0 != null && p0 !== P ? [p0, P, 0] : null;   // a borda do painel assentou: a faixa da cena desliza em 0,25 s (_frame), sem pulo
     if (this._pA) this._viewP(p0);
     this._orbit.dirty = true;
-    const dc = this._pegDica;   // dica do bonequinho: logo abaixo dele, a seta no meio do botão
-    if (dc && wr) { const r = this._pegBtn.getBoundingClientRect(), q = wr.getBoundingClientRect(); dc.hidden = !r.width; dc.style.top = `${r.bottom - q.top + 10}px`; dc.style.right = `${Math.max(8, q.right - r.right - 60)}px`; dc.style.setProperty('--ax', `${q.right - (r.left + r.right) / 2 - Math.max(8, q.right - r.right - 60) - 6}px`); }
+    const dc = this._pegDica;   // dica do bonequinho: logo abaixo do ⋯ (ele mora na lista), a seta no meio do botão
+    if (dc && wr) { const r = this._menuBtn.getBoundingClientRect(), q = wr.getBoundingClientRect(); dc.hidden = !r.width; dc.style.top = `${r.bottom - q.top + 10}px`; dc.style.right = `${Math.max(8, q.right - r.right - 60)}px`; dc.style.setProperty('--ax', `${q.right - (r.left + r.right) / 2 - Math.max(8, q.right - r.right - 60) - 6}px`); }
     if (changed && this._raf && !this._busy) rd.render(this._scene, this._camera);   // o ResizeObserver roda depois do quadro: sem isso a tela piscaria preta
   }
   _viewP(P) {   // câmera na faixa livre: P px à esquerda (coluna), T em cima (cabeçalho) e B embaixo (folha); B, T e o tamanho vêm do _resize

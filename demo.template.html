@@ -18,78 +18,11 @@
     padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 30; text-align: center; }
   .toast.show { opacity: 1; }
   igreja3d-card { flex: 1; min-height: 0; --igreja3d-height: 100%; border-radius: 0; }
-
-  /* Faixa de hora do dia (só na demo) — mesmo visual do HUD do cartão */
-  .sky { --amber: #ffc46b; --amber-soft: #ffd48a; position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 20; box-sizing: border-box;
-    width: min(380px, calc(100vw - 24px)); padding: 4px 6px 4px 11px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "time track btn hide"; align-items: center; column-gap: 8px;
-    background: rgba(10, 15, 30, .78); border: 1px solid rgba(255, 255, 255, .09); border-radius: 12px; color: #e6edf7;
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
-    font: 12px/1.25 -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif; transition: opacity .2s; }
-  .sky-time { grid-area: time; display: flex; flex-direction: column; min-width: 58px; }
-  .sky output { font-size: 16px; font-weight: 700; line-height: 1; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: #f3f6fc; }
-  .sky.sim output { color: var(--amber-soft); }
-  .sky-cap { margin-top: 2px; font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: #8f9bb3; white-space: nowrap; }
-  .sky-track { grid-area: track; position: relative; height: 32px; min-width: 0; }
-  .sky-bar { position: absolute; left: 11px; right: 11px; top: 6px; height: 8px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
-  .sky-mark { position: absolute; top: 21px; left: calc(11px + (100% - 22px) * var(--f)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-  .sky-mark i { position: absolute; top: -7px; width: 1px; height: 5px; background: rgba(255, 255, 255, .35); }
-  .sky-mark em { font-style: normal; font-size: 8.5px; font-weight: 600; color: #8f9bb3; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .sky-mark em b { color: var(--amber); font-weight: 700; margin-right: 2px; }
-  .sky input[type=range] { position: absolute; left: 0; top: 0; width: 100%; height: 20px; margin: 0; padding: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none; }
-  .sky input[type=range]::-webkit-slider-runnable-track { height: 20px; background: transparent; border: 0; }
-  .sky input[type=range]::-moz-range-track { height: 20px; background: transparent; border: 0; }
-  .sky input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 20px; background: transparent; border: 0; }
-  .sky input[type=range]::-moz-range-thumb { width: 22px; height: 20px; background: transparent; border: 0; border-radius: 0; }
-  .sky input[type=range]:focus { outline: none; }
-  .sky-thumb { position: absolute; top: 0; left: calc(11px + (100% - 22px) * var(--f, 0)); width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; box-sizing: border-box; pointer-events: none;
-    display: flex; align-items: center; justify-content: center; background: #0a0f1e; border: 2px solid var(--amber); color: var(--amber);
-    box-shadow: 0 0 0 3px rgba(255, 196, 107, .14), 0 2px 8px rgba(0, 0, 0, .5); transition: box-shadow .15s, border-color .3s, color .3s; }
-  .sky-thumb svg { width: 11px; height: 11px; display: block; }
-  .sky-thumb .moon { display: none; } .sky-thumb.night { border-color: #9db6ee; color: #b9ccf5; box-shadow: 0 0 0 3px rgba(157, 182, 238, .14), 0 2px 8px rgba(0, 0, 0, .5); }
-  .sky-thumb.night .sun { display: none; } .sky-thumb.night .moon { display: block; }
-  .sky input[type=range]:focus-visible ~ .sky-thumb { box-shadow: 0 0 0 2px #0a0f1e, 0 0 0 4px var(--amber); }
-  .sky-live { grid-area: btn; appearance: none; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: .01em; padding: 5px 9px; border-radius: 999px; cursor: pointer;
-    color: #d5dcea; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); white-space: nowrap; }
-  .sky-live:hover { background: rgba(255, 255, 255, .12); }
-  .sky-live:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-  .sky-live .dot { width: 7px; height: 7px; border-radius: 50%; background: #6b768f; flex: none; }
-  .sky-live.on { color: #ffd48a; background: rgba(255, 196, 107, .16); border-color: rgba(255, 196, 107, .4); cursor: default; }
-  .sky-live.on .dot { background: #4be38b; animation: skypulse 1.8s ease-out infinite; }
-  .sky-live:not(.on) .dot { background: transparent; border: 2px solid var(--amber); box-sizing: border-box; }
-  @keyframes skypulse { 0% { box-shadow: 0 0 0 0 rgba(75, 227, 139, .6); } 70%, 100% { box-shadow: 0 0 0 7px rgba(75, 227, 139, 0); } }
-  @media (prefers-reduced-motion: reduce) { .sky-live.on .dot { animation: none; } }
-  /* ocultar: a faixa vira só uma pílula com a hora; clicar nela (ou no botão) mostra de novo */
-  .sky-hide { grid-area: hide; appearance: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .06); color: #aab4c8; cursor: pointer; }
-  .sky-hide:hover { background: rgba(255, 255, 255, .14); color: #e6edf7; }
-  .sky-hide:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-  .sky-hide svg { width: 12px; height: 12px; transition: transform .2s; }
-  .sky.min { width: auto; grid-template-columns: auto auto; grid-template-areas: "time hide"; padding: 3px 4px 3px 10px; cursor: pointer; }
-  .sky.min .sky-track, .sky.min .sky-live, .sky.min .sky-cap { display: none; }
-  .sky.min .sky-time { min-width: 0; }
-  .sky.min output { font-size: 13px; }
-  .sky.min .sky-hide svg { transform: rotate(180deg); }
-  @media (max-width: 560px) {
-    .sky { width: min(360px, calc(100vw - 24px)); }
-    .sky-cap { display: none; }
-  }
 </style>
 <div class="app">
   <igreja3d-card id="card"></igreja3d-card>
 </div>
 <div class="toast" id="toast" role="status"></div>
-<div class="sky" id="sky" role="group" aria-label="Hora do dia simulada">
-  <div class="sky-time"><output id="horaOut" for="hora" aria-live="off">--:--</output><span class="sky-cap" id="skyCap">agora</span></div>
-  <div class="sky-track" id="skyTrack">
-    <div class="sky-bar" id="skyBar" aria-hidden="true"></div>
-    <span class="sky-mark" id="markRise" aria-hidden="true"><i></i><em><b>&#9650;</b><span></span></em></span>
-    <span class="sky-mark" id="markSet" aria-hidden="true"><i></i><em><b>&#9660;</b><span></span></em></span>
-    <input id="hora" type="range" min="0" max="1439" step="5" aria-label="Hora do dia (arraste para simular)">
-    <span class="sky-thumb" id="skyThumb" aria-hidden="true"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg><svg class="moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a.6.6 0 0 0-.8-.7A9.6 9.6 0 1 0 21.1 15.4a.6.6 0 0 0-.7-.8z"/></svg></span>
-  </div>
-  <button class="sky-live on" id="horaAgora" type="button" aria-pressed="true"><span class="dot" aria-hidden="true"></span><span id="skyLiveTxt">Ao vivo</span></button>
-  <button class="sky-hide" id="skyHide" type="button" aria-expanded="true" aria-label="Ocultar a faixa da hora" title="Ocultar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
-</div>
 <script type="module">
 /*__CARD_MODULE__*/
 
@@ -103,19 +36,19 @@ mk('light.palco_rgb', 'on', { friendly_name: 'Palco RGB', rgb_color: [140, 60, 2
 mk('light.templo_plateia', 'on', { friendly_name: 'Plateia', brightness: 77, supported_color_modes: ['brightness'] }, 6);
 mk('media_player.telao_led', 'playing', { friendly_name: 'Telão LED', media_title: 'Louvor — Base Music', volume_level: 0.6 }, 6);
 mk('switch.som_templo', 'on', { friendly_name: 'Som do templo' }, 40);
-mk('climate.ar_templo', 'cool', { friendly_name: 'Ar do templo', temperature: 22, current_temperature: 24.5, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry', 'heat_cool'] }, 55);
+mk('climate.ar_templo', 'cool', { friendly_name: 'Ar do templo', temperature: 22, current_temperature: 24.5, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry', 'heat_cool'], swing_mode: 'on', swing_modes: ['off', 'on'] }, 55);
 mk('light.hall_entrada', 'on', { friendly_name: 'Hall de entrada' }, 70);
 mk('light.fachada_letreiro', 'on', { friendly_name: 'Fachada / letreiro' }, 95);
 mk('light.estacionamento', 'on', { friendly_name: 'Estacionamento' }, 95);
 mk('light.sala_pastoral', 'off', { friendly_name: 'Sala pastoral' }, 180);
-mk('climate.ar_sala_pastoral', 'off', { friendly_name: 'Ar da sala pastoral', temperature: 23, current_temperature: 27, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry'] }, 180);
+mk('climate.ar_sala_pastoral', 'off', { friendly_name: 'Ar da sala pastoral', temperature: 23, current_temperature: 27, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry'], swing_mode: 'off', swing_modes: ['off', 'on'] }, 180);
 mk('light.recepcao', 'off', { friendly_name: 'Recepção' }, 175);
 mk('light.administrativo', 'off', { friendly_name: 'Administrativo' }, 190);
 mk('light.circulacao', 'on', { friendly_name: 'Circulação' }, 80);
 mk('light.sala_midia', 'on', { friendly_name: 'Sala de mídia' }, 60);
-mk('climate.ar_midia', 'off', { friendly_name: 'Ar da mídia', temperature: 21, current_temperature: 26, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry'] }, 60);
+mk('climate.ar_midia', 'off', { friendly_name: 'Ar da mídia', temperature: 21, current_temperature: 26, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry'], swing_mode: 'off', swing_modes: ['off', 'on'] }, 60);
 mk('light.voluntariado', 'off', { friendly_name: 'Voluntariado' }, 50);
-mk('climate.ar_voluntariado', 'off', { friendly_name: 'Ar do voluntariado', temperature: 23, current_temperature: 27.5, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry', 'heat'] }, 50);
+mk('climate.ar_voluntariado', 'off', { friendly_name: 'Ar do voluntariado', temperature: 23, current_temperature: 27.5, min_temp: 16, max_temp: 30, hvac_modes: ['off', 'cool', 'fan_only', 'dry', 'heat'], swing_mode: 'off', swing_modes: ['off', 'on'] }, 50);
 mk('light.cozinha', 'off', { friendly_name: 'Cozinha' }, 120);
 mk('light.banheiros', 'on', { friendly_name: 'Banheiros' }, 75);
 mk('light.sala_familia', 'off', { friendly_name: 'Sala da família' }, 30);   // v1.8: a sala saiu do painel, então fica apagada na demo
@@ -154,6 +87,7 @@ function callService(domain, service, data) {
   else if (service === 'turn_off') later(() => set('off'));
   else if (service === 'set_hvac_mode') later(() => set(data.hvac_mode));
   else if (service === 'set_temperature') later(() => set(s.state, { temperature: data.temperature }));
+  else if (service === 'set_swing_mode') later(() => set(s.state, { swing_mode: data.swing_mode }));   // oscilar (simulado)
   else if (service === 'media_play_pause') later(() => set(s.state === 'playing' ? 'paused' : 'playing'));
   else if (service === 'volume_up') set(s.state, { volume_level: Math.min(1, +((s.attributes.volume_level || 0.3) + 0.05).toFixed(2)) });
   else if (service === 'volume_down') set(s.state, { volume_level: Math.max(0, +((s.attributes.volume_level || 0.3) - 0.05).toFixed(2)) });
@@ -204,96 +138,5 @@ window.demo = {
     push();
   },
 };
-// Controle de hora simulada (só na demo): anda o relógio e o sol
-const TZ = 'America/Sao_Paulo';
-const hora = document.getElementById('hora'), horaOut = document.getElementById('horaOut'), sky = document.getElementById('sky');
-const skyCap = document.getElementById('skyCap'), skyThumb = document.getElementById('skyThumb'), skyBar = document.getElementById('skyBar');
-const btnLive = document.getElementById('horaAgora'), liveTxt = document.getElementById('skyLiveTxt');
-const markRise = document.getElementById('markRise'), markSet = document.getElementById('markSet');
-const pad = (n) => String(n).padStart(2, '0');
-const hhmm = (m) => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
-const minOf = (ts) => { const p = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date(ts)); return (+p.find((x) => x.type === 'hour').value % 24) * 60 + +p.find((x) => x.type === 'minute').value; };
-const nowMin = () => minOf(Date.now());
-let live = true, sunMin = { rise: 360, set: 1090 }, sunKey = '';
-// nascer/pôr do sol reais vêm do próprio cartão (calculados pela latitude/longitude); sem eles usa ~06:00–18:10
-function readSun() {
-  const t = card._sunTimes; const r = t && t.rise ? minOf(t.rise) : 360, s = t && t.set ? minOf(t.set) : 1090;
-  const key = r + '-' + s; if (key === sunKey) return; sunKey = key; sunMin = { rise: r, set: s };
-  const f = (m) => m / 1439, cl = (m) => Math.max(0, Math.min(1439, m));
-  const stops = [[0, '#0a1030'], [r - 75, '#141f4a'], [r - 30, '#2f4189'], [r, '#ff9a4d'], [r + 50, '#f4c27a'], [r + 120, '#8cc8f0'], [(r + s) / 2, '#5aa9e6'], [s - 120, '#8cc8f0'],
-    [s - 45, '#f4b56a'], [s, '#ff7f3a'], [s + 35, '#7a3f7d'], [s + 80, '#1c2758'], [1439, '#0a1030']];
-  let last = -1; const parts = [];
-  for (const [m, c] of stops) { const mm = Math.max(cl(m), last); last = mm; parts.push(`${c} ${(f(mm) * 100).toFixed(2)}%`); }
-  skyBar.style.background = `linear-gradient(90deg, ${parts.join(', ')})`;
-  markRise.style.setProperty('--f', f(r)); markSet.style.setProperty('--f', f(s));
-  markRise.querySelector('span').textContent = hhmm(r); markSet.querySelector('span').textContent = hhmm(s);
-}
-function period(m) {
-  const { rise, set } = sunMin;
-  if (m < rise - 45) return 'Madrugada'; if (m < rise + 25) return 'Amanhecer'; if (m < 720) return 'Manhã';
-  if (m < set - 25) return 'Tarde'; if (m < set + 45) return 'Entardecer'; return 'Noite';
-}
-function render() {
-  readSun();
-  const m = +hora.value, isDay = m >= sunMin.rise && m < sunMin.set;
-  horaOut.textContent = hhmm(m);
-  skyCap.textContent = (live ? 'Agora' : 'Simulado') + ' · ' + period(m);
-  skyThumb.style.setProperty('--f', m / 1439); skyThumb.classList.toggle('night', !isDay);
-  sky.classList.toggle('sim', !live);
-  btnLive.classList.toggle('on', live); btnLive.setAttribute('aria-pressed', String(live));
-  liveTxt.textContent = live ? 'Ao vivo' : 'Agora';
-  btnLive.setAttribute('aria-label', live ? 'Hora ao vivo (relógio real)' : 'Voltar para a hora real (agora)');
-  hora.setAttribute('aria-valuetext', hhmm(m) + (live ? ' (agora, ao vivo)' : ' (simulado)') + ', ' + period(m));
-}
-hora.value = nowMin();
-hora.addEventListener('input', () => {
-  live = false;
-  const target = +hora.value, cur = nowMin();
-  card.setSimTime(new Date(Date.now() + (target - cur) * 60000));
-  render(); place();
-});
-btnLive.addEventListener('click', () => { live = true; card.setSimTime(null); hora.value = nowMin(); render(); });
-setInterval(() => { if (live) { hora.value = nowMin(); } render(); }, 15000);
-setTimeout(render, 600); setTimeout(render, 2500);
-render();
-
-// Ocultar/mostrar a faixa (lembra a escolha neste navegador)
-const btnHide = document.getElementById('skyHide');
-function setMin(on, save = true) {
-  sky.classList.toggle('min', on);
-  btnHide.setAttribute('aria-expanded', String(!on));
-  btnHide.setAttribute('aria-label', on ? 'Mostrar a faixa da hora' : 'Ocultar a faixa da hora'); btnHide.title = on ? 'Mostrar' : 'Ocultar';
-  if (save) try { localStorage.setItem('igreja3d-sky-min', on ? '1' : '0'); } catch (_) {}
-  if (typeof place === 'function') place();
-}
-btnHide.addEventListener('click', (e) => { e.stopPropagation(); setMin(!sky.classList.contains('min')); });
-sky.addEventListener('click', () => { if (sky.classList.contains('min')) setMin(false); });
-// no celular começa recolhida (só a hora), a não ser que a pessoa já tenha aberto antes
-const narrow = () => window.innerWidth < 600;
-{ let saved = null; try { saved = localStorage.getItem('igreja3d-sky-min'); } catch (_) {}
-  if (saved === '1' || (saved === null && narrow())) setMin(true, false); }
-
-// Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas; estreita até 260 px);
-// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima) — menos quando a folha de baixo do cartão (tablet em pé) sobe
-// até a faixa (altura cheia): aí fica no cartão do título, como no celular. Recalcula quando o layout muda.
-function place() {
-  const root = card.shadowRoot; if (!root) return;
-  const hud = root.querySelector('.hud.top'); if (!hud) return;
-  sky.style.width = '';
-  const W = window.innerWidth, bw = sky.getBoundingClientRect().width;
-  const title = hud.querySelector('.title'), btns = hud.querySelector('.btns');
-  const tr = title && title.getBoundingClientRect(), br = btns && btns.getBoundingClientRect();
-  let top, cx = W / 2;
-  const gap = tr && br && Math.abs(tr.top - br.top) < 8 ? br.left - tr.right - 24 : 0, below = hud.getBoundingClientRect().bottom + 4;
-  const dock = root.querySelector('.wrap.sheet .dock:not([hidden])'), up = dock && dock.getBoundingClientRect().top < below + sky.getBoundingClientRect().height + 8;   // folha alta: cobriria a faixa
-  if (!narrow() && gap >= Math.min(bw, 260)) { if (gap < bw) sky.style.width = Math.round(gap) + 'px'; top = tr.top; cx = (tr.right + br.left) / 2; }
-  else if ((narrow() || up) && tr) {
-    // celular: nunca no meio da tela — recolhida, a pílula fica no canto do cartão do título; aberta, cobre o cartão do título
-    if (sky.classList.contains('min')) { top = tr.top + 5; cx = tr.right - 6 - bw / 2; }
-    else { sky.style.width = Math.round(tr.width) + 'px'; top = tr.top + Math.max(0, (tr.height - sky.getBoundingClientRect().height) / 2); cx = (tr.left + tr.right) / 2; }
-  } else top = below;
-  sky.style.top = Math.round(top) + 'px'; sky.style.left = Math.round(cx) + 'px';
-}
-setInterval(place, 400); addEventListener('resize', place); setTimeout(place, 300);
-place();
+// v1.8: a hora (e simular o sol, com "Ao vivo") mora na lista suspensa do próprio cartão (o ⋯ no topo)
 </script>
