@@ -81,7 +81,7 @@ const GOV = {
 const SHRINK_ORDER = ['circulacao', 'administrativo', 'recepcao', 'cozinha', 'banheiros', 'midia', 'voluntariado', 'pastoral', 'familia', 'estacionamento', 'hall', 'plateia', 'palco'];
 
 export const ITEMS = [
-  { key: 'palco', label: 'Palco (RGB)', kind: 'light', icon: 'spot', rgb: true, dim: true, color: 0xb88cff,
+  { key: 'palco', label: 'Palco (RGB)', short: 'Luz RGB', kind: 'light', icon: 'spot', rgb: true, dim: true, color: 0xb88cff,
     fixtures: [
       // 4 moving heads pendurados na treliça preta acima do telão (parede do palco x = 0), mirando o palco (+x e para baixo)
       { p: [0.8, 6.05, 23.9], i: 70, d: 14, moving: true, shadow: true },
@@ -89,7 +89,7 @@ export const ITEMS = [
       { p: [0.8, 6.05, 29.5], i: 70, d: 14, moving: true },
       { p: [0.8, 6.05, 32.3], i: 70, d: 14, moving: true, shadow: true },
     ] },
-  { key: 'plateia', label: 'Plateia', kind: 'light', icon: 'bulb', dim: true, color: 0xffe2bd,
+  { key: 'plateia', label: 'Plateia', short: 'Luz', kind: 'light', icon: 'bulb', dim: true, color: 0xffe2bd,
     fixtures: [
       // high-bays redondos suspensos sobre a plateia (x 6,3–15,5), na altura de antes (y 7,2) — sem as tesouras brancas e
       // sem hastes (pedido do cliente); a linha de z 28,5 (sobre o corredor central, frente da mídia) fica sem luminária
@@ -100,58 +100,58 @@ export const ITEMS = [
       ...[[10.6, 23.5], [10.6, 33.5], [7.2, 18.5], [10.6, 18.5], [14.0, 18.5], [7.2, 38.5], [10.6, 38.5], [14.0, 38.5]]
         .map(([x, z]) => ({ p: [x, 7.2, z], highbay: true, susp: true, glowOnly: true })),
     ] },
-  { key: 'telao', label: 'Telão LED', kind: 'media', icon: 'tv' },
-  { key: 'som', label: 'Som do templo', kind: 'switch', icon: 'speaker' },
-  { key: 'ac_templo', label: 'Ar do templo', kind: 'climate', icon: 'ac' },
-  { key: 'hall', label: 'Hall de entrada', kind: 'light', icon: 'bulb', color: 0xffe7c8,
+  { key: 'telao', label: 'Telão LED', short: 'Telão', kind: 'media', icon: 'tv' },
+  { key: 'som', label: 'Som do templo', short: 'Som', kind: 'switch', icon: 'speaker' },
+  { key: 'ac_templo', label: 'Ar do templo', short: 'Ar', kind: 'climate', icon: 'ac' },
+  { key: 'hall', label: 'Hall de entrada', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe7c8,
     fixtures: [
       { p: [7.5, 2.7, 46.8], i: 30, d: 8, shadow: true, liteShadow: true },
       { p: [11.5, 2.7, 46.8], i: 30, d: 8 },
     ] },
-  { key: 'fachada', label: 'Fachada / letreiro', kind: 'light', icon: 'sign', color: 0xffd9a8,
+  { key: 'fachada', label: 'Fachada / letreiro', short: 'Luz', kind: 'light', icon: 'sign', color: 0xffd9a8,
     fixtures: [
       { p: [8.9, 8.05, 50.35], i: 60, d: 11, spot: true, aim: 'wall' },   // no topo do painel ripado (sempre visível), acima do logo
       { p: [14.6, 2.8, 49.85], i: 14, d: 6, sconce: true },
       { p: [5.0, 2.8, 49.85], sconce: true, glowOnly: true },
     ] },
-  { key: 'estacionamento', label: 'Estacionamento', kind: 'light', icon: 'car', color: 0xfff1dc,
+  { key: 'estacionamento', label: 'Estacionamento', short: 'Luz', kind: 'light', icon: 'car', color: 0xfff1dc,
     fixtures: [
       { p: [4, 5.5, 55.5], i: 140, d: 16, pole: true },
       { p: [16, 5.5, 55.5], i: 140, d: 16, pole: true },
       { p: [0.085, 2.8, 6.2], sconce: true, glowOnly: true },   // arandela no muro x = 0 (face interna em x 0,012)
     ] },
-  { key: 'pastoral', label: 'Sala pastoral', kind: 'light', icon: 'bulb', color: 0xffe0b8,
+  { key: 'pastoral', label: 'Sala pastoral', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe0b8,
     fixtures: [
       { p: [14.9, 2.7, 4.6], i: 30, d: 8, shadow: true, liteShadow: true },
       { p: [18.5, 2.7, 7.0], glowOnly: true },
     ] },
-  { key: 'ac_pastoral', label: 'Ar da pastoral', kind: 'climate', icon: 'ac' },
-  { key: 'recepcao', label: 'Recepção', kind: 'light', icon: 'bulb', color: 0xfff1dc,
+  { key: 'ac_pastoral', label: 'Ar da pastoral', short: 'Ar', kind: 'climate', icon: 'ac' },
+  { key: 'recepcao', label: 'Recepção', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff1dc,
     fixtures: [{ p: [11.1, 2.7, 7.6], i: 20, d: 5.5 }] },
-  { key: 'administrativo', label: 'Administrativo', kind: 'light', icon: 'bulb', color: 0xfff5e6,
+  { key: 'administrativo', label: 'Administrativo', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff5e6,
     fixtures: [
       { p: [18.6, 2.7, 12.6], i: 18, d: 5 },
       { p: [18.6, 2.7, 16.6], i: 22, d: 6 },
     ] },
-  { key: 'circulacao', label: 'Circulação', kind: 'light', icon: 'bulb', color: 0xfff1dc,
+  { key: 'circulacao', label: 'Circulação', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff1dc,
     fixtures: [
       { p: [18.0, 2.7, 21.1], i: 20, d: 6 },
       { p: [16.6, 2.7, 14.8], glowOnly: true },
       { p: [19.5, 2.7, 25.6], glowOnly: true },
       { p: [16.6, 2.7, 35.5], glowOnly: true },
     ] },
-  { key: 'midia', label: 'Sala de mídia', kind: 'light', icon: 'bulb', color: 0xd8e6ff,
+  { key: 'midia', label: 'Sala de mídia', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xd8e6ff,
     fixtures: [{ p: [17.5, 2.7, 25.6], i: 18, d: 5.5 }] },
-  { key: 'ac_midia', label: 'Ar da mídia', kind: 'climate', icon: 'ac' },
-  { key: 'voluntariado', label: 'Voluntariado', kind: 'light', icon: 'bulb', color: 0xffe9cc,
+  { key: 'ac_midia', label: 'Ar da mídia', short: 'Ar', kind: 'climate', icon: 'ac' },
+  { key: 'voluntariado', label: 'Voluntariado', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe9cc,
     fixtures: [{ p: [18.1, 2.7, 30.9], i: 26, d: 7, shadow: true }] },
-  { key: 'ac_voluntariado', label: 'Ar do voluntariado', kind: 'climate', icon: 'ac' },
-  { key: 'cozinha', label: 'Cozinha / almox.', kind: 'light', icon: 'bulb', color: 0xfff5e4,
+  { key: 'ac_voluntariado', label: 'Ar do voluntariado', short: 'Ar', kind: 'climate', icon: 'ac' },
+  { key: 'cozinha', label: 'Cozinha / almox.', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff5e4,
     fixtures: [
       { p: [10.7, 2.7, 1.95], i: 22, d: 6 },
       { p: [6.75, 2.7, 1.95], glowOnly: true },
     ] },
-  { key: 'banheiros', label: 'Banheiros', kind: 'light', icon: 'bulb', color: 0xfff7ea,
+  { key: 'banheiros', label: 'Banheiros', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff7ea,
     fixtures: [
       { p: [18.1, 2.7, 42.5], i: 18, d: 5.5 },
       { p: [18.6, 2.7, 46.9], i: 18, d: 5.5 },
@@ -160,7 +160,7 @@ export const ITEMS = [
       { p: [2.95, 2.7, 45.1], glowOnly: true },
       { p: [18.6, 2.7, 34.9], glowOnly: true },
     ] },
-  { key: 'familia', label: 'Sala da família', kind: 'light', icon: 'bulb', color: 0xffdcae,
+  { key: 'familia', label: 'Sala da família', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffdcae,
     fixtures: [{ p: [2.0, 2.7, 48.0], i: 20, d: 5.5, shadow: true },
       { p: [3.27, 3.95, 46.45], i: 10, d: 5.5, hidden: true }] },   // luz do abajur da mesinha do mezanino (v1.4.6; o abajur é desenhado em rooms/hall_familia.js)
   { key: 'presenca', label: 'Presença', kind: 'sensor', icon: 'motion' },
@@ -359,18 +359,16 @@ const inMezz = (x, z) => x >= MEZZ.x0 && x <= STAIR.XS && z >= MEZZ.z0 && z <= M
 // para onde a pessoa olha ao entrar num cômodo (x, y, z do mundo); sem entrada aqui: rumo ao canto mais fundo do cômodo
 const ROOM_FOCUS = { plateia: [1.0, 1.6, 28.1], palco: [10.5, 1.6, 28.1], hall: [11.85, 1.6, 44.0], familia: [3.9, 1.5, 48.55], mezanino: [4.6, 1.6, 45.6] };
 
-// Vista de cima navegável: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco; cada cômodo junta zonas de ZONES (ou tem `rects`
-// próprios quando divide uma zona, como palco/plateia) e lista os aparelhos (chaves de ITEMS) — _buildBlocks() ainda acrescenta os
-// que têm luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força o enquadramento do cômodo.
+// Vista de cima navegável e painel: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco (enquadramento e sobra do _hit); cada
+// cômodo junta zonas de ZONES (ou tem `rects` próprios quando divide uma zona, como palco/plateia) e lista os aparelhos (chaves de ITEMS) —
+// _buildBlocks() ainda acrescenta os que têm luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força
+// o enquadramento do cômodo. v1.7: 4 blocos (Templo · Corredor direito · Fundos · Entrada); a caixa da Entrada cruza o WC Fem. do
+// Corredor, que vem antes (o _hit e o realce usam os cômodos, não a caixa)
 const BLOCKS = {
   templo: { label: 'Templo', box: [0, 12.4, 16.05, 44.0], rooms: [
     { id: 'palco', label: 'Palco', rects: [[0, 19.6, 5.0, 17.0]], zones: ['templo'], items: ['palco', 'telao', 'som'], noauto: true },
     { id: 'plateia', label: 'Plateia', rects: [[5.0, 12.4, 11.05, 31.6], [0, 12.4, 5.0, 7.2], [0, 36.6, 5.0, 7.4]], zones: ['templo'], items: ['plateia', 'ac_templo', 'presenca', 'temperatura'], noauto: true }] },
-  hall: { label: 'Hall / Família', box: [0, 44.0, 16.05, 49.65], rooms: [
-    { id: 'hall', label: 'Hall de entrada', zones: ['hall'], items: ['hall', 'porta'] },
-    { id: 'familia', label: 'Sala da Família', zones: ['familia'], items: ['familia'] },
-    { id: 'wcs', label: 'WCs', zones: ['wc1', 'wc_pcd'], items: ['banheiros'] }] },
-  ala: { label: 'Ala direita', box: [16.05, 11.0, 20.1, 49.5], rooms: [
+  ala: { label: 'Corredor direito', box: [16.05, 11.0, 20.1, 49.5], rooms: [
     { id: 'gilvan', label: 'Sala Gilvan', zones: ['gilvan'], items: ['administrativo'] },
     { id: 'administrativo', label: 'Administrativo', zones: ['administrativo'], items: ['administrativo'] },
     { id: 'circulacao', label: 'Circulação', zones: ['circulacao', 'corredor', 'circ2'], items: ['circulacao'], frame: [16.05, 19.0, 20.1, 28.0] },
@@ -381,17 +379,22 @@ const BLOCKS = {
     { id: 'wc_masc', label: 'WC Masc.', zones: ['wc_masc'], items: ['banheiros'] },
     { id: 'hall_banheiros', label: 'Hall dos banheiros', zones: ['hall_banheiros'], items: ['banheiros'] },
     { id: 'wc_fem', label: 'WC Fem.', zones: ['wc_fem'], items: ['banheiros'] }] },
-  fundos: { label: 'Bloco dos fundos', box: [0, 0, 20.1, 12.4], rooms: [
+  fundos: { label: 'Fundos', box: [0, 0, 20.1, 12.4], rooms: [
     { id: 'patio', label: 'Pátio', zones: ['estac_interno', 'patio', 'jardim_interno'], items: ['estacionamento'] },
     { id: 'almoxarifado', label: 'Almoxarifado', zones: ['almoxarifado'], items: ['cozinha'] },
     { id: 'cozinha', label: 'Cozinha', zones: ['cozinha'], items: ['cozinha'] },
     { id: 'recepcao', label: 'Recepção', zones: ['recepcao'], items: ['recepcao'] },
     { id: 'pastoral', label: 'Sala Pastoral', zones: ['pastoral', 'wc_pastoral', 'jardim_pastoral'], items: ['pastoral', 'ac_pastoral'] },
     { id: 'caixa_dagua', label: 'Caixa d’água', zones: ['caixa_dagua'], items: [] }] },
-  frente: { label: 'Frente', box: [-3, 49.65, 23, 60], rooms: [
+  entrada: { label: 'Entrada', box: [-3, 44.0, 23, 60], rooms: [
+    { id: 'hall', label: 'Hall de entrada', zones: ['hall'], items: ['hall', 'porta'] },
+    { id: 'familia', label: 'Sala da Família', zones: ['familia'], items: ['familia'] },
+    { id: 'wcs', label: 'WCs', zones: ['wc1', 'wc_pcd'], items: ['banheiros'] },
     { id: 'estac_frontal', label: 'Estacionamento', zones: ['estac_frontal'], items: ['estacionamento'] },
     { id: 'fachada', label: 'Fachada', zones: ['jardim_frontal', 'calcada'], items: ['fachada'] }] },
 };
+// aparelho de vários cômodos → o cômodo em que ele aparece no painel (nos outros: "também …"); os demais ficam no 1º cômodo que os tem
+const HOME = { administrativo: 'administrativo', banheiros: 'hall_banheiros', cozinha: 'cozinha', estacionamento: 'estac_frontal' };
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -6181,7 +6184,17 @@ canvas.walk.pick { cursor: pointer; }
 .zone button i { font-style: normal; font-size: 13px; letter-spacing: 0; color: var(--ink-3); }   /* "›": leva ao cômodo */
 .zone button:not(:disabled):hover, .zone button:not(:disabled):hover i { color: var(--ink); } .zone button:disabled { cursor: default; }
 .zone .zn { order: 3; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }   /* contagem em texto: neutra */
-.zone[hidden], .tile[hidden] { display: none; }
+.zone[hidden], .tile[hidden], .blk[hidden], .sect[hidden] { display: none; }
+/* bloco (v1.7, como a Casa 1.8.1): Templo · Corredor direito · Fundos · Entrada — numa linha, nome, "N de M ligados" e uma ação (a mesma do
+   cômodo); os cômodos dele embaixo, sem vão */
+.blk { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 0 2px; color: var(--ink); }
+:not([hidden]) ~ .blk { margin-top: 14px; } .blk + .zone { margin-top: 0; }   /* vão só entre blocos à vista */
+.blk .bt { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }   /* coluna estreita: a contagem desce */
+.blk b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; } .blk small { white-space: nowrap; font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.blk .all button { position: relative; min-height: 30px; padding: 0 12px; } .blk .all button::after { content: ""; position: absolute; inset: -7px 0; }   /* 30 px à vista, alvo de 44 */
+.autos > .sect { margin: 0 2px; } .autos > .sect:not(:first-child) { margin-top: 12px; } .autos > .sect + .zone { margin-top: 0; } .sect[hidden] + .autos { margin-top: 18px; }   /* Automações · bloco → cômodo */
+.tile.wide { grid-column: 1 / -1; } .dock.room .tile.wide { grid-column: auto; } .tile small .sv { font-weight: 500; }   /* aparelho de mais de um cômodo: linha inteira, cabe o "também …" */
+.tile.wide small { white-space: normal; }   /* "também Depósito, WC Masc., WC Fem. e WCs": quebra a linha em vez de cortar */
 /* bloco compacto (ícone à esquerda, nome e estado à direita) */
 .tile { position: relative; overflow: hidden; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 64px; padding: 9px 9px 9px 10px; border-radius: 14px; text-align: left; color: var(--ink);
   background: var(--off-bg); border: 1px solid var(--line);
@@ -6299,22 +6312,22 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
 /* cômodo tocado (v1.7): o painel focado nele — no lugar das abas e do filtro, "‹", nome, "N de M ligados" e Ligar/Desligar tudo;
    embaixo dos blocos, as automações do cômodo e "Entrar aqui" */
 .rhead { flex: none; margin: 0 12px 10px; }
-.dock:not(.room) .rhead, .dock:not(.room) .rfoot, .dock.room .tabs, .dock.room .zonebar, .dock.room .zone { display: none; }
+.dock:not(.room) .rhead, .dock:not(.room) .rfoot, .dock.room .tabs, .dock.room .zonebar, .dock.room .zone, .dock.room .blk, .dock.room .tile .sv { display: none; }
 .dock.room .rhead { display: flex; align-items: center; gap: 6px; }   /* [‹] [nome + N de M] [uma ação] */
 .rhead .rback { flex: none; width: 32px; height: 32px; margin-left: -8px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--ink-2); } .rhead .rback svg { width: 18px; height: 18px; }
 .rhead .rback:hover { color: var(--ink); background: var(--fill-2); }
 .rhead .rtitle { flex: 1; min-width: 0; } .rhead .rtitle b { display: block; font-size: 16px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rhead .rtitle small { display: block; margin-top: 1px; color: var(--ink-2); font-size: 11.5px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wrap:not(.sheet) .rhead .rtitle small { white-space: normal; }   /* coluna: a leitura dos sensores quebra a linha em vez de sumir (na folha, a 1ª linha é a espiada) */
-.rhead .all { display: flex; flex: none; } .rhead .all[hidden], .rhead .all button[hidden] { display: none; }
-.rhead .all button { padding: 8px 12px; white-space: nowrap; border-radius: 10px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }   /* Desligar tudo: grafite */
-.rhead .all button:hover { background: var(--fill-3); }
-.rhead .all button:first-child { background: var(--on); color: var(--on-ink); border-color: var(--on); }   /* Ligar tudo: âmbar cheio (vem depois do :hover) */
+.all { display: flex; flex: none; } .all[hidden], .all button[hidden] { display: none; }
+.all button { padding: 8px 12px; white-space: nowrap; border-radius: 10px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }   /* Desligar tudo: grafite */
+.all button:hover { background: var(--fill-3); }
+.all button:first-child { background: var(--on); color: var(--on-ink); border-color: var(--on); }   /* Ligar tudo: âmbar cheio (vem depois do :hover) */
 .rfoot { margin-top: 14px; } .rfoot .autos { margin-bottom: 12px; } .rfoot > .tiles { margin-top: -14px; }   /* bloco: a lista dos cômodos logo abaixo do cabeçalho (os blocos de aparelho ficam escondidos) */
 .rfoot .enter { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px; border-radius: 12px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }
 .rfoot .enter:hover { background: var(--fill-3); }
 .rfoot .enter svg { width: 16px; height: 16px; color: var(--ink-2); }
-.rhead .all button:active, .rfoot .enter:active { transform: scale(.97); }   /* retorno já no toque */
+.all button:active, .rfoot .enter:active { transform: scale(.97); }   /* retorno já no toque */
 /* folha de baixo (celular e tablet em pé, ver _layoutHud): altura do conteúdo e três alturas — espiada, média, cheia — por translateY.
    Fora da cheia a lista não rola: o dedo em qualquer ponto move a folha; na cheia, puxar com a lista no topo desce a folha */
 .wrap.sheet .dock { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: calc(100% - var(--side-top, 58px)); border-radius: 22px 22px 0 0; border-width: 1px 0 0; animation-name: drawerIn; touch-action: none; --sab: env(safe-area-inset-bottom, 0px); }
@@ -6362,7 +6375,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
   .phead .collapse::after { content: ""; position: absolute; inset: -6px; } .phead .count { min-height: 36px; }   /* círculo de 32 px, alvo de 44 */
   .tabs button[role="tab"] { position: relative; min-height: 40px; } .tabs button[role="tab"]::after { content: ""; position: absolute; inset: -2px 0; }   /* alvo de 44 px (o vão do trilho) */
   .zonebar button { min-height: 34px; } .zonebar button::after { content: ""; position: absolute; inset: -6px 0; }   /* alvo de 46 px sem cobrir o vizinho */
-  .rhead .rback, .rhead .all button, .rfoot .enter { min-height: 44px; } .rhead .rback { width: 44px; }
+  .rhead .rback, .all button, .rfoot .enter { min-height: 44px; } .rhead .rback { width: 44px; }
   .zone button { min-height: 44px; margin: -12px 0; }
   .tile .more::after { inset: -10px; }
 }
@@ -6385,7 +6398,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
 @media (max-width: 640px) { .peg .pgl { display: none; } }
 /* cartão estreito: o menu ocupa a largura do cartão (10 px de cada lado) e rola se for alto */
 .wrap.narrow .menu { width: calc(var(--cw, 100vw) - 20px); max-height: calc(var(--ch, 100vh) - 68px); }
-@media (prefers-reduced-motion: reduce) { .hud.top > .title, .hint, .pane.active, .tile, .tile .ico, .tile .lvl::after, .detail, .feed li, .auto, .sw, .seg2 button, .swatch, .menu .ms, .menubtn, .menu .mi, .menu .mseg button, .detail input[type="range"]::-webkit-slider-thumb, .rhead .all button, .rfoot .enter, .sel button { animation: none !important; transition: none !important; transform: none !important; }
+@media (prefers-reduced-motion: reduce) { .hud.top > .title, .hint, .pane.active, .tile, .tile .ico, .tile .lvl::after, .detail, .feed li, .auto, .sw, .seg2 button, .swatch, .menu .ms, .menubtn, .menu .mi, .menu .mseg button, .detail input[type="range"]::-webkit-slider-thumb, .all button, .rfoot .enter, .sel button { animation: none !important; transition: none !important; transform: none !important; }
   .sw::after, .menu .ms::after, .btn { transition: none !important; }   /* sem o transform: none: o polegar ligado fica à direita e a pílula da folha, centrada */
   .dock, .dshadow, .reopen, .menu { animation: fadeIn .15s linear !important; } }   /* sem deslize nem mola: fade curto */
 @keyframes fadeIn { from { opacity: 0; } }
@@ -8355,14 +8368,17 @@ export class Igreja3DCard extends HTMLElement {
       for (const r of rooms) r.block = blk;
       return blk;
     });
+    // na lista do painel cada aparelho fica num cômodo só (HOME, ou o 1º que o tem): r.own
+    const home = {}, all = this._blocks.flatMap((b) => b.rooms); for (const r of all) for (const k of r.items) home[k] = home[k] || HOME[k] || r.id;
+    for (const r of all) r.own = r.items.filter((k) => home[k] === r.id);
   }
   _rectsBox(rs) {
     return [Math.min(...rs.map((r) => r[0])), Math.min(...rs.map((r) => r[1])), Math.max(...rs.map((r) => r[0] + r[2])), Math.max(...rs.map((r) => r[1] + r[3]))];
   }
   // retângulos [x0, z0, x1, z1] da região em foco (bloco ou cômodo) — usados no filtro de rótulos
   _navRects() {
-    const n = this._nav;
-    return n.level === 2 && n.room ? n.room.rects.map((r) => [r[0], r[1], r[0] + r[2], r[1] + r[3]]) : n.level === 1 && n.block ? [n.block.box] : null;
+    const n = this._nav, q = n.level === 2 ? n.room : n.level === 1 ? n.block : null;   // bloco: os cômodos dele (a caixa da Entrada cruza o WC Fem.)
+    return q ? q.rects.map((r) => [r[0], r[1], r[0] + r[2], r[1] + r[3]]) : null;
   }
   // Enquadramento de cima de um retângulo (paisagem: palco em cima, como no nível 0 — aproximar não dá meia-volta · retrato: fachada embaixo)
   _frameRect(x0, z0, x1, z1, margin) {
@@ -8770,7 +8786,7 @@ export class Igreja3DCard extends HTMLElement {
   _roomsAll() {
     if (!this._blocks) return [];
     if (!this._mezzRoom) {
-      const hall = this._blocks.find((b) => b.id === 'hall');
+      const hall = this._blocks.find((b) => b.id === 'entrada');
       this._mezzRoom = { id: 'mezanino', label: 'Mezanino (salinha)', rects: [[MEZZ.x0, MEZZ.z0, MEZZ.x1 - MEZZ.x0, MEZZ.z1 - MEZZ.z0]], zones: [], items: [], up: true, block: hall };
     }
     return [...this._blocks.flatMap((b) => b.rooms), this._mezzRoom];
@@ -8887,7 +8903,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const b of this._blocks || []) {
       const sec = document.createElement('div'); sec.className = 'gsec'; const t = document.createElement('div'); t.className = 'gt'; t.textContent = b.label; sec.appendChild(t);
       const row = document.createElement('div'); row.className = 'grow';
-      for (const r of [...b.rooms, ...(b.id === 'hall' ? [this._roomsAll().find((q) => q.up)] : [])]) {
+      for (const r of [...b.rooms, ...(b.id === 'entrada' ? [this._roomsAll().find((q) => q.up)] : [])]) {
         const c = document.createElement('button'); c.textContent = r.up ? '↑ ' + r.label : r.label; c.addEventListener('click', () => this._enterRoom(r));
         row.appendChild(c);
       }
@@ -9083,7 +9099,7 @@ export class Igreja3DCard extends HTMLElement {
       // planta e bloco: realça o bloco / cômodo sob o mouse
       const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
       let rects = null, key = '', name = '';
-      if (h && (n.level === 0 || h.b !== n.block || !h.r)) { rects = [h.b.box]; key = 'b:' + h.b.id; name = h.b.label; }
+      if (h && (n.level === 0 || h.b !== n.block || !h.r)) { rects = h.b.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]); key = 'b:' + h.b.id; name = h.b.label; }   // os cômodos do bloco, não a caixa (a da Entrada cruza o WC Fem.)
       else if (h) { rects = h.r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]); key = 'r:' + h.r.id; name = h.r.label; }
       this._canvas.classList.toggle('pick', !!rects);
       if (key !== this._hoverKey) {
@@ -9433,7 +9449,7 @@ export class Igreja3DCard extends HTMLElement {
     this._reopen.addEventListener('click', () => this._setPanel(true)); wrap.appendChild(this._reopen);
     this._buildWeather();
 
-    // Ambientes: blocos agrupados por área (provisório: os 4 blocos da planta vêm na etapa seguinte); filtro "Ligados · Todos"
+    // Ambientes: blocos → cômodos → aparelhos; filtro "Ligados · Todos"
     this._tiles = {};
     const zbar = document.createElement('div'); zbar.className = 'zonebar'; zbar.setAttribute('role', 'group'); zbar.setAttribute('aria-label', 'Mostrar'); this._panes.ctl.pane.appendChild(zbar); this._zbar = zbar;
     for (const [val, label] of [['on', 'Ligados'], ['', 'Todos']]) {
@@ -9444,16 +9460,26 @@ export class Igreja3DCard extends HTMLElement {
     const all = document.createElement('button'); all.textContent = 'Ver todos'; all.addEventListener('click', () => this._setZone('')); this._zEmpty.appendChild(all); this._panes.ctl.pane.appendChild(this._zEmpty);
     const grid = document.createElement('div'); grid.className = 'tiles'; this._panes.ctl.pane.appendChild(grid); this._grid = grid;
     this._detail = document.createElement('div'); this._detail.className = 'detail'; this._detail.hidden = true;
-    const ROOMS = [['Templo', ['palco', 'plateia', 'telao', 'som', 'ac_templo', 'presenca', 'temperatura']], ['Entrada', ['hall', 'fachada', 'estacionamento', 'porta', 'familia', 'banheiros']],
-      ['Administração', ['recepcao', 'pastoral', 'ac_pastoral', 'administrativo', 'circulacao']], ['Apoio', ['midia', 'ac_midia', 'voluntariado', 'ac_voluntariado', 'cozinha']]];
-    this._zones = []; this._zone = ''; this._onKeep = new Set();
-    for (const [title, keys] of ROOMS) {
-      const zh = document.createElement('div'); zh.className = 'zone'; zh.dataset.room = title; zh.setAttribute('role', 'heading'); zh.setAttribute('aria-level', '3');
-      const zt = document.createElement('button'); zt.className = 'zt'; zt.textContent = title; const zn = document.createElement('span'); zn.className = 'zn'; zh.append(zt, zn); grid.appendChild(zh);
-      const zr = this._roomsAll().find((q) => q.label === title);   // área sem cômodo de mesmo nome: só o título
-      if (zr) { zt.insertAdjacentHTML('beforeend', '<i aria-hidden="true">›</i>'); zt.title = `Abrir ${zr.label}`; zt.addEventListener('click', () => (this._topView ? this._navTo(2, zr.block, zr) : this._showRoom(zr))); } else zt.disabled = true;
-      const z = { title, keys, zh, zn }; this._zones.push(z);
-      for (const k of keys) grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), title));
+    // v1.7 (como a Casa 1.8.1): blocos da Vista de cima → cômodos → aparelhos, cada um uma vez (r.own, ver _buildBlocks); o de vários cômodos
+    // ocupa a linha e diz "também …". Cômodo sem nada próprio (Pátio, Sala Gilvan, Depósito, WCs…) não tem grupo: abre pela planta
+    this._groups = []; this._zone = ''; this._onKeep = new Set(); const list = new Intl.ListFormat('pt-BR');
+    for (const b of this._blocks) {
+      const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome  N de M ligados] [Ligar tudo ou Desligar tudo do bloco]
+      bh.innerHTML = '<div class="bt"><b role="heading" aria-level="2"></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>';
+      const ba = bh.querySelector('.all'); bh.querySelector('b').textContent = b.label; ba.setAttribute('aria-label', b.label);
+      ba.firstChild.title = this._rAll.firstChild.title; ba.lastChild.title = this._rAll.lastChild.title;   // a política do cômodo (ligar acende só as luzes)
+      const keys = b.rooms.flatMap((r) => r.own);   // só os listados embaixo: a soma dos blocos não repete aparelho
+      ba.firstChild.addEventListener('click', () => this._roomPower(true, keys)); ba.lastChild.addEventListener('click', () => this._roomPower(false, keys));
+      this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, all: ba });
+      for (const r of b.rooms.filter((q) => q.own.length)) {
+        const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own });
+        for (const k of r.own) {
+          grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), r.label));
+          const o = this._roomsAll().filter((q) => q !== r && q.items.includes(k)).map((q) => q.label); if (!o.length) continue;   // serve a outros cômodos: diz quais
+          const t = this._tiles[k], sv = document.createElement('span'); sv.className = 'sv'; sv.textContent = ` · também ${list.format(o)}`;
+          t.small.appendChild(sv); t.tile.classList.add('wide'); t.tile.title += ` — também ${list.format(o)}`;   // linha inteira: o "também" cabe
+        }
+      }
     }
     grid.appendChild(this._detail);
     this._rFoot = document.createElement('div'); this._rFoot.className = 'rfoot'; this._panes.ctl.pane.appendChild(this._rFoot);   // automações do cômodo + Entrar aqui
@@ -9463,7 +9489,7 @@ export class Igreja3DCard extends HTMLElement {
     // Automações: rotinas rápidas do cartão + automações do HA (descobertas sozinhas)
     const h1 = document.createElement('div'); h1.className = 'sect'; h1.textContent = 'Rotinas rápidas'; this._panes.scn.pane.appendChild(h1);
     const rgrid = document.createElement('div'); rgrid.className = 'tiles routines'; this._panes.scn.pane.appendChild(rgrid);
-    const h2 = document.createElement('div'); h2.className = 'sect'; h2.innerHTML = 'Automações do Home Assistant <small>ligar/desligar · executar agora</small>'; this._panes.scn.pane.appendChild(h2);
+    const h2 = this._autoHead = document.createElement('div'); h2.className = 'sect'; h2.innerHTML = 'Automações do Home Assistant <small>ligar/desligar · executar agora</small>'; this._panes.scn.pane.appendChild(h2);
     this._autoList = document.createElement('div'); this._autoList.className = 'autos'; this._panes.scn.pane.appendChild(this._autoList);
     for (const sc of SCENES) {
       const b = document.createElement('button'); b.className = 'tile routine';
@@ -9521,13 +9547,20 @@ export class Igreja3DCard extends HTMLElement {
   }
   _zoneHide() {
     const ks = this._room && this._roomKeys(this._room), on = !ks && this._zone === 'on', keep = this._onKeep;
-    for (const zz of this._zones) zz.zh.hidden = on && !zz.keys.some((k) => keep.has(k));
+    for (const g of this._groups) g.zh.hidden = on && !g.keys.some((k) => keep.has(k));   // bloco ou cômodo sem nada à vista some
     for (const [k, t] of Object.entries(this._tiles)) t.tile.hidden = ks ? !ks.includes(k) || t.it.kind === 'sensor' || !!this._room.rooms : on && !keep.has(k);   // bloco: só a lista dos cômodos
     this._zEmpty.hidden = !(on && !keep.size);
   }
   // aparelhos ligados agora (sensor não conta)
   _onKeys() { return ITEMS.filter((i) => i.kind !== 'sensor' && this._state[i.key] && this._state[i.key].on).map((i) => i.key); }
   _hasDetail(it) { return it.kind !== 'sensor'; }
+  // "Mídia ›  1 de 2 ligados": abre o cômodo (na Vista de cima, aproxima ele) — na aba Ambientes e na Automações
+  _zoneHead(r) {
+    const zh = document.createElement('div'); zh.className = 'zone'; zh.dataset.room = r.label; zh.setAttribute('role', 'heading'); zh.setAttribute('aria-level', '3');
+    const zt = document.createElement('button'); zt.className = 'zt'; zt.textContent = r.label; zt.insertAdjacentHTML('beforeend', '<i aria-hidden="true">›</i>'); zt.title = `Abrir ${r.label}`;
+    zt.addEventListener('click', () => (this._topView ? this._navTo(2, r.block, r) : this._showRoom(r)));
+    const zn = document.createElement('span'); zn.className = 'zn'; zh.append(zt, zn); return zh;
+  }
   _makeTile(it, room) {
     const tile = document.createElement('button'); tile.className = 'tile'; tile.dataset.key = it.key; tile.dataset.kind = it.kind; tile.setAttribute('aria-pressed', 'false');
     const top = document.createElement('span'); top.className = 'top';
@@ -9548,7 +9581,7 @@ export class Igreja3DCard extends HTMLElement {
       top.appendChild(more);
     }
     tile.addEventListener('click', () => this._toggleItem(it.key));
-    tile.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._roomHl(this._roomsAll().find((q) => this._roomKeys(q).includes(it.key))); });   // mouse no bloco: realça o cômodo dele
+    tile.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._roomHl(this._blocks.flatMap((b) => b.rooms).find((q) => q.own.includes(it.key))); });   // mouse no bloco: realça o cômodo dele (o do painel)
     tile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') this._roomHl(this._room); });
     this._tiles[it.key] = t; return tile;
   }
@@ -9648,15 +9681,15 @@ export class Igreja3DCard extends HTMLElement {
       t.sSep.textContent = tm ? ' · ' : ''; if (t.sTm.textContent !== tm) t.sTm.textContent = tm;
       if (st && st.attrs && st.attrs.brightness != null && (t.it.dim || t.it.rgb)) t.tile.style.setProperty('--lvl', `${Math.round(st.attrs.brightness / 2.55)}%`);
     }
-    for (const z of this._zones || []) {
+    for (const z of this._groups || []) {
       const ks = z.keys.filter((k) => kind(k) !== 'sensor'), act = ks.filter((k) => this._state[k] && this._state[k].on).length;
       z.zn.textContent = ks.length ? `${act} de ${ks.length} ligados` : '';   // sensor não conta
+      if (z.all) { z.all.hidden = !ks.length; z.all.firstChild.hidden = act > 0; z.all.lastChild.hidden = act === 0; }   // bloco: só a ação que muda algo (como no cômodo)
     }
     // resumo do que está ligado ("4 luzes · Telão · Som · 2 ares", +N depois de 3 partes) e o filtro "Ligados · N"
     const onK = this._onKeys(), n = onK.filter((k) => kind(k) === 'light').length, ac = onK.filter((k) => kind(k) === 'climate').length;
     if (this._countEl) {
-      const SHORT = { telao: 'Telão', som: 'Som' };
-      const parts = [...(n ? [`<b>${n}</b> ${n === 1 ? 'luz' : 'luzes'}`] : []), ...onK.filter((k) => !['light', 'climate'].includes(kind(k))).map((k) => SHORT[k] || ITEMS.find((i) => i.key === k).label), ...(ac ? [ac === 1 ? 'Ar' : `${ac} ares`] : [])];   // os 4 ares somam
+      const parts = [...(n ? [`<b>${n}</b> ${n === 1 ? 'luz' : 'luzes'}`] : []), ...onK.filter((k) => !['light', 'climate'].includes(kind(k))).map((k) => ITEMS.find((i) => i.key === k).short), ...(ac ? [ac === 1 ? 'Ar' : `${ac} ares`] : [])];   // os 4 ares somam
       const txt = parts.length ? parts.slice(0, 3).join(' · ') + (parts.length > 3 ? ` +${parts.length - 3}` : '') : 'Tudo desligado';
       const plain = (parts.join(' · ') || txt).replace(/<\/?b>/g, '');   // a lista inteira: o que muda dentro do "+N" também atualiza o selo e o leitor de tela
       if (this._cN !== plain) {
@@ -9695,9 +9728,22 @@ export class Igreja3DCard extends HTMLElement {
   }
   _renderAutos(now = Date.now()) {
     const el = this._autoList; if (!el) return;
-    el.innerHTML = '';
+    el.innerHTML = ''; this._autoHead.hidden = false;
     if (!this._autos.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = this._hass ? 'Nenhuma automação encontrada no Home Assistant.' : 'As automações do HA aparecem aqui quando o cartão está no Home Assistant.'; el.appendChild(e); return; }
-    for (const a of this._autos) el.appendChild(this._autoRow(a, now));
+    // v1.7 (como a Casa 1.8.1): por bloco → cômodo (o nome casado pelo _roomAutos), cada uma uma vez; a que casa com mais de um cômodo do
+    // bloco fica no bloco ("Ar do templo…": Palco e Plateia); o resto em "Outras automações"
+    const seen = new Set(), sect = (t) => { const h = document.createElement('div'); h.className = 'sect'; h.setAttribute('role', 'heading'); h.setAttribute('aria-level', '2'); h.textContent = t; el.appendChild(h); };
+    const add = (a) => { seen.add(a); el.appendChild(this._autoRow(a, now)); };
+    for (const b of this._blocks) {
+      const per = b.rooms.map((r) => [r, this._roomAutos(r).filter((a) => !seen.has(a))]), all = per.flatMap(([, l]) => l); if (!all.length) continue;
+      sect(`Automações · ${b.label}`);   // sem a dica "ligar/desligar · executar agora": cabe numa linha na coluna
+      new Set(all.filter((a, i) => all.indexOf(a) !== i)).forEach(add);   // de mais de um cômodo do bloco
+      for (const [r, l] of per) { const m = l.filter((a) => !seen.has(a)); if (m.length) { el.appendChild(this._zoneHead(r)); m.forEach(add); } }
+    }
+    const rest = this._autos.filter((a) => !seen.has(a));
+    if (rest.length && seen.size) sect('Outras automações');
+    for (const a of rest) el.appendChild(this._autoRow(a, now));
+    this._autoHead.hidden = !!seen.size;   // agrupadas: o rótulo de cada bloco toma o lugar deste
   }
   // linha de uma automação do HA: ativar/desativar + executar agora (painel lateral e painel do cômodo)
   _autoRow(a, now = Date.now()) {
