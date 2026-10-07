@@ -44,7 +44,7 @@ const DEFAULT_CONFIG = {
   title: 'Base Church', labels: true, mode: 'auto', night_vision: true, panel: true, roof: false,
   quality: 'auto', entities: {},   // auto | alta | media | leve | min
   entorno: 'auto',                 // gramado com textura: auto (chapado só no leve) | true | false (v1.8: sem ruas, árvores e postes)
-  latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 270,   // v1.8: fachada para o oeste (com 90 o dono via o pôr do sol do lado oposto); o YAML do README ainda diz 90 — trocar na etapa do README
+  latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 90,
   weather: true, weather_city: 'Palmas, TO',
   fachada_pessoa: true,            // v1.5.5: a visão de Pessoa liga a Fachada sozinha (e volta ao sair)
 };
@@ -5758,12 +5758,7 @@ function roomFachada(ctx) {
   const pcd = new THREE.Mesh(new THREE.PlaneGeometry(PW, PD), new THREE.MeshStandardMaterial({ map: pcdTex, alphaTest: 0.5, roughness: 0.85 }));
   pcd.rotation.x = -Math.PI / 2; pcd.position.set(PX0 + PW / 2, 0.009, Lm); pcd.castShadow = false; pcd.receiveShadow = true; add(pcd);
   for (const xc of [PX0 + 1.25, PX0 + 4.95]) { add(box(1.5, 0.12, 0.16, P.stop, xc, 0.06, 51.85)); add(flat(box(1.5, 0.004, 0.05, P.yellow, xc, 0.122, 51.85))); }
-  // placa de vaga PCD (poste + placa azul) na cabeceira de cada vaga, junto à calçada
-  for (const xc of [PX0 + 0.35, PX0 + 4.05]) {
-    add(cyl(0.03, 0.03, 1.9, P.grille, xc, 0.95, 50.93, 8));
-    add(box(0.42, 0.42, 0.02, std({ color: 0x2f76b2, roughness: 0.6 }), xc, 1.72, 50.95));
-    add(box(0.16, 0.2, 0.024, P.paint, xc, 1.72, 50.95, { cast: false }));
-  }
+  // v1.8: sem as placas PCD em poste (pedido: nenhum poste no estacionamento) — a vaga fica marcada no piso
   // estacionamento frontal sem carros (vagas livres)
 
   // ---- Limites do estacionamento (o lote acaba em z 60) ----
@@ -10089,7 +10084,7 @@ export class Igreja3DCard extends HTMLElement {
     this._amb.intensity = L(0.12, L(0.14, 0.36, nv), nl);   // visão noturna um pouco mais escura: letreiro e refletores aparecem
     this._amb.color.setHex(0xdde4ee).lerp(new THREE.Color(0x6b7aa8), nl);
     // sol: posição pelo azimute/elevação reais (no dia); cor esquenta perto do horizonte
-    const az = ((this._sunInfo ? this._sunInfo.azimuth : 90) - (this._config.orientation - 180)) * Math.PI / 180;
+    const az = ((this._sunInfo ? this._sunInfo.azimuth : 90) - this._config.orientation) * Math.PI / 180;   // v1.8: sentido corrigido (antes −(o−180): com o 90 do README o sol nascia/punha do lado oposto)
     const elr = Math.max(elev, 4) * Math.PI / 180;
     const sunDir = new THREE.Vector3(Math.sin(az) * Math.cos(elr), Math.sin(elr), -Math.cos(az) * Math.cos(elr));
     if (this._mode === 'day') sunDir.copy(this._sunPos).normalize();
