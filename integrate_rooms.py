@@ -6,7 +6,7 @@ Funções sem arquivo na pasta continuam como estão no cartão (stub ou versão
 import re, sys
 from pathlib import Path
 ROOMS = {  # arquivo -> (nome da função, seed)
-    'templo_palco': ('roomTemploPalco', 21), 'templo_plateia': ('roomTemploPlateia', 22), 'hall_familia': ('roomHallFamilia', 23),
+    'templo_palco': ('roomTemploPalco', 21), 'templo_plateia': ('roomTemploPlateia', 22), 'hall': ('roomHall', 23),
     'ala_direita': ('roomAlaDireita', 24), 'administrativo': ('roomAdministrativo', 25), 'servico_patio': ('roomServicoPatio', 26),
     'fachada': ('roomFachada', 27),
 }

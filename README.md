@@ -15,6 +15,7 @@ refeito para a planta da igreja.
 - **Clicar no bloco** abre a janela lateral com os aparelhos dele (ligar/desligar e ⋯), mostrando todos — ligados e desligados.
 - **Interruptor «Tudo»** em cada bloco e cômodo; **ares com Temperatura (− / +) e Oscilar**.
 - **Cena mais limpa**: sem postes (a luz do estacionamento virou 2 refletores na fachada), sem árvores e sem ruas. Paredes da Sala Pastoral mais finas e baixas. **Sol corrigido** (nasce nos fundos, se põe na frente). Vista de cima inclinada para a frente do templo; tocar no Templo centraliza.
+- **Sala da Família**: v1.8: a Sala da Família foi incorporada ao Hall (saem as paredes, os móveis e a luz `familia`/`light.sala_familia`; o abajur do mezanino acende com a luz do hall).
 - **Topo**: sai o cartão da esquerda; um botão ⋯ à direita abre a lista suspensa (hora e simulação do sol, clima, Pessoa, Ir para… e opções).
 - **Visual do app Casa da Apple** (igual à Casa v1.9): ícones Phosphor, bloco ligado claro, controles do iOS, vidro só em GPU forte.
 - Ganchos: `setTopNav` aceita `templo · operacional · banheiro · pastoral · hall` (e os ids antigos).
@@ -399,7 +400,6 @@ entities:
   fachada:        light.fachada_letreiro       # refletor do letreiro + arandelas
   estacionamento: light.estacionamento         # postes da frente + arandela do pátio
   porta:          binary_sensor.porta_principal  # porta de vidro abre no modelo quando "on"
-  familia:        light.sala_familia
   banheiros:      light.banheiros              # WCs, hall dos banheiros e depósito
   # ---- Administração / apoio ----
   pastoral:       light.sala_pastoral
@@ -498,7 +498,7 @@ Coordenadas em metros (X → direita a partir do muro esquerdo, Z → frente; fa
 | Fundos (z 0–12,4) | Estacionamento interno e pátio · Almoxarifado · Cozinha · Recepção · Sala Pastoral (+ banheiro) · Caixa d'água · jardins | `estacionamento` · `cozinha` · `recepcao` · `pastoral` |
 | Ala direita (x 16–20) | Corredor da entrada lateral · Sala Gilvan · Administrativo · Circulação · Mídia · Voluntariado · Depósito · Área técnica · WC Masc. · Hall dos banheiros · WC Fem. | `circulacao` · `administrativo` · `midia` (+ `ac_midia`) · `voluntariado` (+ `ac_voluntariado`) · `banheiros` |
 | Templo (z 12,4–44) | Palco na parede lateral x = 0 com telão, telas de projeção, banda, treliça e line arrays · plateia de 414 cadeiras virada para −x · cobertura aparente | `plateia` (piso, high-bays), `palco` (moving heads), `telao`, `som`, `ac_templo` |
-| Entrada (z 44–49,65) | Hall com café, lounge e escada até o mezanino (salinha) · Sala da Família · WC · WC PCD | `hall` · `familia` · `banheiros` |
+| Entrada (z 44–49,65) | Hall com café, lounge e escada até o mezanino (salinha) · WC · WC PCD | `hall` · `banheiros` |
 | Frente (z > 49,7) | Jardins, calçada, estacionamento frontal com vagas PCD | `fachada` · `estacionamento` |
 
 ## Ajustando a planta
@@ -513,7 +513,7 @@ Tudo está em metros no topo de `igreja3d-card.js` (X → direita, Z → frente)
 - `_buildWalls()` — paredes com portas (`door`), janelas (`window`), vidro (`glass`), porta de vidro de
   2 folhas (`glassdoor`), vãos (`open`) e portão (`gate`).
 - `_buildFurniture()` — objetos ligados a entidades (telão, som, splits) e chamadas das funções de
-  decoração (`roomTemploPalco`, `roomTemploPlateia`, `roomHallFamilia`, `roomAlaDireita`,
+  decoração (`roomTemploPalco`, `roomTemploPlateia`, `roomHall`, `roomAlaDireita`,
   `roomAdministrativo`, `roomServicoPatio`, `roomFachada`), coladas entre `@rooms-begin` e `@rooms-end`.
 - Para refazer a decoração de uma área: edite `rooms/<área>.js` e rode `python3 integrate_rooms.py`.
 
