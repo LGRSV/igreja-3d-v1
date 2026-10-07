@@ -6189,11 +6189,11 @@ canvas.walk.pick { cursor: pointer; }
    cômodo); os cômodos dele embaixo, sem vão */
 .blk { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 0 2px; color: var(--ink); }
 :not([hidden]) ~ .blk { margin-top: 14px; } .blk + .zone { margin-top: 0; }   /* vão só entre blocos à vista */
-.blk .bt { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }   /* coluna estreita: a contagem desce */
+.blk .bt { flex: 1; min-width: 0; display: flex; flex-direction: column; }   /* nome e, embaixo, a contagem — como no cabeçalho do cômodo, em qualquer largura */
 .blk b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; } .blk small { white-space: nowrap; font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .blk .all button { position: relative; min-height: 30px; padding: 0 12px; } .blk .all button::after { content: ""; position: absolute; inset: -7px 0; }   /* 30 px à vista, alvo de 44 */
-.autos > .sect { margin: 0 2px; } .autos > .sect:not(:first-child) { margin-top: 12px; } .autos > .sect + .zone { margin-top: 0; } .sect[hidden] + .autos { margin-top: 18px; }   /* Automações · bloco → cômodo */
 .tile.wide { grid-column: 1 / -1; } .dock.room .tile.wide { grid-column: auto; } .tile small .sv { font-weight: 500; }   /* aparelho de mais de um cômodo: linha inteira, cabe o "também …" */
+.wrap.sheet:not(.narrow) .dock:not(.room) .tile.wide { grid-column: span 2; }   /* folha do tablet (4+ colunas): 2 colunas bastam */
 .tile.wide small { white-space: normal; }   /* "também Depósito, WC Masc., WC Fem. e WCs": quebra a linha em vez de cortar */
 /* bloco compacto (ícone à esquerda, nome e estado à direita) */
 .tile { position: relative; overflow: hidden; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 64px; padding: 9px 9px 9px 10px; border-radius: 14px; text-align: left; color: var(--ink);
@@ -6324,6 +6324,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
 .all button:hover { background: var(--fill-3); }
 .all button:first-child { background: var(--on); color: var(--on-ink); border-color: var(--on); }   /* Ligar tudo: âmbar cheio (vem depois do :hover) */
 .rfoot { margin-top: 14px; } .rfoot .autos { margin-bottom: 12px; } .rfoot > .tiles { margin-top: -14px; }   /* bloco: a lista dos cômodos logo abaixo do cabeçalho (os blocos de aparelho ficam escondidos) */
+.rfoot .tile { grid-template-columns: minmax(0, 1fr); } .rfoot .tile small { white-space: normal; }   /* cômodos do bloco: sem ícone, nome e "luz do Hall dos banheiros" inteiros */
 .rfoot .enter { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px; border-radius: 12px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }
 .rfoot .enter:hover { background: var(--fill-3); }
 .rfoot .enter svg { width: 16px; height: 16px; color: var(--ink-2); }
@@ -8306,11 +8307,11 @@ export class Igreja3DCard extends HTMLElement {
     this._needShadow = true; this._orbit.dirty = true;
   }
   // Vista de cima, nível 0 (v1.6.1): de frente para o palco, como quem está na plateia — câmera do lado +x olhando para −x, alta e
-  // oblíqua (polar 0,9 ≈ 38° acima do horizonte), centrada no templo; a largura do templo (z 12,4–44) ocupa a largura da tela com pouca
-  // folga (em retrato também: a câmera só afasta). Ala direita, fundos e frente podem ficar cortados nas bordas.
+  // oblíqua (polar 0,9 ≈ 38° acima do horizonte). v1.7: a igreja inteira na largura (z 0–52, dos Fundos à Entrada; em retrato também: a
+  // câmera só afasta) — os 4 blocos à vista para o 1º toque (antes era só o templo, e Fundos e Entrada ficavam fora da tela)
   _topFor(aspect) {
-    const target = new THREE.Vector3(7, 0, 28.2), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
-    return { pos: new THREE.Vector3().setFromSphericalCoords(16.4 / tanH, 0.9, Math.PI / 2).add(target), target };
+    const target = new THREE.Vector3(8, 0, 26), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
+    return { pos: new THREE.Vector3().setFromSphericalCoords(26 / tanH, 0.9, Math.PI / 2).add(target), target };
   }
   // O painel fica como está (v1.7, como na Casa): o cômodo tocado aparece nele
   _setTopView(on, keepCamera = false) {
@@ -8364,13 +8365,16 @@ export class Igreja3DCard extends HTMLElement {
         if (!r.noauto) for (const q of pts) if (q.p.some(([x, z]) => near(rects, x, z, 0))) items.add(q.key);   // só o que está dentro do cômodo (com folga pegava o ar do vizinho)
         return { id: r.id, label: r.label, rects, zones: r.zones, frame: r.frame, items: [...items].filter((k) => ITEMS.some((i) => i.key === k)) };
       });
-      const blk = { id, label: b.label, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))], items: [...new Set(rooms.flatMap((r) => r.items))], rects: rooms.flatMap((r) => r.rects) };   // items/rects: o bloco também aparece no painel (nível 1)
+      const blk = { id, label: b.label, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))], rects: rooms.flatMap((r) => r.rects) };   // rects: realce e rótulos do bloco
       for (const r of rooms) r.block = blk;
       return blk;
     });
     // na lista do painel cada aparelho fica num cômodo só (HOME, ou o 1º que o tem): r.own
     const home = {}, all = this._blocks.flatMap((b) => b.rooms); for (const r of all) for (const k of r.items) home[k] = home[k] || HOME[k] || r.id;
     for (const r of all) r.own = r.items.filter((k) => home[k] === r.id);
+    for (const b of this._blocks) b.items = b.rooms.flatMap((r) => r.own);   // o bloco (painel e nível 1 da Vista de cima): os aparelhos próprios dos cômodos dele — uma conta e um "tudo" só
+    const de = (k) => { const h = all.find((q) => q.id === home[k]), it = ITEMS.find((i) => i.key === k); return `${(it.short || it.label).toLowerCase()} ${/a$/.test(h.label) ? 'da' : 'do'} ${h.label}`; };
+    for (const r of all) if (!r.own.length) r.via = r.items.length ? [...new Set(r.items.map(de))].join(' · ') : 'sem aparelhos';   // sem aparelho próprio: de onde vem a luz ("luz do Estacionamento"), no lugar da conta
   }
   _rectsBox(rs) {
     return [Math.min(...rs.map((r) => r[0])), Math.min(...rs.map((r) => r[1])), Math.max(...rs.map((r) => r[0] + r[2])), Math.max(...rs.map((r) => r[1] + r[3]))];
@@ -8380,14 +8384,15 @@ export class Igreja3DCard extends HTMLElement {
     const n = this._nav, q = n.level === 2 ? n.room : n.level === 1 ? n.block : null;   // bloco: os cômodos dele (a caixa da Entrada cruza o WC Fem.)
     return q ? q.rects.map((r) => [r[0], r[1], r[0] + r[2], r[1] + r[3]]) : null;
   }
-  // Enquadramento de cima de um retângulo (paisagem: palco em cima, como no nível 0 — aproximar não dá meia-volta · retrato: fachada embaixo)
+  // Enquadramento de cima de um retângulo, sempre com o palco em cima, como a planta (v1.7: em qualquer faixa — a altura da folha muda o
+  // formato dela, e a planta girava 90° entre um bloco e outro)
   _frameRect(x0, z0, x1, z1, margin) {
-    const A = this._camera.aspect, tanV = Math.tan(this._camera.fov * Math.PI / 360), land = A >= 1;
+    const A = this._camera.aspect, tanV = Math.tan(this._camera.fov * Math.PI / 360);
     const hx = (x1 - x0) / 2 + margin, hz = (z1 - z0) / 2 + margin;
-    const d = land ? Math.max(hz / (tanV * A), hx / tanV) : Math.max(hx / (tanV * A), hz / tanV);
+    const d = Math.max(hz / (tanV * A), hx / tanV);   // z na largura, x na altura
     const target = new THREE.Vector3((x0 + x1) / 2, 0, (z0 + z1) / 2), o = this._orbit;
     const dist = clamp(d * 1.08 + 3, o.minDist + 2, o.maxDist);   // +3 m: o topo das paredes (3 m) fica mais perto da câmera
-    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, 0.035, land ? Math.PI / 2 : 0).add(target), target };
+    return { pos: new THREE.Vector3().setFromSphericalCoords(dist, 0.035, Math.PI / 2).add(target), target };
   }
   // cômodo (ou, na falta, o bloco) sob o ponto (x, z) do piso; folga de 0,8 m para as paredes
   _hit(x, z) {
@@ -8488,11 +8493,14 @@ export class Igreja3DCard extends HTMLElement {
     this._refreshSub(); this._renderPanel();
   }
   // automações do HA ligadas ao cômodo: o estado não diz que entidades cada uma usa, então casa pelo nome — palavras (4+ letras) do nome
-  // do cômodo e dos aparelhos dele no nome/id da automação. ponytail: heurística por palavra; mapa explícito no YAML se um dia errar muito
+  // do cômodo e dos aparelhos dele no nome/id da automação. Cada automação fica no cômodo que mais casa (o nome do cômodo e o de cada
+  // aparelho contam 1): "Presença acende o hall" → Hall de entrada (cômodo e luz), não a Plateia (só o sensor) nem o Hall dos banheiros;
+  // empate → nos dois (o _renderAutos põe no bloco). ponytail: heurística por palavra; mapa explícito no YAML se um dia errar muito
   _roomAutos(room) {
     const words = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !['sala', 'area', 'tudo', 'principal'].includes(w));
-    const want = new Set(words([room.label, ...room.items.map((k) => ITEMS.find((i) => i.key === k).label)].join(' ')));
-    return (this._autos || []).filter((a) => words(a.name + ' ' + a.id.slice(11)).some((w) => want.has(w)));
+    const src = (r) => r.aw || (r.aw = [r.label, ...r.items.map((k) => ITEMS.find((i) => i.key === k).label)].map(words));   // palavras de cada nome, uma vez
+    const score = (r, aw) => src(r).filter((ws) => ws.some((w) => aw.has(w))).length, rooms = this._roomsAll();
+    return (this._autos || []).filter((a) => { const aw = new Set(words(a.name + ' ' + a.id.slice(11))), s = score(room, aw); return s > 0 && rooms.every((q) => score(q, aw) <= s); });
   }
   // Selo redondo do modo do ar (textura 64 px, uma por modo, em cache): frio ❄ azul, quente chama laranja,
   // seco gota, ventilar hélice, auto "A"
@@ -8995,7 +9003,7 @@ export class Igreja3DCard extends HTMLElement {
   setTopNav(block, room) {
     if (!this._blocks || !this._orbit) return;
     if (!this._topView) this._setTopView(true);
-    const b = this._blocks.find((q) => q.id === block);
+    const id = { hall: 'entrada', frente: 'entrada' }[block] || block, b = this._blocks.find((q) => q.id === id);   // ids de antes da v1.7 (Hall / Família e Frente viraram a Entrada)
     if (b) this._navTo(room ? 2 : 1, b, room); else this._navTo(0);
   }
   getTopNav() { const n = this._nav; return { level: this._topView ? n.level : -1, block: n.block && n.block.id, room: n.room && n.room.id }; }
@@ -9338,7 +9346,7 @@ export class Igreja3DCard extends HTMLElement {
         const autos = r.rooms ? [] : this._roomAutos(r), g = document.createElement('div'); g.className = 'tiles';
         if (autos.length) { const h = document.createElement('div'), al = document.createElement('div'); h.className = 'sect'; h.textContent = 'Automações'; al.className = 'autos'; for (const a of autos) al.appendChild(this._autoRow(a, Date.now())); f.append(h, al); }
         for (const q of r.rooms || []) {   // bloco: os cômodos dele com a contagem (como na v1.6.1); tocar aproxima
-          const b = document.createElement('button'); b.className = 'tile'; b.title = `Aproximar ${q.label}`; b.innerHTML = `<span class="ico">${iconSvg('bulb')}</span><span><b></b><small><span class="st"></span></small></span>`;
+          const b = document.createElement('button'); b.className = 'tile'; b.title = `Aproximar ${q.label}`; b.innerHTML = '<span><b></b><small><span class="st"></span></small></span>';   // sem ícone: "Estacionamento" cabe inteiro em 2 colunas
           b.querySelector('b').textContent = q.label; b.addEventListener('click', () => this._navTo(2, r, q)); g.appendChild(b); this._rRooms.push([q, b]);
         }
         f.appendChild(r.rooms ? g : this._rEnter);
@@ -9461,18 +9469,19 @@ export class Igreja3DCard extends HTMLElement {
     const grid = document.createElement('div'); grid.className = 'tiles'; this._panes.ctl.pane.appendChild(grid); this._grid = grid;
     this._detail = document.createElement('div'); this._detail.className = 'detail'; this._detail.hidden = true;
     // v1.7 (como a Casa 1.8.1): blocos da Vista de cima → cômodos → aparelhos, cada um uma vez (r.own, ver _buildBlocks); o de vários cômodos
-    // ocupa a linha e diz "também …". Cômodo sem nada próprio (Pátio, Sala Gilvan, Depósito, WCs…) não tem grupo: abre pela planta
+    // ocupa a linha e diz "também …". Todos os cômodos do bloco, na ordem da planta: o sem nada próprio (Pátio, Sala Gilvan, WCs…) diz de
+    // onde vem a luz e abre igual
     this._groups = []; this._zone = ''; this._onKeep = new Set(); const list = new Intl.ListFormat('pt-BR');
     for (const b of this._blocks) {
       const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome  N de M ligados] [Ligar tudo ou Desligar tudo do bloco]
       bh.innerHTML = '<div class="bt"><b role="heading" aria-level="2"></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>';
       const ba = bh.querySelector('.all'); bh.querySelector('b').textContent = b.label; ba.setAttribute('aria-label', b.label);
       ba.firstChild.title = this._rAll.firstChild.title; ba.lastChild.title = this._rAll.lastChild.title;   // a política do cômodo (ligar acende só as luzes)
-      const keys = b.rooms.flatMap((r) => r.own);   // só os listados embaixo: a soma dos blocos não repete aparelho
+      const keys = b.items;   // só os listados embaixo (os mesmos do nível 1 da Vista de cima): a soma dos blocos não repete aparelho
       ba.firstChild.addEventListener('click', () => this._roomPower(true, keys)); ba.lastChild.addEventListener('click', () => this._roomPower(false, keys));
       this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, all: ba });
-      for (const r of b.rooms.filter((q) => q.own.length)) {
-        const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own });
+      for (const r of b.rooms) {
+        const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own, via: r.via });
         for (const k of r.own) {
           grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), r.label));
           const o = this._roomsAll().filter((q) => q !== r && q.items.includes(k)).map((q) => q.label); if (!o.length) continue;   // serve a outros cômodos: diz quais
@@ -9489,7 +9498,7 @@ export class Igreja3DCard extends HTMLElement {
     // Automações: rotinas rápidas do cartão + automações do HA (descobertas sozinhas)
     const h1 = document.createElement('div'); h1.className = 'sect'; h1.textContent = 'Rotinas rápidas'; this._panes.scn.pane.appendChild(h1);
     const rgrid = document.createElement('div'); rgrid.className = 'tiles routines'; this._panes.scn.pane.appendChild(rgrid);
-    const h2 = this._autoHead = document.createElement('div'); h2.className = 'sect'; h2.innerHTML = 'Automações do Home Assistant <small>ligar/desligar · executar agora</small>'; this._panes.scn.pane.appendChild(h2);
+    const h2 = document.createElement('div'); h2.className = 'sect'; h2.innerHTML = 'Automações do Home Assistant <small>ligar/desligar · executar agora</small>'; this._panes.scn.pane.appendChild(h2);
     this._autoList = document.createElement('div'); this._autoList.className = 'autos'; this._panes.scn.pane.appendChild(this._autoList);
     for (const sc of SCENES) {
       const b = document.createElement('button'); b.className = 'tile routine';
@@ -9550,6 +9559,12 @@ export class Igreja3DCard extends HTMLElement {
     for (const g of this._groups) g.zh.hidden = on && !g.keys.some((k) => keep.has(k));   // bloco ou cômodo sem nada à vista some
     for (const [k, t] of Object.entries(this._tiles)) t.tile.hidden = ks ? !ks.includes(k) || t.it.kind === 'sensor' || !!this._room.rooms : on && !keep.has(k);   // bloco: só a lista dos cômodos
     this._zEmpty.hidden = !(on && !keep.size);
+  }
+  // Ligar tudo / Desligar tudo: só a ação que muda algo; o foco do teclado passa ao botão que aparece (não cai no body)
+  _allShow(all, n, act) {
+    const f = this.shadowRoot.activeElement, [on, off] = all.children;
+    all.hidden = !n; on.hidden = act > 0; off.hidden = act === 0;
+    if (f && f.hidden && all.contains(f) && n) (on.hidden ? off : on).focus({ preventScroll: true });
   }
   // aparelhos ligados agora (sensor não conta)
   _onKeys() { return ITEMS.filter((i) => i.kind !== 'sensor' && this._state[i.key] && this._state[i.key].on).map((i) => i.key); }
@@ -9663,10 +9678,10 @@ export class Igreja3DCard extends HTMLElement {
       const on = ctl.filter((k) => this._state[k] && this._state[k].on).length;
       const sens = ks.filter((k) => !ctl.includes(k)).map((k) => (k === 'porta' ? 'porta ' : '') + this._stateText(ITEMS.find((i) => i.key === k), this._state[k]));
       this._rCount.textContent = !ks.length ? 'Nenhum aparelho' : [ctl.length ? `${on} de ${ctl.length} ligados` : '', ...sens].filter(Boolean).map((x) => x.replace(/ /g, ' ')).join(' · ');   // coluna estreita: quebra só entre as partes
-      this._rAll.hidden = !ctl.length; this._rAll.firstChild.hidden = on > 0; this._rAll.lastChild.hidden = on === 0;   // só a ação que muda algo
-      for (const [q, b] of this._rRooms || []) {   // bloco: "N de M ligados" de cada cômodo
-        const c = q.items.filter((k) => kind(k) !== 'sensor'), m = c.filter((k) => this._state[k] && this._state[k].on).length;
-        b.classList.toggle('on', m > 0); b.querySelector('.st').textContent = c.length ? `${m} de ${c.length} ligados` : 'sem aparelhos';
+      this._allShow(this._rAll, ctl.length, on);   // só a ação que muda algo
+      for (const [q, b] of this._rRooms || []) {   // bloco: "N de M ligados" de cada cômodo — os próprios, a conta da lista (a soma dá a do bloco)
+        const c = q.own.filter((k) => kind(k) !== 'sensor'), m = c.filter((k) => this._state[k] && this._state[k].on).length;
+        b.classList.toggle('on', m > 0); b.querySelector('.st').textContent = c.length ? `${m} de ${c.length} ligados` : q.via;
       }
     }
     const now = Date.now();
@@ -9683,8 +9698,8 @@ export class Igreja3DCard extends HTMLElement {
     }
     for (const z of this._groups || []) {
       const ks = z.keys.filter((k) => kind(k) !== 'sensor'), act = ks.filter((k) => this._state[k] && this._state[k].on).length;
-      z.zn.textContent = ks.length ? `${act} de ${ks.length} ligados` : '';   // sensor não conta
-      if (z.all) { z.all.hidden = !ks.length; z.all.firstChild.hidden = act > 0; z.all.lastChild.hidden = act === 0; }   // bloco: só a ação que muda algo (como no cômodo)
+      z.zn.textContent = ks.length ? `${act} de ${ks.length} ligados` : z.via || '';   // sensor não conta; cômodo sem aparelho próprio: de onde vem a luz
+      if (z.all) this._allShow(z.all, ks.length, act);   // bloco: só a ação que muda algo (como no cômodo)
     }
     // resumo do que está ligado ("4 luzes · Telão · Som · 2 ares", +N depois de 3 partes) e o filtro "Ligados · N"
     const onK = this._onKeys(), n = onK.filter((k) => kind(k) === 'light').length, ac = onK.filter((k) => kind(k) === 'climate').length;
@@ -9728,22 +9743,21 @@ export class Igreja3DCard extends HTMLElement {
   }
   _renderAutos(now = Date.now()) {
     const el = this._autoList; if (!el) return;
-    el.innerHTML = ''; this._autoHead.hidden = false;
+    el.innerHTML = '';
     if (!this._autos.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = this._hass ? 'Nenhuma automação encontrada no Home Assistant.' : 'As automações do HA aparecem aqui quando o cartão está no Home Assistant.'; el.appendChild(e); return; }
-    // v1.7 (como a Casa 1.8.1): por bloco → cômodo (o nome casado pelo _roomAutos), cada uma uma vez; a que casa com mais de um cômodo do
-    // bloco fica no bloco ("Ar do templo…": Palco e Plateia); o resto em "Outras automações"
-    const seen = new Set(), sect = (t) => { const h = document.createElement('div'); h.className = 'sect'; h.setAttribute('role', 'heading'); h.setAttribute('aria-level', '2'); h.textContent = t; el.appendChild(h); };
+    // v1.7 (como a Casa 1.8.1): por bloco → cômodo (o do _roomAutos), cada uma uma vez; a que empata em mais de um cômodo do bloco fica no
+    // bloco ("Ar do templo…": Palco e Plateia); o resto em "Outras automações". O bloco é o mesmo título da aba Ambientes
+    const seen = new Set(), head = (t) => { const h = document.createElement('div'); h.className = 'blk'; h.innerHTML = '<div class="bt"><b role="heading" aria-level="2"></b></div>'; h.querySelector('b').textContent = t; el.appendChild(h); };
     const add = (a) => { seen.add(a); el.appendChild(this._autoRow(a, now)); };
     for (const b of this._blocks) {
       const per = b.rooms.map((r) => [r, this._roomAutos(r).filter((a) => !seen.has(a))]), all = per.flatMap(([, l]) => l); if (!all.length) continue;
-      sect(`Automações · ${b.label}`);   // sem a dica "ligar/desligar · executar agora": cabe numa linha na coluna
+      head(b.label);
       new Set(all.filter((a, i) => all.indexOf(a) !== i)).forEach(add);   // de mais de um cômodo do bloco
       for (const [r, l] of per) { const m = l.filter((a) => !seen.has(a)); if (m.length) { el.appendChild(this._zoneHead(r)); m.forEach(add); } }
     }
     const rest = this._autos.filter((a) => !seen.has(a));
-    if (rest.length && seen.size) sect('Outras automações');
+    if (rest.length && seen.size) head('Outras automações');
     for (const a of rest) el.appendChild(this._autoRow(a, now));
-    this._autoHead.hidden = !!seen.size;   // agrupadas: o rótulo de cada bloco toma o lugar deste
   }
   // linha de uma automação do HA: ativar/desativar + executar agora (painel lateral e painel do cômodo)
   _autoRow(a, now = Date.now()) {

@@ -273,8 +273,9 @@ const narrow = () => window.innerWidth < 600;
 { let saved = null; try { saved = localStorage.getItem('igreja3d-sky-min'); } catch (_) {}
   if (saved === '1' || (saved === null && narrow())) setMin(true, false); }
 
-// Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas);
-// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima). Recalcula quando o layout muda.
+// Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas; estreita até 260 px);
+// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima) — menos com a folha de baixo do cartão (tablet em pé), que na
+// altura cheia sobe até logo abaixo do HUD: aí fica no cartão do título, como no celular. Recalcula quando o layout muda.
 function place() {
   const root = card.shadowRoot; if (!root) return;
   const hud = root.querySelector('.hud.top'); if (!hud) return;
@@ -283,12 +284,13 @@ function place() {
   const title = hud.querySelector('.title'), btns = hud.querySelector('.btns');
   const tr = title && title.getBoundingClientRect(), br = btns && btns.getBoundingClientRect();
   let top, cx = W / 2;
-  if (narrow() && tr) {
+  const gap = tr && br && Math.abs(tr.top - br.top) < 8 ? br.left - tr.right - 24 : 0, sheet = !!root.querySelector('.wrap.sheet');
+  if (!narrow() && gap >= Math.min(bw, 260)) { if (gap < bw) sky.style.width = Math.round(gap) + 'px'; top = tr.top; cx = (tr.right + br.left) / 2; }
+  else if ((narrow() || sheet) && tr) {
     // celular: nunca no meio da tela — recolhida, a pílula fica no canto do cartão do título; aberta, cobre o cartão do título
     if (sky.classList.contains('min')) { top = tr.top + 5; cx = tr.right - 6 - bw / 2; }
     else { sky.style.width = Math.round(tr.width) + 'px'; top = tr.top + Math.max(0, (tr.height - sky.getBoundingClientRect().height) / 2); cx = (tr.left + tr.right) / 2; }
-  } else if (tr && br && Math.abs(tr.top - br.top) < 8 && br.left - tr.right >= bw + 24) { top = tr.top; cx = (tr.right + br.left) / 2; }
-  else top = hud.getBoundingClientRect().bottom + 4;
+  } else top = hud.getBoundingClientRect().bottom + 4;
   sky.style.top = Math.round(top) + 'px'; sky.style.left = Math.round(cx) + 'px';
 }
 setInterval(place, 400); addEventListener('resize', place); setTimeout(place, 300);
