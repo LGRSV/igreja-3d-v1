@@ -120,7 +120,7 @@ export const ITEMS = [
       { p: [16, 5.5, 55.5], i: 140, d: 16, pole: true },
       { p: [0.085, 2.8, 6.2], sconce: true, glowOnly: true },   // arandela no muro x = 0 (face interna em x 0,012)
     ] },
-  { key: 'pastoral', label: 'Sala pastoral', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe0b8,
+  { key: 'pastoral', label: 'Sala Pastoral', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe0b8,
     fixtures: [
       { p: [14.9, 2.7, 4.6], i: 30, d: 8, shadow: true, liteShadow: true },
       { p: [18.5, 2.7, 7.0], glowOnly: true },
@@ -362,33 +362,33 @@ const ROOM_FOCUS = { templo: [1.0, 1.6, 28.1], hall: [11.85, 1.6, 44.0], mezanin
 // Vista de cima navegável e painel: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco (enquadramento e sobra do _hit); cada
 // cômodo junta zonas de ZONES (ou tem `rects` próprios) e lista os aparelhos (chaves de ITEMS) — _buildBlocks() ainda acrescenta os que têm
 // luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força o enquadramento do cômodo. `flat` = no
-// painel o bloco é uma lista só, sem os cômodos como subtítulos (a Vista de cima continua com eles). v1.8 (pedido do dono): Templo (um
-// cômodo só) · Operacional · Banheiro · Sala Pastoral · Hall de entrada; a Sala da Família saiu
+// painel e na Vista de cima o bloco é uma lista só: abre inteiro, sem os cômodos como subtítulos nem como nível. `lp` = [x, z] do rótulo do
+// bloco na planta. v1.8 (pedido do dono): Templo (um cômodo só) · Operacional · Banheiro · Sala Pastoral · Hall de entrada; a Sala da Família saiu
 const BLOCKS = {
-  templo: { label: 'Templo', flat: true, box: [0, 12.4, 16.05, 44.0], rooms: [
+  templo: { label: 'Templo', flat: true, box: [0, 12.4, 16.05, 44.0], lp: [10.8, 28.1], rooms: [
     { id: 'templo', label: 'Templo', zones: ['templo'], items: ['palco', 'plateia', 'telao', 'som', 'ac_templo', 'presenca', 'temperatura'], noauto: true }] },
-  operacional: { label: 'Operacional', box: [16.05, 11.0, 20.1, 33.9], rooms: [
+  operacional: { label: 'Operacional', box: [16.05, 11.0, 20.1, 33.9], lp: [18.1, 22.4], rooms: [
     { id: 'gilvan', label: 'Sala Gilvan', zones: ['gilvan'], items: ['administrativo'] },
     { id: 'administrativo', label: 'Administrativo', zones: ['administrativo'], items: ['administrativo'] },
     { id: 'circulacao', label: 'Circulação', zones: ['circulacao', 'corredor', 'circ2'], items: ['circulacao'], frame: [16.05, 19.0, 20.1, 28.0] },
     { id: 'midia', label: 'Mídia', zones: ['midia'], items: ['midia', 'ac_midia'] },
     { id: 'voluntariado', label: 'Voluntariado', zones: ['voluntariado'], items: ['voluntariado', 'ac_voluntariado'] }] },
-  banheiro: { label: 'Banheiro', flat: true, box: [16.05, 33.9, 20.1, 49.5], rooms: [
+  banheiro: { label: 'Banheiro', flat: true, box: [16.05, 33.9, 20.1, 49.5], lp: [18.1, 41.7], rooms: [
     { id: 'deposito', label: 'Depósito', zones: ['deposito'], items: ['banheiros'] },
     { id: 'tecnica', label: 'Área técnica', zones: ['tecnica'], items: [] },
     { id: 'wc_masc', label: 'WC Masc.', zones: ['wc_masc'], items: ['banheiros'] },
     { id: 'hall_banheiros', label: 'Hall dos banheiros', zones: ['hall_banheiros'], items: ['banheiros'] },
     { id: 'wc_fem', label: 'WC Fem.', zones: ['wc_fem'], items: ['banheiros'] }] },
-  pastoral: { label: 'Sala Pastoral', flat: true, box: [0, 0, 20.1, 12.4], rooms: [
+  pastoral: { label: 'Sala Pastoral', flat: true, box: [0, 0, 20.1, 12.4], lp: [10.0, 6.2], rooms: [
     { id: 'patio', label: 'Pátio', zones: ['estac_interno', 'patio', 'jardim_interno'], items: ['estacionamento'] },
     { id: 'almoxarifado', label: 'Almoxarifado', zones: ['almoxarifado'], items: ['cozinha'] },
     { id: 'cozinha', label: 'Cozinha', zones: ['cozinha'], items: ['cozinha'] },
     { id: 'recepcao', label: 'Recepção', zones: ['recepcao'], items: ['recepcao'] },
     { id: 'pastoral', label: 'Sala Pastoral', zones: ['pastoral', 'wc_pastoral', 'jardim_pastoral'], items: ['pastoral', 'ac_pastoral'] },
     { id: 'caixa_dagua', label: 'Caixa d’água', zones: ['caixa_dagua'], items: [] }] },
-  hall: { label: 'Hall de entrada', box: [-3, 44.0, 23, 60], rooms: [
-    { id: 'hall', label: 'Hall de entrada', zones: ['hall'], items: ['hall', 'porta'] },
-    { id: 'wcs', label: 'WCs', zones: ['wc1', 'wc_pcd'], items: ['banheiros'] },
+  hall: { label: 'Hall de entrada', box: [-3, 44.0, 23, 60], lp: [10.0, 47.0], rooms: [
+    { id: 'hall', label: 'Hall', zones: ['hall'], items: ['hall', 'porta'] },
+    { id: 'wcs', label: 'WCs da frente', zones: ['wc1', 'wc_pcd'], items: ['banheiros'] },
     { id: 'estac_frontal', label: 'Estacionamento', zones: ['estac_frontal'], items: ['estacionamento'] },
     { id: 'fachada', label: 'Fachada', zones: ['jardim_frontal', 'calcada'], items: ['fachada'] }] },
 };
@@ -8269,12 +8269,12 @@ export class Igreja3DCard extends HTMLElement {
     // câmera baixa (dentro do prédio / altura de gente): só os rótulos até ~20 m, os do fundo não poluem
     const reach = cam.position.y < 8 ? 20 : 1e9;
     // Vista de cima aproximada num bloco/cômodo: só os rótulos de dentro dele
-    const reg = this._topView && this._nav && this._nav.level >= 1 ? this._navRects() : null;
+    const reg = this._topView && this._nav && this._nav.level >= 1 ? this._navRects() : null, lv0 = this._topView && !reg;   // planta: só os nomes dos blocos
     for (const s of this._labels) {
       const L = s.userData.label; if (!L) continue;
       const d = cam.position.distanceTo(s.position);
       const inReg = !reg || reg.some(([x0, z0, x1, z1]) => s.position.x >= x0 - 1 && s.position.x <= x1 + 1 && s.position.z >= z0 - 1 && s.position.z <= z1 + 1);
-      const op = inReg && L.top !== !this._topView ? clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1) : 0;
+      const op = inReg && (L.blk ? lv0 : !lv0 && L.top !== !this._topView) ? clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1) : 0;
       s.visible = op > 0.02; s.material.opacity = op;
       const hpx = L.font * (this._topView ? 2.6 : 3);   // texto de 24 px num canvas de 72 px → sprite com 3× a altura da fonte (menor na Vista de cima)
       s.scale.set(hpx * k * 320 / 72, hpx * k, 1);
@@ -8368,21 +8368,21 @@ export class Igreja3DCard extends HTMLElement {
         if (!r.noauto) for (const q of pts) if (q.p.some(([x, z]) => near(rects, x, z, 0))) items.add(q.key);   // só o que está dentro do cômodo (com folga pegava o ar do vizinho)
         return { id: r.id, label: r.label, rects, zones: r.zones, frame: r.frame, items: [...items].filter((k) => ITEMS.some((i) => i.key === k)) };
       });
-      const blk = { id, label: b.label, flat: !!b.flat, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))], rects: rooms.flatMap((r) => r.rects) };   // rects: realce e rótulos do bloco
+      const blk = { id, label: b.label, flat: !!b.flat, box: b.box, lp: b.lp, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))], rects: rooms.flatMap((r) => r.rects) };   // rects: realce e rótulos do bloco
       for (const r of rooms) r.block = blk;
       return blk;
     });
     // na lista do painel cada aparelho fica num cômodo só (HOME, ou o 1º que o tem): r.own
     const home = {}, all = this._blocks.flatMap((b) => b.rooms); for (const r of all) for (const k of r.items) home[k] = home[k] || HOME[k] || r.id;
     for (const r of all) r.own = r.items.filter((k) => home[k] === r.id);
-    for (const b of this._blocks) b.items = b.rooms.flatMap((r) => r.own);   // o bloco (painel e nível 1 da Vista de cima): os aparelhos próprios dos cômodos dele — uma conta e um "tudo" só
+    for (const b of this._blocks) b.items = b.flat ? [...new Set(b.rooms.flatMap((r) => r.items))] : b.rooms.flatMap((r) => r.own);   // o bloco: os aparelhos próprios dos cômodos dele · lista única: todos os dos cômodos (a luz do Pátio, que é a do Estacionamento, entra na Sala Pastoral)
     const de = (k) => { const h = all.find((q) => q.id === home[k]), it = ITEMS.find((i) => i.key === k), nm = h.block.flat ? h.block.label : h.label; return `${(it.short || it.label).toLowerCase()} ${/a$/.test(nm) ? 'da' : 'do'} ${nm}`; };   // da lista única: o nome do bloco ("luz do Banheiro")
     for (const r of all) if (!r.own.length) r.via = r.items.length ? [...new Set(r.items.map(de))].join(' · ') : 'sem aparelhos';   // sem aparelho próprio: de onde vem a luz ("luz do Estacionamento"), no lugar da conta
-    // Vista de cima: só nomes de cômodo e de bloco do dono — o rótulo de zona com outro nome sai ("Estacionamento interno", do Pátio) e o
-    // cômodo que fica sem nenhum ganha o dele ("WC" + "WC PCD" → "WCs")
-    const names = new Set([...all, ...this._blocks].map((q) => q.label));
+    // Vista de cima: só os nomes do dono — na planta os dos blocos; aproximado, os dos cômodos: o rótulo de zona com outro nome sai
+    // ("Estacionamento interno", do Pátio) e o cômodo que fica sem nenhum ganha o dele ("WC" + "WC PCD" → "WCs da frente"; "Hall de entrada" → "Hall")
+    for (const b of this._blocks) { const s = this._makeLabel(b.label, 1.3, true); s.userData.label.blk = true; s.position.set(b.lp[0], H + 0.6 + (b.id === 'templo' ? 1.2 : 0), b.lp[1]); this._scene.add(s); this._labels.push(s); }   // só na planta (nível 0)
     for (const r of all) {
-      const zl = this._labels.filter((s) => r.zones.includes(s.userData.label.zone)), off = zl.filter((s) => !names.has(ZONES[s.userData.label.zone].label));
+      const zl = this._labels.filter((s) => r.zones.includes(s.userData.label.zone)), off = zl.filter((s) => ZONES[s.userData.label.zone].label !== r.label);
       for (const s of off) s.userData.label.top = false;   // só fora da Vista de cima
       if (!off.length || off.length < zl.length) continue;
       const s = this._makeLabel(r.label, Math.max(...off.map((q) => q.userData.label.ls))); s.userData.label.top = true;   // só na Vista de cima
@@ -8450,7 +8450,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   _navTo(level, block, room) {
     const blk = typeof block === 'string' ? (this._blocks || []).find((q) => q.id === block) : block;
-    const one = blk && blk.rooms.length === 1, rm = one ? blk.rooms[0] : typeof room === 'string' && blk ? blk.rooms.find((q) => q.id === room) : room;   // Templo: o bloco é o cômodo
+    const one = blk && blk.rooms.length === 1, rm = one ? blk.rooms[0] : blk && blk.flat ? null : typeof room === 'string' && blk ? blk.rooms.find((q) => q.id === room) : room;   // Templo: o bloco é o cômodo · Banheiro e Sala Pastoral: o bloco inteiro, sem nível de cômodo
     this._nav = { level: blk ? (rm && (level === 2 || one) ? 2 : 1) : 0, block: blk || null, room: rm && blk ? rm : null };
     this._clearHover(); this._showRoom(this._nav.room || this._nav.block);   // cômodo: o painel mostra ele · bloco: o resumo dele (cômodos + Ligar/Desligar tudo) · planta: visão geral
     this._resetView(true); this._renderNav(); this._updateLabels(); this._orbit.dirty = true;
@@ -8460,8 +8460,9 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._topView) return;
     const n = this._nav;
     if (n.level === 0) this._setTopView(false);
-    else if (n.level === 1 || n.block.rooms.length === 1) this._navTo(0); else this._navTo(1, n.block);
+    else if (n.level === 1 || n.block.flat) this._navTo(0); else this._navTo(1, n.block);
   }
+  _navEnd() { const n = this._nav; return !!n && (n.level === 2 || (n.level === 1 && n.block.flat)); }   // último nível: o cômodo, ou o bloco de lista única
   // liga/desliga o aparelho (mesma lógica dos blocos do painel)
   _toggleItem(key) {
     const it = ITEMS.find((i) => i.key === key); if (!it) return;
@@ -8483,14 +8484,14 @@ export class Igreja3DCard extends HTMLElement {
     const cr = this._navCrumbs; cr.innerHTML = '';
     const list = [{ t: 'Planta', go: () => this._navTo(0) }];
     if (n.block) list.push({ t: n.block.label, go: () => this._navTo(1, n.block) });
-    if (n.room && n.block.rooms.length > 1) list.push({ t: n.room.label });   // Templo: "Planta › Templo" 
+    if (n.room && !n.block.flat) list.push({ t: n.room.label });   // Templo: "Planta › Templo" 
     list.forEach((c, k) => {
       if (k) { const sp = document.createElement('span'); sp.className = 'sep'; sp.textContent = '›'; sp.setAttribute('aria-hidden', 'true'); cr.appendChild(sp); }
       const b = document.createElement('button'); b.textContent = c.t;
       if (k === list.length - 1) b.setAttribute('aria-current', 'page'); else b.addEventListener('click', c.go);
       cr.appendChild(b);
     });
-    this._navHintDefault = n.level === 0 ? 'Clique num bloco para aproximar' : n.level === 1 ? 'Clique num cômodo para aproximar' : '';
+    this._navHintDefault = n.level === 0 ? 'Clique num bloco para aproximar' : this._navEnd() ? 'Clique num aparelho para ligar ou desligar' : 'Clique num cômodo para aproximar';
     this._navHint = document.createElement('span'); this._navHint.className = 'navhint'; this._navHint.textContent = this._navHintDefault; this._navHint.setAttribute('aria-live', 'polite');
     cr.appendChild(this._navHint);
   }
@@ -8809,11 +8810,14 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._mezzRoom) {
       const hall = this._blocks.find((b) => b.id === 'hall');
       this._mezzRoom = { id: 'mezanino', label: 'Mezanino (salinha)', rects: [[MEZZ.x0, MEZZ.z0, MEZZ.x1 - MEZZ.x0, MEZZ.z1 - MEZZ.z0]], zones: [], items: [], up: true, block: hall };
+      this._famRoom = { id: 'familia', label: '', rects: ZONES.familia.rects.map((q) => q.slice(0, 4)), zones: [], items: [], aw: [], block: hall };   // a obra da Sala da Família (fora dos blocos e sem nome): a Pessoa entra nela (bonequinho, enterRoom)
     }
-    return [...this._blocks.flatMap((b) => b.rooms), this._mezzRoom];
+    return [...this._blocks.flatMap((b) => b.rooms), this._mezzRoom, this._famRoom];
   }
   _roomAt(x, z, up) {
     if (up && inMezz(x, z)) return this._roomsAll().find((r) => r.up) || null;
+    const [fx, fz, fw, fd] = this._famRoom ? this._famRoom.rects[0] : [];
+    if (fw && x >= fx && x <= fx + fw && z >= fz && z <= fz + fd) return this._famRoom;   // solto dentro da obra: entra ali (não no WC ou no Hall do lado)
     const h = this._hit(x, z); return h && h.r ? h.r : null;
   }
   _roomBox(r) { return this._rectsBox(r.rects); }
@@ -8867,7 +8871,7 @@ export class Igreja3DCard extends HTMLElement {
     const sp = at ? this._dropSpot(r, at[0], at[1], r.up) : this._roomSpot(r);
     this._enterAt(sp, this._roomYaw(r, sp.x, sp.z)); return true;
   }
-  enterRoom(id, x, z) { const r = this._roomsAll().find((q) => q.id === id); return this._enterRoom(r, x != null ? [x, z] : null); }
+  enterRoom(id, x, z) { const r = this._roomsAll().find((q) => q.id === (ROOM_ALIAS[id] || id)); return this._enterRoom(r, x != null ? [x, z] : null); }   // ids de antes (palco, plateia) também
   walkTo(x, z, up = false) { return this._walkGo({ x, z, up: !!up }); }
 
   // Bonequinho (estilo Street View): arrastar até um ponto do piso da planta/maquete e soltar → entra na visão de Pessoa ali
@@ -8906,7 +8910,7 @@ export class Igreja3DCard extends HTMLElement {
     const hit = this._pegAt(p); this._pegSel = hit;
     if (hit) {
       this._hlShow(hit.r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]));
-      tip.hidden = false; tip.textContent = hit.r.label; tip.style.transform = `translate(${p.x - wr.left + 26}px, ${p.y - wr.top - 30}px)`;
+      tip.hidden = !hit.r.label; tip.textContent = hit.r.label; tip.style.transform = `translate(${p.x - wr.left + 26}px, ${p.y - wr.top - 30}px)`;   // a obra sem nome: sem etiqueta
       g.classList.add('ok');
     } else { this._hlShow(null); tip.hidden = true; g.classList.remove('ok'); }
     this._orbit.dirty = true;
@@ -8922,7 +8926,7 @@ export class Igreja3DCard extends HTMLElement {
     const box = this._gotoPanel; box.innerHTML = '';
     const hd = document.createElement('div'); hd.className = 'gh'; hd.textContent = 'Ir para…'; box.appendChild(hd);
     for (const b of this._blocks || []) {
-      const sec = document.createElement('div'); sec.className = 'gsec'; const t = document.createElement('div'); t.className = 'gt'; t.textContent = b.label; sec.appendChild(t);
+      const sec = document.createElement('div'); sec.className = 'gsec'; const t = document.createElement('div'); t.className = 'gt'; t.textContent = b.label; if (b.rooms.length > 1) sec.appendChild(t);   // Templo: só o botão (não "Templo › Templo")
       const row = document.createElement('div'); row.className = 'grow';
       for (const r of [...b.rooms, ...(b.id === 'hall' ? [this._roomsAll().find((q) => q.up)] : [])]) {
         const c = document.createElement('button'); c.textContent = r.up ? '↑ ' + r.label : r.label; c.addEventListener('click', () => this._enterRoom(r));
@@ -9016,7 +9020,7 @@ export class Igreja3DCard extends HTMLElement {
   setTopNav(block, room) {
     if (!this._blocks || !this._orbit) return;
     if (!this._topView) this._setTopView(true);
-    const id = BLOCK_ALIAS[block] || block, rid = ROOM_ALIAS[room] || room, r = rid && this._roomsAll().find((q) => q.id === rid && !q.up);   // ids de antes (ala, fundos, entrada; palco, plateia)
+    const id = BLOCK_ALIAS[block] || block, rid = ROOM_ALIAS[room] || room, r = rid && this._blocks.flatMap((q) => q.rooms).find((q) => q.id === rid);   // ids de antes (ala, fundos, entrada; palco, plateia)
     const b = r ? r.block : this._blocks.find((q) => q.id === id);   // o cômodo manda: o WC Masc. de setTopNav('ala', 'wc_masc') agora fica no Banheiro
     if (b) this._navTo(r ? 2 : 1, b, r); else this._navTo(0);
   }
@@ -9059,10 +9063,11 @@ export class Igreja3DCard extends HTMLElement {
     // v1.6.1: 1º toque seleciona (realce + balão com nome, estado e o botão); 2º toque no mesmo alvo em até 5 s (ou o botão) executa; vazio limpa
     const s = this._sel, k = o && o.userData.item;
     if (k && s && s.key === k && performance.now() - s.at < 5000) return this._selAct();
-    const h = k && this._hit(hit.point.x, hit.point.z), r = k && (h && h.r && h.r.items.includes(k) ? h.r : this._roomsAll().find((q) => q.items.includes(k)));
+    const h = k && this._hit(hit.point.x, hit.point.z), r0 = k && (h && h.r && h.r.items.includes(k) ? h.r : this._roomsAll().find((q) => q.items.includes(k)));
+    const fb = r0 && r0.block.flat, r = fb ? this._flatUp(r0) : r0;   // lista única: o bloco inteiro, e o nome inteiro do aparelho ("Plateia", não "Luz")
     if (k) {   // v1.7: o cômodo do aparelho entra no painel como está (sem abrir nem mudar a altura: o aparelho fica sob o dedo) · na Pessoa só o balão
       if (!this._walkOn) this._showRoom(r, k, true);
-      return this._select({ key: k, room: r && r.label, p: hit.point.clone(), at: performance.now() });
+      return this._select({ key: k, room: r && r.label, name: fb ? ITEMS.find((i) => i.key === k).label : '', p: hit.point.clone(), at: performance.now() });
     }
     this._select(null); if (!this._walkOn) this._showRoom(null);   // vazio: limpa o balão e o painel volta ao geral
   }
@@ -9077,7 +9082,7 @@ export class Igreja3DCard extends HTMLElement {
   _selRender() {   // também a cada atualização do HA (_renderPanel): só reescreve o que mudou
     const s = this._sel; if (!s) return;
     const it = ITEMS.find((i) => i.key === s.key), st = this._state[s.key], on = !!(st && st.on);
-    const txt = [it.short || it.label, [s.room, this._stateText(it, st, true)].filter(Boolean).join(' · '), it.kind === 'sensor' ? 'Detalhes' : it.kind === 'light' ? (on ? 'Apagar' : 'Acender') : (on ? 'Desligar' : 'Ligar')];   // nome · "Cômodo · acesa" · ação
+    const txt = [s.name || it.short || it.label, [s.room, this._stateText(it, st, true)].filter(Boolean).join(' · '), it.kind === 'sensor' ? 'Detalhes' : it.kind === 'light' ? (on ? 'Apagar' : 'Acender') : (on ? 'Desligar' : 'Ligar')];   // nome · "Cômodo · acesa" · ação
     if (txt.join('|') === this._selTxt) return;
     this._selTxt = txt.join('|'); [this._selName.textContent, this._selState.textContent, this._selBtn.textContent] = txt; this._selEl.setAttribute('aria-label', s.room ? `${txt[0]}, ${s.room}` : txt[0]);
     this._selBtn.classList.toggle('go', it.kind !== 'sensor' && !on);   // Acender/Ligar: âmbar cheio · Apagar/Desligar: grafite
@@ -9096,17 +9101,19 @@ export class Igreja3DCard extends HTMLElement {
     el.style.visibility = v.z > 1 || px < P || px > W || py < 0 || py > H - B ? 'hidden' : '';
   }
   _selAct() { const k = this._sel && this._sel.key; if (!k) return; this._select(null); this._toggleItem(k); this._flashRow(k); }
-  // Vista de cima: planta → 1º clique aproxima o bloco e abre os aparelhos dele no painel (v1.8) → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
+  // Vista de cima: planta → 1º clique aproxima o bloco e abre os aparelhos dele no painel (v1.8) → 2º enquadra o cômodo (no bloco de lista
+  // única não há esse nível) → no último nível o clique num aparelho liga/desliga ele
   _topClick(e, o) {
     const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
     const toggle = (k) => { this._toggleItem(k); this._flashRow(k); };
-    if (n.level === 2) {
-      const room = n.room;
-      if (o && !o.userData.zone && o.userData.item && room.items.includes(o.userData.item)) return toggle(o.userData.item);   // luminária, ar, telão…
+    if (this._navEnd()) {
+      const room = n.room, keys = (room || n.block).items;
+      if (o && !o.userData.zone && o.userData.item && keys.includes(o.userData.item)) return toggle(o.userData.item);   // luminária, ar, telão…
       if (h && h.b !== n.block) { this._navTo(1, h.b); return; }   // outro bloco: aproxima ele e abre os aparelhos dele
+      if (n.block.flat) return;   // lista única (Templo, Banheiro, Sala Pastoral): o piso não liga nada — o 1º toque já abriu, o 2º não apaga a Plateia
       if (h && h.r && h.r !== room) return this._navTo(2, n.block, h.r);
       if (o && o.userData.zone && o.userData.item) {   // piso do próprio cômodo: a luz principal dele (como no clique de sempre)
-        const main = room.items.includes(o.userData.item) ? o.userData.item : room.items.find((k) => { const it = ITEMS.find((i) => i.key === k); return it && it.kind === 'light'; });   // piso do Templo: a Plateia (a luz dele), não a 1ª da lista
+        const main = room.items.includes(o.userData.item) ? o.userData.item : room.items.find((k) => { const it = ITEMS.find((i) => i.key === k); return it && it.kind === 'light'; });   // a luz do piso tocado, se for do cômodo; senão a 1ª luz dele
         toggle(main || o.userData.item);
       }
       return;
@@ -9117,7 +9124,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   _onHover(e) {
     if (e.pointerType && e.pointerType !== 'mouse') return;
-    if (this._topView && this._nav.level < 2) {
+    if (this._topView && !this._navEnd()) {
       // planta e bloco: realça o bloco / cômodo sob o mouse
       const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
       let rects = null, key = '', name = '';
@@ -9132,7 +9139,8 @@ export class Igreja3DCard extends HTMLElement {
       return;
     }
     if (this._hoverKey) { this._roomHl(this._room); this._hoverKey = ''; }
-    const o = this._pick(e);
+    let o = this._pick(e); const nb = this._topView && this._nav.block;
+    if (o && o.userData.zone && nb && nb.flat && nb.zones.includes(o.userData.zone)) o = null;   // piso do bloco de lista única aberto: não é clicável (_topClick)
     if (this._walkOn) this._walkHover(e);
     this._canvas.classList.toggle('pick', (!!o && !(this._walkOn && o.userData.zone)) || (this._walkOn && (!!this._doorHit() || !!this._hoverDest)));   // no modo Pessoa a folha da porta também é clicável
     if (o !== this._hoverObj) {
@@ -9350,8 +9358,9 @@ export class Igreja3DCard extends HTMLElement {
   // da Vista de cima). Abre o painel recolhido — menos na Pessoa com o painel por cima da vista (a folha cobriria o joystick); o cômodo fica
   // pronto e a pílula mostra o nome dele.
   _showRoom(r, key, stay) {   // stay: 1º toque num aparelho da maquete — o cômodo entra no painel como está (recolhido, espiada…), sem abrir nem mudar a altura
-    r = r || null; const d = this._dock, ch = r !== this._room;
+    r = this._flatUp(r) || null; const d = this._dock, ch = r !== this._room;
     if (ch) {
+      this._rUp = r && !r.rooms && this._room && this._room.rooms && r.block === this._room ? this._room : null;   // cômodo aberto de dentro do bloco: o ‹ volta para o bloco
       this._room = r; d.classList.toggle('room', !!r); d.classList.toggle('bv', !!(r && r.rooms)); this._detail.hidden = true; this._detailKey = null; if (!stay) this._select(null);   // o balão é do cômodo de antes (no stay o _onClick já troca)
       this._reopen.querySelector('.rl').textContent = r ? r.label : 'Painel';
       const f = this._rFoot; f.replaceChildren();
@@ -9363,11 +9372,18 @@ export class Igreja3DCard extends HTMLElement {
       }
       this._setZone(r ? '' : this._onKeys().length ? 'on' : '');   // bloco ou cômodo aberto: Todos (v1.8, ligados e desligados) · de volta ao geral: "Ligados" se houver
     }
-    if (r) { const n = this._nav, bl = this._topView ? (n.level === 2 && n.block.rooms.length > 1 ? `Voltar para ${n.block.label}` : 'Voltar para Planta') : 'Todos os ambientes'; this._rBack.setAttribute('aria-label', bl); this._rBack.title = bl; }   // o 2º toque muda o nível sem trocar de cômodo
+    if (r) { const n = this._nav, up = this._topView ? n.level === 2 && !n.block.flat && n.block : this._rUp, bl = up ? `Voltar para ${up.label}` : this._topView ? 'Voltar para Planta' : 'Todos os ambientes'; this._rBack.setAttribute('aria-label', bl); this._rBack.title = bl; }   // o 2º toque muda o nível sem trocar de cômodo
     this._roomHl(r);
     if (r && !this._panelOpen && !stay && !(this._walkOn && this._sideOverlay)) this._setPanel(true);
     else { this._renderPanel(); if ((r || ch) && !stay) this._snapTo(r ? 'half' : 'peek'); }   // folha: cômodo na média, geral na espiada
     if (key) this._flashRow(key);
+  }
+  _flatUp(r) { return r && !r.rooms && r.block && r.block.flat && r.block.rooms.length > 1 ? r.block : r; }   // cômodo de bloco de lista única (Banheiro, Sala Pastoral) → o bloco: não abre sozinho
+  // abre o bloco/cômodo pelo nome na lista; o foco do teclado vai ao ‹ (o nome some com a lista geral e o foco cairia no body)
+  _openFrom(el, r) {
+    const f = this.shadowRoot.activeElement === el;
+    if (this._topView) { if (r.rooms) this._navTo(1, r); else this._navTo(2, r.block, r); } else this._showRoom(r.rooms && r.rooms.length === 1 ? r.rooms[0] : r);   // Templo: o cômodo dele (automações e Entrar aqui)
+    if (f && this._room) this._rBack.focus({ preventScroll: true });
   }
   // realce azul do cômodo do painel (na Pessoa não: desenhado por cima de tudo, atravessaria as paredes)
   _roomHl(r) { this._hlShow(r && !this._walkOn ? r.rects.map(([x, z, w, d]) => [x, z, x + w, z + d]) : null); this._orbit.dirty = true; }
@@ -9420,8 +9436,8 @@ export class Igreja3DCard extends HTMLElement {
     const rh = document.createElement('div'); rh.className = 'rhead'; dock.appendChild(rh);
     rh.innerHTML = `<button class="rback" aria-label="Todos os ambientes">${iconSvg('chevl')}</button><div class="rtitle" role="status"><b></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>`;
     this._rBack = rh.firstChild; this._rBack.addEventListener('click', () => {
-      const f = this.shadowRoot.activeElement === this._rBack; if (this._topView) this._navBack(); else this._showRoom(null);
-      if (f) this._countEl.focus({ preventScroll: true });   // o ‹ some com o cômodo: o foco vai ao resumo (como ao reabrir), não ao body
+      const f = this.shadowRoot.activeElement === this._rBack; if (this._topView) this._navBack(); else this._showRoom(this._rUp);   // cômodo aberto do bloco: volta ao bloco
+      if (f && !this._room) this._countEl.focus({ preventScroll: true });   // o ‹ some com o cômodo: o foco vai ao resumo (como ao reabrir), não ao body
     });
     this._rTitle = rh.querySelector('b'); this._rCount = rh.querySelector('small'); this._rAll = rh.querySelector('.all');
     this._rAll.firstChild.title = 'Acende as luzes (ar, telão e som ficam como estão)'; this._rAll.lastChild.title = 'Apaga as luzes e desliga ar, telão e som';
@@ -9468,7 +9484,7 @@ export class Igreja3DCard extends HTMLElement {
     this._buildWeather();
 
     // Ambientes: blocos → cômodos → aparelhos; filtro "Ligados · Todos"
-    this._tiles = {};
+    this._tiles = {}; this._tileList = [];   // _tiles: o bloco de cada aparelho · _tileList: todos, com as cópias da lista única (a luz do Pátio na Sala Pastoral)
     const zbar = document.createElement('div'); zbar.className = 'zonebar'; zbar.setAttribute('role', 'group'); zbar.setAttribute('aria-label', 'Mostrar'); this._panes.ctl.pane.appendChild(zbar); this._zbar = zbar;
     for (const [val, label] of [['on', 'Ligados'], ['', 'Todos']]) {
       const c = document.createElement('button'); c.textContent = label; c.dataset.zone = val; c.setAttribute('aria-pressed', 'false');
@@ -9487,18 +9503,19 @@ export class Igreja3DCard extends HTMLElement {
       const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome ›  N de M ligados] [Ligar tudo ou Desligar tudo do bloco]
       bh.innerHTML = '<div class="bt"><b role="heading" aria-level="2"><button class="bn"><span></span><i aria-hidden="true">›</i></button></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>';
       const ba = bh.querySelector('.all'), bn = bh.querySelector('.bn'); bn.firstChild.textContent = b.label; bn.title = `Abrir ${b.label}`; ba.setAttribute('aria-label', b.label);
-      bn.addEventListener('click', () => (this._topView ? this._navTo(1, b) : this._showRoom(b.rooms.length === 1 ? b.rooms[0] : b)));   // Templo: o cômodo dele (automações e Entrar aqui)
+      bn.addEventListener('click', () => this._openFrom(bn, b));
       ba.firstChild.title = this._rAll.firstChild.title; ba.lastChild.title = this._rAll.lastChild.title;   // a política do cômodo (ligar acende só as luzes)
       const keys = b.items;   // só os listados embaixo (os mesmos do nível 1 da Vista de cima): a soma dos blocos não repete aparelho
       ba.firstChild.addEventListener('click', () => this._roomPower(true, keys)); ba.lastChild.addEventListener('click', () => this._roomPower(false, keys));
       this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, all: ba, b });
       for (const r of b.rooms) {
         if (!b.flat) { const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own, via: r.via, b }); }
-        for (const k of r.own) {
-          const it = ITEMS.find((i) => i.key === k); grid.appendChild(this._makeTile(it, r.label, b.flat ? it.label : ''));
+        const cp = b.flat ? r.items.filter((k) => !b.rooms.some((q) => q.own.includes(k))) : [];   // lista única: o aparelho de outro bloco que serve a este cômodo entra como cópia, com o nome do cômodo ("Pátio")
+        for (const k of [...cp, ...r.own]) {
+          const it = ITEMS.find((i) => i.key === k), c = cp.includes(k); grid.appendChild(this._makeTile(it, b.flat ? b.label : r.label, c ? r.label : b.flat ? it.label : '', b, r, c));   // o rótulo do leitor de tela: o bloco da lista única
           const o = this._roomsAll().filter((q) => q !== r && q.items.includes(k) && !(b.flat && q.block === b)).map((q) => q.label); if (!o.length) continue;   // serve a outros cômodos: diz quais (na lista única, só os de fora)
-          const t = this._tiles[k], sv = document.createElement('span'); sv.className = 'sv'; sv.textContent = ` · também ${list.format(o)}`;
-          t.small.appendChild(sv); t.tile.classList.add('wide'); t.tile.title += ` — também ${list.format(o)}`;   // linha inteira: o "também" cabe
+          const t = this._tileList[this._tileList.length - 1], sv = document.createElement('span'); sv.className = 'sv'; sv.textContent = ` · também ${list.format(o)}`;
+          t.small.appendChild(sv); t.tile.classList.add('wide'); if (!t.copy) t.tile.title += ` — também ${list.format(o)}`;   // linha inteira: o "também" cabe (a cópia guarda no título o nome da entidade)
         }
       }
     }
@@ -9569,7 +9586,8 @@ export class Igreja3DCard extends HTMLElement {
   _zoneHide() {
     const R = this._room, ks = R && this._roomKeys(R), on = !ks && this._zone === 'on', keep = this._onKeep;
     for (const g of this._groups) g.zh.hidden = R ? g.b !== R : on && !g.keys.some((k) => keep.has(k));   // bloco ou cômodo sem nada à vista some · bloco aberto: os subtítulos dele (o .blk sai no CSS)
-    for (const [k, t] of Object.entries(this._tiles)) t.tile.hidden = ks ? !ks.includes(k) || t.it.kind === 'sensor' : on && !keep.has(k);   // bloco ou cômodo aberto: todos os aparelhos dele, ligados e desligados
+    const Rb = R && (R.rooms ? R : R.block), mine = (t) => (t.copy ? t.b === Rb : !this._tileList.some((q) => q.copy && q.it.key === t.it.key && q.b === Rb));   // aberto: a cópia só no bloco dela, e nele no lugar do original
+    for (const t of this._tileList) t.tile.hidden = ks ? !ks.includes(t.it.key) || !mine(t) : on && !keep.has(t.it.key);   // bloco ou cômodo aberto: todos os aparelhos dele (sensores também), ligados e desligados
     this._zEmpty.hidden = !(on && !keep.size);
   }
   // Ligar tudo / Desligar tudo: só a ação que muda algo; o foco do teclado passa ao botão que aparece (não cai no body)
@@ -9585,10 +9603,10 @@ export class Igreja3DCard extends HTMLElement {
   _zoneHead(r) {
     const zh = document.createElement('div'); zh.className = 'zone'; zh.dataset.room = r.label; zh.setAttribute('role', 'heading'); zh.setAttribute('aria-level', '3');
     const zt = document.createElement('button'); zt.className = 'zt'; zt.textContent = r.label; zt.insertAdjacentHTML('beforeend', '<i aria-hidden="true">›</i>'); zt.title = `Abrir ${r.label}`;
-    zt.addEventListener('click', () => (this._topView ? this._navTo(2, r.block, r) : this._showRoom(r)));
+    zt.addEventListener('click', () => this._openFrom(zt, r));
     const zn = document.createElement('span'); zn.className = 'zn'; zh.append(zt, zn); return zh;
   }
-  _makeTile(it, room, name) {   // name: o nome na lista única do bloco
+  _makeTile(it, room, name, blk, rm, copy) {   // room: rótulo do leitor de tela · name: o nome na lista única do bloco · copy: cópia na lista única
     const tile = document.createElement('button'); tile.className = 'tile'; tile.dataset.key = it.key; tile.dataset.kind = it.kind; tile.setAttribute('aria-pressed', 'false');
     const top = document.createElement('span'); top.className = 'top';
     const ico = document.createElement('span'); ico.className = 'ico'; ico.innerHTML = iconSvg(it.icon); top.appendChild(ico);
@@ -9600,7 +9618,7 @@ export class Igreja3DCard extends HTMLElement {
     small.append(sSt, sSep, sTm);
     tile.append(top, txt);
     if (it.dim || it.rgb) { tile.classList.add('hasl'); const lv = document.createElement('i'); lv.className = 'lvl'; lv.setAttribute('aria-hidden', 'true'); tile.appendChild(lv); }
-    const t = { tile, small, it, room, sSt, sSep, sTm };
+    const t = { tile, small, it, room, sSt, sSep, sTm, b: blk, r: rm, copy: !!copy };
     if (this._hasDetail(it)) {
       const more = document.createElement('span'); more.className = 'more'; more.textContent = '⋯'; more.title = 'Mais controles'; more.setAttribute('role', 'button'); more.tabIndex = 0;
       more.addEventListener('click', (e) => { e.stopPropagation(); this._openDetail(it.key); });
@@ -9608,9 +9626,9 @@ export class Igreja3DCard extends HTMLElement {
       top.appendChild(more);
     }
     tile.addEventListener('click', () => this._toggleItem(it.key));
-    tile.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._roomHl(this._blocks.flatMap((b) => b.rooms).find((q) => q.own.includes(it.key))); });   // mouse no bloco: realça o cômodo dele (o do painel)
+    tile.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._roomHl(rm); });   // mouse no bloco: realça o cômodo dele (o do painel)
     tile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') this._roomHl(this._room); });
-    this._tiles[it.key] = t; return tile;
+    if (!copy) this._tiles[it.key] = t; this._tileList.push(t); return tile;
   }
   // Faixa de detalhes (brilho/cor do LED, modo/temperatura do ar, controles da TV)
   _openDetail(key) {
@@ -9665,7 +9683,7 @@ export class Igreja3DCard extends HTMLElement {
       const cancel = document.createElement('button'); cancel.textContent = 'cancelar'; cancel.addEventListener('click', () => this._setTimer(key, 0)); tm.appendChild(cancel);
       body.appendChild(tm); this._dTimer = tm;
     }
-    d.onkeydown = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); d.hidden = true; this._detailKey = null; const t = this._tiles[key]; const mo = t && t.tile.querySelector('.more'); if (mo) mo.focus(); } };
+    d.onkeydown = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); d.hidden = true; this._detailKey = null; const t = this._tileFor(key); const mo = t && t.tile.querySelector('.more'); if (mo) mo.focus(); } };
     const close = document.createElement('button'); close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', 'Fechar');
     close.addEventListener('click', () => { d.hidden = true; this._detailKey = null; }); head.appendChild(close);
     this._showTab('ctl'); this._renderPanel(); this._snapTo('full');   // folha: os controles pedem a altura cheia (a lista rola)
@@ -9685,16 +9703,15 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._tiles) return;
     this._selRender();
     const kind = (k) => ITEMS.find((i) => i.key === k).kind;
-    if (this._room) {   // cabeçalho do cômodo: "N de M ligados" (sensor não conta, vira leitura); sem aparelho, só o aviso
+    if (this._room) {   // cabeçalho do cômodo: "N de M ligados" (sensor não conta: aparece no bloco dele, como na lista Todos); sem aparelho, só o aviso
       const ks = this._roomKeys(this._room), ctl = ks.filter((k) => kind(k) !== 'sensor');
       const on = ctl.filter((k) => this._state[k] && this._state[k].on).length;
-      const sens = ks.filter((k) => !ctl.includes(k)).map((k) => (k === 'porta' ? 'porta ' : '') + this._stateText(ITEMS.find((i) => i.key === k), this._state[k]));
-      this._rCount.textContent = !ks.length ? 'Nenhum aparelho' : [ctl.length ? `${on} de ${ctl.length} ligados` : '', ...sens].filter(Boolean).map((x) => x.replace(/ /g, ' ')).join(' · ');   // coluna estreita: quebra só entre as partes
+      this._rCount.textContent = !ks.length ? 'Nenhum aparelho' : ctl.length ? `${on} de ${ctl.length} ligados` : '';
       this._allShow(this._rAll, ctl.length, on);   // só a ação que muda algo
     }
     const now = Date.now();
-    for (const [k, t] of Object.entries(this._tiles)) {
-      const st = this._state[k]; const on = !!(st && st.on);
+    for (const t of this._tileList) {
+      const k = t.it.key, st = this._state[k], on = !!(st && st.on);
       t.tile.classList.toggle('on', on); t.tile.classList.toggle('unavailable', !!(st && st.unavailable));
       t.tile.setAttribute('aria-pressed', on ? 'true' : 'false');
       const lc = this._lastChanged[k];
@@ -9810,8 +9827,9 @@ export class Igreja3DCard extends HTMLElement {
       this._feed.appendChild(li);
     }
   }
+  _tileFor(key) { return (this._tileList || []).find((t) => t.it.key === key && !t.tile.hidden) || (this._tiles && this._tiles[key]); }   // o bloco à vista (a cópia da lista única, se for ela)
   _flashRow(key) {
-    const t = this._tiles && this._tiles[key]; if (!t || !this._panelOpen) return;
+    const t = this._tileFor(key); if (!t || !this._panelOpen) return;
     this._showTab('ctl'); if (t.tile.hidden) this._setZone(''); t.tile.classList.add('flash');
     const p = t.tile.closest('.pane'), r = t.tile.getBoundingClientRect(), q = p.getBoundingClientRect();
     if (r.top < q.top || r.bottom > q.bottom) p.scrollBy({ top: r.top - q.top - 12, behavior: 'smooth' });   // só a lista rola, nunca a página do HA (fora da cheia ela é clip e fica)
