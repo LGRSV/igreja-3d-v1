@@ -259,8 +259,8 @@ function roomFachada(ctx) {
   }
 
   // ---- Placa com a marca no muro dos fundos, ao lado do portão (para quem chega pela rua de trás) ----
-  add(box(0.72, 0.72, 0.02, P.plate, 6.3, 2.0, -0.105, { cast: false }));
-  { const m = logo.mesh(0.6, 0, { layout: 'mark', color: '#e9e9e6' }); m.rotation.y = Math.PI; m.position.set(6.3, 2.0, -0.117); add(m); }
+  add(box(0.72, 0.72, 0.02, P.plate, 6.3, 2.0, -ctx.TF - 0.03, { cast: false }));   // 2 cm afastada da face externa do muro (z −TF)
+  { const m = logo.mesh(0.6, 0, { layout: 'mark', color: '#e9e9e6' }); m.rotation.y = Math.PI; m.position.set(6.3, 2.0, -ctx.TF - 0.042); add(m); }
 
   // ---- Paraciclo (3 arcos de aço) na calçada da direita, fora das vagas PCD ----
   for (const x of [21.55, 22.05, 22.55]) {

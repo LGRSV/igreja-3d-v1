@@ -111,7 +111,7 @@ const DEFAULT_CONFIG = {
   title: 'Base Church', labels: true, mode: 'auto', night_vision: true, panel: true, roof: false,
   quality: 'auto', entities: {},   // auto | alta | media | leve | min
   entorno: 'auto',                 // gramado com textura: auto (chapado só no leve) | true | false (v1.8: sem ruas, árvores e postes)
-  latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 270,   // v1.8: fachada para o oeste (o dono viu o pôr do sol do lado oposto com 90)
+  latitude: -10.27, longitude: -48.33, timezone: 'America/Sao_Paulo', orientation: 270,   // v1.8: fachada para o oeste (com 90 o dono via o pôr do sol do lado oposto); o YAML do README ainda diz 90 — trocar na etapa do README
   weather: true, weather_city: 'Palmas, TO',
   fachada_pessoa: true,            // v1.5.5: a visão de Pessoa liga a Fachada sozinha (e volta ao sair)
 };
@@ -216,12 +216,12 @@ export const ITEMS = [
     ] },
   { key: 'pastoral', label: 'Sala Pastoral', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffe0b8,
     fixtures: [
-      { p: [14.9, 2.25, 4.6], i: 30, d: 8, shadow: true, liteShadow: true },   // fundos: pendentes baixos (as paredes têm HB)
-      { p: [18.5, 2.25, 7.0], glowOnly: true },
+      { p: [14.9, 2.1, 4.6], i: 30, d: 8, shadow: true, liteShadow: true },   // fundos: pendentes baixos — cúpula e haste abaixo do topo das paredes (HB)
+      { p: [18.5, 2.1, 7.0], glowOnly: true },
     ] },
   { key: 'ac_pastoral', label: 'Ar da pastoral', short: 'Ar', kind: 'climate', icon: 'ac' },
   { key: 'recepcao', label: 'Recepção', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff1dc,
-    fixtures: [{ p: [11.1, 2.25, 7.6], i: 20, d: 5.5 }] },
+    fixtures: [{ p: [11.1, 2.1, 7.6], i: 20, d: 5.5 }] },
   { key: 'administrativo', label: 'Administrativo', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff5e6,
     fixtures: [
       { p: [18.6, 2.7, 12.6], i: 18, d: 5 },
@@ -242,8 +242,8 @@ export const ITEMS = [
   { key: 'ac_voluntariado', label: 'Ar do voluntariado', short: 'Ar', kind: 'climate', icon: 'ac' },
   { key: 'cozinha', label: 'Cozinha / almox.', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff5e4,
     fixtures: [
-      { p: [10.7, 2.25, 1.95], i: 22, d: 6 },
-      { p: [6.75, 2.25, 1.95], glowOnly: true },
+      { p: [10.7, 2.1, 1.95], i: 22, d: 6 },
+      { p: [6.75, 2.1, 1.95], glowOnly: true },
     ] },
   { key: 'banheiros', label: 'Banheiros', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xfff7ea,
     fixtures: [
@@ -468,7 +468,7 @@ const BLOCKS = {
     { id: 'circulacao', label: 'Circulação', zones: ['circulacao', 'corredor', 'circ2'], items: ['circulacao'], frame: [16.05, 19.0, 20.1, 28.0] },
     { id: 'midia', label: 'Mídia', zones: ['midia'], items: ['midia', 'ac_midia'] },
     { id: 'voluntariado', label: 'Voluntariado', zones: ['voluntariado'], items: ['voluntariado', 'ac_voluntariado'] }] },
-  banheiro: { label: 'Banheiro', flat: true, box: [16.05, 33.9, 20.1, 49.5], lp: [18.1, 41.7], rooms: [
+  banheiro: { label: 'Banheiro', flat: true, box: [16.05, 33.9, 20.1, 49.5], lp: [18.6, 44.0], rooms: [   // rótulo sobre os WCs: no meio encostava no ar do templo (z 37,6)
     { id: 'deposito', label: 'Depósito', zones: ['deposito'], items: ['banheiros'] },
     { id: 'tecnica', label: 'Área técnica', zones: ['tecnica'], items: [] },
     { id: 'wc_masc', label: 'WC Masc.', zones: ['wc_masc'], items: ['banheiros'] },
@@ -1260,7 +1260,7 @@ function mergeStatic(root, skipKeep = true) {
 }
 
 // Remendos de shader do modo media (onBeforeCompile). O laço das luzes pontuais custa por pixel e por luz: o gramado
-// e o entorno (longe das lâmpadas) ficam sem ele. Nos materiais com reflexo do céu fica só o especular do environment
+// (longe das lâmpadas) fica sem ele. Nos materiais com reflexo do céu fica só o especular do environment
 // map — a luz difusa do céu vem da sonda (LightProbe), que custa quase nada.
 const NO_POINT = THREE.ShaderChunk.lights_fragment_begin.replace(/#if \( NUM_POINT_LIGHTS > 0 \)[\s\S]*?#pragma unroll_loop_end\s*#endif/, '');
 const ENV_SPEC = THREE.ShaderChunk.lights_fragment_maps.replace('iblIrradiance += getIBLIrradiance( geometryNormal );', '');
@@ -1474,6 +1474,7 @@ class Orbit {
 
 const _dm1 = new THREE.Matrix4(), _dm2 = new THREE.Matrix4(), _dm3 = new THREE.Matrix4();   // temporários das portas (_doorApply)
 const _rsz = new THREE.Vector2();   // temporário do _resize
+const _lbl = new THREE.Vector3();   // temporário do _updateLabels
 // Acender/apagar das lâmpadas (sem alocar por quadro): up/dn = velocidade da subida/descida (1/s, exponencial), warm = quanto começa alaranjado
 // (filamento/HID esquentando: cor e halo crescem junto), tube = tremida de partida de tubo fluorescente/LED linear (só onde faz sentido)
 const _WARM = new THREE.Color(1.0, 0.5, 0.18);
@@ -2296,10 +2297,14 @@ function roomTemploPlateia(ctx) {
   // Lateral x = 16,05: os pilares pretos acima da parede de 3 m e as 2 vigas saíram (pedido do cliente); o cordão de
   // lampadinhas desse lado fica suspenso no mesmo lugar
 
-  // Cordão de lampadinhas quentes nos dois beirais (v6/v8)
-  for (const [x, y] of [[0.26, 8.3], [15.86, 8.3]]) {
-    bx(bCable, 0.012, 0.012, FZ1 - FZ0 - 0.3, x, y + 0.05, (FZ0 + FZ1) / 2);
-    for (let z = FZ0 + 0.3; z <= FZ1 - 0.25; z += 0.62) put(bBulb, sphGeo(0.036), mat4(x, y, z));
+  // Cordão de lampadinhas quentes nos dois beirais (v6/v8). O do lado x = 15,86 (solto, sem parede alta) some na Vista de cima:
+  // inclinada para o palco, ela o projetava como um risco no meio dos bancos (v1.8)
+  const side = new THREE.Group(); side.userData.keep = true; cover.add(side);
+  Object.defineProperty(side, 'visible', { configurable: true, get: () => !(ctx.top && ctx.top()), set: () => {} });
+  const sCable = batch(blackPl, false, side), sBulb = batch(bulbMat, false, side);
+  for (const [x, y, bc, bb] of [[0.26, 8.3, bCable, bBulb], [15.86, 8.3, sCable, sBulb]]) {
+    bx(bc, 0.012, 0.012, FZ1 - FZ0 - 0.3, x, y + 0.05, (FZ0 + FZ1) / 2);
+    for (let z = FZ0 + 0.3; z <= FZ1 - 0.25; z += 0.62) put(bb, sphGeo(0.036), mat4(x, y, z));
   }
 
   // 2ª treliça de luz (preta, box truss 0,3 × 0,3) sobre a plateia, paralela ao palco, suspensa (sem correntes)
@@ -4257,7 +4262,7 @@ function roomAdministrativo(ctx) {
   // LEDs acompanham a luz do ambiente (ctx.bindEmissive).
   // Paleta: preto, madeira clara (ripado), branco e grafite, acentos âmbar/terracota.
   // Livres: giros das portas (recepção, pastoral, banheiro, Gilvan, Adm.), split da
-  // pastoral (14,9; ctx.HB − 0,18; 0,125) e as luminárias do cartão (y ≈ 2,7; nos fundos 2,25).
+  // pastoral (14,9; ctx.HB − 0,18; 0,125) e as luminárias do cartão (y ≈ 2,7; nos fundos 2,1).
   // v1.8: no bloco dos fundos as paredes têm ctx.HB de altura (2,4 m) e 5 cm de espessura; as faces abaixo são as de 7,5 cm —
   // o cartão (_snapThin) encosta na face nova o que estiver a até 15 cm dela.
   // Faces internas — bloco dos fundos (paredes finas, 7,5 cm): x 9,4875 · 12,7125/12,7875 · 16,9625/17,0375
@@ -5847,8 +5852,8 @@ function roomFachada(ctx) {
   }
 
   // ---- Placa com a marca no muro dos fundos, ao lado do portão (para quem chega pela rua de trás) ----
-  add(box(0.72, 0.72, 0.02, P.plate, 6.3, 2.0, -0.105, { cast: false }));
-  { const m = logo.mesh(0.6, 0, { layout: 'mark', color: '#e9e9e6' }); m.rotation.y = Math.PI; m.position.set(6.3, 2.0, -0.117); add(m); }
+  add(box(0.72, 0.72, 0.02, P.plate, 6.3, 2.0, -ctx.TF - 0.03, { cast: false }));   // 2 cm afastada da face externa do muro (z −TF)
+  { const m = logo.mesh(0.6, 0, { layout: 'mark', color: '#e9e9e6' }); m.rotation.y = Math.PI; m.position.set(6.3, 2.0, -ctx.TF - 0.042); add(m); }
 
   // ---- Paraciclo (3 arcos de aço) na calçada da direita, fora das vagas PCD ----
   for (const x of [21.55, 22.05, 22.55]) {
@@ -6845,7 +6850,9 @@ export class Igreja3DCard extends HTMLElement {
   }
 
   // v1.8: as divisórias dos fundos afinaram (7,5 → 5 cm) e a decoração foi medida nas faces antigas: o que está junto de uma face
-  // antiga (até 15 cm dela, sem atravessar a parede: painel, ripas, logo e halo em camadas andam juntos) acompanha a face nova
+  // antiga (até 15 cm dela, sem atravessar a parede: painel, ripas, logo e halo em camadas andam juntos) acompanha a face nova.
+  // Só o que fica de frente para a parede: o que passa da ponta dela (o paredão da marca além da x = 4,9) fica onde está, e um móvel inteiro
+  // (Group) comprido para longe dela é da parede do lado (a estante do muro x = 20,1). Peças soltas seguem as vizinhas (a bancada em L da cozinha)
   _snapThin(scene) {
     const f0 = 0.0375, d = f0 - TF / 2, bb = new THREE.Box3();
     for (const o of scene.children) {
@@ -6853,7 +6860,8 @@ export class Igreja3DCard extends HTMLElement {
       bb.setFromObject(o); if (bb.isEmpty()) continue;
       for (const w of this._thin || []) {
         const n = w.axis === 'x' ? 'z' : 'x', u = w.axis === 'x' ? 'x' : 'z';   // n = normal da parede · u = ao longo dela
-        if (bb.max[u] < w.a0 - 0.05 || bb.min[u] > w.a1 + 0.05) continue;
+        if (bb.max[u] <= w.a0 + 0.01 || bb.min[u] >= w.a1 - 0.01) continue;   // além da ponta: não é desta parede
+        if (o.isGroup && bb.max[n] - bb.min[n] > Math.max(1, 2 * (bb.max[u] - bb.min[u]))) continue;   // móvel comprido para longe dela: é da parede do lado
         if (bb.min[n] >= w.c + f0 - 0.02 && bb.min[n] <= w.c + f0 + 0.15) o.position[n] -= d;
         else if (bb.max[n] <= w.c - f0 + 0.02 && bb.max[n] >= w.c - f0 - 0.15) o.position[n] += d;
       }
@@ -6979,7 +6987,9 @@ export class Igreja3DCard extends HTMLElement {
           mesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), emis()); mesh.position.set(px, py, pz);
           const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.2, 0.17, 20, 1, true), shadeMat);
           shade.position.set(px, py + 0.09, pz); shade.castShadow = false; shade.userData = { item: it.key }; holder.add(shade); this._clickables.push(shade);
-          const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.28, 6), M.dark); rod.position.set(px, py + 0.3, pz); rod.castShadow = false; holder.add(rod);
+          const fd = pz < 12.4 && !f.ext, top = fd ? HB : py + 0.44;   // fundos (paredes HB): a haste para no topo da parede e continua até H só com a Fachada/Pessoa (v1.8)
+          const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, top - py - 0.16, 6), M.dark); rod.position.set(px, (py + 0.16 + top) / 2, pz); rod.castShadow = false; holder.add(rod);
+          if (fd) { const hi = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, H - HB, 6), M.dark); hi.position.set(px, (HB + H) / 2, pz); hi.castShadow = false; this._ext.add(hi); }
         }
         mesh.userData = { item: it.key }; mesh.castShadow = false; holder.add(mesh);
         rt.fixtures.push(mesh); this._clickables.push(mesh);
@@ -7643,7 +7653,7 @@ export class Igreja3DCard extends HTMLElement {
     const logo = { draw: drawLogo, aspect: logoAspect, tex: logoTex, mesh: logoMesh, relief: logoRelief, font: LOGO_FONT };
     const ctx = (seed) => ({ THREE, M, F, box, cyl, sph, std, place, add: (m) => { scene.add(m); return m; }, rnd: mulberry32(seed),
       ZONES, H, T, TF, HB, LOT, ext, addExt, makeTex, SPEC, PILLARS_L, PILLARS_R, logo, bindEmissive, glowPlane, TEX: textures(),
-      STAIR, MEZZ, addMezz: (m) => { this._mezz.add(m); return m; } });   // mezanino: grupo próprio (some na Vista de cima, que enxerga os cômodos de baixo)
+      STAIR, MEZZ, addMezz: (m) => { this._mezz.add(m); return m; }, top: () => !!this._topView });   // mezanino: grupo próprio (some na Vista de cima, que enxerga os cômodos de baixo)
     const click = (m, key) => { m.userData = { item: key }; scene.add(m); this._clickables.push(m); get(key).fixtures.push(m); return m; };
 
     // ---- Objetos ligados a entidades (as decorações não recriam nem cobrem) ----
@@ -7905,7 +7915,7 @@ export class Igreja3DCard extends HTMLElement {
   // O nível (alta/media/leve/min) é fixo na construção; em tempo de execução só a resolução se adapta ao TEMPO REAL DE QUADRO:
   // em movimento a escala cai/sobe com histerese (2 janelas lentas de 300 ms para baixar, 4 rápidas para subir); ao parar vem UM
   // quadro nítido (resolução cheia ou maior, se sobra fôlego) cujo custo é medido no rAF seguinte — nunca se desenha só para medir.
-  // Só no `auto` (quality manual vale como escolhido) e quando nem a escala mínima aguenta, desce uma escada (entorno, sombras, luzes).
+  // Só no `auto` (quality manual vale como escolhido) e quando nem a escala mínima aguenta, desce uma escada (gramado chapado, luzes, supersampling).
   _govInit() {
     const t = GOV[this._q] || GOV.leve;
     this._gov = { tier: this._q, auto: this._config.quality === 'auto', moveScale: t.move, moveMin: t.min, moveMax: t.max, idleScale: 1, idleMax: t.idleMax, idleMin: t.idleMin,
@@ -7939,7 +7949,7 @@ export class Igreja3DCard extends HTMLElement {
           g.slow = g.moveScale <= g.moveMin + 0.01 && g.ft > 66 ? g.slow + 1 : 0;
           if (g.slow >= 5 && now - g.lastStep > 4000 && this._govSettled(now)) this._govStepDown(now);   // pode recompilar (_busy, sem desenhar): o canvas não muda neste quadro
           else if (this._govPR(this._dprFull * g.moveScale)) dirty = true;
-          // degrau 1 desfeito: ~6 s de movimento fluido na escala máxima → o entorno volta (a queda foi passageira)
+          // degrau 1 desfeito: ~6 s de movimento fluido na escala máxima → o gramado com textura volta (a queda foi passageira)
           g.fastRun = g.rung === 1 && g.ft < 25 && g.moveScale >= g.moveMax - 0.01 ? (g.fastRun || 0) + 1 : 0;
           if (g.fastRun >= 20) this._govStepUp(now);
         }
@@ -7967,7 +7977,8 @@ export class Igreja3DCard extends HTMLElement {
       if (++g.sharpFast >= 2) { g.idleScale = Math.min(this._govIdleMax(), g.idleScale * 1.15); g.sharpFast = 0; }   // sobra fôlego: resolução acima da cheia
     } else { g.sharpFast = 0; g.slowIdle = 0; }
   }
-  // Degraus (só no auto): 1 entorno (volta sozinho se o PC se mostrar rápido) · 2 menos luzes reais · 3 sem supersampling
+  // Degraus (só no auto): 1 entorno = gramado de cor chapada, o chão de 800 m que cobre boa parte da tela (v1.8: ruas, árvores e postes
+  // não existem mais; volta sozinho se o PC se mostrar rápido) · 2 menos luzes reais · 3 sem supersampling
   // parado e escala mínima menor em movimento. A sombra do sol e a resolução cheia parada NUNCA caem (v1.4.3: a sombra
   // em 512² e a parada abaixo da cheia deixavam a imagem borrada)
   _govSettled(now) { return !this._busy && now - (this._gov.t0 || 0) > 20000; }
@@ -8086,10 +8097,10 @@ export class Igreja3DCard extends HTMLElement {
     g.font = '600 24px -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif';
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     g.lineWidth = 7; g.strokeStyle = 'rgba(6,10,20,.9)'; g.strokeText(text, 160, 36, 300);
-    g.fillStyle = '#ffffff'; g.fillText(text, 160, 36, 300);
+    g.fillStyle = '#ffffff'; g.fillText(text, 160, 36, 300); const tw = Math.min(300, g.measureText(text).width) + 7;   // largura do texto (com o contorno), em px do canvas
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: true, depthWrite: false, sizeAttenuation: false, fog: false }));
-    sp.renderOrder = 20; sp.userData.label = { ls: scale, main, font: clamp(13 * Math.sqrt(scale), 11, 16) };
+    sp.renderOrder = 20; sp.userData.label = { ls: scale, main, font: clamp(13 * Math.sqrt(scale), 11, 16), tw };
     return sp;
   }
 
@@ -8272,6 +8283,10 @@ export class Igreja3DCard extends HTMLElement {
       s.visible = op > 0.02; s.material.opacity = op;
       const hpx = L.font * (this._topView ? 2.6 : 3);   // texto de 24 px num canvas de 72 px → sprite com 3× a altura da fonte (menor na Vista de cima)
       s.scale.set(hpx * k * 320 / 72, hpx * k, 1);
+      if (L.blk && s.visible) {   // nome do bloco na planta: o texto inteiro dentro da faixa visível (no celular o do Hall de entrada saía pela borda)
+        const W = this.clientWidth || 1, P = this._pNow || 0, half = hpx * L.tw / 144, x = (_lbl.copy(s.position).project(cam).x + 1) / 2 * W;
+        s.center.x = 0.5 - (clamp(x, Math.min(P + 8 + half, W / 2), Math.max(W - 8 - half, W / 2)) - x) / (hpx * 320 / 72);
+      }
     }
   }
 
@@ -8305,10 +8320,22 @@ export class Igreja3DCard extends HTMLElement {
   }
   // Vista de cima, nível 0 (v1.6.1): de frente para o palco, como quem está na plateia — câmera do lado +x olhando para −x. v1.7: a igreja
   // inteira na largura (z 0–52, dos Fundos à Entrada; em retrato também: a câmera só afasta). v1.8: mais alta, inclinada para o palco
-  // (polar 0,62 ≈ 54° acima do horizonte, antes 38°): os blocos aparecem como áreas e não como uma faixa fina
+  // (polar 0,62 ≈ 54° acima do horizonte, antes 38°): os blocos aparecem como áreas e não como uma faixa fina. A distância sai das quinas
+  // da planta (piso, topo das paredes e da parede do palco) projetadas na faixa visível, com 3 % de folga, e o desenho fica no meio dela:
+  // medida só no alvo, a perspectiva aumentava o lado de perto e a Sala Pastoral e o Hall de entrada saíam pelas bordas
   _topFor(aspect) {
-    const target = new THREE.Vector3(9.5, 0, 26), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
-    return { pos: new THREE.Vector3().setFromSphericalCoords(26 / tanH, 0.62, Math.PI / 2).add(target), target };
+    const tv = Math.tan(this._camera.fov * Math.PI / 360) * 0.97, th = tv * aspect;
+    const w = new THREE.Vector3().setFromSphericalCoords(1, 0.62, Math.PI / 2), r = new THREE.Vector3(0, 1, 0).cross(w).normalize(), u = w.clone().cross(r);   // para a câmera · direita · cima da tela
+    const g = new THREE.Vector3(u.x, 0, u.z).normalize(), gu = g.dot(u);   // no piso, o rumo que sobe na tela
+    const P = [[0, 0, 0], [0, 0, 52], [20.1, 0, 0], [20.1, 0, 52], [20.1, H, 0], [20.1, H, 52], [0, 8.6, 12.4], [0, 8.6, 44]].map((q) => new THREE.Vector3(...q));
+    const target = new THREE.Vector3(10, 0, 26), v = new THREE.Vector3();
+    const fit = () => Math.max(...P.map((q) => { v.subVectors(q, target); return v.dot(w) + Math.max(Math.abs(v.dot(r)) / th, Math.abs(v.dot(u)) / tv); }));
+    for (let i = 0; i < 3; i++) {   // cabe tudo → centra o desenho na faixa → mede de novo
+      const d = fit(), sx = [], sy = [];
+      for (const q of P) { v.subVectors(q, target); const z = d - v.dot(w); sx.push(v.dot(r) / z); sy.push(v.dot(u) / z); }
+      target.addScaledVector(r, (Math.min(...sx) + Math.max(...sx)) / 2 * d).addScaledVector(g, (Math.min(...sy) + Math.max(...sy)) / 2 * d / gu);
+    }
+    return { pos: target.clone().addScaledVector(w, fit()), target };
   }
   // O painel fica como está (v1.7, como na Casa): o cômodo tocado aparece nele
   _setTopView(on, keepCamera = false) {
@@ -8374,7 +8401,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const r of all) if (!r.own.length) r.via = r.items.length ? [...new Set(r.items.map(de))].join(' · ') : 'sem aparelhos';   // sem aparelho próprio: de onde vem a luz ("luz do Estacionamento"), no lugar da conta
     // Vista de cima: só os nomes do dono — na planta os dos blocos; aproximado, os dos cômodos: o rótulo de zona com outro nome sai
     // ("Estacionamento interno", do Pátio) e o cômodo que fica sem nenhum ganha o dele ("WC" + "WC PCD" → "WCs da frente"; "Hall de entrada" → "Hall")
-    for (const b of this._blocks) { const s = this._makeLabel(b.label, 1.3, true); s.userData.label.blk = true; s.position.set(b.lp[0], H + 0.6 + (b.id === 'templo' ? 1.2 : 0), b.lp[1]); this._scene.add(s); this._labels.push(s); }   // só na planta (nível 0)
+    for (const b of this._blocks) { const s = this._makeLabel(b.label, 1.3, true); s.userData.label.blk = true; s.material.depthTest = false; s.position.set(b.lp[0], H + 0.6 + (b.id === 'templo' ? 1.2 : 0), b.lp[1]); this._scene.add(s); this._labels.push(s); }   // só na planta (nível 0), por cima de tudo (a placa ripada da fachada cortava o do Hall)
     for (const r of all) {
       const zl = this._labels.filter((s) => r.zones.includes(s.userData.label.zone)), off = zl.filter((s) => ZONES[s.userData.label.zone].label !== r.label);
       for (const s of off) s.userData.label.top = false;   // só fora da Vista de cima
@@ -8809,6 +8836,11 @@ export class Igreja3DCard extends HTMLElement {
     }
     return [...this._blocks.flatMap((b) => b.rooms), this._mezzRoom, this._famRoom];
   }
+  // o cômodo com o aparelho k mais perto do ponto (x, z): o refletor da fachada é do Estacionamento, não do Pátio (que também acende com ele)
+  _nearRoom(k, x, z) {
+    const dist = (q) => Math.min(...q.rects.map(([rx, rz, w, d]) => Math.hypot(Math.max(rx - x, 0, x - rx - w), Math.max(rz - z, 0, z - rz - d))));
+    return this._roomsAll().filter((q) => q.items.includes(k)).sort((a, b) => dist(a) - dist(b))[0];
+  }
   _roomAt(x, z, up) {
     if (up && inMezz(x, z)) return this._roomsAll().find((r) => r.up) || null;
     const [fx, fz, fw, fd] = this._famRoom ? this._famRoom.rects[0] : [];
@@ -9058,7 +9090,7 @@ export class Igreja3DCard extends HTMLElement {
     // v1.6.1: 1º toque seleciona (realce + balão com nome, estado e o botão); 2º toque no mesmo alvo em até 5 s (ou o botão) executa; vazio limpa
     const s = this._sel, k = o && o.userData.item;
     if (k && s && s.key === k && performance.now() - s.at < 5000) return this._selAct();
-    const h = k && this._hit(hit.point.x, hit.point.z), r0 = k && (h && h.r && h.r.items.includes(k) ? h.r : this._roomsAll().find((q) => q.items.includes(k)));
+    const h = k && this._hit(hit.point.x, hit.point.z), r0 = k && (h && h.r && h.r.items.includes(k) ? h.r : this._nearRoom(k, hit.point.x, hit.point.z));
     const fb = r0 && r0.block.flat, r = fb ? this._flatUp(r0) : r0;   // lista única: o bloco inteiro, e o nome inteiro do aparelho ("Plateia", não "Luz")
     if (k) {   // v1.7: o cômodo do aparelho entra no painel como está (sem abrir nem mudar a altura: o aparelho fica sob o dedo) · na Pessoa só o balão
       if (!this._walkOn) this._showRoom(r, k, true);

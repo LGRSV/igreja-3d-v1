@@ -18,7 +18,7 @@ function roomAdministrativo(ctx) {
   // LEDs acompanham a luz do ambiente (ctx.bindEmissive).
   // Paleta: preto, madeira clara (ripado), branco e grafite, acentos âmbar/terracota.
   // Livres: giros das portas (recepção, pastoral, banheiro, Gilvan, Adm.), split da
-  // pastoral (14,9; ctx.HB − 0,18; 0,125) e as luminárias do cartão (y ≈ 2,7; nos fundos 2,25).
+  // pastoral (14,9; ctx.HB − 0,18; 0,125) e as luminárias do cartão (y ≈ 2,7; nos fundos 2,1).
   // v1.8: no bloco dos fundos as paredes têm ctx.HB de altura (2,4 m) e 5 cm de espessura; as faces abaixo são as de 7,5 cm —
   // o cartão (_snapThin) encosta na face nova o que estiver a até 15 cm dela.
   // Faces internas — bloco dos fundos (paredes finas, 7,5 cm): x 9,4875 · 12,7125/12,7875 · 16,9625/17,0375
