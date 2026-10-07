@@ -6856,7 +6856,7 @@ export class Igreja3DCard extends HTMLElement {
         if (z.item) this._clickables.push(m);
       }
       if (z.label) {
-        const s = this._makeLabel(z.label, z.ls || 1, !!z.main); s.position.set(z.lp[0], z.ly != null ? z.ly : H + 0.6 + (id === 'templo' ? 1.2 : 0), z.lp[1]);
+        const s = this._makeLabel(z.label, z.ls || 1, !!z.main); s.userData.label.zone = id; s.position.set(z.lp[0], z.ly != null ? z.ly : H + 0.6 + (id === 'templo' ? 1.2 : 0), z.lp[1]);
         scene.add(s); this._labels.push(s);
       }
     }
@@ -8364,7 +8364,7 @@ export class Igreja3DCard extends HTMLElement {
       const L = s.userData.label; if (!L) continue;
       const d = cam.position.distanceTo(s.position);
       const inReg = !reg || reg.some(([x0, z0, x1, z1]) => s.position.x >= x0 - 1 && s.position.x <= x1 + 1 && s.position.z >= z0 - 1 && s.position.z <= z1 + 1);
-      const op = inReg ? clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1) : 0;
+      const op = inReg && L.top !== !this._topView ? clamp((d - 5) / 4, 0, 1) * clamp((reach - d) / 4, 0, 1) * (far && (!L.main || (narrow && L.ls < 1)) ? 0 : 1) : 0;
       s.visible = op > 0.02; s.material.opacity = op;
       const hpx = L.font * (this._topView ? 2.6 : 3);   // texto de 24 px num canvas de 72 px → sprite com 3× a altura da fonte (menor na Vista de cima)
       s.scale.set(hpx * k * 320 / 72, hpx * k, 1);
@@ -8468,6 +8468,16 @@ export class Igreja3DCard extends HTMLElement {
     for (const b of this._blocks) b.items = b.rooms.flatMap((r) => r.own);   // o bloco (painel e nível 1 da Vista de cima): os aparelhos próprios dos cômodos dele — uma conta e um "tudo" só
     const de = (k) => { const h = all.find((q) => q.id === home[k]), it = ITEMS.find((i) => i.key === k); return `${(it.short || it.label).toLowerCase()} ${/a$/.test(h.label) ? 'da' : 'do'} ${h.label}`; };
     for (const r of all) if (!r.own.length) r.via = r.items.length ? [...new Set(r.items.map(de))].join(' · ') : 'sem aparelhos';   // sem aparelho próprio: de onde vem a luz ("luz do Estacionamento"), no lugar da conta
+    // Vista de cima: só nomes de cômodo e de bloco do dono — o rótulo de zona com outro nome sai ("Estacionamento interno", do Pátio) e o
+    // cômodo que fica sem nenhum ganha o dele ("WC" + "WC PCD" → "WCs")
+    const names = new Set([...all, ...this._blocks].map((q) => q.label));
+    for (const r of all) {
+      const zl = this._labels.filter((s) => r.zones.includes(s.userData.label.zone)), off = zl.filter((s) => !names.has(ZONES[s.userData.label.zone].label));
+      for (const s of off) s.userData.label.top = false;   // só fora da Vista de cima
+      if (!off.length || off.length < zl.length) continue;
+      const s = this._makeLabel(r.label, Math.max(...off.map((q) => q.userData.label.ls))); s.userData.label.top = true;   // só na Vista de cima
+      s.position.copy(off[0].position); this._scene.add(s); this._labels.push(s);   // no lugar do 1º (o do "WC": no meio colava na Sala da Família); o _setLabels de depois acerta a visibilidade
+    }
   }
   _rectsBox(rs) {
     return [Math.min(...rs.map((r) => r[0])), Math.min(...rs.map((r) => r[1])), Math.max(...rs.map((r) => r[0] + r[2])), Math.max(...rs.map((r) => r[1] + r[3]))];
@@ -8585,14 +8595,14 @@ export class Igreja3DCard extends HTMLElement {
     this._svc('homeassistant', on ? 'turn_on' : 'turn_off', keys.map((k) => this.entity(k)));
     this._refreshSub(); this._renderPanel();
   }
-  // automações do HA ligadas ao cômodo: o estado não diz que entidades cada uma usa, então casa pelo nome — palavras (4+ letras) do nome
-  // do cômodo e dos aparelhos dele no nome/id da automação. Cada automação fica no cômodo que mais casa (o nome do cômodo e o de cada
-  // aparelho contam 1): "Presença acende o hall" → Hall de entrada (cômodo e luz), não a Plateia (só o sensor) nem o Hall dos banheiros;
+  // automações do HA ligadas ao cômodo: o estado não diz que entidades cada uma usa, então casa pelo nome — palavras (4+ letras, mais "ar"
+  // e "som") do nome do cômodo e dos aparelhos dele no nome/id da automação. Cada automação fica no cômodo que mais casa (cada palavra em
+  // comum, no nome do cômodo e no de cada aparelho, conta 1): "Presença acende o hall" → Hall de entrada (cômodo e luz), não a Plateia (só o sensor) nem o Hall dos banheiros;
   // empate → nos dois (o _renderAutos põe no bloco). ponytail: heurística por palavra; mapa explícito no YAML se um dia errar muito
   _roomAutos(room) {
-    const words = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !['sala', 'area', 'tudo', 'principal'].includes(w));
+    const words = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter((w) => (w.length >= 4 || w === 'ar' || w === 'som') && !['sala', 'area', 'tudo', 'principal'].includes(w));
     const src = (r) => r.aw || (r.aw = [r.label, ...r.items.map((k) => ITEMS.find((i) => i.key === k).label)].map(words));   // palavras de cada nome, uma vez
-    const score = (r, aw) => src(r).filter((ws) => ws.some((w) => aw.has(w))).length, rooms = this._roomsAll();
+    const score = (r, aw) => src(r).reduce((n, ws) => n + ws.filter((w) => aw.has(w)).length, 0), rooms = this._roomsAll();   // "Ar do templo…" → Plateia (ar + templo), não o Palco (templo, do som)
     return (this._autos || []).filter((a) => { const aw = new Set(words(a.name + ' ' + a.id.slice(11))), s = score(room, aw); return s > 0 && rooms.every((q) => score(q, aw) <= s); });
   }
   // Selo redondo do modo do ar (textura 64 px, uma por modo, em cache): frio ❄ azul, quente chama laranja,
@@ -9839,7 +9849,7 @@ export class Igreja3DCard extends HTMLElement {
     el.innerHTML = '';
     if (!this._autos.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = this._hass ? 'Nenhuma automação encontrada no Home Assistant.' : 'As automações do HA aparecem aqui quando o cartão está no Home Assistant.'; el.appendChild(e); return; }
     // v1.7 (como a Casa 1.8.1): por bloco → cômodo (o do _roomAutos), cada uma uma vez; a que empata em mais de um cômodo do bloco fica no
-    // bloco ("Ar do templo…": Palco e Plateia); o resto em "Outras automações". O bloco é o mesmo título da aba Ambientes
+    // bloco; o resto em "Outras automações". O bloco é o mesmo título da aba Ambientes
     const seen = new Set(), head = (t) => { const h = document.createElement('div'); h.className = 'blk'; h.innerHTML = '<div class="bt"><b role="heading" aria-level="2"></b></div>'; h.querySelector('b').textContent = t; el.appendChild(h); };
     const add = (a) => { seen.add(a); el.appendChild(this._autoRow(a, now)); };
     for (const b of this._blocks) {
@@ -10414,8 +10424,8 @@ const narrow = () => window.innerWidth < 600;
   if (saved === '1' || (saved === null && narrow())) setMin(true, false); }
 
 // Posiciona a faixa no alto: na mesma linha do HUD, entre o título e os botões, quando cabe (telas largas; estreita até 260 px);
-// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima) — menos com a folha de baixo do cartão (tablet em pé), que na
-// altura cheia sobe até logo abaixo do HUD: aí fica no cartão do título, como no celular. Recalcula quando o layout muda.
+// senão logo abaixo do HUD (título, botões e a trilha da Vista de cima) — menos quando a folha de baixo do cartão (tablet em pé) sobe
+// até a faixa (altura cheia): aí fica no cartão do título, como no celular. Recalcula quando o layout muda.
 function place() {
   const root = card.shadowRoot; if (!root) return;
   const hud = root.querySelector('.hud.top'); if (!hud) return;
@@ -10424,13 +10434,14 @@ function place() {
   const title = hud.querySelector('.title'), btns = hud.querySelector('.btns');
   const tr = title && title.getBoundingClientRect(), br = btns && btns.getBoundingClientRect();
   let top, cx = W / 2;
-  const gap = tr && br && Math.abs(tr.top - br.top) < 8 ? br.left - tr.right - 24 : 0, sheet = !!root.querySelector('.wrap.sheet');
+  const gap = tr && br && Math.abs(tr.top - br.top) < 8 ? br.left - tr.right - 24 : 0, below = hud.getBoundingClientRect().bottom + 4;
+  const dock = root.querySelector('.wrap.sheet .dock:not([hidden])'), up = dock && dock.getBoundingClientRect().top < below + sky.getBoundingClientRect().height + 8;   // folha alta: cobriria a faixa
   if (!narrow() && gap >= Math.min(bw, 260)) { if (gap < bw) sky.style.width = Math.round(gap) + 'px'; top = tr.top; cx = (tr.right + br.left) / 2; }
-  else if ((narrow() || sheet) && tr) {
+  else if ((narrow() || up) && tr) {
     // celular: nunca no meio da tela — recolhida, a pílula fica no canto do cartão do título; aberta, cobre o cartão do título
     if (sky.classList.contains('min')) { top = tr.top + 5; cx = tr.right - 6 - bw / 2; }
     else { sky.style.width = Math.round(tr.width) + 'px'; top = tr.top + Math.max(0, (tr.height - sky.getBoundingClientRect().height) / 2); cx = (tr.left + tr.right) / 2; }
-  } else top = hud.getBoundingClientRect().bottom + 4;
+  } else top = below;
   sky.style.top = Math.round(top) + 'px'; sky.style.left = Math.round(cx) + 'px';
 }
 setInterval(place, 400); addEventListener('resize', place); setTimeout(place, 300);
