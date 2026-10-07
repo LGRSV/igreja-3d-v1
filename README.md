@@ -9,6 +9,14 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.7.0 — painel da Casa v1.8 e 4 blocos com todas as automações por cômodo
+
+- **4 blocos gerais**, iguais no painel e na Vista de cima: **Templo** (Palco, Plateia) · **Corredor direito** (Sala Gilvan, Administrativo, Circulação, Mídia, Voluntariado, Depósito, Área técnica, WCs) · **Fundos** (Pátio, Almoxarifado, Cozinha, Recepção, Sala Pastoral, Caixa d’água) · **Entrada** (Hall de entrada, Sala da Família, WCs, Estacionamento, Fachada). Cada bloco mostra «N de M ligados» e Ligar/Desligar tudo; dentro, cada cômodo com **todos** os aparelhos que dá para ligar/desligar (luzes, palco, telão, som, ares), cada um uma vez («também …» quando serve a mais de um cômodo). As automações do HA seguem a mesma divisão.
+- **Painel novo** (o mesmo da Casa v1.8): coluna à **esquerda** com o título em cima e **borda arrastável** (compacta · padrão · larga, lembrada) no desktop e no tablet deitado; **folha de baixo com 3 alturas** no celular e no tablet em pé; resumo do que está ligado e filtro Ligados/Todos; o cômodo tocado aparece **no próprio painel** (sai o painel da esquerda da v1.6.1); paleta âmbar (ligado) + grafite; mais leve (sem desfoque no painel, um desenho por atualização do HA).
+- **Sem piscadas pretas** ao mexer na tela (o canvas só muda de tamanho quando precisa e é redesenhado na hora).
+- Tocar nos objetos continua em **2 toques** (balão com nome e estado; o 2º toque ou o botão executa), agora com a cena parada para o 2º toque acertar.
+- Ganchos: `setTopNav(bloco, cômodo)` usa os blocos `templo · ala · fundos · entrada` (`hall` e `frente` viraram `entrada`).
+
 ## Novidades da v1.6.1 — painel do cômodo, Vista de cima de frente para o palco
 
 - **Abre na Vista de cima** (nível 0) na demo e no HA; **Recentrar** volta a ela; sair pelo menu (Vista de cima) ou entrar na Pessoa funciona como antes (com `fachada: true` no YAML abre na maquete de sempre).
@@ -148,7 +156,7 @@ Voltou (e ficou melhor) a animação dos ares: **cada aparelho tem a sua própri
 - **‹ Voltar** (ou Esc / Backspace) sobe um nível; na planta inteira, sai da Vista de cima. A câmera voa suave (3 s) e, com
   `prefers-reduced-motion`, corta direto. Os rótulos mostram só o que está dentro do bloco/cômodo. Redimensionar ou abrir o
   painel re-enquadra o **mesmo nível**. Ligar um ar na Vista de cima não tira você da planta (o selo do ar já mostra o estado).
-- Ganchos: `setTopNav('ala', 'midia')` (liga a Vista de cima se preciso e navega direto; blocos `templo · hall · ala · fundos · frente`)
+- Ganchos: `setTopNav('ala', 'midia')` (liga a Vista de cima se preciso e navega direto; blocos `templo · ala · fundos · entrada` desde a v1.7)
   e `getTopNav()` → `{ level, block, room }`.
 
 **Visão de pessoa (botão *Pessoa*).** Câmera na altura dos olhos (1,6 m; 1,0 m a mais em cima do palco), começando na calçada,
