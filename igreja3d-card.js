@@ -160,7 +160,7 @@ export const ITEMS = [
       { p: [2.95, 2.7, 45.1], glowOnly: true },
       { p: [18.6, 2.7, 34.9], glowOnly: true },
     ] },
-  { key: 'familia', label: 'Sala da família', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffdcae,
+  { key: 'familia', label: 'Sala da família', short: 'Luz', kind: 'light', icon: 'bulb', color: 0xffdcae, nolist: true,   // v1.8: fora do painel, da conta e do toque (a sala saiu dos blocos); a maquete ainda acende com a entidade
     fixtures: [{ p: [2.0, 2.7, 48.0], i: 20, d: 5.5, shadow: true },
       { p: [3.27, 3.95, 46.45], i: 10, d: 5.5, hidden: true }] },   // luz do abajur da mesinha do mezanino (v1.4.6; o abajur é desenhado em rooms/hall_familia.js)
   { key: 'presenca', label: 'Presença', kind: 'sensor', icon: 'motion' },
@@ -336,7 +336,7 @@ const ZONES = {
   hall:          { rects: [[4.0, 44.0, 12.05, 5.65]], floor: 'tileGray', tile: 1.8, label: 'Hall de entrada', lp: [12.4, 46.8], item: 'hall', inside: true, main: true },
   wc1:           { rects: [[0, 44.0, 1.9, 2.3]], floor: 'porcelainBeige', tile: 1.8, label: 'WC', lp: [0.95, 45.1], item: 'banheiros', inside: true, ls: 0.6 },
   wc_pcd:        { rects: [[1.9, 44.0, 2.1, 2.3]], floor: 'porcelainBeige', tile: 1.8, label: 'WC PCD', lp: [2.95, 45.1], item: 'banheiros', inside: true, ls: 0.6 },
-  familia:       { rects: [[0, 46.3, 4.0, 3.35]], floor: 'laminate', tile: 2.4, label: 'Sala da Família', lp: [2.0, 48.0], item: 'familia', inside: true, ls: 0.8, main: true },
+  familia:       { rects: [[0, 46.3, 4.0, 3.35]], floor: 'laminate', tile: 2.4, label: null, item: 'familia', inside: true },   // v1.8: sem rótulo nem toque (a luz da Pessoa ainda acha a sala)
   jardim_frontal:{ rects: [[0.1, 49.73, 10.5, 1.12, ''], [13.3, 49.73, 2.7, 1.12, '']], floor: 'grass', tile: 2.2, label: null, item: 'fachada' },
   calcada:       { rects: [[-3, 49.73, 3.1, 1.27, ''], [0.1, 50.85, 10.5, 0.15, ''], [10.6, 49.73, 2.7, 1.27, ''], [13.3, 50.85, 2.7, 0.15, ''], [16.0, 49.58, 7.0, 1.42, '']],
                    floor: 'paversDark', tile: 2.4, label: null, item: 'fachada' },
@@ -357,42 +357,43 @@ const stairNose = (x) => STAIR.R * (18 - (x - STAIR.XS) / STAIR.GO);            
 const inChan = (x, z) => !STAIR.off && x >= MEZZ.x1 && x <= STAIR.XE + STAIR.GO && z >= STAIR.Z0 && z <= STAIR.Z1;   // passagem da escada (rampa)
 const inMezz = (x, z) => x >= MEZZ.x0 && x <= STAIR.XS && z >= MEZZ.z0 && z <= MEZZ.z1;               // piso do mezanino
 // para onde a pessoa olha ao entrar num cômodo (x, y, z do mundo); sem entrada aqui: rumo ao canto mais fundo do cômodo
-const ROOM_FOCUS = { plateia: [1.0, 1.6, 28.1], palco: [10.5, 1.6, 28.1], hall: [11.85, 1.6, 44.0], familia: [3.9, 1.5, 48.55], mezanino: [4.6, 1.6, 45.6] };
+const ROOM_FOCUS = { templo: [1.0, 1.6, 28.1], hall: [11.85, 1.6, 44.0], mezanino: [4.6, 1.6, 45.6] };   // templo: de frente para o palco
 
 // Vista de cima navegável e painel: blocos → cômodos → aparelhos. `box` = [x0, z0, x1, z1] do bloco (enquadramento e sobra do _hit); cada
-// cômodo junta zonas de ZONES (ou tem `rects` próprios quando divide uma zona, como palco/plateia) e lista os aparelhos (chaves de ITEMS) —
-// _buildBlocks() ainda acrescenta os que têm luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força
-// o enquadramento do cômodo. v1.7: 4 blocos (Templo · Corredor direito · Fundos · Entrada); a caixa da Entrada cruza o WC Fem. do
-// Corredor, que vem antes (o _hit e o realce usam os cômodos, não a caixa)
+// cômodo junta zonas de ZONES (ou tem `rects` próprios) e lista os aparelhos (chaves de ITEMS) — _buildBlocks() ainda acrescenta os que têm
+// luminária/aparelho de ar dentro do cômodo (`noauto` desliga). `frame` = [x0, z0, x1, z1] força o enquadramento do cômodo. `flat` = no
+// painel o bloco é uma lista só, sem os cômodos como subtítulos (a Vista de cima continua com eles). v1.8 (pedido do dono): Templo (um
+// cômodo só) · Operacional · Banheiro · Sala Pastoral · Hall de entrada; a Sala da Família saiu
 const BLOCKS = {
-  templo: { label: 'Templo', box: [0, 12.4, 16.05, 44.0], rooms: [
-    { id: 'palco', label: 'Palco', rects: [[0, 19.6, 5.0, 17.0]], zones: ['templo'], items: ['palco', 'telao', 'som'], noauto: true },
-    { id: 'plateia', label: 'Plateia', rects: [[5.0, 12.4, 11.05, 31.6], [0, 12.4, 5.0, 7.2], [0, 36.6, 5.0, 7.4]], zones: ['templo'], items: ['plateia', 'ac_templo', 'presenca', 'temperatura'], noauto: true }] },
-  ala: { label: 'Corredor direito', box: [16.05, 11.0, 20.1, 49.5], rooms: [
+  templo: { label: 'Templo', flat: true, box: [0, 12.4, 16.05, 44.0], rooms: [
+    { id: 'templo', label: 'Templo', zones: ['templo'], items: ['palco', 'plateia', 'telao', 'som', 'ac_templo', 'presenca', 'temperatura'], noauto: true }] },
+  operacional: { label: 'Operacional', box: [16.05, 11.0, 20.1, 33.9], rooms: [
     { id: 'gilvan', label: 'Sala Gilvan', zones: ['gilvan'], items: ['administrativo'] },
     { id: 'administrativo', label: 'Administrativo', zones: ['administrativo'], items: ['administrativo'] },
     { id: 'circulacao', label: 'Circulação', zones: ['circulacao', 'corredor', 'circ2'], items: ['circulacao'], frame: [16.05, 19.0, 20.1, 28.0] },
     { id: 'midia', label: 'Mídia', zones: ['midia'], items: ['midia', 'ac_midia'] },
-    { id: 'voluntariado', label: 'Voluntariado', zones: ['voluntariado'], items: ['voluntariado', 'ac_voluntariado'] },
+    { id: 'voluntariado', label: 'Voluntariado', zones: ['voluntariado'], items: ['voluntariado', 'ac_voluntariado'] }] },
+  banheiro: { label: 'Banheiro', flat: true, box: [16.05, 33.9, 20.1, 49.5], rooms: [
     { id: 'deposito', label: 'Depósito', zones: ['deposito'], items: ['banheiros'] },
     { id: 'tecnica', label: 'Área técnica', zones: ['tecnica'], items: [] },
     { id: 'wc_masc', label: 'WC Masc.', zones: ['wc_masc'], items: ['banheiros'] },
     { id: 'hall_banheiros', label: 'Hall dos banheiros', zones: ['hall_banheiros'], items: ['banheiros'] },
     { id: 'wc_fem', label: 'WC Fem.', zones: ['wc_fem'], items: ['banheiros'] }] },
-  fundos: { label: 'Fundos', box: [0, 0, 20.1, 12.4], rooms: [
+  pastoral: { label: 'Sala Pastoral', flat: true, box: [0, 0, 20.1, 12.4], rooms: [
     { id: 'patio', label: 'Pátio', zones: ['estac_interno', 'patio', 'jardim_interno'], items: ['estacionamento'] },
     { id: 'almoxarifado', label: 'Almoxarifado', zones: ['almoxarifado'], items: ['cozinha'] },
     { id: 'cozinha', label: 'Cozinha', zones: ['cozinha'], items: ['cozinha'] },
     { id: 'recepcao', label: 'Recepção', zones: ['recepcao'], items: ['recepcao'] },
     { id: 'pastoral', label: 'Sala Pastoral', zones: ['pastoral', 'wc_pastoral', 'jardim_pastoral'], items: ['pastoral', 'ac_pastoral'] },
     { id: 'caixa_dagua', label: 'Caixa d’água', zones: ['caixa_dagua'], items: [] }] },
-  entrada: { label: 'Entrada', box: [-3, 44.0, 23, 60], rooms: [
+  hall: { label: 'Hall de entrada', box: [-3, 44.0, 23, 60], rooms: [
     { id: 'hall', label: 'Hall de entrada', zones: ['hall'], items: ['hall', 'porta'] },
-    { id: 'familia', label: 'Sala da Família', zones: ['familia'], items: ['familia'] },
     { id: 'wcs', label: 'WCs', zones: ['wc1', 'wc_pcd'], items: ['banheiros'] },
     { id: 'estac_frontal', label: 'Estacionamento', zones: ['estac_frontal'], items: ['estacionamento'] },
     { id: 'fachada', label: 'Fachada', zones: ['jardim_frontal', 'calcada'], items: ['fachada'] }] },
 };
+// ids de antes (setTopNav e README): blocos da v1.6/v1.7 e cômodos que viraram outro
+const BLOCK_ALIAS = { ala: 'operacional', fundos: 'pastoral', entrada: 'hall', frente: 'hall' }, ROOM_ALIAS = { palco: 'templo', plateia: 'templo' };
 // aparelho de vários cômodos → o cômodo em que ele aparece no painel (nos outros: "também …"); os demais ficam no 1º cômodo que os tem
 const HOME = { administrativo: 'administrativo', banheiros: 'hall_banheiros', cozinha: 'cozinha', estacionamento: 'estac_frontal' };
 
@@ -6185,15 +6186,17 @@ canvas.walk.pick { cursor: pointer; }
 .zone button:not(:disabled):hover, .zone button:not(:disabled):hover i { color: var(--ink); } .zone button:disabled { cursor: default; }
 .zone .zn { order: 3; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }   /* contagem em texto: neutra */
 .zone[hidden], .tile[hidden], .blk[hidden], .sect[hidden] { display: none; }
-/* bloco (v1.7, como a Casa 1.8.1): Templo · Corredor direito · Fundos · Entrada — numa linha, nome, "N de M ligados" e uma ação (a mesma do
-   cômodo); os cômodos dele embaixo, sem vão */
+/* bloco (v1.7, como a Casa 1.8.1; v1.8: Templo · Operacional · Banheiro · Sala Pastoral · Hall de entrada) — numa linha, nome › (abre o
+   bloco), "N de M ligados" e uma ação (a mesma do cômodo); os cômodos dele embaixo, sem vão */
 .blk { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 0 2px; color: var(--ink); }
 :not([hidden]) ~ .blk { margin-top: 14px; } .blk + .zone { margin-top: 0; }   /* vão só entre blocos à vista */
 .blk .bt { flex: 1; min-width: 0; display: flex; flex-direction: column; }   /* nome e, embaixo, a contagem — como no cabeçalho do cômodo, em qualquer largura */
-.blk b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; } .blk small { white-space: nowrap; font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.blk b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; } .blk .bn { position: relative; display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; padding: 0; font: inherit; color: inherit; text-align: left; }
+.blk .bn i { font-style: normal; font-weight: 600; color: var(--ink-3); } .blk .bn:hover i { color: var(--ink); } .blk .bn::after { content: ""; position: absolute; inset: -8px -6px; }   /* alvo maior que o texto */
+.blk small { white-space: nowrap; font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .blk .all button { position: relative; min-height: 30px; padding: 0 12px; } .blk .all button::after { content: ""; position: absolute; inset: -7px 0; }   /* 30 px à vista, alvo de 44 */
-.tile.wide { grid-column: 1 / -1; } .dock.room .tile.wide { grid-column: auto; } .tile small .sv { font-weight: 500; }   /* aparelho de mais de um cômodo: linha inteira, cabe o "também …" */
-.wrap.sheet:not(.narrow) .dock:not(.room) .tile.wide { grid-column: span 2; }   /* folha do tablet (4+ colunas): 2 colunas bastam */
+.tile.wide { grid-column: 1 / -1; } .dock.room:not(.bv) .tile.wide { grid-column: auto; } .tile small .sv { font-weight: 500; }   /* aparelho de mais de um cômodo: linha inteira, cabe o "também …" */
+.wrap.sheet:not(.narrow) .dock:not(.room) .tile.wide, .wrap.sheet:not(.narrow) .dock.bv .tile.wide { grid-column: span 2; }   /* folha do tablet (4+ colunas): 2 colunas bastam */
 .tile.wide small { white-space: normal; }   /* "também Depósito, WC Masc., WC Fem. e WCs": quebra a linha em vez de cortar */
 /* bloco compacto (ícone à esquerda, nome e estado à direita) */
 .tile { position: relative; overflow: hidden; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; min-height: 64px; padding: 9px 9px 9px 10px; border-radius: 14px; text-align: left; color: var(--ink);
@@ -6312,7 +6315,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
 /* cômodo tocado (v1.7): o painel focado nele — no lugar das abas e do filtro, "‹", nome, "N de M ligados" e Ligar/Desligar tudo;
    embaixo dos blocos, as automações do cômodo e "Entrar aqui" */
 .rhead { flex: none; margin: 0 12px 10px; }
-.dock:not(.room) .rhead, .dock:not(.room) .rfoot, .dock.room .tabs, .dock.room .zonebar, .dock.room .zone, .dock.room .blk, .dock.room .tile .sv { display: none; }
+.dock:not(.room) .rhead, .dock:not(.room) .rfoot, .dock.room .tabs, .dock.room .zonebar, .dock.room .blk, .dock.room:not(.bv) .tile .sv { display: none; }   /* bloco aberto (.bv): os subtítulos e o "também" ficam */
 .dock.room .rhead { display: flex; align-items: center; gap: 6px; }   /* [‹] [nome + N de M] [uma ação] */
 .rhead .rback { flex: none; width: 32px; height: 32px; margin-left: -8px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--ink-2); } .rhead .rback svg { width: 18px; height: 18px; }
 .rhead .rback:hover { color: var(--ink); background: var(--fill-2); }
@@ -6323,8 +6326,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
 .all button { padding: 8px 12px; white-space: nowrap; border-radius: 10px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }   /* Desligar tudo: grafite */
 .all button:hover { background: var(--fill-3); }
 .all button:first-child { background: var(--on); color: var(--on-ink); border-color: var(--on); }   /* Ligar tudo: âmbar cheio (vem depois do :hover) */
-.rfoot { margin-top: 14px; } .rfoot .autos { margin-bottom: 12px; } .rfoot > .tiles { margin-top: -14px; }   /* bloco: a lista dos cômodos logo abaixo do cabeçalho (os blocos de aparelho ficam escondidos) */
-.rfoot .tile { grid-template-columns: minmax(0, 1fr); } .rfoot .tile small { white-space: normal; }   /* cômodos do bloco: sem ícone, nome e "luz do Hall dos banheiros" inteiros */
+.rfoot { margin-top: 14px; } .rfoot .autos { margin-bottom: 12px; }
 .rfoot .enter { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px; border-radius: 12px; background: var(--fill-2); color: var(--ink); border: 1px solid var(--line); transition: transform .1s ease-out, background-color .2s; }
 .rfoot .enter:hover { background: var(--fill-3); }
 .rfoot .enter svg { width: 16px; height: 16px; color: var(--ink-2); }
@@ -6377,7 +6379,7 @@ input[type="range"] { flex: 1; min-width: 110px; accent-color: var(--adj); }
   .tabs button[role="tab"] { position: relative; min-height: 40px; } .tabs button[role="tab"]::after { content: ""; position: absolute; inset: -2px 0; }   /* alvo de 44 px (o vão do trilho) */
   .zonebar button { min-height: 34px; } .zonebar button::after { content: ""; position: absolute; inset: -6px 0; }   /* alvo de 46 px sem cobrir o vizinho */
   .rhead .rback, .all button, .rfoot .enter { min-height: 44px; } .rhead .rback { width: 44px; }
-  .zone button { min-height: 44px; margin: -12px 0; }
+  .zone button { min-height: 44px; margin: -12px 0; } .blk .bn::after { inset: -13px -6px; }   /* nome do bloco: alvo de 44 px */
   .tile .more::after { inset: -10px; }
 }
 /* Clima (v1.6.1): no título só ícone + temperatura, ao lado do relógio; os detalhes ficam no topo do menu ☰ */
@@ -6803,6 +6805,7 @@ export class Igreja3DCard extends HTMLElement {
     this._buildFixtures(scene, M);
     this._buildPools(scene);
     mergeItems(scene, this._clickables, this._items); mergeItems(this._ext, this._clickables, this._items);
+    this._clickables = this._clickables.filter((m) => !(ITEMS.find((i) => i.key === m.userData.item) || {}).nolist);   // Sala da Família: nem a luz nem o piso tocam
     this._buildDoors(scene);   // folhas das portas viram instâncias animáveis (antes do merge estático)
 
     const stats = mergeStatic(scene, true);
@@ -8191,7 +8194,7 @@ export class Igreja3DCard extends HTMLElement {
   }
 
   _refreshSub() {   // só o título: o painel quem desenha é quem chama (_syncFromHass, _activate, _applyDemoDefaults, _roomPower), um render por atualização
-    const lights = ITEMS.filter((i) => i.kind === 'light');
+    const lights = ITEMS.filter((i) => i.kind === 'light' && !i.nolist);   // as do painel (a da Sala da Família não conta)
     const n = lights.filter((i) => this._state[i.key] && this._state[i.key].on).length;
     const hasHass = !!this._hass;
     this._subEl.textContent = `${n} de ${lights.length} luzes acesas` + (hasHass ? '' : ' · demo');
@@ -8308,7 +8311,7 @@ export class Igreja3DCard extends HTMLElement {
   }
   // Vista de cima, nível 0 (v1.6.1): de frente para o palco, como quem está na plateia — câmera do lado +x olhando para −x, alta e
   // oblíqua (polar 0,9 ≈ 38° acima do horizonte). v1.7: a igreja inteira na largura (z 0–52, dos Fundos à Entrada; em retrato também: a
-  // câmera só afasta) — os 4 blocos à vista para o 1º toque (antes era só o templo, e Fundos e Entrada ficavam fora da tela)
+  // câmera só afasta) — os blocos à vista para o 1º toque (antes era só o templo, e os dos fundos e da entrada ficavam fora da tela)
   _topFor(aspect) {
     const target = new THREE.Vector3(8, 0, 26), tanH = Math.tan(this._camera.fov * Math.PI / 360) * aspect;
     return { pos: new THREE.Vector3().setFromSphericalCoords(26 / tanH, 0.9, Math.PI / 2).add(target), target };
@@ -8365,7 +8368,7 @@ export class Igreja3DCard extends HTMLElement {
         if (!r.noauto) for (const q of pts) if (q.p.some(([x, z]) => near(rects, x, z, 0))) items.add(q.key);   // só o que está dentro do cômodo (com folga pegava o ar do vizinho)
         return { id: r.id, label: r.label, rects, zones: r.zones, frame: r.frame, items: [...items].filter((k) => ITEMS.some((i) => i.key === k)) };
       });
-      const blk = { id, label: b.label, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))], rects: rooms.flatMap((r) => r.rects) };   // rects: realce e rótulos do bloco
+      const blk = { id, label: b.label, flat: !!b.flat, box: b.box, rooms, zones: [...new Set(rooms.flatMap((r) => r.zones))], rects: rooms.flatMap((r) => r.rects) };   // rects: realce e rótulos do bloco
       for (const r of rooms) r.block = blk;
       return blk;
     });
@@ -8373,7 +8376,7 @@ export class Igreja3DCard extends HTMLElement {
     const home = {}, all = this._blocks.flatMap((b) => b.rooms); for (const r of all) for (const k of r.items) home[k] = home[k] || HOME[k] || r.id;
     for (const r of all) r.own = r.items.filter((k) => home[k] === r.id);
     for (const b of this._blocks) b.items = b.rooms.flatMap((r) => r.own);   // o bloco (painel e nível 1 da Vista de cima): os aparelhos próprios dos cômodos dele — uma conta e um "tudo" só
-    const de = (k) => { const h = all.find((q) => q.id === home[k]), it = ITEMS.find((i) => i.key === k); return `${(it.short || it.label).toLowerCase()} ${/a$/.test(h.label) ? 'da' : 'do'} ${h.label}`; };
+    const de = (k) => { const h = all.find((q) => q.id === home[k]), it = ITEMS.find((i) => i.key === k), nm = h.block.flat ? h.block.label : h.label; return `${(it.short || it.label).toLowerCase()} ${/a$/.test(nm) ? 'da' : 'do'} ${nm}`; };   // da lista única: o nome do bloco ("luz do Banheiro")
     for (const r of all) if (!r.own.length) r.via = r.items.length ? [...new Set(r.items.map(de))].join(' · ') : 'sem aparelhos';   // sem aparelho próprio: de onde vem a luz ("luz do Estacionamento"), no lugar da conta
     // Vista de cima: só nomes de cômodo e de bloco do dono — o rótulo de zona com outro nome sai ("Estacionamento interno", do Pátio) e o
     // cômodo que fica sem nenhum ganha o dele ("WC" + "WC PCD" → "WCs")
@@ -8447,8 +8450,8 @@ export class Igreja3DCard extends HTMLElement {
   }
   _navTo(level, block, room) {
     const blk = typeof block === 'string' ? (this._blocks || []).find((q) => q.id === block) : block;
-    const rm = typeof room === 'string' && blk ? blk.rooms.find((q) => q.id === room) : room;
-    this._nav = { level: blk ? (rm && level === 2 ? 2 : 1) : 0, block: blk || null, room: rm && blk ? rm : null };
+    const one = blk && blk.rooms.length === 1, rm = one ? blk.rooms[0] : typeof room === 'string' && blk ? blk.rooms.find((q) => q.id === room) : room;   // Templo: o bloco é o cômodo
+    this._nav = { level: blk ? (rm && (level === 2 || one) ? 2 : 1) : 0, block: blk || null, room: rm && blk ? rm : null };
     this._clearHover(); this._showRoom(this._nav.room || this._nav.block);   // cômodo: o painel mostra ele · bloco: o resumo dele (cômodos + Ligar/Desligar tudo) · planta: visão geral
     this._resetView(true); this._renderNav(); this._updateLabels(); this._orbit.dirty = true;
   }
@@ -8457,7 +8460,7 @@ export class Igreja3DCard extends HTMLElement {
     if (!this._topView) return;
     const n = this._nav;
     if (n.level === 0) this._setTopView(false);
-    else if (n.level === 1) this._navTo(0); else this._navTo(1, n.block);
+    else if (n.level === 1 || n.block.rooms.length === 1) this._navTo(0); else this._navTo(1, n.block);
   }
   // liga/desliga o aparelho (mesma lógica dos blocos do painel)
   _toggleItem(key) {
@@ -8480,7 +8483,7 @@ export class Igreja3DCard extends HTMLElement {
     const cr = this._navCrumbs; cr.innerHTML = '';
     const list = [{ t: 'Planta', go: () => this._navTo(0) }];
     if (n.block) list.push({ t: n.block.label, go: () => this._navTo(1, n.block) });
-    if (n.room) list.push({ t: n.room.label });
+    if (n.room && n.block.rooms.length > 1) list.push({ t: n.room.label });   // Templo: "Planta › Templo" 
     list.forEach((c, k) => {
       if (k) { const sp = document.createElement('span'); sp.className = 'sep'; sp.textContent = '›'; sp.setAttribute('aria-hidden', 'true'); cr.appendChild(sp); }
       const b = document.createElement('button'); b.textContent = c.t;
@@ -8509,7 +8512,7 @@ export class Igreja3DCard extends HTMLElement {
   _roomAutos(room) {
     const words = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter((w) => (w.length >= 4 || w === 'ar' || w === 'som') && !['sala', 'area', 'tudo', 'principal'].includes(w));
     const src = (r) => r.aw || (r.aw = [r.label, ...r.items.map((k) => ITEMS.find((i) => i.key === k).label)].map(words));   // palavras de cada nome, uma vez
-    const score = (r, aw) => src(r).reduce((n, ws) => n + ws.filter((w) => aw.has(w)).length, 0), rooms = this._roomsAll();   // "Ar do templo…" → Plateia (ar + templo), não o Palco (templo, do som)
+    const score = (r, aw) => src(r).reduce((n, ws) => n + ws.filter((w) => aw.has(w)).length, 0), rooms = this._roomsAll();   // cada palavra em comum conta: "Ar do templo…" → Templo (ar + templo)
     return (this._autos || []).filter((a) => { const aw = new Set(words(a.name + ' ' + a.id.slice(11))), s = score(room, aw); return s > 0 && rooms.every((q) => score(q, aw) <= s); });
   }
   // Selo redondo do modo do ar (textura 64 px, uma por modo, em cache): frio ❄ azul, quente chama laranja,
@@ -8804,7 +8807,7 @@ export class Igreja3DCard extends HTMLElement {
   _roomsAll() {
     if (!this._blocks) return [];
     if (!this._mezzRoom) {
-      const hall = this._blocks.find((b) => b.id === 'entrada');
+      const hall = this._blocks.find((b) => b.id === 'hall');
       this._mezzRoom = { id: 'mezanino', label: 'Mezanino (salinha)', rects: [[MEZZ.x0, MEZZ.z0, MEZZ.x1 - MEZZ.x0, MEZZ.z1 - MEZZ.z0]], zones: [], items: [], up: true, block: hall };
     }
     return [...this._blocks.flatMap((b) => b.rooms), this._mezzRoom];
@@ -8921,7 +8924,7 @@ export class Igreja3DCard extends HTMLElement {
     for (const b of this._blocks || []) {
       const sec = document.createElement('div'); sec.className = 'gsec'; const t = document.createElement('div'); t.className = 'gt'; t.textContent = b.label; sec.appendChild(t);
       const row = document.createElement('div'); row.className = 'grow';
-      for (const r of [...b.rooms, ...(b.id === 'entrada' ? [this._roomsAll().find((q) => q.up)] : [])]) {
+      for (const r of [...b.rooms, ...(b.id === 'hall' ? [this._roomsAll().find((q) => q.up)] : [])]) {
         const c = document.createElement('button'); c.textContent = r.up ? '↑ ' + r.label : r.label; c.addEventListener('click', () => this._enterRoom(r));
         row.appendChild(c);
       }
@@ -9009,12 +9012,13 @@ export class Igreja3DCard extends HTMLElement {
   setWalk(on) { this._setWalk(!!on); }
   setWalkPose(x, z, yaw = 0, pitch = 0, up = false) { this._setWalk(true); this._walk.reset(x, z, yaw, pitch, up); this._orbit.dirty = true; }
   getWalkPose() { const w = this._walk; return w ? { x: w.pos.x, y: w.pos.y, z: w.pos.z, yaw: w.yaw, pitch: w.pitch, up: w.high, walking: !!w.path } : null; }
-  // setTopNav('ala', 'midia') — liga a Vista de cima (se preciso) e navega direto para o bloco / cômodo; getTopNav() → { level, block, room }
+  // setTopNav('operacional', 'midia') — liga a Vista de cima (se preciso) e navega direto para o bloco / cômodo; getTopNav() → { level, block, room }
   setTopNav(block, room) {
     if (!this._blocks || !this._orbit) return;
     if (!this._topView) this._setTopView(true);
-    const id = { hall: 'entrada', frente: 'entrada' }[block] || block, b = this._blocks.find((q) => q.id === id);   // ids de antes da v1.7 (Hall / Família e Frente viraram a Entrada)
-    if (b) this._navTo(room ? 2 : 1, b, room); else this._navTo(0);
+    const id = BLOCK_ALIAS[block] || block, rid = ROOM_ALIAS[room] || room, r = rid && this._roomsAll().find((q) => q.id === rid && !q.up);   // ids de antes (ala, fundos, entrada; palco, plateia)
+    const b = r ? r.block : this._blocks.find((q) => q.id === id);   // o cômodo manda: o WC Masc. de setTopNav('ala', 'wc_masc') agora fica no Banheiro
+    if (b) this._navTo(r ? 2 : 1, b, r); else this._navTo(0);
   }
   getTopNav() { const n = this._nav; return { level: this._topView ? n.level : -1, block: n.block && n.block.id, room: n.room && n.room.id }; }
   // setMode('auto'|'day'|'night') — troca o ambiente na hora (sem a transição suave dos botões)
@@ -9092,23 +9096,23 @@ export class Igreja3DCard extends HTMLElement {
     el.style.visibility = v.z > 1 || px < P || px > W || py < 0 || py > H - B ? 'hidden' : '';
   }
   _selAct() { const k = this._sel && this._sel.key; if (!k) return; this._select(null); this._toggleItem(k); this._flashRow(k); }
-  // Vista de cima: planta → 1º clique aproxima o bloco e abre o cômodo no painel → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
+  // Vista de cima: planta → 1º clique aproxima o bloco e abre os aparelhos dele no painel (v1.8) → 2º enquadra o cômodo → dentro dele o clique liga/desliga o aparelho
   _topClick(e, o) {
     const n = this._nav, p = this._groundPoint(e), h = p && this._hit(p.x, p.z);
     const toggle = (k) => { this._toggleItem(k); this._flashRow(k); };
     if (n.level === 2) {
       const room = n.room;
       if (o && !o.userData.zone && o.userData.item && room.items.includes(o.userData.item)) return toggle(o.userData.item);   // luminária, ar, telão…
-      if (h && h.b !== n.block) { this._navTo(1, h.b); if (h.r) this._showRoom(h.r); return; }   // outro bloco: aproxima ele e já abre o cômodo
+      if (h && h.b !== n.block) { this._navTo(1, h.b); return; }   // outro bloco: aproxima ele e abre os aparelhos dele
       if (h && h.r && h.r !== room) return this._navTo(2, n.block, h.r);
       if (o && o.userData.zone && o.userData.item) {   // piso do próprio cômodo: a luz principal dele (como no clique de sempre)
-        const main = room.items.find((k) => { const it = ITEMS.find((i) => i.key === k); return it && it.kind === 'light'; });
+        const main = room.items.includes(o.userData.item) ? o.userData.item : room.items.find((k) => { const it = ITEMS.find((i) => i.key === k); return it && it.kind === 'light'; });   // piso do Templo: a Plateia (a luz dele), não a 1ª da lista
         toggle(main || o.userData.item);
       }
       return;
     }
     if (!h) { this._showRoom(null); return; }   // vazio da planta: painel volta ao geral
-    if (n.level === 0 || h.b !== n.block) { this._navTo(1, h.b); if (h.r) this._showRoom(h.r); }   // 1º toque: aproxima o bloco e já abre o cômodo no painel
+    if (n.level === 0 || h.b !== n.block) this._navTo(1, h.b);   // 1º toque: aproxima o bloco e abre os aparelhos dele no painel (o Templo, um cômodo só, já entra nele)
     else if (h.r) this._navTo(2, h.b, h.r);
   }
   _onHover(e) {
@@ -9348,22 +9352,18 @@ export class Igreja3DCard extends HTMLElement {
   _showRoom(r, key, stay) {   // stay: 1º toque num aparelho da maquete — o cômodo entra no painel como está (recolhido, espiada…), sem abrir nem mudar a altura
     r = r || null; const d = this._dock, ch = r !== this._room;
     if (ch) {
-      this._room = r; d.classList.toggle('room', !!r); this._detail.hidden = true; this._detailKey = null; if (!stay) this._select(null);   // o balão é do cômodo de antes (no stay o _onClick já troca)
+      this._room = r; d.classList.toggle('room', !!r); d.classList.toggle('bv', !!(r && r.rooms)); this._detail.hidden = true; this._detailKey = null; if (!stay) this._select(null);   // o balão é do cômodo de antes (no stay o _onClick já troca)
       this._reopen.querySelector('.rl').textContent = r ? r.label : 'Painel';
-      const f = this._rFoot; f.replaceChildren(); this._rRooms = [];
-      if (r) {
+      const f = this._rFoot; f.replaceChildren();
+      if (r) {   // v1.8: o bloco (r.rooms) mostra os aparelhos dele, como o cômodo — com os cômodos de subtítulo, salvo na lista única — e as automações de todos
         this._rTitle.textContent = r.label; this._showTab('ctl');
-        const autos = r.rooms ? [] : this._roomAutos(r), g = document.createElement('div'); g.className = 'tiles';
+        const autos = r.rooms ? [...new Set(r.rooms.flatMap((q) => this._roomAutos(q)))] : this._roomAutos(r);
         if (autos.length) { const h = document.createElement('div'), al = document.createElement('div'); h.className = 'sect'; h.textContent = 'Automações'; al.className = 'autos'; for (const a of autos) al.appendChild(this._autoRow(a, Date.now())); f.append(h, al); }
-        for (const q of r.rooms || []) {   // bloco: os cômodos dele com a contagem (como na v1.6.1); tocar aproxima
-          const b = document.createElement('button'); b.className = 'tile'; b.title = `Aproximar ${q.label}`; b.innerHTML = '<span><b></b><small><span class="st"></span></small></span>';   // sem ícone: "Estacionamento" cabe inteiro em 2 colunas
-          b.querySelector('b').textContent = q.label; b.addEventListener('click', () => this._navTo(2, r, q)); g.appendChild(b); this._rRooms.push([q, b]);
-        }
-        f.appendChild(r.rooms ? g : this._rEnter);
+        if (!r.rooms) f.appendChild(this._rEnter);
       }
-      this._setZone(r ? this._zone : this._onKeys().length ? 'on' : '');   // blocos: só os do cômodo · de volta ao geral: "Ligados" se houver
+      this._setZone(r ? '' : this._onKeys().length ? 'on' : '');   // bloco ou cômodo aberto: Todos (v1.8, ligados e desligados) · de volta ao geral: "Ligados" se houver
     }
-    if (r) { const n = this._nav, bl = this._topView ? (n.level === 2 ? `Voltar para ${n.block.label}` : 'Voltar para Planta') : 'Todos os ambientes'; this._rBack.setAttribute('aria-label', bl); this._rBack.title = bl; }   // o 2º toque muda o nível sem trocar de cômodo
+    if (r) { const n = this._nav, bl = this._topView ? (n.level === 2 && n.block.rooms.length > 1 ? `Voltar para ${n.block.label}` : 'Voltar para Planta') : 'Todos os ambientes'; this._rBack.setAttribute('aria-label', bl); this._rBack.title = bl; }   // o 2º toque muda o nível sem trocar de cômodo
     this._roomHl(r);
     if (r && !this._panelOpen && !stay && !(this._walkOn && this._sideOverlay)) this._setPanel(true);
     else { this._renderPanel(); if ((r || ch) && !stay) this._snapTo(r ? 'half' : 'peek'); }   // folha: cômodo na média, geral na espiada
@@ -9479,22 +9479,24 @@ export class Igreja3DCard extends HTMLElement {
     const grid = document.createElement('div'); grid.className = 'tiles'; this._panes.ctl.pane.appendChild(grid); this._grid = grid;
     this._detail = document.createElement('div'); this._detail.className = 'detail'; this._detail.hidden = true;
     // v1.7 (como a Casa 1.8.1): blocos da Vista de cima → cômodos → aparelhos, cada um uma vez (r.own, ver _buildBlocks); o de vários cômodos
-    // ocupa a linha e diz "também …". Todos os cômodos do bloco, na ordem da planta: o sem nada próprio (Pátio, Sala Gilvan, WCs…) diz de
-    // onde vem a luz e abre igual
+    // ocupa a linha e diz "também …". Todos os cômodos do bloco, na ordem da planta: o sem nada próprio (Sala Gilvan, WCs…) diz de onde vem
+    // a luz e abre igual. v1.8: o bloco `flat` (Templo, Banheiro, Sala Pastoral) é uma lista só, sem subtítulos, com o nome inteiro do
+    // aparelho ("Ar do templo", não "Ar"); o nome do bloco abre ele (na Vista de cima, aproxima)
     this._groups = []; this._zone = ''; this._onKeep = new Set(); const list = new Intl.ListFormat('pt-BR');
     for (const b of this._blocks) {
-      const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome  N de M ligados] [Ligar tudo ou Desligar tudo do bloco]
-      bh.innerHTML = '<div class="bt"><b role="heading" aria-level="2"></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>';
-      const ba = bh.querySelector('.all'); bh.querySelector('b').textContent = b.label; ba.setAttribute('aria-label', b.label);
+      const bh = document.createElement('div'); bh.className = 'blk'; grid.appendChild(bh);   // [nome ›  N de M ligados] [Ligar tudo ou Desligar tudo do bloco]
+      bh.innerHTML = '<div class="bt"><b role="heading" aria-level="2"><button class="bn"><span></span><i aria-hidden="true">›</i></button></b><small></small></div><div class="all" role="group"><button>Ligar tudo</button><button>Desligar tudo</button></div>';
+      const ba = bh.querySelector('.all'), bn = bh.querySelector('.bn'); bn.firstChild.textContent = b.label; bn.title = `Abrir ${b.label}`; ba.setAttribute('aria-label', b.label);
+      bn.addEventListener('click', () => (this._topView ? this._navTo(1, b) : this._showRoom(b.rooms.length === 1 ? b.rooms[0] : b)));   // Templo: o cômodo dele (automações e Entrar aqui)
       ba.firstChild.title = this._rAll.firstChild.title; ba.lastChild.title = this._rAll.lastChild.title;   // a política do cômodo (ligar acende só as luzes)
       const keys = b.items;   // só os listados embaixo (os mesmos do nível 1 da Vista de cima): a soma dos blocos não repete aparelho
       ba.firstChild.addEventListener('click', () => this._roomPower(true, keys)); ba.lastChild.addEventListener('click', () => this._roomPower(false, keys));
-      this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, all: ba });
+      this._groups.push({ zh: bh, zn: bh.querySelector('small'), keys, all: ba, b });
       for (const r of b.rooms) {
-        const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own, via: r.via });
+        if (!b.flat) { const zh = this._zoneHead(r); grid.appendChild(zh); this._groups.push({ zh, zn: zh.lastChild, keys: r.own, via: r.via, b }); }
         for (const k of r.own) {
-          grid.appendChild(this._makeTile(ITEMS.find((i) => i.key === k), r.label));
-          const o = this._roomsAll().filter((q) => q !== r && q.items.includes(k)).map((q) => q.label); if (!o.length) continue;   // serve a outros cômodos: diz quais
+          const it = ITEMS.find((i) => i.key === k); grid.appendChild(this._makeTile(it, r.label, b.flat ? it.label : ''));
+          const o = this._roomsAll().filter((q) => q !== r && q.items.includes(k) && !(b.flat && q.block === b)).map((q) => q.label); if (!o.length) continue;   // serve a outros cômodos: diz quais (na lista única, só os de fora)
           const t = this._tiles[k], sv = document.createElement('span'); sv.className = 'sv'; sv.textContent = ` · também ${list.format(o)}`;
           t.small.appendChild(sv); t.tile.classList.add('wide'); t.tile.title += ` — também ${list.format(o)}`;   // linha inteira: o "também" cabe
         }
@@ -9565,9 +9567,9 @@ export class Igreja3DCard extends HTMLElement {
     this._zoneHide(); this._panes.ctl.pane.scrollTop = 0;
   }
   _zoneHide() {
-    const ks = this._room && this._roomKeys(this._room), on = !ks && this._zone === 'on', keep = this._onKeep;
-    for (const g of this._groups) g.zh.hidden = on && !g.keys.some((k) => keep.has(k));   // bloco ou cômodo sem nada à vista some
-    for (const [k, t] of Object.entries(this._tiles)) t.tile.hidden = ks ? !ks.includes(k) || t.it.kind === 'sensor' || !!this._room.rooms : on && !keep.has(k);   // bloco: só a lista dos cômodos
+    const R = this._room, ks = R && this._roomKeys(R), on = !ks && this._zone === 'on', keep = this._onKeep;
+    for (const g of this._groups) g.zh.hidden = R ? g.b !== R : on && !g.keys.some((k) => keep.has(k));   // bloco ou cômodo sem nada à vista some · bloco aberto: os subtítulos dele (o .blk sai no CSS)
+    for (const [k, t] of Object.entries(this._tiles)) t.tile.hidden = ks ? !ks.includes(k) || t.it.kind === 'sensor' : on && !keep.has(k);   // bloco ou cômodo aberto: todos os aparelhos dele, ligados e desligados
     this._zEmpty.hidden = !(on && !keep.size);
   }
   // Ligar tudo / Desligar tudo: só a ação que muda algo; o foco do teclado passa ao botão que aparece (não cai no body)
@@ -9577,7 +9579,7 @@ export class Igreja3DCard extends HTMLElement {
     if (f && f.hidden && all.contains(f) && n) (on.hidden ? off : on).focus({ preventScroll: true });
   }
   // aparelhos ligados agora (sensor não conta)
-  _onKeys() { return ITEMS.filter((i) => i.kind !== 'sensor' && this._state[i.key] && this._state[i.key].on).map((i) => i.key); }
+  _onKeys() { return ITEMS.filter((i) => i.kind !== 'sensor' && !i.nolist && this._state[i.key] && this._state[i.key].on).map((i) => i.key); }
   _hasDetail(it) { return it.kind !== 'sensor'; }
   // "Mídia ›  1 de 2 ligados": abre o cômodo (na Vista de cima, aproxima ele) — na aba Ambientes e na Automações
   _zoneHead(r) {
@@ -9586,13 +9588,13 @@ export class Igreja3DCard extends HTMLElement {
     zt.addEventListener('click', () => (this._topView ? this._navTo(2, r.block, r) : this._showRoom(r)));
     const zn = document.createElement('span'); zn.className = 'zn'; zh.append(zt, zn); return zh;
   }
-  _makeTile(it, room) {
+  _makeTile(it, room, name) {   // name: o nome na lista única do bloco
     const tile = document.createElement('button'); tile.className = 'tile'; tile.dataset.key = it.key; tile.dataset.kind = it.kind; tile.setAttribute('aria-pressed', 'false');
     const top = document.createElement('span'); top.className = 'top';
     const ico = document.createElement('span'); ico.className = 'ico'; ico.innerHTML = iconSvg(it.icon); top.appendChild(ico);
     const txt = document.createElement('span');
     const eye = document.createElement('span'); eye.className = 'eyebrow'; eye.textContent = room || '';
-    const b = document.createElement('b'); b.textContent = it.short || it.label; tile.title = it.label; const small = document.createElement('small'); txt.append(eye, b, small);
+    const b = document.createElement('b'); b.textContent = name || it.short || it.label; tile.title = it.label; const small = document.createElement('small'); txt.append(eye, b, small);
     // estado em três partes (estado · separador · tempo) — o texto junto continua "acesa · 30% · há 6 min"
     const sSt = document.createElement('span'); sSt.className = 'st'; const sSep = document.createElement('span'); sSep.className = 'sep'; const sTm = document.createElement('span'); sTm.className = 'tm';
     small.append(sSt, sSep, sTm);
@@ -9689,10 +9691,6 @@ export class Igreja3DCard extends HTMLElement {
       const sens = ks.filter((k) => !ctl.includes(k)).map((k) => (k === 'porta' ? 'porta ' : '') + this._stateText(ITEMS.find((i) => i.key === k), this._state[k]));
       this._rCount.textContent = !ks.length ? 'Nenhum aparelho' : [ctl.length ? `${on} de ${ctl.length} ligados` : '', ...sens].filter(Boolean).map((x) => x.replace(/ /g, ' ')).join(' · ');   // coluna estreita: quebra só entre as partes
       this._allShow(this._rAll, ctl.length, on);   // só a ação que muda algo
-      for (const [q, b] of this._rRooms || []) {   // bloco: "N de M ligados" de cada cômodo — os próprios, a conta da lista (a soma dá a do bloco)
-        const c = q.own.filter((k) => kind(k) !== 'sensor'), m = c.filter((k) => this._state[k] && this._state[k].on).length;
-        b.classList.toggle('on', m > 0); b.querySelector('.st').textContent = c.length ? `${m} de ${c.length} ligados` : q.via;
-      }
     }
     const now = Date.now();
     for (const [k, t] of Object.entries(this._tiles)) {
@@ -9747,6 +9745,7 @@ export class Igreja3DCard extends HTMLElement {
     if (this._panelOpen && this._tab !== 'ctl') this._renderFeed(now); else this._feedDirty = true;   // Automações e Atividade só com a aba à vista (a troca de aba refaz)
   }
   _pushActivity(key, state, ts, seed = false) {
+    if ((ITEMS.find((i) => i.key === key) || {}).nolist) return;   // fora do painel, fora da Atividade
     this._activity.push({ key, state, ts, seed });
     this._activity.sort((a, b) => b.ts - a.ts);
     if (this._activity.length > 40) this._activity.length = 40;
@@ -9763,7 +9762,7 @@ export class Igreja3DCard extends HTMLElement {
       const per = b.rooms.map((r) => [r, this._roomAutos(r).filter((a) => !seen.has(a))]), all = per.flatMap(([, l]) => l); if (!all.length) continue;
       head(b.label);
       new Set(all.filter((a, i) => all.indexOf(a) !== i)).forEach(add);   // de mais de um cômodo do bloco
-      for (const [r, l] of per) { const m = l.filter((a) => !seen.has(a)); if (m.length) { el.appendChild(this._zoneHead(r)); m.forEach(add); } }
+      for (const [r, l] of per) { const m = l.filter((a) => !seen.has(a)); if (m.length) { if (!b.flat) el.appendChild(this._zoneHead(r)); m.forEach(add); } }   // lista única: sem subtítulo
     }
     const rest = this._autos.filter((a) => !seen.has(a));
     if (rest.length && seen.size) head('Outras automações');
@@ -9964,7 +9963,7 @@ export class Igreja3DCard extends HTMLElement {
     this._airFocus = { key: hero, at: now, until: now + U.length * stag + 45000 };
     this._orbit.touched = true;
   }
-  // Vista de cima: leva a planta até o cômodo do ar (no templo, a Plateia)
+  // Vista de cima: leva a planta até o cômodo do ar (no templo, o Templo inteiro)
   _airNavTo(key) {
     for (const b of this._blocks || []) for (const r of b.rooms) if (r.items.includes(key)) {
       const n = this._nav; if (n.level === 2 && n.room === r) return;
