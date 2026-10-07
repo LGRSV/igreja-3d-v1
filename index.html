@@ -5939,7 +5939,7 @@ function roomFachada(ctx) {
 const CSS = `
 :host { display: block; position: relative; height: var(--igreja3d-height, calc(100vh - 100px)); min-height: 360px;
   border-radius: var(--ha-card-border-radius, 12px); overflow: hidden; overflow: clip; background: #0a0f1e;   /* clip: foco e scrollIntoView não rolam o cartão */
-  font: 13px/1.35 var(--igreja3d-font, -apple-system, BlinkMacSystemFont, var(--primary-font-family, "Segoe UI", Roboto, system-ui, sans-serif)); color: var(--ink);   /* SF nos aparelhos Apple; nos outros, a fonte do tema do HA */
+  font: 13px/1.35 var(--igreja3d-font, -apple-system, BlinkMacSystemFont, var(--primary-font-family, "Segoe UI", Roboto, sans-serif)); color: var(--ink);   /* SF nos aparelhos Apple; nos outros, a fonte do tema do HA (sem system-ui: no Linux ele vira a DejaVu, 1/4 mais larga) */
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   /* Paleta v1.8 (a da Casa v1.9): cores de sistema do iOS escuro (referência: app Casa do iOS 17/18, sem Liquid Glass). Ligado = âmbar · estrutura = grafite ·
      foco e seleção = azul · indisponível = vermelho. Contraste no pior fundo: texto ≥ 4,5:1, ícone e controle ≥ 3:1 */
@@ -6007,7 +6007,7 @@ canvas:active { cursor: grabbing; }
 .menu .mi:disabled { cursor: default; } .menu .mi:disabled:hover { background: transparent; }
 .menu .mi .mic { order: 2; flex: none; width: 20px; display: grid; place-items: center; color: var(--ink); } .menu .mi .mic svg { width: 20px; height: 20px; }   /* ícone à direita; o estado é a marca */
 .menu .mi .ml { flex: 1; min-width: 0; } .menu .mi .ml small, .menu .mi .mnote { display: block; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); }
-.menu .mi.peg { touch-action: none; cursor: grab; } .menu .mi.peg .mic { color: var(--on); }   /* o bonequinho continua âmbar: arraste até um ambiente */
+.menu .mi.peg { touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; } .menu .mi.peg .mic { color: var(--on); transition: transform .2s var(--ease); } .menu .mi.peg.lift .mic { transform: scale(1.3); }   /* o bonequinho continua âmbar: no toque, segure (ele cresce) e arraste; correr o dedo rola a lista */
 @media (pointer: fine) { .menu .mi { min-height: 36px; padding-block: 8px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; } .menu .mi .ml small, .menu .mi .mnote { font-size: 12px; line-height: 16px; letter-spacing: 0; } }
 .menu .mseg { display: flex; margin: 4px 16px 10px; }
 .menu .mseg button { flex: 1; }
@@ -6053,7 +6053,7 @@ button[aria-pressed="true"] { background: var(--on-bg); color: var(--on); }
 .nav .crumbs button[aria-current="page"] { color: var(--ink); cursor: default; background: transparent; }   /* página atual não é "ligado" */
 .nav .sep { color: var(--ink-2); }
 .nav .navhint { color: var(--ink-2); font-size: 13px; padding: 0 4px; }
-@media (max-width: 640px) { .nav .back { min-height: 44px; } .nav .crumbs button { padding: 8px 6px; } .nav .navhint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }   /* celular: a trilha numa linha ao lado do ⋯; a dica fica só para o leitor de tela
+@media (max-width: 640px) { .nav .back { min-height: 44px; } .nav .crumbs button { padding: 8px 6px; } .nav .navhint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }   /* celular: a trilha numa linha ao lado do ⋯; a dica fica só para o leitor de tela */
 /* Visão de pessoa: joystick, aviso de comandos */
 .joy { position: absolute; left: 16px; bottom: 16px; width: 116px; height: 116px; border-radius: 50%; z-index: 4; touch-action: none; opacity: .85; cursor: grab;
   background: radial-gradient(circle, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04)); border: 1px solid rgba(255, 255, 255, .24); backdrop-filter: var(--blur-s); -webkit-backdrop-filter: var(--blur-s); }
@@ -6179,6 +6179,7 @@ canvas.walk.pick { cursor: pointer; }
   background: var(--raised); border: 0;
   transition: background-color .2s, transform .14s var(--ease); }
 .tile > * { position: relative; }
+.tile { container: tile / inline-size; }   /* a letra segue a largura do bloco, não a da tela */
 .tile:hover { background: #363638; }
 .tile:active { transform: scale(.97); }
 .tile:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
@@ -6208,10 +6209,11 @@ svg .f, :is(.on, .lit) svg .r { display: none; } :is(.on, .lit) svg .f { display
 .tile.on .more { color: var(--tile-on-ink-2); } .tile.on .more:hover, .tile.on .more:focus-visible { background: rgba(60, 60, 67, .14); color: #000; }
 .tile .more:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; } .tile.on .more:focus-visible { outline-color: #0040dd; }   /* por dentro do círculo; no bloco claro, o azul escuro do iOS (6:1) */
 .tile .more::after { content: ""; position: absolute; inset: -4px; }   /* área de toque maior */
-.tile[data-kind]:not([data-kind="sensor"]):is(:hover, :focus-within) b { padding-right: 22px; } @media (hover: none) { .tile[data-kind]:not([data-kind="sensor"]) b { padding-right: 22px; } }   /* onde o "⋯" aparece, o nome acaba antes dele, não embaixo */
+.tile[data-kind]:not([data-kind="sensor"]):is(:hover, :focus-within) b { padding-right: var(--mw, 22px); } @media (hover: none) { .tile[data-kind]:not([data-kind="sensor"]) b { padding-right: var(--mw, 22px); } }   /* onde o "⋯" aparece, o nome acaba antes dele, não embaixo */
 .tiles.routines { grid-template-columns: minmax(0, 1fr); }
 .tile.routine .ico { background: var(--fill); color: var(--ink-2); }
 .tile.routine small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }   /* descrição em até 2 linhas (o .tile small é de 1) */
+@container tile (max-width: 140px) { .tile b { --mw: 18px; font-size: 13px; line-height: 18px; letter-spacing: -.006em; } .tile small { font-size: 12px; line-height: 16px; letter-spacing: 0; } .tile .ico { width: 32px; height: 32px; margin-left: -2px; } }   /* bloco estreito (2 colunas na coluna de 330, tablet deitado, 320): nome 13 e estado 12, como no Home, e o vão do ⋯ a 18; palavras inteiras e «acesa · 100%» sem corte */
 /* folha de controles do aparelho: cartão #2c2c2e colado no fim da área rolável */
 .detail { grid-column: 1 / -1; position: sticky; bottom: 4px; z-index: 4; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 18px; margin-top: 4px;
   background: var(--raised); box-shadow: 0 -8px 32px rgba(0, 0, 0, .4); animation: sheetIn .28s var(--ease); }
@@ -6225,7 +6227,7 @@ svg .f, :is(.on, .lit) svg .r { display: none; } :is(.on, .lit) svg .f { display
 .detail .dtitle b { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.025em; } .detail .dtitle small { color: var(--ink-2); font-size: 13px; line-height: 18px; display: block; }
 .detail .close { position: relative; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--fill-2); color: var(--ink-2); } .detail .close svg { width: 13px; height: 13px; }
 /* linhas de ajuste do ar (v1.8): nome à esquerda (com a leitura embaixo), controle à direita — Temperatura (alvo no − / +, atual embaixo) e Oscilar */
-.detail .drow { flex: 1 1 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; }
+.detail .drow { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; font-size: 15px; line-height: 20px; letter-spacing: -.015em; } .detail .drow > :last-child { margin-left: auto; }   /* coluna de 272: o − / + desce para baixo do nome, à direita, em vez de passar da borda */
 .detail .drow small { display: block; font-size: 13px; line-height: 18px; letter-spacing: -.006em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .detail .drow .sw:disabled { opacity: .45; cursor: default; }   /* o ar não informa oscilar ao HA: a nota diz por quê */
 /* UISwitch 51×31 (luz, ar, automação, oscilar e o "tudo" do bloco e do cômodo): polegar 27 branco com a sombra do iOS; ligado em âmbar; estica sob o dedo */
@@ -6370,7 +6372,7 @@ input[type="range"] { flex: 1; min-width: 110px; }
   .detail .rng { flex-basis: 100%; }
   .hud.top { gap: 6px; }
 }
-@media (max-width: 340px) { .tile b { font-size: 14px; line-height: 19px; } .rhead .swl { display: none; } }   /* celular de 320: o nome do cômodo antes do rótulo "Tudo" */
+@media (max-width: 340px) { .rhead .swl { display: none; } }   /* celular de 320: o nome do cômodo antes do rótulo "Tudo" */
 /* cantos contínuos (Chrome/Edge ≥ 139), raio ~1,4×; só com o vidro: em aparelho fraco, recorte que não é retângulo arredondado pode virar máscara.
    Os botões são cápsulas (o HIG prefere) e ficam fora */
 @supports (corner-shape: squircle) {
@@ -6516,7 +6518,7 @@ export class Igreja3DCard extends HTMLElement {
     this._hrLive.addEventListener('click', () => this.setSimTime(null));
     const sNav = sec('Andar');
     // Pessoa = o bonequinho (v1.4.6): arraste até um ambiente da maquete/planta e solte para entrar ali; toque: anda daqui, na altura dos olhos
-    this._walkBtn = this._pegBtn = item(sNav, 'person', 'Pessoa', { toggle: true, note: 'arraste até um ambiente', title: 'Arraste o bonequinho até um ambiente para andar por dentro dele · toque: anda daqui (setas/WASD ou joystick; arraste para olhar)' });
+    this._walkBtn = this._pegBtn = item(sNav, 'person', 'Pessoa', { toggle: true, note: 'segure e arraste até um ambiente', title: 'Segure e arraste o bonequinho até um ambiente para andar por dentro dele · toque: anda daqui (setas/WASD ou joystick; arraste para olhar)' });
     this._pegBtn.classList.add('peg'); this._pegBind(this._pegBtn);
     this._walkBtn.addEventListener('click', () => { if (performance.now() - (this._pegT || 0) < 400) return; const on = !this._walkOn; this._setWalk(on); if (on) this._menuSet(false); });   // o clique que sobra do arrasto não conta
     const gotoMi = item(sNav, 'pin', 'Ir para…', { note: 'um ambiente, como Pessoa', title: 'Vai direto a um ambiente na visão de Pessoa (inclui a salinha do mezanino)' });
@@ -6554,7 +6556,8 @@ export class Igreja3DCard extends HTMLElement {
     // teclado e clique fora com o menu aberto: escutados na janela, em captura (antes do Walker e da trilha da Vista de cima); presos à conexão (_timersOn)
     this._menuKeyH = (e) => this._menuKey(e);
     this._menuOut = (e) => { if (!this._menuOn) return; const path = e.composedPath(); if (!path.includes(menu) && !path.includes(this._menuBtn)) this._menuSet(false); };
-    menu.addEventListener('focusout', (e) => { const t = e.relatedTarget; if (this._menuOn && t && !menu.contains(t) && t !== this._menuBtn) this._menuSet(false); });   // Tab saiu da lista: ela fecha
+    const out = (e) => { const t = e.relatedTarget; if (this._menuOn && t && !menu.contains(t) && t !== this._menuBtn) this._menuSet(false); };
+    menu.addEventListener('focusout', out); this._menuBtn.addEventListener('focusout', out);   // Tab saiu da lista (ou Shift+Tab do ⋯, aberta pelo clique): ela fecha
     const PERSON = iconSvg('person');
     this._pegGhost = document.createElement('div'); this._pegGhost.className = 'pegghost'; this._pegGhost.innerHTML = PERSON; this._pegGhost.hidden = true; wrap.appendChild(this._pegGhost);
     this._pegTip = document.createElement('div'); this._pegTip.className = 'panel pegtip'; this._pegTip.hidden = true; wrap.appendChild(this._pegTip);
@@ -6575,7 +6578,7 @@ export class Igreja3DCard extends HTMLElement {
     let seen = '1'; try { seen = window.localStorage.getItem('igreja3d.dica_pessoa'); } catch { /* sem armazenamento: não insiste */ }
     if (!seen) {
       const d = document.createElement('div'); d.className = 'panel pegdica'; d.setAttribute('role', 'note');
-      d.innerHTML = '<span>Para andar por dentro, abra ⋯ e arraste o bonequinho até um ambiente</span><button type="button" aria-label="Fechar a dica">×</button>';
+      d.innerHTML = '<span>Para andar por dentro, abra ⋯, segure o bonequinho e arraste até um ambiente</span><button type="button" aria-label="Fechar a dica">×</button>';
       wrap.appendChild(d); this._pegDica = d; d.querySelector('button').addEventListener('click', () => this._dicaOff());
       this._pegBtn.addEventListener('pointerdown', () => this._dicaOff()); this._pegBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') this._dicaOff(); });
     }
@@ -8209,7 +8212,7 @@ export class Igreja3DCard extends HTMLElement {
       const d0 = new Date(date); d0.setHours(0, 0, 0, 0);
       for (let m = 0; m <= 1440; m += 5) { const el2 = solarPosition(new Date(d0.getTime() + m * 60000), lat, lon).elevation; if (prev !== null) { if (prev < -0.83 && el2 >= -0.83) rise = d0.getTime() + m * 60000; if (prev >= -0.83 && el2 < -0.83) set = d0.getTime() + m * 60000; } prev = el2; }
       this._sunTimes = { rise, set };
-      const r = rise ? this._dayMin(rise) : 360, s = set ? this._dayMin(set) : 1090, f = (m) => `${clamp(m / 14.39, 0, 100).toFixed(1)}%`;
+      const r = rise ? this._dayMin(rise) : 360, s = set ? this._dayMin(set) : 1090, f = (m) => `calc(12px + (100% - 24px) * ${clamp(m / 1439, 0, 1).toFixed(4)})`;   // a cor sob o CENTRO do polegar (24 px: anda de 12 a 100% − 12)
       if (this._hrRange) this._hrRange.style.setProperty('--sky', `linear-gradient(90deg, #1c2758 ${f(r - 60)}, #ff9a4d ${f(r)}, #8cc8f0 ${f(r + 90)}, #5aa9e6 ${f((r + s) / 2)}, #8cc8f0 ${f(s - 90)}, #ff7f3a ${f(s)}, #1c2758 ${f(s + 60)})`);
     }
     if (!this._clockEl || !this._menuOn) return;   // a hora mora na lista suspensa: fechada, nada a escrever
@@ -8503,10 +8506,10 @@ export class Igreja3DCard extends HTMLElement {
   }
   // aparelhos do cômodo (os de BLOCKS + o que tem luminária/ar dentro dele, ver _buildBlocks)
   _roomKeys(r) { return r ? r.items : []; }
-  // Ligar tudo acende só as luzes (ligar ar, telão e som sem querer gasta e faz barulho); Desligar tudo apaga as luzes e desliga ar, telão
-  // e som (é o "fechar a sala"). Uma chamada em lote (homeassistant.turn_on/turn_off, como as rotinas); luzes/interruptores mudam na hora
+  // Ligar tudo liga luzes e interruptores (o Som do templo), como o _allSet da Casa v1.9 — ar e telão ficam (ligar sem escolher modo/fonte seria
+  // surpresa); Desligar tudo apaga as luzes e desliga ar, telão e som (é o "fechar a sala"). Uma chamada em lote (homeassistant.turn_on/turn_off); luzes/interruptores mudam na hora
   _roomPower(on, keys = this._roomKeys(this._room)) {
-    keys = keys.filter((k) => { const it = ITEMS.find((i) => i.key === k), st = this._state[k]; return (on ? it.kind === 'light' : it.kind !== 'sensor') && !!(st && st.on) !== on; });
+    keys = keys.filter((k) => { const it = ITEMS.find((i) => i.key === k), st = this._state[k]; return (on ? it.kind === 'light' || it.kind === 'switch' : it.kind !== 'sensor') && !!(st && st.on) !== on; });
     if (!keys.length) return;
     for (const k of keys) { const it = ITEMS.find((i) => i.key === k), st = this._state[k]; if ((it.kind === 'light' || it.kind === 'switch') && st && !st.unavailable) this._setItemState(k, { state: on ? 'on' : 'off', attrs: st.attrs }); }
     this._svc('homeassistant', on ? 'turn_on' : 'turn_off', keys.map((k) => this.entity(k)));
@@ -8889,20 +8892,25 @@ export class Igreja3DCard extends HTMLElement {
   _pegBind(btn) {
     let st = null;
     const pt = (e) => ({ x: e.clientX, y: e.clientY - (e.pointerType === 'touch' ? 56 : 0) });   // no toque a mira fica acima do dedo
+    const drop = () => { if (st) clearTimeout(st.t); btn.classList.remove('lift'); st = null; };
     btn.addEventListener('pointerdown', (e) => {
       if (e.button > 0 || this._walkOn) return;
-      st = { id: e.pointerId, x0: e.clientX, y0: e.clientY, live: false }; try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+      const touch = e.pointerType === 'touch';   // v1.8: no toque a linha mora numa lista que rola — o dedo parado levanta o bonequinho, o dedo que corre rola
+      st = { id: e.pointerId, x0: e.clientX, y0: e.clientY, live: false, up: !touch, t: touch ? setTimeout(() => { if (st) { st.up = true; btn.classList.add('lift'); } }, 300) : 0 };
+      try { btn.setPointerCapture(e.pointerId); } catch (_) {}
       e.preventDefault();
     });
+    btn.addEventListener('touchmove', (e) => { if (st && st.up) e.preventDefault(); }, { passive: false });   // levantado: o dedo leva o bonequinho, não a lista
     btn.addEventListener('pointermove', (e) => {
       if (!st || e.pointerId !== st.id) return;
       if (!st.live && Math.hypot(e.clientX - st.x0, e.clientY - st.y0) < 6) return;
+      if (!st.up) { drop(); return; }   // correu antes de levantar: é rolagem da lista (o navegador segue com ela)
       if (!st.live) this._menuSet(false);   // v1.8: o bonequinho sai da lista suspensa; ela fecha e a cena fica livre
       st.live = true; this._pegMove(pt(e));
     });
     const end = (e) => {
       if (!st || e.pointerId !== st.id) return;
-      const s = st; st = null; try { btn.releasePointerCapture(e.pointerId); } catch (_) {}
+      const s = st; drop(); try { btn.releasePointerCapture(e.pointerId); } catch (_) {}
       if (!s.live) return;   // toque: o clique do item (Pessoa liga/desliga)
       this._pegT = performance.now(); this._pegDrop(e.type === 'pointerup' ? pt(e) : null);
     };
@@ -9602,14 +9610,14 @@ export class Igreja3DCard extends HTMLElement {
     this._zEmpty.hidden = !(on && !keep.size);
   }
   // interruptor "Tudo" (v1.8, o da Casa v1.9; bloco e cômodo): ligado se algum aparelho controlável do grupo está; tocar ligado desliga tudo,
-  // desligado acende as luzes (_roomPower). Vira na hora (como o UISwitch) e segura a posição pedida até o HA concordar (no máx. 2 s)
+  // desligado liga luzes e som (_roomPower). Vira na hora (como o UISwitch) e segura a posição pedida até o HA concordar (no máx. 2 s)
   _swFlip(sw, keys) {
     const on = sw.getAttribute('aria-checked') !== 'true'; sw.setAttribute('aria-checked', String(on)); sw.dataset.hold = performance.now() + 2000;
     clearTimeout(this._swT); this._swT = setTimeout(() => this._renderPanel(), 2050); this._roomPower(on, keys);   // o HA não confirmou (aparelho fora do ar): volta ao real
   }
   _swSet(sw, n, on) {
     sw.hidden = sw.previousSibling.hidden = !n; if (+sw.dataset.hold > performance.now() && (sw.getAttribute('aria-checked') === 'true') !== on) return;
-    delete sw.dataset.hold; sw.setAttribute('aria-checked', String(on)); sw.title = on ? 'Desligar tudo (luzes, ar, telão e som)' : 'Acender as luzes (ar, telão e som ficam como estão)';
+    delete sw.dataset.hold; sw.setAttribute('aria-checked', String(on)); sw.title = on ? 'Desligar tudo (luzes, ar, telão e som)' : 'Ligar tudo (luzes e som; ar e telão ficam como estão)';
     if (sw.classList.contains('still')) requestAnimationFrame(() => sw.classList.remove('still'));   // 1º desenho (e troca de cômodo) sem deslize
   }
   // aparelhos ligados agora (sensor não conta)
