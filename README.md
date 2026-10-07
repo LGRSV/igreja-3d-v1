@@ -9,6 +9,16 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.8.0 — blocos do dono, cena limpa, topo em lista suspensa e visual Apple
+
+- **Blocos**: Templo (um cômodo só, com todos os aparelhos) · Operacional (Sala Gilvan, Administrativo, Circulação, Mídia, Voluntariado) · Banheiro (Depósito ao WC Fem., numa lista só) · Sala Pastoral (os fundos, numa lista só) · Hall de entrada (Hall, WCs, Estacionamento, Fachada). A Sala da Família saiu das listas.
+- **Clicar no bloco** abre a janela lateral com os aparelhos dele (ligar/desligar e ⋯), mostrando todos — ligados e desligados.
+- **Interruptor «Tudo»** em cada bloco e cômodo; **ares com Temperatura (− / +) e Oscilar**.
+- **Cena mais limpa**: sem postes (a luz do estacionamento virou 2 refletores na fachada), sem árvores e sem ruas. Paredes da Sala Pastoral mais finas e baixas. **Sol corrigido** (nasce nos fundos, se põe na frente). Vista de cima inclinada para a frente do templo; tocar no Templo centraliza.
+- **Topo**: sai o cartão da esquerda; um botão ⋯ à direita abre a lista suspensa (hora e simulação do sol, clima, Pessoa, Ir para… e opções).
+- **Visual do app Casa da Apple** (igual à Casa v1.9): ícones Phosphor, bloco ligado claro, controles do iOS, vidro só em GPU forte.
+- Ganchos: `setTopNav` aceita `templo · operacional · banheiro · pastoral · hall` (e os ids antigos).
+
 ## Novidades da v1.7.0 — painel da Casa v1.8 e 4 blocos com todas as automações por cômodo
 
 - **4 blocos gerais**, iguais no painel e na Vista de cima: **Templo** (Palco, Plateia) · **Corredor direito** (Sala Gilvan, Administrativo, Circulação, Mídia, Voluntariado, Depósito, Área técnica, WCs) · **Fundos** (Pátio, Almoxarifado, Cozinha, Recepção, Sala Pastoral, Caixa d’água) · **Entrada** (Hall de entrada, Sala da Família, WCs, Estacionamento, Fachada). Cada bloco mostra «N de M ligados» e Ligar/Desligar tudo; dentro, cada cômodo com **todos** os aparelhos que dá para ligar/desligar (luzes, palco, telão, som, ares), cada um uma vez («também …» quando serve a mais de um cômodo). As automações do HA seguem a mesma divisão.
@@ -374,7 +384,7 @@ weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
 latitude: -10.27                 # clima (sempre) e posição do sol fora do HA — no HA o sol usa
 longitude: -48.33                #  a localização configurada no próprio HA (hass.config)
-orientation: 90       # para onde a fachada (lado do estacionamento) aponta: 0=N, 90=L, 180=S, 270=O (Base Church: leste)
+orientation: 90       # sol: com 90 ele nasce nos fundos e se põe na frente (Base Church). Se o sol aparecer do lado errado, use 270
 entities:
   # ---- Templo ----
   palco:          light.palco_rgb              # moving heads do palco (RGB + brilho)
@@ -585,8 +595,8 @@ não no HA nem no GitHub.
 - A geometria é **aproximada** a partir da planta de layout do térreo (Uõma Arquitetura, NOV/2024,
   escala 1:100) — precisão de ~0,1 m, não é levantamento. Alturas externas (8,5 / 4,5 / 3,6 m) e a
   fachada vêm de uma foto; o mobiliário é ilustrativo.
-- **Orientação**: a fachada da Base Church é virada para o **leste** (`orientation: 90`) — o sol da manhã
-  bate na fachada e o da tarde nos fundos. Para outro prédio ajuste (0 = N, 90 = L, 180 = S, 270 = O).
+- **Orientação** (`orientation`, padrão 90): na Base Church o sol nasce nos fundos e se põe na frente (corrigido na v1.8).
+  Para outro prédio, gire em passos de 90 até o sol bater do lado certo.
 - As entidades de `entities:` são exemplos — troque pelos IDs reais antes de usar.
 - O Three.js é carregado do jsDelivr (`three@0.170.0`): o **dispositivo que abre o dashboard** precisa
   de internet; o HA em si não.
