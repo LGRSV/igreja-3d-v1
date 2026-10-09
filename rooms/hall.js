@@ -1,23 +1,22 @@
-function roomHallFamilia(ctx) {
+function roomHall(ctx) {
   // ---------------------------------------------------------------------------
-  // HALL DE ENTRADA (x 4,0–16,05 · z 44,0–49,65) + SALA DA FAMÍLIA (x 0–4,0 ·
-  // z 46,3–49,65) + WC (x 0–1,9) e WC PCD (x 1,9–4,0) · z 44,0–46,3.
+  // HALL DE ENTRADA (x 4,0–16,05 · z 44,0–49,65, mais o canto x 0–4,0 · z 46,3–49,65 —
+  // v1.8: a Sala da Família foi incorporada ao Hall) + WC (x 0–1,9) e WC PCD (x 1,9–4,0) · z 44,0–46,3.
   // Paleta da fachada: preto, ripado de madeira clara, branco e grafite, com
   // acentos âmbar/terracota. Acabamentos reais (fotos/vídeos do cliente):
-  // paredes de destaque em marmorato (x = 4,0 no hall; x = 0 na Sala da Família),
+  // parede de destaque em marmorato (x = 4,0, do lado do hall),
   // WCs no padrão dos banheiros (v3): porcelanato cinza até 1,2 m + mármore
   // "marrom imperador" na parede da bancada / marmorato nas outras, bancada branca
   // com cuba de apoio, torneira de parede, espelho com moldura de LED e lixeira
-  // inox de pedal; faixa azul-marinho no acesso aos banheiros. Sala da Família:
-  // laminado (cartão) + marmorato, sofá cinza, cortina cinza, brinquedos.
+  // inox de pedal; faixa azul-marinho no acesso aos banheiros.
   // Livres: rota porta principal → portas de vidro do templo (x 10,3–13,6),
   // portas em x = 4,0 e a porta do WC (z = 46,3). (A porta do WC Feminino voltou para o hall dos banheiros na v1.5.1.)
   // Escada em U (x 13,62–15,94 · z 44,2–49,55): lance 1 maciço subindo para +z, patamar intermediário (y 1,5) junto à fachada,
   // lance 2 de degraus soltos voltando para −z e patamar/mezanino em y 3,0 sobre a passagem dos banheiros (v1.5.4: voltou ao lugar
   // original, a pedido do cliente; a escada reta da fachada saiu). O MEZANINO ("salinha", piso em y = 3,05) sobre o WC / WC PCD /
-  // Sala da Família continua (laje, guarda-corpo de vidro fechado do lado do hall, janela para a fachada, poltronas, mesinha com
+  // canto do hall continua (laje, guarda-corpo de vidro fechado do lado do hall, janela para a fachada, poltronas, mesinha com
   // abajur, tapete e plantas) — sem escada até ele: chega-se pelo "Ir para…". Peças do mezanino no grupo `ctx.addMezz`.
-  // Objetos do cartão (pendentes do hall e da família, arandelas) NÃO são recriados.
+  // Objetos do cartão (pendentes do hall, arandelas) NÃO são recriados.
   // ---------------------------------------------------------------------------
   const THREE = ctx.THREE, M = ctx.M;
   const box = (...a) => ctx.box(...a), cyl = (...a) => ctx.cyl(...a), sph = (...a) => ctx.sph(...a);
@@ -49,24 +48,12 @@ function roomHallFamilia(ctx) {
   // aceso junto com a luz do hall
   const ledWarm  = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });
   ctx.bindEmissive('hall', ledWarm, 1.0, { min: 0.1 });
-  const ledFam   = new THREE.MeshStandardMaterial({ color: 0xffd9a0, emissive: 0xffb866, emissiveIntensity: 0.9, roughness: 0.5 });   // abajur da salinha: acende com a luz da Sala da Família
-  ctx.bindEmissive('familia', ledFam, 1.0, { min: 0.1 });
   const frost    = std({ color: 0xf1f3f4, roughness: 0.85, transparent: true, opacity: 0.55 });   // vidro jateado
   const rugHall  = std({ color: 0x4a4b50, roughness: 1 });
   const rugEdge  = std({ color: 0x8a6a4c, roughness: 1 });
   const mat      = std({ color: 0x232325, roughness: 1 });
-  // Sala da família
-  const cream    = std({ color: 0xe9e1d3, roughness: 0.95 });
-  const woodLt   = std({ color: 0xd8b98f, roughness: 0.7 });
   const whiteF   = std({ color: 0xf1efea, roughness: 0.6 });
-  const wicker   = std({ color: 0xb9925a, roughness: 0.95 });
-  const net      = std({ color: 0xf4f1ea, roughness: 1, transparent: true, opacity: 0.42 });
-  const toys     = [0xe0574a, 0xf2b53a, 0x4f9bd9, 0x5bb36a, 0x9a6ad0, 0xf08fb0].map((c) => std({ color: c, roughness: 0.6 }));
-  const eva      = [0xf2c14e, 0x7cc4e8, 0x9fd49a, 0xf4a3a0].map((c) => std({ color: c, roughness: 0.95 }));
-  const fabricG  = std({ color: 0x8e9095, roughness: 0.97 });                     // sofá cinza (igual ao voluntariado)
-  const fabricD  = std({ color: 0x55575c, roughness: 0.97 });                     // almofada cinza-escuro
-  const mustard  = std({ color: 0xd9a53a, roughness: 0.95 });                     // almofada/manta mostarda
-  const curtain  = std({ color: 0xcfcdc8, roughness: 1 });                        // cortina cinza-claro
+  const mustard  = std({ color: 0xd9a53a, roughness: 0.95 });                     // quadro mostarda (mezanino)
   // Acabamentos reais do cartão (padrão em espaço de mundo: NÃO clonar, só reusar)
   const MARM = M.marmorato, PORC = M.porcelanatoCinza, MARR = M.marmoreMarrom;
   // WCs
@@ -223,24 +210,25 @@ function roomHallFamilia(ctx) {
   // Planta grande perto do café (o balcão, o painel ripado e o letreiro da parede do templo foram retirados)
   place(bigPlant(1.7, 0.28, 5), 7.3, 49.02);
 
-  // Parede de destaque em MARMORATO (vídeos): face do hall da parede x = 4,0 (portas com 0,1 m de folga,
-  // o revestimento continua acima delas) e o trecho da parede z = 44,0 até o pilar de x 5,2
+  // Parede de destaque em MARMORATO (vídeos): face do hall da parede x = 4,0 (porta com 0,1 m de folga,
+  // o revestimento continua acima dela) e o trecho da parede z = 44,0 até o pilar de x 5,2
   {
     const F4 = 4.075;
-    for (const [a, b] of [[44.075, 44.3], [45.4, 46.5], [47.6, 49.563]]) clad('x', F4, 1, a, b, 0.09, 2.99, MARM);
-    for (const [a, b] of [[44.3, 45.4], [46.5, 47.6]]) clad('x', F4, 1, a, b, 2.28, 2.99, MARM);
+    for (const [a, b] of [[44.075, 44.3], [45.4, 46.375]]) clad('x', F4, 1, a, b, 0.09, 2.99, MARM);   // v1.8: a parede acaba em z 46,375 (a sala virou hall)
+    clad('x', F4, 1, 44.3, 45.4, 2.28, 2.99, MARM);
     clad('z', 44.075, 1, 4.087, 5.19, 0.09, 2.99, MARM);
   }
-  // Banco de madeira ripada entre as portas da parede x = 4,0 + quadro
+  // Banco de madeira ripada na parede x = 4,0 (ao lado da porta do WC PCD) + quadro
   {
     const S = [];
-    for (let i = 0; i < 6; i++) S.push([0.055, 0.04, 1.0, 4.19 + i * 0.065, 0.45, 45.95]);
+    const BZ = 45.88;                                                             // v1.8: 7 cm para dentro (a parede acaba em z 46,375)
+    for (let i = 0; i < 6; i++) S.push([0.055, 0.04, 1.0, 4.19 + i * 0.065, 0.45, BZ]);
     put(mergeBoxes(S, slat));
-    for (const z of [45.55, 46.35]) { put(box(0.36, 0.43, 0.04, black, 4.35, 0.215, z)); }
-    put(box(0.03, 0.8, 0.95, black, 4.102, 1.55, 45.95));
-    put(box(0.012, 0.7, 0.85, slat, 4.123, 1.55, 45.95, nc));
-    put(box(0.014, 0.28, 0.28, felt, 4.134, 1.55, 45.95, nc));
-    put(cyl(0.07, 0.07, 0.016, amber, 4.141, 1.55, 45.95, 20)).rotation.z = Math.PI / 2;
+    for (const z of [BZ - 0.4, BZ + 0.4]) { put(box(0.36, 0.43, 0.04, black, 4.35, 0.215, z)); }
+    put(box(0.03, 0.8, 0.95, black, 4.102, 1.55, BZ));
+    put(box(0.012, 0.7, 0.85, slat, 4.123, 1.55, BZ, nc));
+    put(box(0.014, 0.28, 0.28, felt, 4.134, 1.55, BZ, nc));
+    put(cyl(0.07, 0.07, 0.016, amber, 4.141, 1.55, BZ, 20)).rotation.z = Math.PI / 2;
   }
 
   // Lounge: sofá grafite na parede x = 4,0, mesa de centro, 2 poltronas caramelo e tapete
@@ -415,7 +403,7 @@ function roomHallFamilia(ctx) {
     plane(0.42, 0.16, ex, 12.0, 2.52, 49.532, Math.PI);
   }
 
-  // Placas pretas sobre as portas (atlas numa textura só): Sala da Família, WC PCD e WC
+  // Placas pretas sobre as portas (atlas numa textura só; a linha 0 ficou livre na v1.8): WC PCD e WC
   {
     const tex = ctx.makeTex(1024, (g, s) => {
       const rh = s / 3;
@@ -426,7 +414,6 @@ function roomHallFamilia(ctx) {
         g.fillStyle = '#f4efe6'; g.font = `800 ${rh * 0.3}px ${FONT}`; g.fillText(t1, rh * 1.05, rh * 0.4);
         g.fillStyle = '#f0b36a'; g.font = `500 ${rh * 0.19}px ${FONT}`; g.fillText(t2, rh * 1.05, rh * 0.72);
       };
-      row(0, () => { ctx.logo.draw(g, rh * 0.18, rh * 0.16, rh * 0.68, { layout: 'mark', color: '#f4efe6' }); txt('Sala da Família', 'Base Kids · 0 a 3 anos'); });
       row(1, () => {
         g.fillStyle = '#1f5fae'; rr(g, rh * 0.16, rh * 0.14, rh * 0.72, rh * 0.72, rh * 0.08); g.fill();
         g.strokeStyle = '#ffffff'; g.fillStyle = '#ffffff'; g.lineCap = 'round'; g.lineWidth = rh * 0.06;
@@ -444,7 +431,7 @@ function roomHallFamilia(ctx) {
           if (fem) { g.beginPath(); g.moveTo(cx, rh * 0.42); g.lineTo(cx - rh * 0.13, rh * 0.78); g.lineTo(cx + rh * 0.13, rh * 0.78); g.closePath(); g.fill(); }
           else g.fillRect(cx - rh * 0.08, rh * 0.42, rh * 0.16, rh * 0.38);
         }
-        txt('WC', 'Sala da Família');
+        txt('WC', 'unissex');
       });
     });
     tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
@@ -455,12 +442,11 @@ function roomHallFamilia(ctx) {
       const p = atlasPlane(0.54, 0.18, pm, 1 - (i + 1) / 3, 1 - i / 3);
       p.position.set(x + Math.sin(ry) * 0.0115, y, z + Math.cos(ry) * 0.0115); p.rotation.y = ry; put(p);
     };
-    sign(0, 4.099, 2.42, 47.05, Math.PI / 2);      // hall → Sala da Família
     sign(1, 4.099, 2.42, 44.85, Math.PI / 2);      // hall → WC PCD
-    sign(2, 0.9, 2.42, 46.387, 0);                 // Sala da Família → WC
+    sign(2, 0.9, 2.42, 46.387, 0);                 // hall → WC
   }
 
-  // Tríptico (foto de culto: silhuetas de mãos erguidas contra a luz âmbar do palco) acima do sofá do lounge
+  // Tríptico (foto de culto: silhuetas de mãos erguidas contra a luz âmbar do palco) na parede x = 0 (v1.8: a parede x = 4,0 do lounge saiu)
   {
     const art = canvasMat(1.5 / 0.7, (g, W, Hh) => {
       const bg = g.createLinearGradient(0, 0, 0, Hh); bg.addColorStop(0, '#22140e'); bg.addColorStop(0.55, '#7a3f1f'); bg.addColorStop(0.8, '#d98c3f'); bg.addColorStop(1, '#2a1a12');
@@ -485,9 +471,9 @@ function roomHallFamilia(ctx) {
       }
     }, 0.12);
     [49.11, 48.55, 47.99].forEach((z, i) => {
-      put(box(0.03, 0.72, 0.52, black, 4.103, 1.68, z));
+      put(box(0.03, 0.72, 0.52, black, 0.102, 1.68, z));
       const p = atlasPlane(0.48, 0.68, art, 0, 1, i / 3, (i + 1) / 3);
-      p.position.set(4.12, 1.68, z); p.rotation.y = Math.PI / 2; put(p);
+      p.position.set(0.119, 1.68, z); p.rotation.y = Math.PI / 2; put(p);
     });
   }
 
@@ -571,17 +557,18 @@ function roomHallFamilia(ctx) {
   }
 
   // =====================================================================
-  // MEZANINO / "salinha" (y 3,05) sobre WC / WC PCD / Sala da Família — sem escada até ele (v1.5.4)
+  // MEZANINO / "salinha" (y 3,05) sobre WC / WC PCD / canto do hall — sem escada até ele (v1.5.4)
   // =====================================================================
   const SX = ctx.STAIR, MZ = ctx.MEZZ;
   const mz = (m) => ctx.addMezz(m);                      // peças do mezanino: grupo próprio (some na Vista de cima)
-  // ---- Mezanino: laje sobre WC / WC PCD / Sala da Família (x 0,087–4,075 · z 44,075–49,563), piso em y = 3,05 ----
+  // ---- Mezanino: laje sobre WC / WC PCD / canto do hall (x 0,087–4,075 · z 44,075–49,563), piso em y = 3,05 ----
   {
     const YF = SX.Y, x0 = MZ.x0, x1 = MZ.x1, z0 = MZ.z0, z1 = MZ.z1, WT = 5.92;
     // laje (face de baixo = forro dos cômodos de baixo) e testeira grafite com fita de LED no lado do hall
     mz(box(4.125, 0.12, 5.75, M.wall, 2.0125, 2.97, 46.825));
     mz(box(0.05, 0.23, z1 - z0, mass, 4.1, 2.955, (z0 + z1) / 2));
     mz(box(0.012, 0.012, z1 - z0 - 0.2, ledWarm, 4.1, 2.83, (z0 + z1) / 2, nc));
+    mz(box(0.15, 0.3, z1 - 46.375, M.wall, 4.0, 2.76, (46.375 + z1) / 2));                 // v1.8: viga sob a borda da laje (sem a parede x = 4,0 da Sala da Família), da ponta da parede do WC PCD à fachada
     // piso laminado (mesma textura e escala dos pisos do cartão)
     {
       const tile = 2.4, fw = 4.1 - x0, fd = z1 - z0, map = ctx.TEX.laminate.clone();
@@ -600,7 +587,7 @@ function roomHallFamilia(ctx) {
     mz(box(0.012, wh, z1 - z0, M.wall, 0.081, wcy, (z0 + z1) / 2, nc));
     mz(box(4.0, wh, 0.15, M.wallDark, 2.075, wcy, 44.0));                                   // z = 44,0 (parede do templo)
     mz(box(4.0 - x0, wh, 0.012, M.wall, (x0 + 4.075) / 2, wcy, z0 + 0.006, nc));
-    const WX0 = 0.7, WX1 = 3.2, WY0 = YF + 0.9, WY1 = WY0 + 1.25;                          // janela da fachada (mesmo vão da Sala da Família)
+    const WX0 = 0.7, WX1 = 3.2, WY0 = YF + 0.9, WY1 = WY0 + 1.25;                          // janela da fachada (mesmo vão da janela de baixo)
     for (const [a, b, ya, yb] of [[0.075, 4.075, wy0, WY0], [0.075, 4.075, WY1, WT], [0.075, WX0, WY0, WY1], [WX1, 4.075, WY0, WY1]]) {
       mz(box(b - a, yb - ya, 0.15, M.wallDark, (a + b) / 2, (ya + yb) / 2, 49.65));
       const ia = Math.max(a, x0), ib = Math.min(b, 4.075);
@@ -630,141 +617,13 @@ function roomHallFamilia(ctx) {
       T2.add(box(0.2, 0.03, 0.15, terra, -0.08, 0.535, 0.05)); T2.add(box(0.17, 0.025, 0.13, paper, -0.08, 0.56, 0.05));
       T2.add(cyl(0.05, 0.04, 0.1, ceramic, 0.1, 0.57, -0.05, 10));
       T2.position.set(3.15, YF, 46.35); mz(T2); }
-    { const L = G();                                                                     // abajur (a luz real vem do cartão: fixture da Sala da Família)
+    { const L = G();                                                                     // abajur (a luz real vem do cartão: fixture escondida da luz do hall)
       L.add(cyl(0.06, 0.07, 0.025, black, 0, 0.0125, 0, 14)); L.add(cyl(0.01, 0.01, 0.3, black, 0, 0.175, 0, 6));
-      L.add(cyl(0.085, 0.13, 0.17, ledFam, 0, 0.4, 0, 18));
+      L.add(cyl(0.085, 0.13, 0.17, ledWarm, 0, 0.4, 0, 18));
       L.position.set(3.27, YF + 0.5175, 46.45); mz(L); }
     { const c = cycas(0.5, 0.55, 5); c.position.set(0.55, YF, 48.95); mz(c); }
     { const c = bigPlant(1.6, 0.24, 3); c.position.set(0.55, YF, 44.65); mz(c); }
     [[45.6, 0.5, mustard], [46.3, 0.42, terra]].forEach(([z, s, c]) => { mz(box(0.03, s, s, black, x0 + 0.02, YF + 1.5, z)); mz(box(0.012, s - 0.08, s - 0.08, c, x0 + 0.04, YF + 1.5, z, nc)); });
-  }
-
-  // =====================================================================
-  // SALA DA FAMÍLIA (x 0,09–3,92 · z 46,38–49,56)
-  // =====================================================================
-  {
-    // parede de destaque em marmorato (x = 0, face 0,087), como a sala ampla do v1
-    clad('x', 0.087, 1, 46.375, 49.563, 0.07, 2.99, MARM);
-    // Sofá cinza na parede x = 0 (de frente para a TV), almofadas mostarda/grafite e manta
-    const S = G();
-    S.add(box(1.8, 0.26, 0.8, fabricG, 0, 0.28, 0));
-    S.add(box(1.8, 0.44, 0.17, fabricG, 0, 0.62, -0.315));
-    for (const sx of [-1, 1]) S.add(box(0.14, 0.22, 0.8, fabricG, sx * 0.83, 0.52, 0));
-    for (const sx of [-1, 1]) S.add(box(0.74, 0.1, 0.58, cream, sx * 0.38, 0.46, 0.08));
-    S.add(rot(box(0.36, 0.34, 0.1, mustard, -0.5, 0.66, -0.17), -0.15, 0.2));
-    S.add(rot(box(0.34, 0.32, 0.1, fabricD, 0.5, 0.66, -0.17), -0.15, -0.2));
-    S.add(rot(box(0.6, 0.02, 0.5, cream, 0.45, 0.52, 0.08), 0, 0.1));
-    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) S.add(cyl(0.016, 0.012, 0.15, woodLt, sx * 0.82, 0.075, sz * 0.33, 6));
-    place(S, 0.58, 48.42, Math.PI / 2);
-
-    // Poltrona de amamentação (balanço) + pufe, voltada para a TV
-    const P = G();
-    P.add(cyl(0.3, 0.32, 0.03, woodLt, 0, 0.015, 0, 20));
-    P.add(cyl(0.05, 0.06, 0.2, woodLt, 0, 0.13, 0, 10));
-    P.add(box(0.7, 0.2, 0.66, cream, 0, 0.36, 0.02));
-    P.add(rot(box(0.7, 0.7, 0.16, cream, 0, 0.78, -0.27), -0.14));
-    for (const sx of [-1, 1]) { const a = cyl(0.09, 0.09, 0.66, cream, sx * 0.33, 0.54, 0.02, 12); a.rotation.x = Math.PI / 2; P.add(a); }
-    P.add(box(0.52, 0.08, 0.5, fabricG, 0, 0.5, 0.05));
-    P.add(rot(box(0.4, 0.3, 0.09, mustard, 0, 0.72, -0.16), -0.15));
-    place(P, 2.15, 46.98, 0.72);
-    const pf = cyl(0.2, 0.2, 0.34, fabricD, 2.64, 0.17, 47.5, 18); put(pf);
-    put(cyl(0.2, 0.2, 0.02, cream, 2.64, 0.35, 47.5, 18));
-
-    // Tapete infantil de EVA (placas coloridas) + brinquedos
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) if (!(i >= 2 && j === 2)) put(box(0.52, 0.014, 0.52, eva[(i + j) % 4], 1.4 + i * 0.53, 0.009, 47.95 + j * 0.53, nc));
-    // Cercadinho (1,0 × 1,0) com urso e bola
-    {
-      const cx = 1.72, cz = 48.82, s = 0.96, h = 0.66;
-      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put(cyl(0.022, 0.022, h, whiteF, cx + sx * s / 2, h / 2 + 0.02, cz + sz * s / 2, 8));
-      for (const sz of [-1, 1]) { put(box(s, 0.035, 0.04, whiteF, cx, h + 0.02, cz + sz * s / 2)); put(box(s - 0.04, h - 0.1, 0.008, net, cx, h / 2 + 0.04, cz + sz * s / 2, nc)); }
-      for (const sx of [-1, 1]) { put(box(0.04, 0.035, s, whiteF, cx + sx * s / 2, h + 0.02, cz)); put(box(0.008, h - 0.1, s - 0.04, net, cx + sx * s / 2, h / 2 + 0.04, cz, nc)); }
-      put(box(s - 0.02, 0.06, s - 0.02, cream, cx, 0.05, cz));
-      // urso de pelúcia
-      const bx = cx - 0.2, bz = cz - 0.18, bear = std({ color: 0xb48a60, roughness: 1 });
-      put(sph(0.1, bear, bx, 0.17, bz)); put(sph(0.075, bear, bx, 0.32, bz));
-      put(sph(0.028, bear, bx - 0.055, 0.38, bz)); put(sph(0.028, bear, bx + 0.055, 0.38, bz));
-      put(sph(0.03, cream, bx, 0.31, bz + 0.065));
-      put(sph(0.09, toys[1], cx + 0.2, 0.17, cz + 0.2));
-      put(box(0.08, 0.08, 0.08, toys[2], cx + 0.25, 0.12, cz - 0.2));
-    }
-    // brinquedos soltos sobre o EVA
-    [[2.55, 48.0, 0], [2.66, 48.12, 3], [2.62, 48.04, 5]].forEach(([x, z, c], i) => { const b = box(0.09, 0.09, 0.09, toys[c], x, 0.06 + (i === 2 ? 0.09 : 0), z); b.rotation.y = i * 0.5; put(b); });
-    put(sph(0.11, toys[0], 3.0, 0.125, 48.4));
-    put(cyl(0.012, 0.012, 0.22, whiteF, 2.4, 0.13, 48.55, 6));
-    put(cyl(0.07, 0.07, 0.02, whiteF, 2.4, 0.025, 48.55, 12));
-    [0.065, 0.055, 0.045, 0.035].forEach((r, i) => { const t = new THREE.Mesh(new THREE.TorusGeometry(r, 0.018, 8, 18), toys[i + 1]); t.rotation.x = Math.PI / 2; t.position.set(2.4, 0.05 + i * 0.038, 48.55); t.castShadow = true; put(t); });
-
-    // TV transmitindo o culto (parede x = 4,0) + rack baixo com cestos
-    put(box(0.36, 0.44, 1.2, whiteF, 3.73, 0.26, 48.55));
-    put(box(0.38, 0.03, 1.22, woodLt, 3.73, 0.495, 48.55));
-    for (const z of [48.25, 48.85]) put(box(0.02, 0.26, 0.5, wicker, 3.54, 0.25, z));
-    for (const z of [48.1, 48.9]) put(box(0.04, 0.04, 0.04, woodLt, 3.73, 0.02, z));
-    put(box(0.05, 0.64, 1.1, black, 3.9, 1.5, 48.55));
-    const live = canvasMat(1.04 / 0.58, (g, W, Hh) => {
-      const bg = g.createLinearGradient(0, 0, 0, Hh); bg.addColorStop(0, '#1a1036'); bg.addColorStop(0.7, '#3a1f6e'); bg.addColorStop(1, '#0d0a18');
-      g.fillStyle = bg; g.fillRect(0, 0, W, Hh);
-      // feixes de luz do palco
-      for (let i = 0; i < 5; i++) {
-        const x = W * (0.12 + i * 0.19), gr = g.createLinearGradient(x, 0, x, Hh * 0.8);
-        gr.addColorStop(0, i % 2 ? 'rgba(120,160,255,0.55)' : 'rgba(190,120,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = gr; g.beginPath(); g.moveTo(x - W * 0.01, 0); g.lineTo(x + W * 0.01, 0); g.lineTo(x + W * 0.09, Hh * 0.8); g.lineTo(x - W * 0.09, Hh * 0.8); g.closePath(); g.fill();
-      }
-      // telão ao fundo com o logo
-      g.fillStyle = '#0b0b10'; g.fillRect(W * 0.34, Hh * 0.14, W * 0.32, Hh * 0.3);
-      ctx.logo.draw(g, W * 0.5 - Hh * 0.105, Hh * 0.158, Hh * 0.21, { layout: 'full', color: '#f4efe6' });
-      g.textBaseline = 'middle';
-      // palco e banda (silhuetas)
-      g.fillStyle = '#0a0812'; g.fillRect(0, Hh * 0.62, W, Hh * 0.38);
-      g.fillStyle = '#120d20';
-      [0.2, 0.36, 0.5, 0.64, 0.8].forEach((x, i) => { const hh = Hh * (i === 2 ? 0.2 : 0.17); g.fillRect(W * x - W * 0.014, Hh * 0.62 - hh, W * 0.028, hh); g.beginPath(); g.arc(W * x, Hh * 0.62 - hh - Hh * 0.025, Hh * 0.03, 0, Math.PI * 2); g.fill(); });
-      // plateia de mãos erguidas
-      g.fillStyle = '#050407';
-      for (let i = 0; i < 14; i++) { const x = W * (0.03 + i * 0.072); g.beginPath(); g.arc(x, Hh * 0.93, Hh * 0.06, 0, Math.PI * 2); g.fill(); if (i % 3 === 0) g.fillRect(x + Hh * 0.02, Hh * 0.72, Hh * 0.02, Hh * 0.18); }
-      // selo AO VIVO + tarja
-      g.fillStyle = '#e02424'; rr(g, W * 0.04, Hh * 0.05, W * 0.15, Hh * 0.09, Hh * 0.02); g.fill();
-      g.fillStyle = '#fff'; g.font = `700 ${Hh * 0.055}px ${FONT}`; g.textAlign = 'left'; g.fillText('● AO VIVO', W * 0.055, Hh * 0.097);
-      g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(0, Hh * 0.8, W, Hh * 0.12);
-      g.fillStyle = '#f0b36a'; g.fillRect(0, Hh * 0.8, W * 0.012, Hh * 0.12);
-      g.fillStyle = '#fff'; g.font = `700 ${Hh * 0.05}px ${FONT}`; g.fillText('Culto de Celebração', W * 0.04, Hh * 0.845);
-      g.fillStyle = '#d6d0c6'; g.font = `400 ${Hh * 0.04}px ${FONT}`; g.fillText('Base Church · transmissão para a Sala da Família', W * 0.04, Hh * 0.89);
-    }, 0.95);
-    ctx.bindEmissive('familia', live, 0.95, { min: 0.35 });
-    plane(1.04, 0.58, live, 3.87, 1.5, 48.55, -Math.PI / 2);
-
-    // Trocador (fraldário) sob a janela: cômoda branca, colchonete e cestos
-    {
-      const cx = 2.92, cz = 49.19;
-      put(box(0.96, 0.86, 0.5, whiteF, cx, 0.45, cz));
-      for (let i = 0; i < 3; i++) { put(box(0.9, 0.24, 0.012, woodLt, cx, 0.2 + i * 0.27, cz - 0.255)); put(box(0.14, 0.015, 0.02, M.chrome, cx, 0.27 + i * 0.27, cz - 0.268)); }
-      put(box(0.96, 0.03, 0.52, woodLt, cx, 0.895, cz));
-      put(box(0.74, 0.06, 0.46, fabricG, cx - 0.08, 0.94, cz));
-      for (const sx of [-1, 1]) put(box(0.05, 0.1, 0.46, fabricG, cx - 0.08 + sx * 0.36, 0.96, cz));
-      put(box(0.16, 0.12, 0.2, wicker, cx + 0.38, 0.97, cz));
-      for (let i = 0; i < 3; i++) put(box(0.13, 0.03, 0.15, whiteF, cx + 0.38, 1.02 + i * 0.032, cz));
-      put(box(0.12, 0.06, 0.08, toys[4], cx + 0.39, 1.14, cz + 0.02));
-    }
-    // Cortinas leves (laterais da janela x 0,6–3,2) e varão
-    put(cyl(0.012, 0.012, 3.5, black, 1.9, 2.35, 49.5, 8)).rotation.z = Math.PI / 2;
-    for (const x of [0.36, 3.44]) { put(box(0.34, 2.28, 0.04, curtain, x, 1.2, 49.5)); for (let i = 0; i < 3; i++) put(box(0.02, 2.26, 0.02, curtain, x - 0.11 + i * 0.11, 1.2, 49.47, nc)); }
-    // Frase adesiva na parede z = 46,3 (acima da prateleira)
-    {
-      const dec = canvasMat(1.5 / 0.3, (g, W, Hh) => {
-        g.clearRect(0, 0, W, Hh); g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillStyle = '#6f8a6a'; g.font = `italic 600 ${Hh * 0.38}px Georgia, "Times New Roman", serif`; g.fillText('Deixai vir a mim as criancinhas', W / 2, Hh * 0.36);
-        g.fillStyle = '#c47f68'; g.font = `600 ${Hh * 0.2}px ${FONT}`; g.fillText('MARCOS 10.14', W / 2, Hh * 0.8);
-      }, 0, true);
-      dec.polygonOffset = true; dec.polygonOffsetFactor = -2; dec.polygonOffsetUnits = -2;
-      plane(1.5, 0.3, dec, 2.2, 2.08, 46.379);
-    }
-    // Quadros na parede x = 0 (acima do sofá) e prateleira com livrinhos na parede z = 46,3
-    [[47.9, 0.42, toys[2]], [48.45, 0.5, mustard], [49.0, 0.42, cream]].forEach(([z, s, c]) => {
-      put(box(0.025, s, s, black, 0.112, 1.55, z)); put(box(0.012, s - 0.08, s - 0.08, c, 0.127, 1.55, z, nc));
-    });
-    put(box(1.1, 0.03, 0.2, woodLt, 2.1, 1.55, 46.48));
-    for (let i = 0; i < 7; i++) put(box(0.03, 0.2 - (i % 3) * 0.02, 0.15, toys[i % 6], 1.7 + i * 0.045, 1.66 - (i % 3) * 0.01, 46.49));
-    put(sph(0.07, std({ color: 0xb48a60, roughness: 1 }), 2.35, 1.64, 46.49));
-    put(cyl(0.06, 0.05, 0.12, ceramic, 2.55, 1.63, 46.49, 12));
-    for (let i = 0; i < 3; i++) put(sph(0.06, frond2, 2.55 + (i - 1) * 0.04, 1.74, 46.49));
   }
 
   // =====================================================================
@@ -909,8 +768,6 @@ function roomHallFamilia(ctx) {
     put(cyl(0.1, 0.09, 0.5, black, 10.35, 0.25, 49.42, 16));
     put(cyl(0.085, 0.085, 0.01, felt, 10.35, 0.505, 49.42, 16));
     for (const [dx, dz, ry] of [[-0.03, 0.02, 0.2], [0.035, -0.015, -0.35]]) { const u = cyl(0.014, 0.02, 0.62, caramel, 10.35 + dx, 0.62, 49.42 + dz, 8); u.rotation.z = ry * 0.4; u.rotation.x = ry * 0.3; put(u); }
-    // Sala da Família: interruptor ao lado da porta (face x 3,925) e tomada baixa na parede de marmorato
-    plate('z', 3.925, -1, 47.85, 1.15, 'sw'); plate('z', 0.099, 1, 48.6, 0.3, 'out');
     // WC / WC PCD: ralos
     drain(1.35, 45.0); drain(3.4, 45.4);
   }

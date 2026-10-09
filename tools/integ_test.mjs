@@ -1,12 +1,18 @@
-// Convivência (v1.4): Pessoa × Vista de cima × Recentrar × Fachada × painel × voo do ar × governador.
+// Convivência (v1.4; v1.6.0: botões pelo menu ☰ Opções): Pessoa × Vista de cima × Recentrar × Fachada × painel × voo do ar × governador.
 // Uso: THREE_LOCAL=<three.module.min.js> node tools/integ_test.mjs <index.html>
 import { open, proj } from './lib.mjs';
 const [,, html] = process.argv;
 const t = await open(html); const { page, S, ev } = t; const R = {};
 const C = (f, a) => page.evaluate(`(${f})(document.querySelector('igreja3d-card'), ${JSON.stringify(a)})`);
 const st = () => C((c) => ({ top: !!c._topView, lvl: c.getTopNav().level, room: c.getTopNav().room, walk: !!c._walkOn, navVisible: !c._navRow.hidden, joy: !c._joy.hidden, panel: c._panelOpen, orbit: c._orbit.enabled, roof: !!c._roofOn }));
-const btn = (label) => page.locator('igreja3d-card').locator('.hud button', { hasText: new RegExp('^' + label + '$') }).first().click();
-// (h) painel aberto + Pessoa
+// v1.6.0: os botões do topo moraram no menu ☰ Opções — abre o menu se o item não está à vista, clica e fecha o menu (como os botões de antes)
+const btn = async (label) => {
+  const card = page.locator('igreja3d-card'), it = card.locator('.hud button', { hasText: new RegExp('^' + label + '$') }).first();
+  if (!(await it.isVisible())) await card.locator('.menubtn').click();
+  await it.click(); await C((c) => c._menuSet(false));
+};
+// (h) painel aberto + Pessoa (v1.6.1: o cartão abre na Vista de cima — sai dela antes)
+await C((c) => c._setTopView(false)); await S();
 R.h0 = await st();
 await btn('Pessoa'); await S(); R.h1 = await st();
 await page.keyboard.press('Escape'); await S(); R.h2 = await st();
@@ -27,7 +33,7 @@ await page.keyboard.press('Escape'); await S(); await C((c) => c.setTopNav('ala'
 const cam0 = await C((c) => c._orbit.targetGoal.toArray()); await C((c) => c._flyToAir('ac_midia')); await S(); R.g2 = { top: (await st()).top, moved: JSON.stringify(cam0) !== JSON.stringify(await C((c) => c._orbit.targetGoal.toArray())) };
 // (e) chips do ar em nível 2 (selo)
 await C((c) => c.setTopNav('ala', 'midia')); await S();
-const a0 = await C((c) => c._state.ac_midia.on); await page.locator('igreja3d-card').locator('.nav .chip[data-key=ac_midia]').click(); await page.waitForTimeout(1500); await S();
+const a0 = await C((c) => c._state.ac_midia.on); await page.locator('igreja3d-card').locator('.room .chip[data-key=ac_midia]').click(); await page.waitForTimeout(1500); await S();
 R.e = { before: a0, after: await C((c) => c._state.ac_midia.on), top: (await st()).top, badge: await C((c) => (c._items.get('ac_midia').badges || []).some((b) => b.visible)) };
 await C((c) => c._setTopView(false)); await S();
 // (d) andar em tempo real: governador reage; ao parar, exatamente 1 quadro nítido

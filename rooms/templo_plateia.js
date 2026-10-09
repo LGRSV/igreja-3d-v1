@@ -189,10 +189,14 @@ function roomTemploPlateia(ctx) {
   // Lateral x = 16,05: os pilares pretos acima da parede de 3 m e as 2 vigas saíram (pedido do cliente); o cordão de
   // lampadinhas desse lado fica suspenso no mesmo lugar
 
-  // Cordão de lampadinhas quentes nos dois beirais (v6/v8)
-  for (const [x, y] of [[0.26, 8.3], [15.86, 8.3]]) {
-    bx(bCable, 0.012, 0.012, FZ1 - FZ0 - 0.3, x, y + 0.05, (FZ0 + FZ1) / 2);
-    for (let z = FZ0 + 0.3; z <= FZ1 - 0.25; z += 0.62) put(bBulb, sphGeo(0.036), mat4(x, y, z));
+  // Cordão de lampadinhas quentes nos dois beirais (v6/v8). O do lado x = 15,86 (solto, sem parede alta) some na Vista de cima:
+  // inclinada para o palco, ela o projetava como um risco no meio dos bancos (v1.8)
+  const side = new THREE.Group(); side.userData.keep = true; cover.add(side);
+  Object.defineProperty(side, 'visible', { configurable: true, get: () => !(ctx.top && ctx.top()), set: () => {} });
+  const sCable = batch(blackPl, false, side), sBulb = batch(bulbMat, false, side);
+  for (const [x, y, bc, bb] of [[0.26, 8.3, bCable, bBulb], [15.86, 8.3, sCable, sBulb]]) {
+    bx(bc, 0.012, 0.012, FZ1 - FZ0 - 0.3, x, y + 0.05, (FZ0 + FZ1) / 2);
+    for (let z = FZ0 + 0.3; z <= FZ1 - 0.25; z += 0.62) put(bb, sphGeo(0.036), mat4(x, y, z));
   }
 
   // 2ª treliça de luz (preta, box truss 0,3 × 0,3) sobre a plateia, paralela ao palco, suspensa (sem correntes)

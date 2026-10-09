@@ -9,6 +9,48 @@ som e dos ares acendem com o estado e a porta de vidro abre quando o sensor da p
 É o mesmo motor do cartão `casa3d-card` (repositório [casa-chefe](https://github.com/LGRSV/casa-chefe)),
 refeito para a planta da igreja.
 
+## Novidades da v1.8.0 — blocos do dono, cena limpa, topo em lista suspensa e visual Apple
+
+- **Blocos**: Templo (um cômodo só, com todos os aparelhos) · Operacional (Sala Gilvan, Administrativo, Circulação, Mídia, Voluntariado) · Banheiro (Depósito ao WC Fem., numa lista só) · Sala Pastoral (os fundos, numa lista só) · Hall de entrada (Hall, WCs, Estacionamento, Fachada). A Sala da Família saiu das listas.
+- **Clicar no bloco** abre a janela lateral com os aparelhos dele (ligar/desligar e ⋯), mostrando todos — ligados e desligados.
+- **Interruptor «Tudo»** em cada bloco e cômodo; **ares com Temperatura (− / +) e Oscilar**.
+- **Cena mais limpa**: sem postes (a luz do estacionamento virou 2 refletores na fachada), sem árvores e sem ruas. Paredes da Sala Pastoral mais finas e baixas. **Sol corrigido** (nasce nos fundos, se põe na frente). Vista de cima inclinada para a frente do templo; tocar no Templo centraliza.
+- **Sala da Família**: v1.8: a Sala da Família foi incorporada ao Hall (saem as paredes, os móveis e a luz `familia`/`light.sala_familia`; o abajur do mezanino acende com a luz do hall).
+- **Topo**: sai o cartão da esquerda; um botão ⋯ à direita abre a lista suspensa (hora e simulação do sol, clima, Pessoa, Ir para… e opções).
+- **Visual do app Casa da Apple** (igual à Casa v1.9): ícones Phosphor, bloco ligado claro, controles do iOS, vidro só em GPU forte.
+- Ganchos: `setTopNav` aceita `templo · operacional · banheiro · pastoral · hall` (e os ids antigos).
+
+## Novidades da v1.7.0 — painel da Casa v1.8 e 4 blocos com todas as automações por cômodo
+
+- **4 blocos gerais**, iguais no painel e na Vista de cima: **Templo** (Palco, Plateia) · **Corredor direito** (Sala Gilvan, Administrativo, Circulação, Mídia, Voluntariado, Depósito, Área técnica, WCs) · **Fundos** (Pátio, Almoxarifado, Cozinha, Recepção, Sala Pastoral, Caixa d’água) · **Entrada** (Hall de entrada, Sala da Família, WCs, Estacionamento, Fachada). Cada bloco mostra «N de M ligados» e Ligar/Desligar tudo; dentro, cada cômodo com **todos** os aparelhos que dá para ligar/desligar (luzes, palco, telão, som, ares), cada um uma vez («também …» quando serve a mais de um cômodo). As automações do HA seguem a mesma divisão.
+- **Painel novo** (o mesmo da Casa v1.8): coluna à **esquerda** com o título em cima e **borda arrastável** (compacta · padrão · larga, lembrada) no desktop e no tablet deitado; **folha de baixo com 3 alturas** no celular e no tablet em pé; resumo do que está ligado e filtro Ligados/Todos; o cômodo tocado aparece **no próprio painel** (sai o painel da esquerda da v1.6.1); paleta âmbar (ligado) + grafite; mais leve (sem desfoque no painel, um desenho por atualização do HA).
+- **Sem piscadas pretas** ao mexer na tela (o canvas só muda de tamanho quando precisa e é redesenhado na hora).
+- Tocar nos objetos continua em **2 toques** (balão com nome e estado; o 2º toque ou o botão executa), agora com a cena parada para o 2º toque acertar.
+- Ganchos: `setTopNav(bloco, cômodo)` usa os blocos `templo · ala · fundos · entrada` (`hall` e `frente` viraram `entrada`).
+
+## Novidades da v1.6.1 — painel do cômodo, Vista de cima de frente para o palco
+
+- **Abre na Vista de cima** (nível 0) na demo e no HA; **Recentrar** volta a ela; sair pelo menu (Vista de cima) ou entrar na Pessoa funciona como antes (com `fachada: true` no YAML abre na maquete de sempre).
+- **Vista de cima de frente para o palco**: o nível 0 olha o templo do lado da plateia (câmera em +x olhando para −x), alta e oblíqua (~38° acima do horizonte), com a largura do templo ocupando a tela (paisagem e retrato); bloco e cômodo continuam retos de cima, agora com o palco em cima também na paisagem (aproximar não dá meia-volta).
+- **Painel do cômodo à esquerda** (no celular, folha compacta embaixo) nos níveis bloco e cômodo: título, "N de M ligados", **Ligar tudo** (só as luzes) / **Desligar tudo** (luzes, ar, telão e som) em uma chamada `homeassistant.turn_on/turn_off`, os aparelhos com estado, "Entrar aqui" e as **automações do HA do cômodo** (casadas pelo nome, com ativar/desativar e executar); no bloco, os cômodos com "N de M ligados". A trilha do topo ficou só com Voltar + migalhas, e a cena é enquadrada ao lado do painel.
+- Na Vista de cima o **painel lateral direito recolhe** e volta ao sair (se estava aberto).
+- **Painel lateral mais estreito e enxuto**: `clamp(260px, 26%, 320px)`, blocos e espaçamentos menores.
+- **Clima minimalista**: no título, ao lado do relógio, só ícone + temperatura (condição no title/aria-label); os detalhes (cidade, condição, sensação, vento, atualizado) estão no topo do menu ☰. Sem rede: nada no título e "Clima indisponível" no menu. O cartão flutuante saiu.
+- **Gestos de toque na maquete** (o mouse continua igual): 1 dedo gira com sensibilidade pela largura da tela e trava o eixo depois de ~10 px; solto com velocidade, o giro continua e desacelera; 2 dedos como num mapa (pinça = zoom no ponto entre os dedos, torção = gira, arrasto = pan), cada gesto com seu limiar; zoom e inclinação resistem nos limites e voltam ao soltar.
+- **Selecionar antes de agir** na maquete: o 1º toque num ambiente/aparelho realça e mostra um balão com nome, estado e "Acender/Apagar" (ou Ligar/Desligar); o 2º toque no mesmo alvo em até 5 s ou o botão executa; Esc ou tocar no vazio limpa. Os blocos dos painéis continuam diretos; no modo Pessoa o toque no piso continua andando até lá.
+- **Bonequinho "Andar"** com o nome ao lado (no celular só o ícone) e, no primeiro acesso, uma dica apontando para ele que só some quando ele é usado ou a dica é fechada (lembrada em `localStorage`, chave `igreja3d.dica_pessoa`); as dicas do título e do modo Pessoa somem na primeira interação, não por tempo.
+- **Visão noturna** de dia: o item mostra "só à noite" (e o porquê no title).
+- Demo: tocar nos blocos de sensor (presença, temperatura, porta) mostra um aviso com nome e estado; as chamadas em lote funcionam no `hass` simulado.
+
+## Novidades da v1.6.0 — painel lateral e menu de opções
+
+- **Painel lateral** no lugar do painel de baixo. Desktop/tablet: coluna à direita (abaixo dos botões do topo até o pé do cartão, largura ~34 %, entre 272 e 380 px), mesmo vidro escuro/âmbar, agora mais pesado (blur e sombra maiores). Cabeçalho com o contador "N de M luzes acesas" e o botão **→ recolher**; abas Ambientes · Automações · Atividade num segmentado; filtros por área (Todos, Templo, Entrada, Administração, Apoio) quebram em 2 linhas; blocos em grade de 2 colunas (ícone à esquerda); a folha de controle continua presa ao pé da coluna. Recolhido, sobra a aba **‹ Painel** na borda direita com o número de luzes acesas. A **cena é enquadrada à esquerda do painel** (deslocamento horizontal da câmera): a igreja e a Vista de cima não ficam escondidas atrás dele; a trilha da Vista de cima e a lista *Ir para…* também ficam à esquerda da coluna.
+- **Celular** (cartão ≤ 640 px): o painel é uma **gaveta que entra pela direita** (até 88 % da largura, 360 px no máximo, da linha de baixo do cabeçalho até o pé), com véu escuro sobre a cena; começa recolhida (a aba "Painel" abre). Fecha pelo botão →, tocando no véu, com Esc ou **arrastando para a direita**: depois de ~10 px na horizontal a gaveta segue o dedo 1:1, além do aberto resiste (rubber band), ao soltar decide pela velocidade (projeção do movimento) e assenta com uma mola (feita à mão, sem biblioteca); dá para agarrar a gaveta no meio da animação. Não há reenquadramento no celular (a gaveta fica por cima). No modo Pessoa a gaveta fecha (no desktop a coluna fica).
+- **Menu ☰ Opções** no canto superior direito no lugar da fileira de botões, em seções: **Ambiente** (Auto/Dia/Noite + Visão noturna) · **Vista** (Rótulos, Fachada, Vista de cima, Recentrar) · **Navegação** (Pessoa, Ir para um ambiente…) · **Painel** (Painel lateral). Liga/desliga com interruptor; nasce do botão (escala 0,96 → 1, sem passada). Fecha no clique de novo, Esc, clique fora e depois de Recentrar, Ir para… e de entrar na Pessoa. Teclado: Enter/↓ abre com o foco no 1º item, ↑/↓/Home/End andam, Tab sai; com o menu aberto o **Esc só fecha o menu** (não sai da Pessoa nem volta um nível na Vista de cima). Fora do menu ficam o **bonequinho** (arrastar até a maquete) e, no modo Pessoa, **Ir para…**. No celular o menu ocupa a largura e rola.
+- **Clima** foi para o **canto inferior esquerdo** (o direito é do painel); some no modo Pessoa (lugar do joystick) e sob a gaveta do celular.
+- Acessibilidade: `prefers-reduced-motion` troca deslize/mola/escala por um fade curto; `prefers-reduced-transparency` deixa painel/menu quase sólidos sem blur; `prefers-contrast: more` usa fundo sólido e borda clara. Retorno visual no toque (escala 0,97) nos botões.
+- Teste novo: `tools/ui_test.mjs` (menu, painel, gaveta com toque via CDP); `tools/integ_test.mjs` usa os botões pelo menu.
+
 ## Novidades da v1.5.5 — Fachada automática no modo Pessoa
 
 - Ao entrar na visão de **Pessoa** a **Fachada** liga sozinha: paredes altas, forro e telhado aparecem, então por fora se vê a fachada completa e por dentro o teto (some o céu sobre as salas). Ao sair, a Fachada volta a como estava. O botão Fachada continua valendo durante o passeio. Opção `fachada_pessoa: false` desliga esse comportamento.
@@ -125,7 +167,7 @@ Voltou (e ficou melhor) a animação dos ares: **cada aparelho tem a sua própri
 - **‹ Voltar** (ou Esc / Backspace) sobe um nível; na planta inteira, sai da Vista de cima. A câmera voa suave (3 s) e, com
   `prefers-reduced-motion`, corta direto. Os rótulos mostram só o que está dentro do bloco/cômodo. Redimensionar ou abrir o
   painel re-enquadra o **mesmo nível**. Ligar um ar na Vista de cima não tira você da planta (o selo do ar já mostra o estado).
-- Ganchos: `setTopNav('ala', 'midia')` (liga a Vista de cima se preciso e navega direto; blocos `templo · hall · ala · fundos · frente`)
+- Ganchos: `setTopNav('ala', 'midia')` (liga a Vista de cima se preciso e navega direto; blocos `templo · ala · fundos · entrada` desde a v1.7)
   e `getTopNav()` → `{ level, block, room }`.
 
 **Visão de pessoa (botão *Pessoa*).** Câmera na altura dos olhos (1,6 m; 1,0 m a mais em cima do palco), começando na calçada,
@@ -333,17 +375,17 @@ mode: auto            # auto = segue sun.sun | day | night
 night_vision: true    # à noite, luz de lua + ambiente frio: a igreja inteira fica legível
 labels: true          # nomes dos ambientes flutuando (somem no modo Fachada)
 height: calc(100vh - 100px)   # numa vista com seções use algo como 560px
-panel: true           # painel inferior aberto ao iniciar (false = recolhido)
+panel: true           # painel lateral aberto ao iniciar (false = recolhido); no celular a gaveta sempre começa recolhida
 fachada: false        # começa no modo Fachada (paredes altas, cobertura e fachada completa)
 quality: auto         # auto (padrão: alta com GPU dedicada; media em PC com vídeo integrado; leve em celular/tablet ou ≤ 4 GB de RAM;
                       #   min em renderizador por software, ≤ 2 GB ou ≤ 2 núcleos com ≤ 4 GB) · alta · media · leve · min
 entorno: auto         # ruas, árvores de rua e postes: auto (some só no leve) · true · false
-weather: true         # widget de clima ao vivo no canto inferior direito (Open-Meteo, sem chave)
+weather: true         # widget de clima ao vivo no canto inferior esquerdo (Open-Meteo, sem chave)
 weather_city: 'Palmas, TO'
 timezone: America/Sao_Paulo      # relógio e nascer/pôr do sol (no HA vale o fuso do próprio HA)
 latitude: -10.27                 # clima (sempre) e posição do sol fora do HA — no HA o sol usa
 longitude: -48.33                #  a localização configurada no próprio HA (hass.config)
-orientation: 90       # para onde a fachada (lado do estacionamento) aponta: 0=N, 90=L, 180=S, 270=O (Base Church: leste)
+orientation: 90       # sol: com 90 ele nasce nos fundos e se põe na frente (Base Church). Se o sol aparecer do lado errado, use 270
 entities:
   # ---- Templo ----
   palco:          light.palco_rgb              # moving heads do palco (RGB + brilho)
@@ -358,7 +400,6 @@ entities:
   fachada:        light.fachada_letreiro       # refletor do letreiro + arandelas
   estacionamento: light.estacionamento         # postes da frente + arandela do pátio
   porta:          binary_sensor.porta_principal  # porta de vidro abre no modelo quando "on"
-  familia:        light.sala_familia
   banheiros:      light.banheiros              # WCs, hall dos banheiros e depósito
   # ---- Administração / apoio ----
   pastoral:       light.sala_pastoral
@@ -409,7 +450,7 @@ Só precisa listar as chaves que quiser trocar; as que ficarem de fora usam o no
 - **Entorno**: estacionamento frontal em intertravado cinza (espinha de peixe), sem carros, vagas PCD, cerca-viva e cicas na
   frente, totem de entrada com o logo, ruas da frente e dos fundos, árvores e postes — só contexto (vizinhos e muros de
   divisa saíram na v1.4.5).
-- **Clima ao vivo (Palmas)**: widget no canto inferior direito com temperatura, condição, sensação
+- **Clima ao vivo (Palmas)**: widget no canto inferior esquerdo (some no modo Pessoa) com temperatura, condição, sensação
   térmica e vento — dados da [Open-Meteo](https://open-meteo.com/) (gratuita, sem chave), atualizados
   a cada 15 min, nas coordenadas `latitude`/`longitude` (padrão: Palmas-TO). Some quando o painel
   abre por cima e volta quando fecha. Desative com `weather: false`.
@@ -457,7 +498,7 @@ Coordenadas em metros (X → direita a partir do muro esquerdo, Z → frente; fa
 | Fundos (z 0–12,4) | Estacionamento interno e pátio · Almoxarifado · Cozinha · Recepção · Sala Pastoral (+ banheiro) · Caixa d'água · jardins | `estacionamento` · `cozinha` · `recepcao` · `pastoral` |
 | Ala direita (x 16–20) | Corredor da entrada lateral · Sala Gilvan · Administrativo · Circulação · Mídia · Voluntariado · Depósito · Área técnica · WC Masc. · Hall dos banheiros · WC Fem. | `circulacao` · `administrativo` · `midia` (+ `ac_midia`) · `voluntariado` (+ `ac_voluntariado`) · `banheiros` |
 | Templo (z 12,4–44) | Palco na parede lateral x = 0 com telão, telas de projeção, banda, treliça e line arrays · plateia de 414 cadeiras virada para −x · cobertura aparente | `plateia` (piso, high-bays), `palco` (moving heads), `telao`, `som`, `ac_templo` |
-| Entrada (z 44–49,65) | Hall com café, lounge e escada até o mezanino (salinha) · Sala da Família · WC · WC PCD | `hall` · `familia` · `banheiros` |
+| Entrada (z 44–49,65) | Hall com café, lounge e escada até o mezanino (salinha) · WC · WC PCD | `hall` · `banheiros` |
 | Frente (z > 49,7) | Jardins, calçada, estacionamento frontal com vagas PCD | `fachada` · `estacionamento` |
 
 ## Ajustando a planta
@@ -472,7 +513,7 @@ Tudo está em metros no topo de `igreja3d-card.js` (X → direita, Z → frente)
 - `_buildWalls()` — paredes com portas (`door`), janelas (`window`), vidro (`glass`), porta de vidro de
   2 folhas (`glassdoor`), vãos (`open`) e portão (`gate`).
 - `_buildFurniture()` — objetos ligados a entidades (telão, som, splits) e chamadas das funções de
-  decoração (`roomTemploPalco`, `roomTemploPlateia`, `roomHallFamilia`, `roomAlaDireita`,
+  decoração (`roomTemploPalco`, `roomTemploPlateia`, `roomHall`, `roomAlaDireita`,
   `roomAdministrativo`, `roomServicoPatio`, `roomFachada`), coladas entre `@rooms-begin` e `@rooms-end`.
 - Para refazer a decoração de uma área: edite `rooms/<área>.js` e rode `python3 integrate_rooms.py`.
 
@@ -554,8 +595,8 @@ não no HA nem no GitHub.
 - A geometria é **aproximada** a partir da planta de layout do térreo (Uõma Arquitetura, NOV/2024,
   escala 1:100) — precisão de ~0,1 m, não é levantamento. Alturas externas (8,5 / 4,5 / 3,6 m) e a
   fachada vêm de uma foto; o mobiliário é ilustrativo.
-- **Orientação**: a fachada da Base Church é virada para o **leste** (`orientation: 90`) — o sol da manhã
-  bate na fachada e o da tarde nos fundos. Para outro prédio ajuste (0 = N, 90 = L, 180 = S, 270 = O).
+- **Orientação** (`orientation`, padrão 90): na Base Church o sol nasce nos fundos e se põe na frente (corrigido na v1.8).
+  Para outro prédio, gire em passos de 90 até o sol bater do lado certo.
 - As entidades de `entities:` são exemplos — troque pelos IDs reais antes de usar.
 - O Three.js é carregado do jsDelivr (`three@0.170.0`): o **dispositivo que abre o dashboard** precisa
   de internet; o HA em si não.

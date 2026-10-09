@@ -16,13 +16,12 @@ function roomServicoPatio(ctx) {
   //  · Pátio: PAREDÃO DA MARCA na face externa do almoxarifado (z=3,9 · x 5,0–7,3): ripado de
   //    madeira clara como o da fachada, logo oficial em letras caixa (ctx.logo.relief), sanca
   //    com fita de LED, halo e floreira preta com uplights. Medalhão com o "B" no piso
-  //    (x 11,1 · z 10,85), no caminho recepção → templo. Ipê-amarelo florido (copa de tufos
-  //    pequenos, galhos e flores caídas no chão), banco ripado com LED sob o assento,
+  //    (x 11,1 · z 10,85), no caminho recepção → templo. Banco ripado com LED sob o assento,
   //    bicicletário com 2 bicicletas, abrigo de gás, cicas em vasos pretos na porta do templo.
-  //  · Jardim interno (x 7,5–9,45 · z 5,8–10,2): meio-fio, 2 palmeiras, cica, arbustos,
+  //  · Jardim interno (x 7,5–9,45 · z 5,8–10,2): meio-fio, cica, arbustos,
   //    forração, pedras brancas e spots de chão (só emissivo, sem luz real).
   //  · Jardim pastoral (x 12,75–20,1 · z 9,25–11,0): pisantes de concreto ligando a porta
-  //    da pastoral e o pátio à porta PM01, canteiros com forração, buxinhos, moreias e ráfis.
+  //    da pastoral e o pátio à porta PM01, canteiros com forração, buxinhos e moreias (v1.8: sem árvores).
   // Livres: rotas das portas (PM01, recepção, pastoral, vidro do templo, cozinha, almox.),
   // luminárias do cartão (cozinha 10,7/6,75 · y 2,7 · z 1,95) e a arandela do pátio.
   // Brilhos da decoração (spots, LEDs do paredão e do banco, logo) seguem 'estacionamento'
@@ -59,7 +58,6 @@ function roomServicoPatio(ctx) {
     bikeT: std({ color: 0xb85c38, roughness: 0.5, metalness: 0.3 }), bikeK: std({ color: 0x26282b, roughness: 0.5, metalness: 0.3 }),
     leafDk: std({ color: 0x24512a, roughness: 1 }), leafLt: std({ color: 0x6b9a3e, roughness: 1 }), palm: std({ color: 0x4d8a3c, roughness: 0.9 }),
     cyca: std({ color: 0x35612b, roughness: 0.9 }), forr: std({ color: 0x4f7d33, roughness: 1 }), strap: std({ color: 0x5f8f4a, roughness: 0.9 }),
-    ipe: std({ color: 0xe8b832, roughness: 0.95 }), ipe2: std({ color: 0xd49a24, roughness: 0.95 }),
     flowerY: std({ color: 0xf0c040, roughness: 0.9 }), flowerT: std({ color: 0xc8643c, roughness: 0.9 }),
     pebble: std({ color: 0xeceae4, roughness: 0.95 }), pebble2: std({ color: 0xd9d5cb, roughness: 0.95 }),
     rock: std({ color: 0x8f8b82, roughness: 0.95 }), slab: std({ color: 0xbdb9b0, roughness: 0.95 }),
@@ -68,7 +66,7 @@ function roomServicoPatio(ctx) {
     spotLens: std({ color: 0xfff3d6, emissive: 0xffd9a0, emissiveIntensity: 0.6, roughness: 0.39 }),
     led: std({ color: 0xfff0d8, emissive: 0xffd49a, emissiveIntensity: 0.1, roughness: 0.43 }),
     ripa: std({ color: 0xd9b8a0, roughness: 0.72 }), ripaFundo: std({ color: 0xa8876f, roughness: 0.85 }),
-    medal: std({ color: 0x2b2c30, roughness: 0.85 }), ipe3: std({ color: 0xf2c94a, roughness: 0.95 }),
+    medal: std({ color: 0x2b2c30, roughness: 0.85 }),
     gasDoor: std({ color: 0x9aa0a6, roughness: 0.6, metalness: 0.4 }), thermoR: std({ color: 0x8b2f2f, roughness: 0.5 }),
     fruitO: std({ color: 0xe08a2a, roughness: 0.7 }), fruitG: std({ color: 0x7ca23a, roughness: 0.7 }),
   };
@@ -356,16 +354,17 @@ function roomServicoPatio(ctx) {
     g2.fillText('COLETA SELETIVA', s / 2, (s * 0.1875) / 2); g2.restore();
     ['#2f5f9e', '#b23a2e', '#2f7a3e', '#d9a82a'].forEach((c, i) => { g2.fillStyle = c; g2.fillRect((i * s) / 4, s * 0.86, s / 4, s * 0.14); });
   });
-  // placa acima da janela do almoxarifado (verga em y 2,15), virada para −x
-  add(box(0.02, 0.32, 1.62, P.trim, 4.8515, 2.38, 1.75, nc));
-  const signM = new THREE.Mesh(new THREE.PlaneGeometry(1.58, 0.28), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.8 }));
-  signM.position.set(4.8395, 2.38, 1.75); signM.rotation.y = -PI / 2; add(signM);
+  // placa acima da janela do almoxarifado (verga em y 2,15), virada para −x — cabe abaixo do topo da parede (ctx.HB, v1.8)
+  const SY = (ctx.HB || 2.7) - 0.12;
+  add(box(0.02, 0.22, 1.16, P.trim, 4.8515, SY, 1.75, nc));
+  const signM = new THREE.Mesh(new THREE.PlaneGeometry(1.12, 0.2), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.8 }));
+  signM.position.set(4.8395, SY, 1.75); signM.rotation.y = -PI / 2; add(signM);
 
   // ---- PAREDÃO DA MARCA (face externa do almoxarifado, z = 3,9375, virado para o pátio) ----
   // Ripado de madeira clara igual ao da fachada + logo oficial em letras caixa prateadas.
   // Fica de frente para a câmera inicial (que olha de +z/+x) e vira o "ponto de foto" do pátio.
   {
-    const x0 = 5.02, x1 = 7.3, W = x1 - x0, cx = (x0 + x1) / 2, y0 = 0.02, y1 = 2.84, Hh = y1 - y0, ym = (y0 + y1) / 2;
+    const x0 = 5.02, x1 = 7.3, W = x1 - x0, cx = (x0 + x1) / 2, y0 = 0.02, y1 = (ctx.HB || 2.94) - 0.1, Hh = y1 - y0, ym = (y0 + y1) / 2;   // até logo abaixo do topo da parede
     add(box(W, Hh, 0.02, P.ripaFundo, cx, ym, 3.9495, nc));                                   // fundo
     const n = Math.floor((W - 0.03) / 0.075);
     for (let i = 0; i <= n; i++) add(box(0.046, Hh, 0.035, P.ripa, x0 + 0.03 + i * 0.075 + (W - 0.06 - n * 0.075) / 2, ym, 3.977));
@@ -375,7 +374,7 @@ function roomServicoPatio(ctx) {
     for (const sx of [-1, 1]) add(box(0.03, Hh + 0.06, 0.07, P.trim, cx + sx * (W / 2 + 0.015), ym + 0.03, 3.9725));   // perfis laterais
     // logo oficial (anel + B + BASE/CHURCH) em relevo, acende de leve à noite
     const L = logo.relief(1.08, { depth: 0.05, layers: 4 });
-    L.position.set(cx, 1.78, 3.9965); add(L);
+    L.position.set(cx, y1 - 0.75, 3.9965); add(L);
     if (ctx.bindEmissive) ctx.bindEmissive('estacionamento', L.userData.face, 0.6, { min: 0.3 });   // de dia fica branco-prata, à noite brilha
     if (ctx.glowPlane) { const h = ctx.glowPlane(W + 0.3, Hh + 0.3, 'estacionamento', { color: 0xffc98f, base: 0.55, day: 0.12 }); h.position.set(cx, ym + 0.1, 4.0625); add(h); }
     // floreira preta ao pé do painel: grama-preta (moreia/ráfis) e 2 uplights
@@ -399,39 +398,7 @@ function roomServicoPatio(ctx) {
     const mk2 = logo.mesh(1.12, 1.12, { layout: 'mark', color: '#e3dfd5', roughness: 0.8 }); mk2.rotation.x = -PI / 2; mk2.position.set(mx, 0.0175, mz); add(mk2);
   }
 
-  // Ipê-amarelo florido em floreira redonda preta (acento âmbar no pátio):
-  // tronco + 3 galhos saindo do topo (com ramos finos), copa em guarda-chuva de ~22 tufos pequenos
-  // achatados e flores caídas no chão em volta da floreira.
-  const ipe = () => {
-    const g = G();
-    g.add(cyl(0.62, 0.56, 0.45, P.potBlk, 0, 0.225, 0, 24));
-    g.add(cyl(0.645, 0.645, 0.04, P.potBlk, 0, 0.45, 0, 24));                  // borda
-    g.add(cyl(0.575, 0.575, 0.02, M.soil, 0, 0.462, 0, 22));
-    g.add(cyl(0.065, 0.12, 2.05, M.trunk, 0, 1.45, 0, 10));
-    const top = [0, 2.42, 0], tips = [[-0.62, 2.98, 0.28], [0.58, 3.02, -0.26], [0.06, 3.12, 0.64], [0.12, 3.0, -0.62]];
-    tips.forEach((t, i) => {
-      tube(g, i < 3 ? top : [0, 2.1, 0], t, i < 3 ? 0.04 : 0.028, M.trunk);
-      const d = V(t[0], 0, t[2]).normalize();
-      for (const s of [-1, 1]) {
-        const e = [t[0] + (d.x * 0.3 - d.z * 0.22 * s), t[1] + 0.18, t[2] + (d.z * 0.3 + d.x * 0.22 * s)];
-        tube(g, t, e, 0.016, M.trunk, 6);
-      }
-    });
-    const mats = [P.ipe, P.ipe3, P.ipe2, P.ipe, P.ipe3, P.ipe, P.ipe2, P.leafLt, P.ipe, P.ipe3, P.ipe];
-    for (let i = 0; i < 28; i++) {
-      const t = (i + 0.5) / 28, a = i * 2.39996 + j(0.3), rr = 1.08 * Math.sqrt(t);
-      const s = sph(0.14 + rnd() * 0.1, mats[i % mats.length], Math.cos(a) * rr + j(0.18), 3.0 + 0.45 * (1 - t) + j(0.12), Math.sin(a) * rr + j(0.18));
-      s.scale.set(1, 0.7, 1); s.rotation.y = rnd() * PI; g.add(s);
-    }
-    for (let i = 0; i < 5; i++) { const a = rnd() * PI * 2, r = 0.15 + rnd() * 0.35; g.add(flat(cyl(0.05, 0.05, 0.004, P.ipe, Math.cos(a) * r, 0.474, Math.sin(a) * r, 8))); }
-    return g;
-  };
-  place(ipe(), 6.1, 6.55);
-  // flores caídas no piso em volta da floreira
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * PI * 2 + j(0.25), r = 0.74 + rnd() * 0.55;
-    add(flat(cyl(0.05, 0.05, 0.004, i % 3 ? P.ipe : P.ipe2, 6.1 + Math.cos(a) * r, 0.008, 6.55 + Math.sin(a) * r, 8)));
-  }
+  // (v1.8: o ipê-amarelo saiu — pedido do dono: nenhuma árvore)
 
   // Banco ripado de madeira clara com pés pretos (de frente para o jardim interno)
   const bench = (L) => {
@@ -512,7 +479,7 @@ function roomServicoPatio(ctx) {
   add(box(1.83, 0.14, 0.1, M.concrete, 8.505, 0.07, 5.85));
   add(box(2.85, 0.14, 0.1, M.concrete, 8.875, 0.07, 10.15));
   add(box(0.1, 0.14, 0.81, M.concrete, 10.25, 0.07, 9.695));
-  // Pedras brancas: faixa junto ao meio-fio + rodas em volta das palmeiras + seixos soltos
+  // Pedras brancas: faixa junto ao meio-fio + rodas de pedra + seixos soltos
   add(box(0.32, 0.02, 4.2, P.pebble, 7.77, 0.012, 8.0, nc));
   add(box(2.45, 0.02, 0.32, P.pebble, 9.0, 0.013, 9.94, nc));
   add(flat(cyl(0.5, 0.5, 0.02, P.pebble, 8.45, 0.014, 6.75, 20)));
@@ -523,22 +490,7 @@ function roomServicoPatio(ctx) {
   }
   // Pedras ornamentais
   for (const [x, z, r] of [[8.0, 7.55, 0.16], [9.1, 7.3, 0.12], [9.75, 9.7, 0.14]]) { const s = sph(r, P.rock, x, r * 0.35, z); s.scale.set(1.3, 0.6, 1); add(s); }
-  // Palmeiras: tronco em anéis + folhas em leque
-  // folha arqueada: trecho interno subindo + trecho externo (mais estreito) caindo
-  const arcFrond = (g, y, len, w, a, droop, mat) => {
-    const L1 = len * 0.45, t1 = -0.35, c1 = Math.cos(t1);
-    frond(g, 0, y, 0, L1, w, a, t1, mat);
-    frond(g, L1 * c1 * Math.cos(a), y - L1 * Math.sin(t1), -L1 * c1 * Math.sin(a), len * 0.55, w * 0.7, a, droop, mat);
-  };
-  const palm = (h, n, len, w, segs) => {
-    const g = G(), sh = h / segs;
-    for (let i = 0; i < segs; i++) g.add(cyl(0.07 - i * 0.006, 0.085 - i * 0.006, sh, i % 2 ? M.trunk : M.woodDark, 0, sh * (i + 0.5), 0, 8));
-    for (let i = 0; i < n; i++) arcFrond(g, h, len, w, (i / n) * PI * 2 + j(0.15), 0.45 + rnd() * 0.35, i % 2 ? P.palm : M.leaf2);
-    g.add(sph(0.08, P.leafLt, 0, h + 0.03, 0));
-    return g;
-  };
-  place(palm(2.5, 8, 1.0, 0.16, 4), 8.45, 6.75);
-  place(palm(1.8, 7, 0.85, 0.15, 3), 8.35, 8.85);
+  // (v1.8: as 2 palmeiras saíram — nenhuma árvore; as rodas de pedra ficam como canteiro)
   place(cycaPot(0.6, false), 9.85, 9.8);
   // Arbustos (buxinhos) e forração baixa junto à parede da recepção
   const shrub = (x, z, s, m1, m2) => {
@@ -572,8 +524,7 @@ function roomServicoPatio(ctx) {
     add(sph(0.03, P.binW, x + 0.05, 0.42, z));
   };
   moreia(14.7, 9.72); moreia(16.15, 9.72);
-  // Canteiro leste: ráfis no canto, buxinhos e touceiras floridas terracota diante da janela J13
-  place(palm(1.3, 7, 0.6, 0.12, 2), 19.4, 10.15);
+  // Canteiro leste: buxinhos e touceiras floridas terracota diante da janela J13
   shrub(17.65, 10.3, 0.85, P.leafDk, M.leaf2); shrub(18.55, 9.8, 0.7, M.plant, P.leafDk); shrub(19.25, 10.45, 0.75, P.leafDk, M.plant);
   for (const [x, z] of [[18.1, 10.55], [18.95, 10.1]]) {
     add(sph(0.18, M.leaf2, x, 0.16, z));
